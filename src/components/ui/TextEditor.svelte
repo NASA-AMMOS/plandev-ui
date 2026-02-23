@@ -7,9 +7,12 @@
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import { basicSetup, EditorView } from 'codemirror';
+  import { debounce } from 'lodash-es';
   import { File } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
+  import type { LintDiagnostic } from '../../types/errors';
+  import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -30,6 +33,7 @@
 
   const dispatch = createEventDispatcher<{
     download: { filePath: string };
+    lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
     textContentUpdated: { filePath: string; input: string };
@@ -40,9 +44,10 @@
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
   let editorView: EditorView;
-  let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
   let previousIsJSON: boolean | null = null;
+  let previousTextFilePath: string = textFilePath;
+  let updatedTextContent: string = textFileContent;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
@@ -62,6 +67,13 @@
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
+  // Cancel pending debounced events when file path changes to prevent stale events
+  // from being dispatched with the wrong file path
+  $: if (textFilePath !== previousTextFilePath) {
+    dispatchLintChange.cancel();
+    previousTextFilePath = textFilePath;
+  }
+
   $: if (previousIsJSON !== isJSON && editorDiv) {
     previousIsJSON = isJSON;
 
@@ -80,6 +92,7 @@
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
           json(),
+          EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
           jsonLinter,
           EditorView.updateListener.of(viewUpdate => {
             if (viewUpdate.docChanged) {
@@ -101,6 +114,7 @@
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
+          EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
           EditorView.updateListener.of(viewUpdate => {
             if (viewUpdate.docChanged) {
               textContentUpdateListener(viewUpdate);
@@ -112,6 +126,15 @@
       });
     }
   }
+
+  const dispatchLintChange = debounce((view: EditorView) => {
+    if (textFilePath) {
+      dispatch('lintChange', {
+        diagnostics: getLintDiagnostics(view),
+        filePath: textFilePath,
+      });
+    }
+  }, 300);
 
   function textContentUpdateListener(viewUpdate: ViewUpdate): void {
     const updatedText = viewUpdate.state.doc.toString();
@@ -157,6 +180,7 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
+        EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
         EditorView.updateListener.of(viewUpdate => {
           if (viewUpdate.docChanged) {
             textContentUpdateListener(viewUpdate);
@@ -170,6 +194,7 @@
   });
 
   onDestroy(() => {
+    dispatchLintChange.cancel();
     editorView?.destroy();
   });
 </script>

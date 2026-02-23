@@ -3,7 +3,7 @@
 <script lang="ts">
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
-  import { forEachDiagnostic, lintGutter, openLintPanel } from '@codemirror/lint';
+  import { lintGutter, openLintPanel } from '@codemirror/lint';
   import { Compartment, EditorSelection, EditorState, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
@@ -21,6 +21,7 @@
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
+  import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
@@ -199,8 +200,8 @@
           : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
     } catch (e) {
       console.error('Adaptation toOutputFormat error:', e);
-      if (sequenceName) {
-        dispatch('adaptationError', { error: e as Error, filePath: sequenceName });
+      if (sequenceFilePath) {
+        dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
       }
       output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
     }
@@ -225,26 +226,11 @@
     }
   }
 
-  function getLintDiagnostics(view: EditorView): LintDiagnostic[] {
-    const diagnostics: LintDiagnostic[] = [];
-    forEachDiagnostic(view.state, (d, from, to) => {
-      const fromLine = view.state.doc.lineAt(from);
-      const toLine = view.state.doc.lineAt(to);
-      diagnostics.push({
-        from: { column: from - fromLine.from, line: fromLine.number },
-        message: d.message,
-        severity: d.severity,
-        to: { column: to - toLine.from, line: toLine.number },
-      });
-    });
-    return diagnostics;
-  }
-
   const dispatchLintChange = debounce((view: EditorView) => {
-    if (sequenceName) {
+    if (sequenceFilePath) {
       dispatch('lintChange', {
         diagnostics: getLintDiagnostics(view),
-        filePath: sequenceName,
+        filePath: sequenceFilePath,
       });
     }
   }, 300);

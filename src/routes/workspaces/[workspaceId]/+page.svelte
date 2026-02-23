@@ -506,6 +506,10 @@
   }
 
   function updateActiveFilePath(newFilePath: string) {
+    // Clear lint errors for the old path before updating to new path
+    if ($activeDocumentPath) {
+      clearWorkspaceLintErrors($activeDocumentPath);
+    }
     const { filename } = separateFilenameFromPath(newFilePath);
     const newType = workspaceTreeMap[newFilePath]?.type ?? null;
     activeDocument.updatePath(newFilePath, filename ?? undefined, newType);
@@ -1081,6 +1085,7 @@
                 textFileName={$activeDocument.fileName ?? undefined}
                 textFilePath={$activeDocumentPath ?? ''}
                 textFileContent={$activeDocument.originalContent}
+                on:lintChange={onLintChange}
                 on:runAction={onRunActionOnActiveFile}
                 on:save={onSaveWorkspaceFile}
                 on:download={onDownloadInput}
