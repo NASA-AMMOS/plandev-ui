@@ -74,7 +74,8 @@
     selectActivity(activityId, null);
   }
 
-  function handleActionRunClick(actionRunId: number) {
+  function handleActionRunClick(event: MouseEvent, actionRunId: number) {
+    event.stopPropagation();
     openActionRun($workspaceId, actionRunId, true);
   }
 
@@ -168,10 +169,7 @@
             {:else if log.type === ErrorTypes.WORKSPACE_ACTION_RUN && log.data?.actionRunId && log.data?.actionName}
               <button
                 class="inline-flex cursor-pointer items-center gap-0.5 text-violet-700 underline decoration-violet-400/50 underline-offset-2 hover:text-violet-900 hover:decoration-violet-600"
-                on:click={e => {
-                  e.stopPropagation();
-                  handleActionRunClick(log.data?.actionRunId);
-                }}
+                on:click={e => handleActionRunClick(e, log.data?.actionRunId)}
               >
                 {log.data.actionName}•
                 <span class="">Run #{log.data.actionRunId}</span>
