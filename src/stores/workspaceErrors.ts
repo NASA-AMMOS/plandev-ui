@@ -1,6 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActionRunSlim } from '../types/actions';
-import type { AdaptationLog, BaseError, LintDiagnostic, LintError, LogLevel } from '../types/errors';
+import type { AdaptationLog, AdaptationMessage, BaseError, LintDiagnostic, LintError, LogLevel } from '../types/errors';
 import { ErrorTypes } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
@@ -9,8 +9,6 @@ import { workspaceId } from './workspaces';
 /* Writable Stores */
 
 // Adaptation messages (errors from loading failures + console logs from adaptation code)
-export type AdaptationError = BaseError & { level: LogLevel };
-export type AdaptationMessage = AdaptationLog | AdaptationError;
 export const workspaceAdaptationMessages: Writable<AdaptationMessage[]> = writable([]);
 
 export const workspaceAdaptationErrors: Readable<AdaptationMessage[]> = derived(

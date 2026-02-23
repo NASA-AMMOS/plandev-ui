@@ -170,3 +170,6 @@ export interface AdaptationLog extends BaseError {
   level: LogLevel;
   type: ErrorTypes.WORKSPACE_ADAPTATION_LOG;
 }
+
+export type AdaptationError = BaseError & { level: LogLevel };
+export type AdaptationMessage = AdaptationLog | AdaptationError;
