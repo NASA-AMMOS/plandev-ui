@@ -31,7 +31,7 @@ export async function loadSequenceAdaptation(id: number, user: User | null): Pro
       '@codemirror/commands': cmCommands,
       '@codemirror/language': cmLanguage,
       '@codemirror/state': cmState,
-      '@codemirror/view': cmView
+      '@codemirror/view': cmView,
     }[id];
   };
   // adaptation code will set `exports.adaptation = adaptation;`

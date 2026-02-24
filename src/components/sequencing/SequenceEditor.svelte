@@ -104,7 +104,7 @@
     if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
       editorSequenceView?.dispatch({
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-        userEvent: "file.open"
+        userEvent: 'file.open',
       });
     }
   }
