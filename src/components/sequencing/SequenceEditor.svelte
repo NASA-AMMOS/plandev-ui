@@ -4,7 +4,7 @@
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
-  import { Compartment, EditorState, type Extension } from '@codemirror/state';
+  import { Compartment, EditorState, Transaction, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
   import type {
@@ -104,6 +104,7 @@
     if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
       editorSequenceView?.dispatch({
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+        userEvent: "file.open"
       });
     }
   }
@@ -291,6 +292,13 @@
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+        EditorView.updateListener.of(viewUpdate => {
+          for (const tr of viewUpdate.transactions) {
+            if (tr.annotation(Transaction.userEvent)?.startsWith('sanitize.smartQuotes')) {
+              showSuccessToast('Replaced curly quotes with ASCII quotes, save to accept changes');
+            }
+          }
+        }),
       ],
       parent: editorSequenceDiv,
     });

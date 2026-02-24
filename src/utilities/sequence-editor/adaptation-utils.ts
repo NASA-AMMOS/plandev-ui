@@ -2,6 +2,7 @@
 import * as cmCommands from '@codemirror/commands';
 import * as cmLanguage from '@codemirror/language';
 import * as cmView from '@codemirror/view';
+import * as cmState from '@codemirror/state';
 
 import type { PhoenixAdaptation } from '@nasa-jpl/aerie-sequence-languages';
 import type { User } from '../../types/app';
@@ -29,7 +30,8 @@ export async function loadSequenceAdaptation(id: number, user: User | null): Pro
     return {
       '@codemirror/commands': cmCommands,
       '@codemirror/language': cmLanguage,
-      '@codemirror/view': cmView,
+      '@codemirror/state': cmState,
+      '@codemirror/view': cmView
     }[id];
   };
   // adaptation code will set `exports.adaptation = adaptation;`
