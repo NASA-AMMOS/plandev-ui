@@ -7201,14 +7201,25 @@ const effects = {
   },
 
   async searchActivities(
+    modelId: number | undefined,
     filterArgType: string,
     filterActName: string,
     filterArgs: [name: string, value: string | number | boolean][],
     filterTagValue: string,
+    filterPreset: string,
     user: User | null,
   ): Promise<ActivityDirectiveSearchResult[] | null> {
     try {
       const clauses = [];
+      if (modelId !== undefined && modelId !== null) {
+        clauses.push({
+          plan: {
+            model_id: {
+              _eq: modelId,
+            },
+          },
+        });
+      }
       if (filterArgType) {
         clauses.push({
           type: {
@@ -7229,6 +7240,17 @@ const effects = {
             tag: {
               name: {
                 _eq: filterTagValue,
+              },
+            },
+          },
+        });
+      }
+      if (filterPreset) {
+        clauses.push({
+          applied_preset: {
+            preset_applied: {
+              name: {
+                _eq: filterPreset,
               },
             },
           },

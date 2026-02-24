@@ -971,6 +971,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_ACTIVITY_PRESETS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.ACTIVITY_PRESETS], user);
   },
+  SUB_ACTIVITY_PRESETS_ALL: () => true,
   SUB_ACTIVITY_TYPES: () => true,
   SUB_ANCHOR_VALIDATION_STATUS: () => true,
   SUB_CHANNEL_DICTIONARIES: () => true,

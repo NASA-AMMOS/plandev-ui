@@ -2265,6 +2265,19 @@ const gql = {
     }
   `,
 
+  SUB_ACTIVITY_PRESETS_ALL: `#graphql
+    subscription SubActivityPresetsAll {
+      ${Queries.ACTIVITY_PRESETS} {
+        id
+        model_id
+        name
+        associated_activity_type
+        arguments
+        owner
+      }
+    }
+  `,
+
   SUB_ACTIVITY_TYPES: `#graphql
     subscription SubActivityTypes($modelId: Int!) {
       ${Queries.ACTIVITY_TYPES}(where: { model_id: { _eq: $modelId } }, order_by: { name: asc }) {
@@ -2751,6 +2764,10 @@ const gql = {
   SUB_MODELS: `#graphql
     subscription SubModels {
       models: ${Queries.MISSION_MODELS}(order_by: { name: asc }) {
+        activity_types {
+          name
+          parameters
+        }
         created_at
         description
         id
