@@ -64,7 +64,7 @@ export async function reqActionServer<T = any>(
   };
 
   const options: RequestInit = {
-    credentials: 'include',
+    credentials: env.PUBLIC_ACTION_INCLUDE_CREDENTIALS === 'true' ? 'include' : 'omit',
     headers,
     method,
     signal,

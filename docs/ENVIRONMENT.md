@@ -11,6 +11,7 @@ This document provides detailed information about environment variables for Aeri
 | `PUBLIC_GATEWAY_CLIENT_URL`        | Url of the Gateway as called from the client (i.e. web browser)                                               | `string` | http://localhost:9000            |
 | `PUBLIC_GATEWAY_SERVER_URL`        | Url of the Gateway as called from the server (i.e. Node.js container)                                         | `string` | http://localhost:9000            |
 | `PUBLIC_ACTION_CLIENT_URL`         | Url of the Action Server as called from the client (i.e. web browser)                                         | `string` | http://localhost:27186           |
+| `PUBLIC_ACTION_INCLUDE_CREDENTIALS`| Whether to include browser credentials (cookies) in requests to the Action Server. Required for cookie forwarding to actions. | `string` | false                            |
 | `PUBLIC_HASURA_CLIENT_URL`         | Url of Hasura as called from the client (i.e. web browser)                                                    | `string` | http://localhost:8080/v1/graphql |
 | `PUBLIC_HASURA_SERVER_URL`         | Url of Hasura as called from the server (i.e. Node.js container)                                              | `string` | http://localhost:8080/v1/graphql |
 | `PUBLIC_WORKSPACE_CLIENT_URL`      | Url of the Workspace Service as called from the client (i.e. web browser)                                     | `string` | http://localhost:28000           |
