@@ -294,7 +294,7 @@
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         EditorView.updateListener.of(viewUpdate => {
           for (const tr of viewUpdate.transactions) {
-            if (tr.annotation(Transaction.userEvent)?.startsWith('sanitize.smartQuotes')) {
+            if (tr.annotation(Transaction.userEvent) === 'sanitize.smartQuotes') {
               showSuccessToast('Replaced curly quotes with ASCII quotes, save to accept changes');
             }
           }
