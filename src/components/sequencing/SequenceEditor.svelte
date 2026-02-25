@@ -109,6 +109,7 @@
     // both files could have identical content.
     if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
       editorSequenceView?.dispatch({
+        annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
         changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
         userEvent: 'file.open',
       });
