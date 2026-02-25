@@ -114,7 +114,7 @@
               variant="ghost"
               size="icon"
               class="ml-auto mr-1 flex flex-shrink-0 items-center"
-              role="none"
+              aria-label={expanded ? 'Collapse' : 'Expand'}
               on:click={onToggle}
             >
               {#if expanded}

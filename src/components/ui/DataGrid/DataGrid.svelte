@@ -93,8 +93,12 @@
     gridApi?.onFilterChanged();
   }
 
-  export function showContextMenu(event: MouseEvent) {
+  export function showContextMenu(event: MouseEvent, targetRowId?: RowId) {
     if (useCustomContextMenu) {
+      if (targetRowId !== undefined) {
+        contextMenuTargetRowId = targetRowId;
+      }
+      contextMenuOpen = true;
       contextMenu.show(event);
     }
   }

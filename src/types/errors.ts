@@ -144,3 +144,32 @@ export interface ActivityErrorRollup {
   location: string[];
   type: string;
 }
+
+export type LintSeverity = 'error' | 'warning' | 'info' | 'hint';
+
+export interface LintDiagnostic {
+  from: { column: number; line: number };
+  message: string;
+  severity: LintSeverity;
+  to: { column: number; line: number };
+}
+
+export interface LintError extends BaseError {
+  data: {
+    column: number;
+    filePath: string;
+    line: number;
+    severity: LintSeverity;
+  };
+  level: LogLevel;
+  type: ErrorTypes.WORKSPACE_LINT_ERROR;
+}
+
+export interface AdaptationLog extends BaseError {
+  data: any[];
+  level: LogLevel;
+  type: ErrorTypes.WORKSPACE_ADAPTATION_LOG;
+}
+
+export type AdaptationError = BaseError & { level: LogLevel };
+export type AdaptationMessage = AdaptationLog | AdaptationError;

@@ -356,7 +356,6 @@
 
   function onShowMenu(node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) {
     contextMenuNode = node;
-    selectedTreeNodePath = node.fullPath;
     const button = event.currentTarget as HTMLElement;
     const rect = button.getBoundingClientRect();
     const syntheticEvent = new MouseEvent('contextmenu', {
@@ -364,7 +363,7 @@
       clientX: rect.right,
       clientY: rect.top,
     });
-    dataGrid?.showContextMenu(syntheticEvent);
+    dataGrid?.showContextMenu(syntheticEvent, node.fullPath);
   }
 
   function onContextMenu(event: CustomEvent<CellContextMenuEvent<WorkspaceTreeNodeWithFullPath, unknown>>) {

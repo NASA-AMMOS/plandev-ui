@@ -47,9 +47,11 @@
     }
   });
 
-  beforeNavigate(() => {
-    // Clear logs on page change
-    clearLogs();
+  beforeNavigate(({ from, to }) => {
+    // Clear logs only on actual page change (not query param changes like file switching)
+    if (from?.route?.id !== to?.route?.id) {
+      clearLogs();
+    }
   });
 
   async function loadPlugins() {
