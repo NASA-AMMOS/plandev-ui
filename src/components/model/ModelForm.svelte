@@ -27,9 +27,9 @@
   export let modelId: number | undefined;
   export let createdAt: string | undefined;
   export let user: User | null;
-  export let users: UserId[] | null = null;
+  export let users: UserId[] = [];
   export let usersLoading: boolean = false;
-  export let views: ViewSlim[] | null = null;
+  export let views: ViewSlim[] = [];
   export let viewsLoading: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -184,7 +184,7 @@
       <label for="owner">Owner</label>
       <UserInput
         allowMultiple={false}
-        users={users || []}
+        {users}
         {user}
         disabled={usersLoading}
         placeholder={usersLoading ? 'Loading' : 'Search users'}
@@ -205,7 +205,7 @@
     <Input layout="inline">
       <label for="view">Default View</label>
       <select name="view" class="st-select w-full" bind:value={viewId} disabled={viewsLoading}>
-        {#if viewsLoading || !views}
+        {#if viewsLoading}
           <option>Loading</option>
         {:else}
           <option value={null}>None</option>

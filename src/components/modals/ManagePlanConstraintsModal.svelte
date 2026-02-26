@@ -107,7 +107,7 @@
   let hasEditSpecPermission: boolean = false;
   let selectedConstraints: Record<string, boolean> = {};
 
-  $: filteredConstraints = ($constraints || []).filter(constraint => {
+  $: filteredConstraints = $constraints.filter(constraint => {
     const filterTextLowerCase = filterText.toLowerCase();
     const includesId = `${constraint.id}`.includes(filterTextLowerCase);
     const includesName = constraint.name.toLocaleLowerCase().includes(filterTextLowerCase);
@@ -179,7 +179,7 @@
   }
 
   function viewConstraint({ id }: Pick<ConstraintMetadata, 'id'>) {
-    const constraint = ($constraints || []).find(c => c.id === id);
+    const constraint = $constraints.find(c => c.id === id);
     window.open(
       `${base}/constraints/edit/${constraint?.id}?${SearchParameters.REVISION}=${constraint?.versions[0].revision}${typeof $plan?.model?.id === 'number' ? `&${SearchParameters.MODEL_ID}=${$plan.model.id}` : ''}`,
     );
@@ -291,17 +291,14 @@
       </div>
       <hr />
       <div class="constraints-modal-table-container">
-        {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading || filteredConstraints.length}
-          <DataGrid
-            loading={$initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
-            bind:this={dataGrid}
-            {columnDefs}
-            rowData={filteredConstraints}
-            on:cellEditingStopped={onToggleConstraint}
-          />
-        {:else}
-          <div class="p1 st-typography-label">No Constraints Found</div>
-        {/if}
+        <DataGrid
+          loading={$initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
+          bind:this={dataGrid}
+          {columnDefs}
+          noRowsOverlayText="No Constraints Found"
+          rowData={filteredConstraints}
+          on:cellEditingStopped={onToggleConstraint}
+        />
       </div>
     </div>
   </ModalContent>

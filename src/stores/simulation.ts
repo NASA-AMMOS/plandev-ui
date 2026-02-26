@@ -71,17 +71,17 @@ export const simulationDatasetLatest = gqlSubscribable<SimulationDataset | null>
   },
 );
 
-export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[] | null>(
+export const simulationDatasetsPlan = gqlSubscribable<SimulationDataset[]>(
   gql.SUB_SIMULATION_DATASETS,
   { planId },
-  null,
+  [],
   v => v[0]?.simulation_datasets || [],
 );
 
-export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[] | null>(
+export const simulationDatasetsAll = gqlSubscribable<SimulationDatasetSlim[]>(
   gql.SUB_SIMULATION_DATASETS_ALL,
   null,
-  null,
+  [],
 );
 
 export const simulationTemplates = gqlSubscribable<SimulationTemplate[]>(
@@ -182,8 +182,8 @@ export function resetSimulationStores() {
   simulationDatasetLatest.updateValue(() => null);
   simulationEvents.set(null);
   simulationTemplates.updateValue(() => []);
-  simulationDatasetsPlan.updateValue(() => null);
-  simulationDatasetsAll.updateValue(() => null);
+  simulationDatasetsPlan.updateValue(() => []);
+  simulationDatasetsAll.updateValue(() => []);
   spans.set(null);
   resourceTypes.set([]);
 }

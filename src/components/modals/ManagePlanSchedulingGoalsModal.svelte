@@ -121,7 +121,7 @@
       const includesName = goal.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedGoals = ($allowedSchedulingGoalSpecs || []).reduce(
+  $: selectedGoals = $allowedSchedulingGoalSpecs.reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingGoalPlanSpec: SchedulingGoalPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -207,7 +207,7 @@
   }
 
   async function onUpdateGoals(selectedGoals: Record<number, boolean>) {
-    if ($plan && $schedulingPlanSpecification && $allowedSchedulingGoalSpecs) {
+    if ($plan && $schedulingPlanSpecification) {
       const goalPlanSpecUpdates: {
         goalPlanSpecIdsToDelete: number[];
         goalPlanSpecsToAdd: SchedulingGoalPlanSpecInsertInput[];
@@ -224,7 +224,7 @@
 
           // if we find at least one goal invocation with the selected goal_id, we don't want to insert this goal_id into the plan spec
           // i.e. this goal was already selected when we entered the modal, so we don't want to kick off an update, which would cause a duplicate invocation to appear
-          const goalsInPlanSpecification = ($allowedSchedulingGoalSpecs || []).filter(
+          const goalsInPlanSpecification = $allowedSchedulingGoalSpecs.filter(
             schedulingGoalPlanSpecification => schedulingGoalPlanSpecification.goal_id === goalId,
           );
 
@@ -293,17 +293,14 @@
       </div>
       <hr />
       <div class="goals-modal-table-container">
-        {#if $schedulingGoalsLoading || filteredGoals.length}
-          <DataGrid
-            bind:this={dataGrid}
-            {columnDefs}
-            rowData={filteredGoals}
-            on:cellEditingStopped={onToggleGoal}
-            loading={$schedulingGoalsLoading}
-          />
-        {:else}
-          <div class="p1 st-typography-label">No Scheduling Goals Found</div>
-        {/if}
+        <DataGrid
+          bind:this={dataGrid}
+          {columnDefs}
+          rowData={filteredGoals}
+          noRowsOverlayText="No Scheduling Goals Found"
+          on:cellEditingStopped={onToggleGoal}
+          loading={$schedulingGoalsLoading}
+        />
       </div>
     </div>
   </ModalContent>

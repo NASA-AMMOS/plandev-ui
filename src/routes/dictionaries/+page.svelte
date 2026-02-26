@@ -17,7 +17,9 @@
   import { featurePermissions } from '../../utilities/permissions';
 
   const user = getUserStore();
-
+  const commandDictionariesLoading = commandDictionaries.loading;
+  const channelDictionariesLoading = channelDictionaries.loading;
+  const parameterDictionariesLoading = parameterDictionaries.loading;
   const createPermissionError = 'You do not have permission to create Command Dictionaries';
 
   let createButtonDisabled: boolean = false;
@@ -166,6 +168,7 @@
         dictionaries={$commandDictionaries}
         hasDeletePermission={featurePermissions.commandDictionary.canDelete($user)}
         isEditingDictionaries={true}
+        loading={$commandDictionariesLoading}
         type={'Command'}
         user={$user}
         on:delete={deleteCommandDictionary}
@@ -175,6 +178,7 @@
         dictionaries={$channelDictionaries}
         hasDeletePermission={featurePermissions.channelDictionary.canDelete($user)}
         isEditingDictionaries={true}
+        loading={$channelDictionariesLoading}
         type={'Channel'}
         user={$user}
         on:delete={deleteChannelDictionary}
@@ -184,6 +188,7 @@
         dictionaries={$parameterDictionaries}
         hasDeletePermission={featurePermissions.parameterDictionary.canDelete($user)}
         isEditingDictionaries={true}
+        loading={$parameterDictionariesLoading}
         type={'Parameter'}
         user={$user}
         on:delete={deleteParameterDictionary}

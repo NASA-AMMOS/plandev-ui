@@ -10,6 +10,7 @@
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
+    planSnapshots,
     planSnapshotsWithSimulations,
   } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
@@ -30,7 +31,7 @@
   import { removeQueryParam, setQueryParam } from '../../utilities/url';
   import { required, unique } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
-  import Loading from '../Loading.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import CardList from '../ui/CardList.svelte';
@@ -40,12 +41,14 @@
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
 
+  const planSnapshotsError = planSnapshots.error;
+
   export let plan: Plan | null;
   export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let planTags: Tag[];
   export let tags: Tag[] = [];
   export let user: User | null;
-  export let users: UserId[] | null = null;
+  export let users: UserId[] = [];
   export let usersLoading: boolean = false;
   export let userWriteablePlans: PlanSlimmer[] | null = null;
 
@@ -58,7 +61,7 @@
   let planNameField = field<string>('', [
     required,
     unique(
-      ($plans || []).filter(p => p.id !== plan?.id).map(p => p.name),
+      $plans.filter(p => p.id !== plan?.id).map(p => p.name),
       'Plan name already exists',
     ),
   ]);
@@ -321,7 +324,7 @@
             <PlanCollaboratorInput
               name="collaborators"
               collaborators={plan.collaborators}
-              users={users || []}
+              {users}
               plans={userWriteablePlans}
               {plan}
               {user}
@@ -387,38 +390,42 @@
           </button>
         </div>
         <div style="margin-top: 8px">
-          {#if $initialPlanSnapshotsLoading}
-            <Loading />
-          {/if}
-          <CardList>
-            {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
-              <PlanSnapshot
-                activePlanSnapshotId={$planSnapshotId}
-                planModelId={plan.model?.id}
-                {planSnapshot}
-                on:click={() => {
-                  setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
-                  $planSnapshotId = planSnapshot.snapshot_id;
-                  $planReadOnlySnapshot = true;
+          <AsyncContentState
+            loading={$initialPlanSnapshotsLoading}
+            error={$planSnapshotsError || null}
+            errorMessage="Failed to load plan snapshots"
+            showRetry
+            empty={!filteredPlanSnapshots.length}
+            emptyMessage="No Plan Snapshots Found"
+            on:retry={() => planSnapshots.restartSocket()}
+          >
+            <CardList>
+              {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
+                <PlanSnapshot
+                  activePlanSnapshotId={$planSnapshotId}
+                  planModelId={plan.model?.id}
+                  {planSnapshot}
+                  on:click={() => {
+                    setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
+                    $planSnapshotId = planSnapshot.snapshot_id;
+                    $planReadOnlySnapshot = true;
 
-                  if (planSnapshot.simulation?.id != null) {
-                    setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
-                    $simulationDatasetId = planSnapshot.simulation?.id;
+                    if (planSnapshot.simulation?.id != null) {
+                      setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
+                      $simulationDatasetId = planSnapshot.simulation?.id;
 
-                    viewTogglePanel({ state: true, type: 'left', update: { leftComponentTop: 'SimulationPanel' } });
-                  } else {
-                    removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
-                    $simulationDatasetId = -1;
-                  }
-                }}
-                on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
-                on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
-              />
-            {/each}
-            {#if !$initialPlanSnapshotsLoading && filteredPlanSnapshots.length < 1}
-              <div class="st-typography-label">No Plan Snapshots Found</div>
-            {/if}
-          </CardList>
+                      viewTogglePanel({ state: true, type: 'left', update: { leftComponentTop: 'SimulationPanel' } });
+                    } else {
+                      removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
+                      $simulationDatasetId = -1;
+                    }
+                  }}
+                  on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
+                  on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
+                />
+              {/each}
+            </CardList>
+          </AsyncContentState>
         </div>
       </Collapse>
     </fieldset>

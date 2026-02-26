@@ -64,7 +64,7 @@
     hasCreatePermissionSequenceFilter = featurePermissions.sequenceFilter.canCreate(user);
   }
 
-  $: relevantSimulationDatasetIds = $simulationDatasetsPlan?.map(dataset => dataset.id);
+  $: relevantSimulationDatasetIds = $simulationDatasetsPlan.map(dataset => dataset.id);
 
   $: relevantExpansionSequences = $expansionSequences.filter(sequence =>
     relevantSimulationDatasetIds?.includes(sequence.simulation_dataset_id),

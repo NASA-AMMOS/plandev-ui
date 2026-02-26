@@ -8,6 +8,8 @@
     schedulingGoalResponses,
     schedulingGoals,
   } from '../../stores/scheduling';
+  const schedulingGoalResponsesLoading = schedulingGoalResponses.loading;
+  const schedulingConditionResponsesLoading = schedulingConditionResponses.loading;
   import type { User } from '../../types/app';
   import type { DataGridRowSelection } from '../../types/data-grid';
   import type { SchedulingConditionMetadata, SchedulingGoalMetadata } from '../../types/scheduling';
@@ -138,7 +140,7 @@
     <SchedulingGoals
       {selectedGoal}
       schedulingGoals={allowedSchedulingGoals}
-      loading={!$schedulingGoalResponses}
+      loading={$schedulingGoalResponsesLoading}
       {user}
       on:deleteGoal={deleteGoalContext}
       on:rowSelected={toggleGoal}
@@ -147,7 +149,7 @@
     <SchedulingConditions
       {selectedCondition}
       schedulingConditions={allowedSchedulingConditions}
-      loading={!$schedulingConditionResponses}
+      loading={$schedulingConditionResponsesLoading}
       {user}
       on:deleteCondition={deleteConditionContext}
       on:rowSelected={toggleCondition}

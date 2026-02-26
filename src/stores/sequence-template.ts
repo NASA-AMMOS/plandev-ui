@@ -20,13 +20,13 @@ export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQ
 
 export const allTemplates = gqlSubscribable<
   { expanded_template: string; seq_id: string; simulation_dataset_id: number }[]
->(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS, {}, null);
+>(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS, {}, []);
 
 /* Derived */
 export const lastTemplatedSimulationDatasetId = derived(
   [allTemplates, planSimDatasetMapping],
   ([$allTemplates, $planSimDatasetMapping]) => {
-    if (!$allTemplates || !$planSimDatasetMapping) {
+    if (!$planSimDatasetMapping) {
       return -1;
     }
     const filteredDatasets = $planSimDatasetMapping.simulations[0].simulation_datasets.map(entry => entry.id);

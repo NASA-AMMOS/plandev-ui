@@ -812,7 +812,7 @@
                       {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
                         <div style="color: var(--st-gray-50)">
                           {formatSimulationQueuePosition(
-                            getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll || []),
+                            getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
                           )}
                         </div>
                       {:else}

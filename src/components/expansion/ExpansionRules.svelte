@@ -31,6 +31,7 @@
   };
   type ExpansionRuleCellRendererParams = ICellRendererParams<ExpansionRule> & CellRendererParams;
 
+  const expansionRulesLoading = expansionRules.loading;
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -234,22 +235,21 @@
     </svelte:fragment>
 
     <svelte:fragment slot="body">
-      {#if filteredRules.length}
-        <SingleActionDataGrid
-          {columnDefs}
-          hasEdit={true}
-          {hasDeletePermission}
-          {hasEditPermission}
-          itemDisplayText="Rule"
-          items={filteredRules}
-          {user}
-          on:deleteItem={deleteRuleContext}
-          on:editItem={editRuleContext}
-          on:rowSelected={toggleRule}
-        />
-      {:else}
-        <div class="st-typography-label">No Rules Found</div>
-      {/if}
+      <SingleActionDataGrid
+        showLoadingSkeleton
+        loading={$expansionRulesLoading}
+        {columnDefs}
+        hasEdit={true}
+        {hasDeletePermission}
+        {hasEditPermission}
+        itemDisplayText="Rule"
+        noRowsOverlayText="No Rules Found"
+        items={filteredRules}
+        {user}
+        on:deleteItem={deleteRuleContext}
+        on:editItem={editRuleContext}
+        on:rowSelected={toggleRule}
+      />
     </svelte:fragment>
   </Panel>
 

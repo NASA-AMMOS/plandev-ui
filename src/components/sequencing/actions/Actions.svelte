@@ -28,8 +28,8 @@
   import { featurePermissions } from '../../../utilities/permissions';
   import { getActionsUrl } from '../../../utilities/routes';
   import Input from '../../form/Input.svelte';
-  import Loading from '../../Loading.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
+  import AsyncContentState from '../../ui/AsyncContentState.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import CssGridGutter from '../../ui/CssGridGutter.svelte';
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
@@ -39,6 +39,11 @@
   import TabPanel from '../../ui/Tabs/TabPanel.svelte';
   import Tabs from '../../ui/Tabs/Tabs.svelte';
   import ActionRunCard from './ActionRunCard.svelte';
+
+  const actionDefinitionsError = actionDefinitions.error;
+  const actionDefinitionsLoading = actionDefinitions.loading;
+  const actionRunsError = actionRuns.error;
+  const actionRunsLoading = actionRuns.loading;
 
   export let user: User | null;
   export let workspace: Workspace | null;
@@ -71,7 +76,7 @@
     hasRunActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
   }
 
-  $: selectedActionRuns = (workspaceActionRuns || []).filter(actionRun => {
+  $: selectedActionRuns = workspaceActionRuns.filter(actionRun => {
     return actionRun.action_definition_id === selectedActionDefinition?.id;
   });
 
@@ -227,13 +232,15 @@
 
     <svelte:fragment slot="body">
       <div class="actions">
-        {#if !$actionDefinitions}
-          <div class="p-2">
-            <Loading />
-          </div>
-        {:else if filteredActionDefinitions.length < 1}
-          <div class="st-typography-label p-2">No actions</div>
-        {:else}
+        <AsyncContentState
+          loading={$actionDefinitionsLoading}
+          error={$actionDefinitionsError || null}
+          errorMessage="Failed to load actions"
+          showRetry
+          empty={!filteredActionDefinitions.length}
+          emptyMessage="No actions"
+          on:retry={() => actionDefinitions.restartSocket()}
+        >
           {#each filteredActionDefinitions as actionDefinition}
             <button
               class="action st-button tertiary"
@@ -259,7 +266,7 @@
               </button>
             </button>
           {/each}
-        {/if}
+        </AsyncContentState>
       </div>
     </svelte:fragment>
   </Panel>
@@ -278,184 +285,197 @@
     <b>Action Runs</b>
 
     <svelte:fragment slot="body">
-      {#if !$actionRuns}
-        <div class="p-2">
-          <Loading />
-        </div>
-      {/if}
-      {#if selectedActionDefinition}
-        <div class="action-definition-runs-container">
-          <div class="action-definition-runs">
-            <div class="action-definition-runs-info">
-              <div class="st-typography-bold">{selectedActionDefinition.name}</div>
-              <div class="st-typography-body">{selectedActionDefinition.description}</div>
+      <AsyncContentState
+        class="p-2 py-2"
+        loading={$actionRunsLoading}
+        error={$actionRunsError || null}
+        errorMessage="Failed to load action runs"
+        showRetry
+        on:retry={() => actionRuns.restartSocket()}
+      >
+        {#if selectedActionDefinition}
+          <div class="action-definition-runs-container">
+            <div class="action-definition-runs">
+              <div class="action-definition-runs-info">
+                <div class="st-typography-bold">{selectedActionDefinition.name}</div>
+                <div class="st-typography-body">{selectedActionDefinition.description}</div>
+              </div>
+              <div>
+                <button
+                  class="st-button primary"
+                  use:permissionHandler={{
+                    hasPermission: hasRunActionPermission,
+                    permissionError: 'You do not have permission to run an action',
+                  }}
+                  on:click|stopPropagation={() => {
+                    if (selectedActionDefinition) {
+                      runAction(selectedActionDefinition);
+                    }
+                  }}
+                >
+                  Run
+                </button>
+                <button class="st-button secondary" on:click={() => (selectedActionDefinition = null)}> Close </button>
+              </div>
             </div>
-            <div>
-              <button
-                class="st-button primary"
-                use:permissionHandler={{
-                  hasPermission: hasRunActionPermission,
-                  permissionError: 'You do not have permission to run an action',
-                }}
-                on:click|stopPropagation={() => {
-                  if (selectedActionDefinition) {
-                    runAction(selectedActionDefinition);
-                  }
-                }}
-              >
-                Run
-              </button>
-              <button class="st-button secondary" on:click={() => (selectedActionDefinition = null)}> Close </button>
-            </div>
-          </div>
-          <div class="action-definition-runs-tabs-wrapper">
-            <Tabs class="action-definition-runs-tabs">
-              <svelte:fragment slot="tab-list">
-                <Tab class="action-definition-runs-tab">Runs ({(filteredActionRuns || []).length})</Tab>
-                <Tab class="action-definition-runs-tab">Configure</Tab>
-                <Tab class="action-definition-runs-tab">Code</Tab>
-              </svelte:fragment>
-              <TabPanel>
-                <div class="action-runs pt-2">
-                  {#if filteredActionRuns.length < 1}
-                    <div class="st-typography-label p-2">No action runs</div>
-                  {:else}
-                    {#each filteredActionRuns || [] as actionRun}
-                      <ActionRunCard
-                        {actionRun}
-                        actionDefinition={getActionDefinitionForRun(
-                          actionRun,
-                          $actionDefinitionsByWorkspace,
-                          workspaceId,
-                        )}
-                        on:cancelAction={e => onCancelAction(e.detail.id)}
-                        on:showActionRun={e => onActionRunClick(e.detail.id)}
-                      />
-                    {/each}
-                  {/if}
-                </div>
-              </TabPanel>
-              <TabPanel>
-                <div class="configure">
-                  <div class="st-typography-bold">Action Metadata</div>
-                  <div class="configure-metadata">
-                    <Input layout="inline">
-                      <label for="name">Name</label>
-                      <input
-                        bind:value={name}
-                        autocomplete="off"
-                        class="st-input w-100"
-                        id="name"
-                        required
-                        type="text"
-                        placeholder="Enter a name"
-                        use:permissionHandler={{
-                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
-                          permissionError: 'You do not have permission to update an action',
-                        }}
-                      />
-                    </Input>
-
-                    <Input layout="inline">
-                      <label for="description">Description</label>
-                      <textarea
-                        bind:value={description}
-                        autocomplete="off"
-                        class="st-input w-100"
-                        id="description"
-                        required
-                        placeholder="Enter a description"
-                        use:permissionHandler={{
-                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
-                          permissionError: 'You do not have permission to update an action',
-                        }}
-                      />
-                    </Input>
+            <div class="action-definition-runs-tabs-wrapper">
+              <Tabs class="action-definition-runs-tabs">
+                <svelte:fragment slot="tab-list">
+                  <Tab class="action-definition-runs-tab">Runs ({filteredActionRuns.length})</Tab>
+                  <Tab class="action-definition-runs-tab">Configure</Tab>
+                  <Tab class="action-definition-runs-tab">Code</Tab>
+                </svelte:fragment>
+                <TabPanel>
+                  <div class="action-runs pt-2">
+                    {#if filteredActionRuns.length < 1}
+                      <div class="st-typography-label p-2">No action runs</div>
+                    {:else}
+                      {#each filteredActionRuns as actionRun}
+                        <ActionRunCard
+                          {actionRun}
+                          actionDefinition={getActionDefinitionForRun(
+                            actionRun,
+                            $actionDefinitionsByWorkspace,
+                            workspaceId,
+                          )}
+                          on:cancelAction={e => onCancelAction(e.detail.id)}
+                          on:showActionRun={e => onActionRunClick(e.detail.id)}
+                        />
+                      {/each}
+                    {/if}
                   </div>
+                </TabPanel>
+                <TabPanel>
+                  <div class="configure">
+                    <div class="st-typography-bold">Action Metadata</div>
+                    <div class="configure-metadata">
+                      <Input layout="inline">
+                        <label for="name">Name</label>
+                        <input
+                          bind:value={name}
+                          autocomplete="off"
+                          class="st-input w-100"
+                          id="name"
+                          required
+                          type="text"
+                          placeholder="Enter a name"
+                          use:permissionHandler={{
+                            hasPermission: featurePermissions.actionDefinition.canUpdate(
+                              user,
+                              selectedActionDefinition,
+                            ),
+                            permissionError: 'You do not have permission to update an action',
+                          }}
+                        />
+                      </Input>
 
-                  <div class="st-typography-bold">Action Settings</div>
-                  <div class="st-typography-label">Persistent settings provided to every run of this action</div>
-                  {#if Object.keys(selectedActionDefinition.settings_schema).length < 1}
-                    <div class="st-typography-body pt-2"><i>No settings found</i></div>
-                  {/if}
-                  <Parameters
-                    formParameters={getFormParameters(
-                      valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
-                      argumentsMap,
-                      [],
-                      undefined,
-                      undefined,
-                      getUserSequenceValueSchemaOptions(workspaceFiles, workspaceId),
-                      'sequence',
-                      undefined,
-                      false,
-                      false,
-                    )}
-                    parameterType="action"
-                    hideInfo={false}
-                    hideRightAdornments
-                    disabled={isLoadingWorkspace}
-                    on:change={onChangeFormParameters}
-                    use={[
-                      [
-                        permissionHandler,
-                        {
-                          hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
-                          permissionError: 'You do not have permission to update an action',
-                        },
-                      ],
-                    ]}
-                  />
-                  <button
-                    class="st-button secondary w-100 mt-4"
-                    disabled={saveButtonDisabled || saving}
-                    use:permissionHandler={{
-                      hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
-                      permissionError: 'You do not have permission to update an action',
-                    }}
-                    on:click={() => {
-                      if (selectedActionDefinition) {
-                        save(selectedActionDefinition);
-                      }
-                    }}
-                  >
-                    Save
-                  </button>
-                </div>
-              </TabPanel>
-              <TabPanel>
-                <div class="code">
-                  <MonacoEditor
-                    automaticLayout={true}
-                    language="javascript"
-                    lineNumbers="on"
-                    minimap={{ enabled: false }}
-                    readOnly={true}
-                    scrollBeyondLastLine={false}
-                    tabSize={2}
-                    value={code || 'Loading...'}
-                  />
-                </div>
-              </TabPanel>
-            </Tabs>
+                      <Input layout="inline">
+                        <label for="description">Description</label>
+                        <textarea
+                          bind:value={description}
+                          autocomplete="off"
+                          class="st-input w-100"
+                          id="description"
+                          required
+                          placeholder="Enter a description"
+                          use:permissionHandler={{
+                            hasPermission: featurePermissions.actionDefinition.canUpdate(
+                              user,
+                              selectedActionDefinition,
+                            ),
+                            permissionError: 'You do not have permission to update an action',
+                          }}
+                        />
+                      </Input>
+                    </div>
+
+                    <div class="st-typography-bold">Action Settings</div>
+                    <div class="st-typography-label">Persistent settings provided to every run of this action</div>
+                    {#if Object.keys(selectedActionDefinition.settings_schema).length < 1}
+                      <div class="st-typography-body pt-2"><i>No settings found</i></div>
+                    {/if}
+                    <Parameters
+                      formParameters={getFormParameters(
+                        valueSchemaRecordToParametersMap(selectedActionDefinition.settings_schema),
+                        argumentsMap,
+                        [],
+                        undefined,
+                        undefined,
+                        getUserSequenceValueSchemaOptions(workspaceFiles, workspaceId),
+                        'sequence',
+                        undefined,
+                        false,
+                        false,
+                      )}
+                      parameterType="action"
+                      hideInfo={false}
+                      hideRightAdornments
+                      disabled={isLoadingWorkspace}
+                      on:change={onChangeFormParameters}
+                      use={[
+                        [
+                          permissionHandler,
+                          {
+                            hasPermission: featurePermissions.actionDefinition.canUpdate(
+                              user,
+                              selectedActionDefinition,
+                            ),
+                            permissionError: 'You do not have permission to update an action',
+                          },
+                        ],
+                      ]}
+                    />
+                    <button
+                      class="st-button secondary w-100 mt-4"
+                      disabled={saveButtonDisabled || saving}
+                      use:permissionHandler={{
+                        hasPermission: featurePermissions.actionDefinition.canUpdate(user, selectedActionDefinition),
+                        permissionError: 'You do not have permission to update an action',
+                      }}
+                      on:click={() => {
+                        if (selectedActionDefinition) {
+                          save(selectedActionDefinition);
+                        }
+                      }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </TabPanel>
+                <TabPanel>
+                  <div class="code">
+                    <MonacoEditor
+                      automaticLayout={true}
+                      language="javascript"
+                      lineNumbers="on"
+                      minimap={{ enabled: false }}
+                      readOnly={true}
+                      scrollBeyondLastLine={false}
+                      tabSize={2}
+                      value={code || 'Loading...'}
+                    />
+                  </div>
+                </TabPanel>
+              </Tabs>
+            </div>
           </div>
-        </div>
-      {:else}
-        <div class="action-runs">
-          {#if $actionRuns?.length && filteredActionRuns.length < 1}
-            <div class="st-typography-label p-2">No action runs</div>
-          {:else}
-            {#each filteredActionRuns || [] as actionRun}
-              <ActionRunCard
-                {actionRun}
-                actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
-                on:cancelAction={() => onCancelAction(actionRun.id)}
-                on:showActionRun={e => onActionRunClick(e.detail.id)}
-              />
-            {/each}
-          {/if}
-        </div>
-      {/if}
+        {:else}
+          <div class="action-runs">
+            {#if $actionRuns.length && filteredActionRuns.length < 1}
+              <div class="st-typography-label p-2">No action runs</div>
+            {:else}
+              {#each filteredActionRuns as actionRun}
+                <ActionRunCard
+                  {actionRun}
+                  actionDefinition={getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, workspaceId)}
+                  on:cancelAction={() => onCancelAction(actionRun.id)}
+                  on:showActionRun={e => onActionRunClick(e.detail.id)}
+                />
+              {/each}
+            {/if}
+          </div>
+        {/if}
+      </AsyncContentState>
     </svelte:fragment>
   </Panel>
 </CssGrid>

@@ -29,6 +29,8 @@
     editRule: (expansionRule: ExpansionRuleSlim) => void;
   };
 
+  const expansionSetsLoading = expansionSets.loading;
+
   const baseExpansionSetColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -221,19 +223,18 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        {#if $expansionSets.length}
-          <SingleActionDataGrid
-            columnDefs={expansionSetColumnDefs}
-            hasDeletePermission={hasDeleteExpansionSetPermission}
-            itemDisplayText="Expansion Set"
-            items={$expansionSets}
-            {user}
-            on:deleteItem={deleteSetContext}
-            on:rowSelected={toggleSet}
-          />
-        {:else}
-          No Expansion Sets Found
-        {/if}
+        <SingleActionDataGrid
+          showLoadingSkeleton
+          loading={$expansionSetsLoading}
+          columnDefs={expansionSetColumnDefs}
+          hasDeletePermission={hasDeleteExpansionSetPermission}
+          itemDisplayText="Expansion Set"
+          noRowsOverlayText="No Expansion Sets Found"
+          items={$expansionSets}
+          {user}
+          on:deleteItem={deleteSetContext}
+          on:rowSelected={toggleSet}
+        />
       </svelte:fragment>
     </Panel>
 

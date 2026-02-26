@@ -68,6 +68,8 @@
   };
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
+  const plansLoading = plans.loading;
+
   /* eslint-disable sort-keys */
   const baseColumnDefs: DataGridColumnDef[] = [
     {
@@ -208,7 +210,7 @@
   let nameField = field<string>('', [
     required,
     unique(
-      ($plans || []).map(plan => plan.name),
+      $plans.map(plan => plan.name),
       'Plan name already exists',
     ),
   ]);
@@ -338,7 +340,7 @@
     ];
   }
   $: createButtonEnabled =
-    $plans !== null &&
+    !$plansLoading &&
     $endTimeField.dirtyAndValid &&
     $modelIdField.dirtyAndValid &&
     $nameField.dirtyAndValid &&
@@ -350,7 +352,7 @@
   } else {
     createPlanButtonText = planUploadFiles ? 'Create from .json' : 'Create';
   }
-  $: filteredPlans = ($plans || []).filter(plan => {
+  $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
       plan.end_time_doy.includes(filterTextLowerCase) ||
@@ -426,13 +428,13 @@
       );
       if (newPlan) {
         // Associate new tags with plan
-        const newPlanTags: PlanTagsInsertInput[] = (planTags || []).map(({ id: tag_id }) => ({
+        const newPlanTags: PlanTagsInsertInput[] = planTags.map(({ id: tag_id }) => ({
           plan_id: newPlan.id,
           tag_id,
         }));
         newPlan.tags = planTags.map(tag => ({ tag }));
-        if (!($plans || []).find(({ id }) => newPlan.id === id)) {
-          plans.updateValue(storePlans => [...(storePlans || []), newPlan]);
+        if (!$plans.find(({ id }) => newPlan.id === id)) {
+          plans.updateValue(storePlans => [...storePlans, newPlan]);
         }
         await effects.createPlanTags(newPlanTags, newPlan, $user);
         startTimeField.reset('');
@@ -446,7 +448,7 @@
     const success = await effects.deletePlan(plan, $user);
 
     if (success) {
-      plans.updateValue(storePlans => (storePlans || []).filter(p => plan.id !== p.id));
+      plans.updateValue(storePlans => storePlans.filter(p => plan.id !== p.id));
     }
   }
 
@@ -1061,10 +1063,11 @@
       <svelte:fragment slot="body">
         <SingleActionDataGrid
           showLoadingSkeleton
-          loading={$plans === null}
+          loading={$plansLoading}
           {columnDefs}
           hasDeletePermission={featurePermissions.plan.canDelete}
           itemDisplayText="Plan"
+          noRowsOverlayText="No Plans Found"
           items={filteredPlans}
           user={$user}
           selectedItemId={selectedPlanId ?? null}

@@ -121,6 +121,7 @@ export function gqlSubscribable<T>(
                 newError = 'Unknown socket error';
               }
               setError(newError);
+              setLoading(false);
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
               });
