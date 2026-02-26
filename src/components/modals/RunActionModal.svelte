@@ -44,13 +44,11 @@
     running = true;
     let secretParametersMap: ActionParametersMap = {};
     let nonSecretParametersMap: ActionParametersMap = {};
-    let hasSecrets = false;
 
     // Filter out the secret params to send directly to the action server.
     for (const param of Object.keys(parametersMap)) {
       if (parametersMap[param].schema.type === 'secret') {
         secretParametersMap[param] = argumentsMap[param];
-        hasSecrets = true;
       } else {
         nonSecretParametersMap[param] = argumentsMap[param];
       }
@@ -65,10 +63,6 @@
       actionDefinition.settings,
       user,
     );
-
-    if (actionRunId !== null && hasSecrets) {
-      await effects.sendActionSecretParameters(workspace, secretParametersMap, actionRunId, user);
-    }
 
     running = false;
     dispatch('complete', { actionRunId });
