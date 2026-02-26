@@ -86,17 +86,19 @@
 
             <div class="border-t border-border" />
 
-            <div class="min-h-0 flex-1 divide-y divide-border overflow-auto border-b border-border bg-background">
-              <Button
-                variant="ghost"
-                class="flex h-min w-full items-center justify-start gap-2 rounded-none border-l-2 px-2 py-4 text-left text-xs hover:bg-accent {isAllRunsSelected
-                  ? 'border-primary bg-accent'
-                  : 'border-transparent'}"
-                on:click={() => dispatch('selectAllRuns')}
-              >
-                <ListChecks size={14} class="shrink-0 text-muted-foreground" />
-                <span class="truncate font-medium">All Runs</span>
-              </Button>
+            <div class="min-h-0 flex-1 overflow-auto bg-background">
+              <div class="border-b border-border">
+                <Button
+                  variant="ghost"
+                  class="flex h-min w-full items-center justify-start gap-2 rounded-none border-l-2 px-2 py-4 text-left text-xs hover:bg-accent {isAllRunsSelected
+                    ? 'border-l-primary bg-accent'
+                    : 'border-l-transparent'}"
+                  on:click={() => dispatch('selectAllRuns')}
+                >
+                  <ListChecks size={14} class="shrink-0 text-muted-foreground" />
+                  <span class="truncate font-medium">All Runs</span>
+                </Button>
+              </div>
               {#if loading}
                 <div class="p-2">
                   <Loading>Loading actions...</Loading>
@@ -112,7 +114,7 @@
                   )}
                   {@const latestRun = [...actionRuns].sort((a, b) => b.id - a.id)[0]}
                   {@const latestStatus = latestRun ? getStatusForActionRun(latestRun) : null}
-                  <div class="group/action relative">
+                  <div class="group/action relative border-b border-border">
                     <Button
                       variant="ghost"
                       class="flex h-min w-full items-center gap-2 rounded-none border-l-2 px-2 text-left text-xs hover:bg-accent {selectedActionId ===

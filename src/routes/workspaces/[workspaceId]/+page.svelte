@@ -930,7 +930,7 @@
     const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
     const actionDef = defs[actionDefinitionId];
     if (actionDef && $workspace) {
-      const runId = await effects.runAction(actionDef, $workspace, workspaceFileList, user, parameters);
+      const runId = await effects.runAction(actionDef, $workspace, workspaceFileList, $user, parameters);
       if (runId !== null) {
         const goToRun = await effects.confirmOpenActionRunResults(runId);
         if (goToRun === true) {
@@ -943,7 +943,7 @@
   async function onRunActionFromSidebar(event: CustomEvent<ActionDefinition>) {
     const action = event.detail;
     if ($workspace) {
-      const runId = await effects.runAction(action, $workspace, workspaceFileList, user);
+      const runId = await effects.runAction(action, $workspace, workspaceFileList, $user);
       if (runId !== null) {
         const goToRun = await effects.confirmOpenActionRunResults(runId);
         if (goToRun === true) {
@@ -956,7 +956,7 @@
   async function onRunActionFromDetailView(event: CustomEvent<ActionDefinition>) {
     const action = event.detail;
     if ($workspace) {
-      const runId = await effects.runAction(action, $workspace, workspaceFileList, user);
+      const runId = await effects.runAction(action, $workspace, workspaceFileList, $user);
       if (runId !== null) {
         const goToRun = await effects.confirmOpenActionRunResults(runId);
         if (goToRun === true) {
@@ -1249,7 +1249,7 @@
       {#if sidebarPanelOpen}
         <CssGridGutter track={1} type="column" />
       {/if}
-      <Sidebar.Inset className="min-h-0">
+      <Sidebar.Inset className="min-h-0 min-w-0 overflow-hidden">
         {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
           <ActionDetailView
             actionDefinitionId={$selectedActionDefinitionId}

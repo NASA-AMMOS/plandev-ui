@@ -45,7 +45,7 @@
   let actionParameters: FormParameter[] = [];
   let sequenceOptions: ValueSchemaOption[] = [];
 
-  const actionRunSubscription = gqlSubscribable<ActionRun | null>(gql.SUB_ACTION_RUN, { actionRunId }, null, user);
+  const actionRunSubscription = gqlSubscribable<ActionRun | null>(gql.SUB_ACTION_RUN, { actionRunId }, null);
 
   $: actionRun = $actionRunSubscription;
 
@@ -144,26 +144,26 @@
   <div class="flex h-full flex-col overflow-hidden">
     <!-- Header -->
     <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
-      <div class="flex items-center gap-3">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
         <button
-          class="rounded p-1 hover:bg-accent"
+          class="shrink-0 rounded p-1 hover:bg-accent"
           on:click={onBack}
           use:tooltip={{ content: 'Back', placement: 'bottom' }}
         >
           <ArrowLeft size={16} />
         </button>
-        <div class="flex items-center gap-2">
+        <div class="flex min-w-0 items-center gap-2">
           {#if actionDefinition}
             <button
-              class="text-sm text-muted-foreground hover:underline"
+              class="truncate text-lg text-muted-foreground hover:underline"
               on:click={() => dispatch('viewAction', { actionId: actionRun.action_definition_id })}
             >
               {actionDefinition.name}
             </button>
-            <span class="text-sm text-muted-foreground">/</span>
+            <span class="shrink-0 text-sm text-muted-foreground">/</span>
           {/if}
-          <StatusBadge {status} />
-          <h2 class="text-lg font-bold">Run #{actionRun.id}</h2>
+          <span class="flex shrink-0 items-center justify-center"><StatusBadge {status} /></span>
+          <h2 class="shrink-0 text-lg font-bold">Run #{actionRun.id}</h2>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -283,8 +283,8 @@
 
         <!-- Parameters tab -->
         <Tabs.Content value="parameters" class="mt-0 flex-1 overflow-y-auto">
-          <div class="flex max-w-lg flex-col gap-4 p-4">
-            <div class="flex flex-col gap-2">
+          <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
+            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
               <h3 class="text-sm font-medium">Action Parameters</h3>
               {#if actionParameters.length > 0}
                 <Parameters
@@ -298,7 +298,7 @@
                 <p class="text-xs italic text-muted-foreground">No parameters</p>
               {/if}
             </div>
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
               <h3 class="text-sm font-medium">Action Settings</h3>
               {#if actionSettings.length > 0}
                 <Parameters

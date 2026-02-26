@@ -216,7 +216,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 60,
+      width: 80,
     },
     {
       cellRenderer: statusCellRenderer,
@@ -225,7 +225,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 80,
+      width: 90,
     },
     {
       field: 'requested_by',
@@ -234,7 +234,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 120,
+      width: 140,
     },
     {
       field: 'requested_at',
@@ -254,7 +254,7 @@
       suppressSizeToFit: true,
       valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
         params.data ? formatMS(params.data.duration) : '',
-      width: 80,
+      width: 100,
     },
     {
       cellRenderer: paramsCellRenderer,
@@ -280,7 +280,7 @@
   <div class="flex h-full flex-col overflow-hidden">
     <!-- Header -->
     <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
-      <div class="flex min-w-0 flex-col gap-0.5">
+      <div class="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
         <h2 class="truncate text-lg font-bold">{actionDefinition.name}</h2>
         {#if actionDefinition.description}
           <p class="truncate text-sm text-muted-foreground">{actionDefinition.description}</p>
@@ -344,7 +344,7 @@
         <Tabs.Content value="runs" class="mt-0 flex-1 overflow-hidden">
           <div class="h-full p-2">
             {#if actionRuns.length === 0}
-              <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+              <div class="flex h-full items-center justify-center text-xs text-muted-foreground">
                 No runs for this action yet
               </div>
             {:else}
@@ -364,8 +364,8 @@
 
         <!-- Configure tab -->
         <Tabs.Content value="configure" class="mt-0 flex-1 overflow-y-auto">
-          <div class="flex max-w-lg flex-col gap-4 p-4">
-            <div class="flex flex-col gap-2">
+          <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
+            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
               <h3 class="text-sm font-medium">Action Metadata</h3>
               <Input layout="inline">
                 <label for="action-name">Name</label>
@@ -403,39 +403,42 @@
               </Input>
             </div>
 
-            <div class="flex flex-col gap-2">
-              <h3 class="text-sm font-medium">Action Settings</h3>
-              <p class="text-xs text-muted-foreground">Persistent settings provided to every run of this action</p>
+            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
+              <div>
+                <h3 class="text-sm font-medium">Action Settings</h3>
+                <p class="text-xs text-muted-foreground">Persistent settings provided to every run of this action</p>
+              </div>
               {#if Object.keys(actionDefinition.settings_schema).length < 1}
-                <p class="text-xs italic text-muted-foreground">No settings found</p>
+                <p class="text-xs italic text-muted-foreground">No settings defined</p>
+              {:else}
+                <Parameters
+                  formParameters={getFormParameters(
+                    valueSchemaRecordToParametersMap(actionDefinition.settings_schema),
+                    argumentsMap,
+                    [],
+                    undefined,
+                    undefined,
+                    getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
+                    'sequence',
+                    undefined,
+                    false,
+                    false,
+                  )}
+                  parameterType="action"
+                  hideInfo={false}
+                  hideRightAdornments
+                  on:change={onChangeFormParameters}
+                  use={[
+                    [
+                      permissionHandler,
+                      {
+                        hasPermission: hasUpdatePermission,
+                        permissionError: 'You do not have permission to update an action',
+                      },
+                    ],
+                  ]}
+                />
               {/if}
-              <Parameters
-                formParameters={getFormParameters(
-                  valueSchemaRecordToParametersMap(actionDefinition.settings_schema),
-                  argumentsMap,
-                  [],
-                  undefined,
-                  undefined,
-                  getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
-                  'sequence',
-                  undefined,
-                  false,
-                  false,
-                )}
-                parameterType="action"
-                hideInfo={false}
-                hideRightAdornments
-                on:change={onChangeFormParameters}
-                use={[
-                  [
-                    permissionHandler,
-                    {
-                      hasPermission: hasUpdatePermission,
-                      permissionError: 'You do not have permission to update an action',
-                    },
-                  ],
-                ]}
-              />
             </div>
 
             <div
