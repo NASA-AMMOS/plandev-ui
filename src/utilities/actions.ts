@@ -42,6 +42,18 @@ export function valueSchemaRecordToParametersMap(
   }, {});
 }
 
+/**
+ * Extracts defaultValue from each entry in a value schema record into an ArgumentsMap.
+ */
+export function getDefaultsFromSchema(schemaRecord: Record<string, ActionValueSchema>): ArgumentsMap {
+  return Object.entries(schemaRecord).reduce((acc: ArgumentsMap, [key, schema]) => {
+    if ('defaultValue' in schema && schema.defaultValue !== undefined) {
+      acc[key] = schema.defaultValue;
+    }
+    return acc;
+  }, {});
+}
+
 export function getUserSequenceValueSchemaOptions(
   workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   workspaceId: number | null,

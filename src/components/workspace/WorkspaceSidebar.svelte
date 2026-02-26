@@ -251,7 +251,6 @@
           <ActionSidebarList
             {actions}
             {isAllRunsSelected}
-            loading={isWorkspaceLoading}
             selectedActionId={selectedActionId}
             {user}
             {workspace}

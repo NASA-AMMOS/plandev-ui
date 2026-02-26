@@ -7,7 +7,11 @@
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
-  import { getUserSequenceValueSchemaOptions, valueSchemaRecordToParametersMap } from '../../utilities/actions';
+  import {
+    getDefaultsFromSchema,
+    getUserSequenceValueSchemaOptions,
+    valueSchemaRecordToParametersMap,
+  } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { getArguments, getFormParameters } from '../../utilities/parameters';
   import Parameters from '../parameters/Parameters.svelte';
@@ -102,7 +106,7 @@
         argumentsMap,
         [],
         undefined,
-        undefined,
+        getDefaultsFromSchema(actionDefinition.parameter_schema),
         getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
         'sequence',
         false,

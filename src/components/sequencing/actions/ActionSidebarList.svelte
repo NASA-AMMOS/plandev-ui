@@ -5,7 +5,7 @@
   import { ListChecks, Play, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../../enums/status';
-  import { actionRunsByWorkspace } from '../../../stores/actions';
+  import { actionDefinitions, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { User } from '../../../types/app';
@@ -16,10 +16,13 @@
   import { featurePermissions } from '../../../utilities/permissions';
   import { getTimeAgo } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
-  import Loading from '../../Loading.svelte';
+  import AsyncContentState from '../../ui/AsyncContentState.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
   import * as Sidebar from '../../ui/Sidebar/index.js';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+
+  const actionDefinitionsError = actionDefinitions.error;
+  const actionDefinitionsLoading = actionDefinitions.loading;
 
   const dispatch = createEventDispatcher<{
     runAction: ActionDefinition;
@@ -29,7 +32,6 @@
 
   export let actions: ActionDefinition[] = [];
   export let isAllRunsSelected: boolean = false;
-  export let loading: boolean = false;
   export let selectedActionId: number | null = null;
   export let user: User | null;
   export let workspace: Workspace | null | undefined = null;
@@ -99,15 +101,15 @@
                   <span class="truncate font-medium">All Runs</span>
                 </Button>
               </div>
-              {#if loading}
-                <div class="p-2">
-                  <Loading>Loading actions...</Loading>
-                </div>
-              {:else if filteredActions.length === 0}
-                <div class="px-2 py-1 text-xs text-muted-foreground">
-                  {filterText ? 'No matching actions' : 'No actions'}
-                </div>
-              {:else}
+              <AsyncContentState
+                loading={$actionDefinitionsLoading}
+                error={$actionDefinitionsError || null}
+                errorMessage="Failed to load actions"
+                showRetry
+                empty={filteredActions.length === 0}
+                emptyMessage={filterText ? 'No matching actions' : 'No actions'}
+                on:retry={() => actionDefinitions.restartSocket()}
+              >
                 {#each filteredActions as action (action.id)}
                   {@const actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
                     r => r.action_definition_id === action.id,
@@ -154,7 +156,7 @@
                     </div>
                   </div>
                 {/each}
-              {/if}
+              </AsyncContentState>
             </div>
           </div>
         </Sidebar.Menu>

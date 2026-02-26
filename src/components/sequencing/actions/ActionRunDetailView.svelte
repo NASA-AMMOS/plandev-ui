@@ -4,6 +4,8 @@
   import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import { ArrowLeft, Ban, ExternalLink, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { writable } from 'svelte/store';
+  import { Status } from '../../../enums/status';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import { workspaceId } from '../../../stores/workspaces';
@@ -45,8 +47,14 @@
   let actionParameters: FormParameter[] = [];
   let sequenceOptions: ValueSchemaOption[] = [];
 
-  const actionRunSubscription = gqlSubscribable<ActionRun | null>(gql.SUB_ACTION_RUN, { actionRunId }, null);
+  const actionRunIdStore = writable(actionRunId);
+  const actionRunSubscription = gqlSubscribable<ActionRun | null>(
+    gql.SUB_ACTION_RUN,
+    { actionRunId: actionRunIdStore },
+    null,
+  );
 
+  $: actionRunIdStore.set(actionRunId);
   $: actionRun = $actionRunSubscription;
 
   $: if ($workspaceId > 0) {
@@ -177,7 +185,7 @@
             </Button>
           </div>
         {/if}
-        {#if actionRun.status === 'pending' || actionRun.status === 'incomplete'}
+        {#if status === Status['Pending'] || status === Status['Incomplete']}
           <button
             class="st-button secondary"
             style="font-size: 12px; height: 28px; padding: 0 12px;"
@@ -239,52 +247,29 @@
         </Tabs.List>
 
         <!-- Results tab -->
-        <Tabs.Content value="results" class="mt-0 flex-1 overflow-y-auto">
-          <div class="flex flex-col gap-4 p-4">
-            <div class="flex flex-col gap-2">
-              <h3 class="text-sm font-medium">Results Data</h3>
-              {#if actionRun.results?.data}
-                <div class="h-[400px]">
-                  <MonacoEditor
-                    automaticLayout={true}
-                    language="json"
-                    lineNumbers="on"
-                    minimap={{ enabled: false }}
-                    readOnly={true}
-                    scrollBeyondLastLine={false}
-                    tabSize={2}
-                    value={JSON.stringify(actionRun.results.data, undefined, 2)}
-                  />
-                </div>
-              {:else}
-                <p class="text-xs italic text-muted-foreground">No data</p>
-              {/if}
+        <Tabs.Content value="results" class="mt-0 flex-1 overflow-hidden">
+          {#if actionRun.results?.data}
+            <div class="h-full">
+              <MonacoEditor
+                automaticLayout={true}
+                language="json"
+                lineNumbers="on"
+                minimap={{ enabled: false }}
+                readOnly={true}
+                scrollBeyondLastLine={false}
+                tabSize={2}
+                value={JSON.stringify(actionRun.results.data, undefined, 2)}
+              />
             </div>
-
-            <div class="flex flex-col gap-2">
-              <h3 class="text-sm font-medium">Errors</h3>
-              {#if actionRun.error}
-                {@const errorLog = {
-                  level: 'error',
-                  message: actionRun.error.message,
-                  timestamp: actionRun.requested_at,
-                  trace: actionRun.error.stack,
-                  type: ErrorTypes.CAUGHT_ERROR,
-                }}
-                <div class="max-h-[400px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  <ConsoleLog log={errorLog} showTimestamp={false} showType={false} />
-                </div>
-              {:else}
-                <p class="text-xs italic text-muted-foreground">No errors</p>
-              {/if}
-            </div>
-          </div>
+          {:else}
+            <div class="flex h-full items-center justify-center text-xs text-muted-foreground">No results data</div>
+          {/if}
         </Tabs.Content>
 
         <!-- Parameters tab -->
         <Tabs.Content value="parameters" class="mt-0 flex-1 overflow-y-auto">
           <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
               <h3 class="text-sm font-medium">Action Parameters</h3>
               {#if actionParameters.length > 0}
                 <Parameters
@@ -298,7 +283,7 @@
                 <p class="text-xs italic text-muted-foreground">No parameters</p>
               {/if}
             </div>
-            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
               <h3 class="text-sm font-medium">Action Settings</h3>
               {#if actionSettings.length > 0}
                 <Parameters
@@ -317,23 +302,40 @@
 
         <!-- Logs tab -->
         <Tabs.Content value="logs" class="mt-0 flex-1 overflow-y-auto">
-          <div class="flex flex-col gap-2 p-4">
-            <h3 class="text-sm font-medium">Logs</h3>
-            {#if actionRun.logs}
-              {@const logMessages = parseLogLines(actionRun.logs)}
-              <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                {#each logMessages as log}
-                  <ConsoleLog {log} showTimestamp={false} showType={false} />
-                {/each}
+          <div class="mx-auto flex max-w-5xl flex-col gap-4 p-6">
+            {#if actionRun.error?.message}
+              {@const errorLog = {
+                level: 'error',
+                message: actionRun.error.message,
+                timestamp: actionRun.requested_at,
+                trace: actionRun.error.stack,
+                type: ErrorTypes.CAUGHT_ERROR,
+              }}
+              <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
+                <h3 class="text-sm font-medium text-destructive">Error</h3>
+                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                  <ConsoleLog log={errorLog} showTimestamp={false} showType={false} />
+                </div>
               </div>
-            {:else}
-              <p class="text-xs italic text-muted-foreground">No logs</p>
             {/if}
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
+              <h3 class="text-sm font-medium">Logs</h3>
+              {#if actionRun.logs}
+                {@const logMessages = parseLogLines(actionRun.logs)}
+                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                  {#each logMessages as log}
+                    <ConsoleLog {log} showTimestamp={false} showType={false} />
+                  {/each}
+                </div>
+              {:else}
+                <p class="text-xs italic text-muted-foreground">No logs</p>
+              {/if}
+            </div>
           </div>
         </Tabs.Content>
       </Tabs.Root>
     </div>
   </div>
 {:else}
-  <div class="flex h-full items-center justify-center text-sm text-muted-foreground">Loading action run...</div>
+  <div class="flex h-full items-center justify-center text-xs text-muted-foreground">Loading action run...</div>
 {/if}

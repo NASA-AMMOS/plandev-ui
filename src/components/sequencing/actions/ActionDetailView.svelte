@@ -12,6 +12,7 @@
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
+    getDefaultsFromSchema,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
     truncateRunParameters,
@@ -259,10 +260,17 @@
     {
       cellRenderer: paramsCellRenderer,
       field: 'parameters',
+      filter: 'text',
       headerName: 'Parameters',
       minWidth: 120,
       resizable: true,
       sortable: false,
+      valueGetter: (params: { data: ActionRunSlim }) => {
+        if (!params.data || !actionDefinition) {
+          return '';
+        }
+        return truncateRunParameters(params.data.parameters, actionDefinition.parameter_schema);
+      },
     },
     {
       cellRenderer: cancelCellRenderer,
@@ -365,7 +373,7 @@
         <!-- Configure tab -->
         <Tabs.Content value="configure" class="mt-0 flex-1 overflow-y-auto">
           <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
               <h3 class="text-sm font-medium">Action Metadata</h3>
               <Input layout="inline">
                 <label for="action-name">Name</label>
@@ -403,10 +411,12 @@
               </Input>
             </div>
 
-            <div class="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
               <div>
                 <h3 class="text-sm font-medium">Action Settings</h3>
-                <p class="text-xs text-muted-foreground">Persistent settings provided to every run of this action</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Persistent settings provided to every run of this action
+                </p>
               </div>
               {#if Object.keys(actionDefinition.settings_schema).length < 1}
                 <p class="text-xs italic text-muted-foreground">No settings defined</p>
@@ -417,7 +427,7 @@
                     argumentsMap,
                     [],
                     undefined,
-                    undefined,
+                    getDefaultsFromSchema(actionDefinition.settings_schema),
                     getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
                     'sequence',
                     undefined,

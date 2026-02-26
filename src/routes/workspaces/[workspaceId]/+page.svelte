@@ -932,10 +932,7 @@
     if (actionDef && $workspace) {
       const runId = await effects.runAction(actionDef, $workspace, workspaceFileList, $user, parameters);
       if (runId !== null) {
-        const goToRun = await effects.confirmOpenActionRunResults(runId);
-        if (goToRun === true) {
-          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
-        }
+        switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
       }
     }
   }
@@ -945,10 +942,7 @@
     if ($workspace) {
       const runId = await effects.runAction(action, $workspace, workspaceFileList, $user);
       if (runId !== null) {
-        const goToRun = await effects.confirmOpenActionRunResults(runId);
-        if (goToRun === true) {
-          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
-        }
+        switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
       }
     }
   }
@@ -958,10 +952,7 @@
     if ($workspace) {
       const runId = await effects.runAction(action, $workspace, workspaceFileList, $user);
       if (runId !== null) {
-        const goToRun = await effects.confirmOpenActionRunResults(runId);
-        if (goToRun === true) {
-          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
-        }
+        switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
       }
     }
   }
@@ -996,10 +987,7 @@
       const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
         userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
-        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-        if (goToRun === true) {
-          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
-        }
+        switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
       }
     }
   }
@@ -1039,10 +1027,7 @@
       const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
       if (actionRunId !== null) {
         userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
-        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-        if (goToRun === true) {
-          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
-        }
+        switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
       }
     }
   }

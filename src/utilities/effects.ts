@@ -289,7 +289,6 @@ import {
   showRenameWorkspaceItemModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
-  showRunActionResultsModal,
   showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
@@ -885,15 +884,6 @@ const effects = {
     } catch (e) {
       catchError('Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
-    }
-  },
-
-  async confirmOpenActionRunResults(actionRunId: number): Promise<boolean | null> {
-    try {
-      const { confirm } = await showRunActionResultsModal(actionRunId);
-      return confirm;
-    } catch (e) {
-      return null;
     }
   },
 

@@ -4,20 +4,20 @@
   import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
   import { createEventDispatcher } from 'svelte';
-  import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
+  import { actionDefinitionsByWorkspace, actionRuns, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import {
-    getActionDefinitionForRun,
-    getStatusForActionRun,
-    truncateRunParameters,
-  } from '../../../utilities/actions';
+  import { getActionDefinitionForRun, getStatusForActionRun, truncateRunParameters } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { formatMS } from '../../../utilities/time';
-  import SectionTitle from '../../ui/SectionTitle.svelte';
+  import AsyncContentState from '../../ui/AsyncContentState.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+
+  const actionRunsError = actionRuns.error;
+  const actionRunsLoading = actionRuns.loading;
 
   const dispatch = createEventDispatcher<{
     viewRun: { runId: number };
@@ -25,28 +25,10 @@
 
   export let user: User | null;
 
-  let filterText: string = '';
+  let filterExpression: string = '';
   let selectedRunId: number | null = null;
 
-  $: allRuns = $actionRunsByWorkspace[$workspaceId] || [];
-
-  $: filteredRuns = allRuns.filter(run => {
-    if (!filterText) {
-      return true;
-    }
-    const lowerFilter = filterText.toLowerCase();
-    const def = getActionDefinitionForRun(run, $actionDefinitionsByWorkspace, $workspaceId);
-    if (def && def.name.toLowerCase().includes(lowerFilter)) {
-      return true;
-    }
-    if (run.requested_by && run.requested_by.toLowerCase().includes(lowerFilter)) {
-      return true;
-    }
-    if (run.status.toLowerCase().includes(lowerFilter)) {
-      return true;
-    }
-    return false;
-  });
+  $: workspaceActionRuns = $actionRunsByWorkspace[$workspaceId] || [];
 
   function statusCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
     const div = document.createElement('div');
@@ -170,10 +152,18 @@
     {
       cellRenderer: paramsCellRenderer,
       field: 'parameters',
+      filter: 'text',
       headerName: 'Parameters',
       minWidth: 120,
       resizable: true,
       sortable: false,
+      valueGetter: (params: { data: ActionRunSlim }) => {
+        if (!params.data) {
+          return '';
+        }
+        const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
+        return truncateRunParameters(params.data.parameters, def?.parameter_schema);
+      },
     },
     {
       cellRenderer: cancelCellRenderer,
@@ -189,7 +179,7 @@
 
 <div class="flex h-full flex-col overflow-hidden">
   <!-- Header -->
-  <div class="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+  <div class="flex items-center gap-2 border-b border-border px-4 py-3">
     <SectionTitle>All Action Runs</SectionTitle>
     <div class="w-48">
       <InputStellar
@@ -197,28 +187,32 @@
         class="w-full"
         sizeVariant="xs"
         placeholder="Filter runs..."
-        bind:value={filterText}
+        bind:value={filterExpression}
       />
     </div>
   </div>
 
   <!-- DataGrid -->
   <div class="flex-1 overflow-hidden p-2">
-    {#if filteredRuns.length === 0 && !filterText}
-      <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
-        No action runs yet
-      </div>
-    {:else}
+    <AsyncContentState
+      loading={$actionRunsLoading}
+      error={$actionRunsError || null}
+      errorMessage="Failed to load action runs"
+      showRetry
+      on:retry={() => actionRuns.restartSocket()}
+    >
       <SingleActionDataGrid
         {columnDefs}
-        items={filteredRuns}
+        {filterExpression}
+        items={workspaceActionRuns}
         itemDisplayText="Action Run"
         {user}
         selectedItemId={selectedRunId}
+        noRowsOverlayText="No Action Runs Found"
         hasDeletePermission={false}
         hasEdit={false}
         on:rowClicked={onRowClicked}
       />
-    {/if}
+    </AsyncContentState>
   </div>
 </div>
