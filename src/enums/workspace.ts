@@ -1,3 +1,10 @@
+export enum WorkspaceContentMode {
+  ActionDetail = 'ACTION_DETAIL',
+  ActionRunDetail = 'ACTION_RUN_DETAIL',
+  ActionRunsList = 'ACTION_RUNS_LIST',
+  File = 'FILE',
+}
+
 export enum WorkspaceContentType {
   Binary = 'BINARY',
   Directory = 'DIRECTORY',

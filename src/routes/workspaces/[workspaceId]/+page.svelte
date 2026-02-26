@@ -22,6 +22,9 @@
   import Console from '../../../components/console/Console.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
+  import ActionDetailView from '../../../components/sequencing/actions/ActionDetailView.svelte';
+  import ActionRunDetailView from '../../../components/sequencing/actions/ActionRunDetailView.svelte';
+  import ActionRunsListView from '../../../components/sequencing/actions/ActionRunsListView.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
@@ -29,7 +32,7 @@
   import TextEditor from '../../../components/ui/TextEditor.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { WorkspaceContentType } from '../../../enums/workspace';
+  import { WorkspaceContentMode, WorkspaceContentType } from '../../../enums/workspace';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import {
     activeDocument,
@@ -65,7 +68,17 @@
     workspaceAdaptationMessages,
     workspaceLintErrors,
   } from '../../../stores/workspaceErrors';
-  import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
+  import {
+    parcel,
+    parcels,
+    selectedActionDefinitionId,
+    selectedActionRunId,
+    workspace,
+    workspaceColumns,
+    workspaceContentMode,
+    workspaceId,
+    workspaces,
+  } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
   import type { LintDiagnostic, LogLevel } from '../../../types/errors';
@@ -89,7 +102,6 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
@@ -97,7 +109,7 @@
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
-  import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
+  import { getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast } from '../../../utilities/toast';
@@ -154,6 +166,8 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
+  let actionDetailIsDirty: boolean = false;
+  let sidebarActiveTab: string = 'files';
 
   // Ensure columns are consistent with sidebar state on mount.
   // The workspaceColumns store persists across navigations, but sidebarPanelOpen resets to true.
@@ -323,6 +337,25 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
+    // If we're in a non-file mode, guard against dirty action detail before switching
+    if ($workspaceContentMode !== WorkspaceContentMode.File && actionDetailIsDirty) {
+      const { confirm } = await showConfirmModal(
+        'Navigate Away',
+        'There are unsaved action changes. Are you sure you want to navigate away?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      );
+      if (!confirm) {
+        selectedFilePath = $activeDocumentPath;
+        return;
+      }
+      actionDetailIsDirty = false;
+    }
+    // Switch back to file mode
+    $workspaceContentMode = WorkspaceContentMode.File;
+    $selectedActionDefinitionId = null;
+
     const didNavigate = await confirmAndNavigate(nextPath);
     if (!didNavigate) {
       // user decided not to navigate away due to unsaved changes, set selected UI back to active file
@@ -786,8 +819,151 @@
     }
   }
 
-  function onActionsClicked() {
-    window.open(getActionsUrl(base, $workspaceId), '_blank');
+  async function switchToContentMode(
+    mode: WorkspaceContentMode,
+    options?: { actionId?: number | null; runId?: number | null },
+  ) {
+    // Guard against switching away from dirty file
+    if ($workspaceContentMode === WorkspaceContentMode.File && $activeDocumentIsDirty) {
+      const { confirm } = await showConfirmModal(
+        'Navigate Away',
+        'There are unsaved changes. Are you sure you want to navigate away from the current file?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      );
+      if (!confirm) {
+        return;
+      }
+      activeDocument.markClean();
+    }
+
+    // Guard against switching away from dirty action detail
+    if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
+      const { confirm } = await showConfirmModal(
+        'Navigate Away',
+        'There are unsaved action changes. Are you sure you want to navigate away?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      );
+      if (!confirm) {
+        return;
+      }
+      actionDetailIsDirty = false;
+    }
+
+    $workspaceContentMode = mode;
+    if (options?.actionId !== undefined) {
+      $selectedActionDefinitionId = options.actionId ?? null;
+    } else if (mode === WorkspaceContentMode.ActionRunsList) {
+      $selectedActionDefinitionId = null;
+    }
+    if (options?.runId !== undefined) {
+      $selectedActionRunId = options.runId ?? null;
+    }
+
+    // Sync sidebar tab with content mode
+    if (mode !== WorkspaceContentMode.File) {
+      sidebarActiveTab = 'actions';
+    }
+
+    // Update URL to reflect current content mode for deep linking
+    updateContentModeUrl(mode, options);
+  }
+
+  function updateContentModeUrl(
+    mode: WorkspaceContentMode,
+    options?: { actionId?: number | null; runId?: number | null },
+  ) {
+    const baseUrl = getWorkspacesUrl(base, $workspaceId);
+    const params = new URLSearchParams();
+
+    if (mode === WorkspaceContentMode.ActionRunDetail && options?.runId != null) {
+      params.set(SearchParameters.ACTION_RUN_ID, String(options.runId));
+      if ($selectedActionDefinitionId != null) {
+        params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
+      }
+    } else if (mode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId != null) {
+      params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
+    } else if (mode === WorkspaceContentMode.ActionRunsList) {
+      params.set(SearchParameters.SIDEBAR_TAB, 'actions');
+    }
+
+    const query = params.toString();
+    replaceState(query ? `${baseUrl}?${query}` : baseUrl, {});
+  }
+
+  function onSelectAction(event: CustomEvent<{ id: number }>) {
+    switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: event.detail.id });
+  }
+
+  function onSelectAllRuns() {
+    switchToContentMode(WorkspaceContentMode.ActionRunsList);
+  }
+
+  function onSidebarTabChange(event: CustomEvent<string>) {
+    if (event.detail !== 'actions') {
+      switchToContentMode(WorkspaceContentMode.File);
+    }
+  }
+
+  function onActionDetailDirty(event: CustomEvent<boolean>) {
+    actionDetailIsDirty = event.detail;
+  }
+
+  function onViewActionRun(event: CustomEvent<{ runId: number }>) {
+    switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: event.detail.runId });
+  }
+
+  function onActionRunBack() {
+    // Navigate back to the previous action view
+    if ($selectedActionDefinitionId !== null) {
+      switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: $selectedActionDefinitionId });
+    } else {
+      switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    }
+  }
+
+  async function onRerunAction(event: CustomEvent<{ actionDefinitionId: number; parameters: ArgumentsMap }>) {
+    const { actionDefinitionId, parameters } = event.detail;
+    const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
+    const actionDef = defs[actionDefinitionId];
+    if (actionDef && $workspace) {
+      const runId = await effects.runAction(actionDef, $workspace, workspaceFileList, user, parameters);
+      if (runId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(runId);
+        if (goToRun === true) {
+          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+        }
+      }
+    }
+  }
+
+  async function onRunActionFromSidebar(event: CustomEvent<ActionDefinition>) {
+    const action = event.detail;
+    if ($workspace) {
+      const runId = await effects.runAction(action, $workspace, workspaceFileList, user);
+      if (runId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(runId);
+        if (goToRun === true) {
+          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+        }
+      }
+    }
+  }
+
+  async function onRunActionFromDetailView(event: CustomEvent<ActionDefinition>) {
+    const action = event.detail;
+    if ($workspace) {
+      const runId = await effects.runAction(action, $workspace, workspaceFileList, user);
+      if (runId !== null) {
+        const goToRun = await effects.confirmOpenActionRunResults(runId);
+        if (goToRun === true) {
+          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+        }
+      }
+    }
   }
 
   async function onRunActionOnActiveFile(event: CustomEvent<{ action: ActionDefinition; parameter: string }>) {
@@ -822,7 +998,7 @@
         userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
-          openActionRun($workspaceId, actionRunId, true);
+          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
         }
       }
     }
@@ -865,7 +1041,7 @@
         userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
         const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
         if (goToRun === true) {
-          openActionRun($workspaceId, actionRunId, true);
+          switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: actionRunId });
         }
       }
     }
@@ -965,6 +1141,38 @@
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
       selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+
+      // Handle deep link query parameters for actions
+      const actionRunIdParam = $page.url.searchParams.get(SearchParameters.ACTION_RUN_ID);
+      const actionIdParam = $page.url.searchParams.get(SearchParameters.ACTION_ID);
+      const sidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+
+      if (actionRunIdParam) {
+        const runId = parseInt(actionRunIdParam, 10);
+        if (!isNaN(runId)) {
+          $selectedActionRunId = runId;
+          $workspaceContentMode = WorkspaceContentMode.ActionRunDetail;
+          sidebarActiveTab = 'actions';
+          // Also restore the action if provided, so back navigation works
+          if (actionIdParam) {
+            const actionId = parseInt(actionIdParam, 10);
+            if (!isNaN(actionId)) {
+              $selectedActionDefinitionId = actionId;
+            }
+          }
+        }
+      } else if (actionIdParam) {
+        const actionId = parseInt(actionIdParam, 10);
+        if (!isNaN(actionId)) {
+          $selectedActionDefinitionId = actionId;
+          $workspaceContentMode = WorkspaceContentMode.ActionDetail;
+          sidebarActiveTab = 'actions';
+        }
+      } else if (sidebarTab === 'actions') {
+        $workspaceContentMode = WorkspaceContentMode.ActionRunsList;
+        sidebarActiveTab = 'actions';
+      }
+
       getWorkspaceContents(initialWorkspace);
     }
   });
@@ -973,6 +1181,9 @@
     resetSequenceAdaptation();
     activeDocument.reset();
     resetWorkspaceErrorStores();
+    $workspaceContentMode = WorkspaceContentMode.File;
+    $selectedActionDefinitionId = null;
+    $selectedActionRunId = null;
 
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -999,7 +1210,10 @@
         <WorkspaceSidebar
           bind:selectedFilePath
           bind:panelOpen={sidebarPanelOpen}
+          bind:activeTab={sidebarActiveTab}
           actions={allActionsForWorkspace}
+          isAllRunsSelected={$workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+          selectedActionId={$selectedActionDefinitionId}
           {workspaceTree}
           {isWorkspaceLoading}
           {hasEditWorkspacePermission}
@@ -1010,7 +1224,6 @@
           usersLoading={$initialUsersLoading}
           workspace={$workspace}
           workspaces={$workspaces}
-          on:actionsClick={onActionsClicked}
           on:addCollaborator={onAddCollaborator}
           on:deleteCollaborator={onDeleteCollaborator}
           on:download={onDownloadNodes}
@@ -1026,6 +1239,10 @@
           on:refreshWorkspace={refreshWorkspaceContents}
           on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
           on:runAction={onRunActionOnFileSelection}
+          on:runActionFromSidebar={onRunActionFromSidebar}
+          on:selectAction={onSelectAction}
+          on:selectAllRuns={onSelectAllRuns}
+          on:sidebarTabChange={onSidebarTabChange}
           on:openInNewTab={onOpenInNewTab}
         />
       </Sidebar.Provider>
@@ -1033,12 +1250,35 @@
         <CssGridGutter track={1} type="column" />
       {/if}
       <Sidebar.Inset className="min-h-0">
-        {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-        {@const isSequenceFile =
-          $activeDocumentPath === null ||
-          ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
-        <div class="relative grid h-full grid-cols-1 grid-rows-1">
-          {#if showLoadingSpinner && isTextOrEmpty}
+        {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
+          <ActionDetailView
+            actionDefinitionId={$selectedActionDefinitionId}
+            user={$user}
+            workspace={$workspace}
+            workspaceFiles={workspaceFileList}
+            on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
+            on:dirty={onActionDetailDirty}
+            on:runAction={onRunActionFromDetailView}
+            on:viewRun={onViewActionRun}
+          />
+        {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
+          <ActionRunDetailView
+            actionRunId={$selectedActionRunId}
+            user={$user}
+            hasPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
+            on:back={onActionRunBack}
+            on:rerun={onRerunAction}
+            on:viewAction={e => switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
+          />
+        {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+          <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
+        {:else}
+          {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+          {@const isSequenceFile =
+            $activeDocumentPath === null ||
+            ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
+          <div class="relative grid h-full grid-cols-1 grid-rows-1">
+            {#if showLoadingSpinner && isTextOrEmpty}
             <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
               <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
             </div>
@@ -1131,6 +1371,7 @@
             </div>
           {/if}
         </div>
+        {/if}
       </Sidebar.Inset>
     </CssGrid>
   </Resizable.Pane>

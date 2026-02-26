@@ -5,15 +5,30 @@
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import Nav from '../../../../../../components/app/Nav.svelte';
   import CssGrid from '../../../../../../components/ui/CssGrid.svelte';
+  import { SearchParameters } from '../../../../../../enums/searchParameters';
   import type { ActionRun } from '../../../../../../types/actions';
   import type { Workspace } from '../../../../../../types/workspace';
-  import { getActionsUrl, getWorkspacesUrl } from '../../../../../../utilities/routes';
+  import { getWorkspacesUrl } from '../../../../../../utilities/routes';
   import type { LayoutData } from './$types';
 
   export let data: LayoutData;
 
   let workspace: Workspace | null = data.initialWorkspace;
   let actionRun: ActionRun | null = data.initialActionRun;
+
+  $: actionsUrl = workspace ? `${getWorkspacesUrl(base, workspace.id)}?sidebarTab=actions` : '';
+
+  $: runDeepLink = (() => {
+    if (!workspace || !actionRun) {
+      return '';
+    }
+    const params = new URLSearchParams();
+    params.set(SearchParameters.ACTION_RUN_ID, String(actionRun.id));
+    if (actionRun.action_definition_id != null) {
+      params.set(SearchParameters.ACTION_ID, String(actionRun.action_definition_id));
+    }
+    return `${getWorkspacesUrl(base, workspace.id)}?${params.toString()}`;
+  })();
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
@@ -30,11 +45,11 @@
         <span class="icon-wrapper">
           <ChevronRightIcon />
         </span>
-        <a class="link flex flex-nowrap" href={getActionsUrl(base, workspace.id)}> Actions </a>
+        <a class="link flex flex-nowrap" href={actionsUrl}> Actions </a>
         <span class="icon-wrapper">
           <ChevronRightIcon />
         </span>
-        Run - {actionRun?.id}
+        <a class="link flex flex-nowrap" href={runDeepLink}>Run - {actionRun?.id}</a>
       {/if}
     </div>
   </Nav>

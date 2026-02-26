@@ -12,6 +12,8 @@
   export let data: LayoutData;
 
   let workspace: Workspace | null = data.initialWorkspace;
+
+  $: actionsUrl = workspace ? `${getWorkspacesUrl(base, workspace.id)}?sidebarTab=actions` : '';
 </script>
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
@@ -28,7 +30,7 @@
         <span class="icon-wrapper">
           <ChevronRightIcon />
         </span>
-        Actions
+        <a class="link flex flex-nowrap" href={actionsUrl}> Actions </a>
       {/if}
     </div>
   </Nav>

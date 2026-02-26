@@ -7,10 +7,13 @@ import type {
   ActionValueSchemaSequence,
   ActionValueSchemaSequenceList,
 } from '@nasa-jpl/aerie-actions';
+import { SearchParameters } from '../enums/searchParameters';
+import { Status } from '../enums/status';
 import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
+import type { ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
-import { getActionsUrl } from './routes';
+import { getWorkspacesUrl } from './routes';
 
 /**
  * Typeguard for determining if a schema is an action sequence/sequenceList schema
@@ -81,11 +84,99 @@ export function getActionParametersOfType(action: ActionDefinition, parameterTyp
   return parametersOfType;
 }
 
-export function openActionRun(workspaceId: number, id: number, newTab?: boolean) {
-  const actionRunUrl = getActionsUrl(base, workspaceId, id);
-  if (newTab === true) {
-    window.open(actionRunUrl, '_blank');
-  } else {
-    goto(actionRunUrl);
+/**
+ * Maps an ActionRunSlim's status fields to the UI Status enum.
+ */
+export function getStatusForActionRun(actionRun: ActionRunSlim): Status {
+  if (actionRun.canceled === true) {
+    return Status.Canceled;
   }
+
+  if (actionRun.error?.message || actionRun.results?.status === 'FAILED') {
+    return Status.Failed;
+  }
+
+  switch (actionRun.status) {
+    case 'success':
+      return Status.Complete;
+    case 'pending':
+      return Status.Pending;
+    case 'incomplete':
+      return Status.Incomplete;
+    case 'failed':
+      return Status.Failed;
+    default:
+      return Status.Unchecked;
+  }
+}
+
+export function getActionRunDeepLink(workspaceId: number, runId: number, actionId?: number | null): string {
+  const baseUrl = getWorkspacesUrl(base, workspaceId);
+  const params = new URLSearchParams();
+  params.set(SearchParameters.ACTION_RUN_ID, String(runId));
+  if (actionId != null) {
+    params.set(SearchParameters.ACTION_ID, String(actionId));
+  }
+  return `${baseUrl}?${params.toString()}`;
+}
+
+export function openActionRun(workspaceId: number, runId: number, newTab?: boolean) {
+  const url = getActionRunDeepLink(workspaceId, runId);
+  if (newTab === true) {
+    window.open(url, '_blank');
+  } else {
+    goto(url);
+  }
+}
+
+/**
+ * Formats action run parameters as a truncated summary string.
+ * Prioritizes parameters with `primary: true`, then by `order`.
+ */
+export function truncateRunParameters(
+  parameters: ArgumentsMap,
+  parameterSchema: Record<string, ActionValueSchema> | undefined,
+  maxLength: number = 60,
+): string {
+  if (!parameters || !parameterSchema) {
+    return '';
+  }
+
+  const entries = Object.entries(parameters);
+  if (entries.length === 0) {
+    return '';
+  }
+
+  // Sort: primary params first, then by schema order (or alphabetically as fallback)
+  const sorted = entries.sort(([keyA], [keyB]) => {
+    const schemaA = parameterSchema[keyA];
+    const schemaB = parameterSchema[keyB];
+    const primaryA = schemaA && 'primary' in schemaA && schemaA.primary ? 0 : 1;
+    const primaryB = schemaB && 'primary' in schemaB && schemaB.primary ? 0 : 1;
+    if (primaryA !== primaryB) {
+      return primaryA - primaryB;
+    }
+    return keyA.localeCompare(keyB);
+  });
+
+  let result = '';
+  for (const [key, value] of sorted) {
+    const formatted = typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
+    const pair = `${key}: ${formatted}`;
+    if (result.length === 0) {
+      result = pair;
+    } else {
+      const next = `${result}, ${pair}`;
+      if (next.length > maxLength) {
+        break;
+      }
+      result = next;
+    }
+  }
+
+  if (result.length > maxLength) {
+    result = result.substring(0, maxLength - 3) + '...';
+  }
+
+  return result;
 }

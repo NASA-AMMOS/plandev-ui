@@ -1,0 +1,224 @@
+<svelte:options immutable={true} />
+
+<script lang="ts">
+  import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
+  import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
+  import { createEventDispatcher } from 'svelte';
+  import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
+  import { workspaceId } from '../../../stores/workspaces';
+  import type { ActionRunSlim } from '../../../types/actions';
+  import type { User } from '../../../types/app';
+  import {
+    getActionDefinitionForRun,
+    getStatusForActionRun,
+    truncateRunParameters,
+  } from '../../../utilities/actions';
+  import effects from '../../../utilities/effects';
+  import { formatMS } from '../../../utilities/time';
+  import SectionTitle from '../../ui/SectionTitle.svelte';
+  import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
+  import StatusBadge from '../../ui/StatusBadge.svelte';
+
+  const dispatch = createEventDispatcher<{
+    viewRun: { runId: number };
+  }>();
+
+  export let user: User | null;
+
+  let filterText: string = '';
+  let selectedRunId: number | null = null;
+
+  $: allRuns = $actionRunsByWorkspace[$workspaceId] || [];
+
+  $: filteredRuns = allRuns.filter(run => {
+    if (!filterText) {
+      return true;
+    }
+    const lowerFilter = filterText.toLowerCase();
+    const def = getActionDefinitionForRun(run, $actionDefinitionsByWorkspace, $workspaceId);
+    if (def && def.name.toLowerCase().includes(lowerFilter)) {
+      return true;
+    }
+    if (run.requested_by && run.requested_by.toLowerCase().includes(lowerFilter)) {
+      return true;
+    }
+    if (run.status.toLowerCase().includes(lowerFilter)) {
+      return true;
+    }
+    return false;
+  });
+
+  function statusCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.height = '100%';
+    if (params.data) {
+      const status = getStatusForActionRun(params.data);
+      new StatusBadge({ props: { status }, target: div });
+    }
+    return div;
+  }
+
+  function actionNameValueGetter(params: { data: ActionRunSlim }) {
+    if (!params.data) {
+      return '';
+    }
+    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
+    return def?.name ?? 'Deleted Action';
+  }
+
+  function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    if (!params.data) {
+      return '';
+    }
+    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
+    return truncateRunParameters(params.data.parameters, def?.parameter_schema);
+  }
+
+  function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    if (
+      !params.data ||
+      params.data.canceled ||
+      (params.data.status !== 'pending' && params.data.status !== 'incomplete')
+    ) {
+      return '';
+    }
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'center';
+    div.style.height = '100%';
+    const btn = document.createElement('button');
+    btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
+    btn.title = 'Cancel Action Run';
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (params.data) {
+        effects.cancelActionRun(params.data.id, user);
+      }
+    });
+    div.appendChild(btn);
+    return div;
+  }
+
+  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim }>) {
+    const { data } = event.detail;
+    if (data) {
+      dispatch('viewRun', { runId: data.id });
+    }
+  }
+
+  $: columnDefs = [
+    {
+      field: 'id',
+      filter: 'number',
+      headerName: 'ID',
+      sort: 'desc',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 60,
+    },
+    {
+      filter: 'text',
+      headerName: 'Action',
+      sortable: true,
+      valueGetter: actionNameValueGetter,
+      width: 140,
+    },
+    {
+      cellRenderer: statusCellRenderer,
+      field: 'status',
+      filter: 'text',
+      headerName: 'Status',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
+    },
+    {
+      field: 'requested_by',
+      filter: 'text',
+      headerName: 'Requested By',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 120,
+    },
+    {
+      field: 'requested_at',
+      headerName: 'Requested At',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
+        params.data ? new Date(params.data.requested_at).toLocaleString() : '',
+      width: 170,
+    },
+    {
+      field: 'duration',
+      headerName: 'Duration',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
+        params.data ? formatMS(params.data.duration) : '',
+      width: 80,
+    },
+    {
+      cellRenderer: paramsCellRenderer,
+      field: 'parameters',
+      headerName: 'Parameters',
+      minWidth: 120,
+      resizable: true,
+      sortable: false,
+    },
+    {
+      cellRenderer: cancelCellRenderer,
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 40,
+    },
+  ] as ColDef<ActionRunSlim>[];
+</script>
+
+<div class="flex h-full flex-col overflow-hidden">
+  <!-- Header -->
+  <div class="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+    <SectionTitle>All Action Runs</SectionTitle>
+    <div class="w-48">
+      <InputStellar
+        autocomplete="off"
+        class="w-full"
+        sizeVariant="xs"
+        placeholder="Filter runs..."
+        bind:value={filterText}
+      />
+    </div>
+  </div>
+
+  <!-- DataGrid -->
+  <div class="flex-1 overflow-hidden p-2">
+    {#if filteredRuns.length === 0 && !filterText}
+      <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+        No action runs yet
+      </div>
+    {:else}
+      <SingleActionDataGrid
+        {columnDefs}
+        items={filteredRuns}
+        itemDisplayText="Action Run"
+        {user}
+        selectedItemId={selectedRunId}
+        hasDeletePermission={false}
+        hasEdit={false}
+        on:rowClicked={onRowClicked}
+      />
+    {/if}
+  </div>
+</div>

@@ -209,7 +209,7 @@
 <CssGrid bind:columns={$actionsColumns} class="grid">
   <Panel>
     <svelte:fragment slot="header">
-      <SectionTitle>Actions</SectionTitle>
+      <SectionTitle>Workspace Actions</SectionTitle>
 
       <Input>
         <input bind:value={actionDefinitionsFilterText} class="st-input w-100" placeholder="Filter actions" />

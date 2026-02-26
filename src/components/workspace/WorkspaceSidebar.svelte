@@ -17,6 +17,7 @@
   import { tooltip } from '../../utilities/tooltip';
   import Input from '../form/Input.svelte';
   import Loading from '../Loading.svelte';
+  import ActionSidebarList from '../sequencing/actions/ActionSidebarList.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
@@ -24,7 +25,6 @@
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
 
   const dispatch = createEventDispatcher<{
-    actionsClick: void;
     addCollaborator: WorkspaceCollaborator[];
     copyFileLocation: string;
     copyFullPath: string;
@@ -34,12 +34,18 @@
     newFolder: string;
     refreshWorkspace: void;
     runAction: WorkspaceNodeRunActionEvent;
+    runActionFromSidebar: ActionDefinition;
     saveFile: void;
+    selectAction: { id: number };
+    selectAllRuns: void;
+    sidebarTabChange: string;
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
 
   export let actions: ActionDefinition[] = [];
+  export let isAllRunsSelected: boolean = false;
   export let isWorkspaceLoading: boolean = false;
+  export let selectedActionId: number | null = null;
   export let selectedFilePath: string | null = null;
   export let user: User | null;
   export let users: UserId[] = [];
@@ -54,8 +60,7 @@
   const permissionError = 'You do not have permission to edit this workspace';
 
   export let panelOpen: boolean = true;
-
-  let activeTab: string = 'files';
+  export let activeTab: string = 'files';
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
   let currentBreadcrumbPath: string = ''; // Navigation state - current folder being viewed as root
@@ -68,6 +73,7 @@
       // Switching tabs or opening closed panel
       activeTab = tab;
       panelOpen = true;
+      dispatch('sidebarTabChange', tab);
     }
   }
 
@@ -85,10 +91,6 @@
       await new Promise(resolve => setTimeout(resolve, 1000));
       didWorkspaceUpdate = false;
     }
-  }
-
-  function onActionsClick() {
-    dispatch('actionsClick');
   }
 
   function onNewFolder() {
@@ -136,6 +138,10 @@
   function onRefreshWorkspace() {
     dispatch('refreshWorkspace');
   }
+
+  function onRunActionFromSidebar(event: CustomEvent<ActionDefinition>) {
+    dispatch('runActionFromSidebar', event.detail);
+  }
 </script>
 
 <Sidebar.Root className="h-full inset-x-0 border-none flex">
@@ -150,22 +156,14 @@
         >
           <Files size={16} />
         </Sidebar.MenuButton>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild let:builder>
-            <Button
-              class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
-              builders={[builder]}
-              variant="ghost"
-              aria-label="Actions"
-              on:click={onActionsClick}
-            >
-              <Clapperboard size={16} />
-            </Button>
-          </Tooltip.Trigger>
-          <Tooltip.Content sideOffset={8}>
-            <div>Actions</div>
-          </Tooltip.Content>
-        </Tooltip.Root>
+        <Sidebar.MenuButton
+          className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+          isActive={activeTab === 'actions' && panelOpen}
+          tooltipContent="Actions"
+          on:click={e => handleTabClick('actions', e.detail.wasActive)}
+        >
+          <Clapperboard size={16} />
+        </Sidebar.MenuButton>
         <Sidebar.MenuButton
           className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
           isActive={activeTab === 'settings' && panelOpen}
@@ -249,6 +247,18 @@
               </Sidebar.Group>
             </Sidebar.Content>
           </div>
+        {:else if activeTab === 'actions'}
+          <ActionSidebarList
+            {actions}
+            {isAllRunsSelected}
+            loading={isWorkspaceLoading}
+            selectedActionId={selectedActionId}
+            {user}
+            {workspace}
+            on:selectAction
+            on:selectAllRuns
+            on:runAction={onRunActionFromSidebar}
+          />
         {:else if activeTab === 'settings'}
           <div class="grid h-full grid-rows-[min-content_auto]">
             <Sidebar.Header className="p-0">

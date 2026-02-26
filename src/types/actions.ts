@@ -48,4 +48,4 @@ export type ActionRunSlim = Omit<ActionRun, 'action_definition'> & {
   };
 };
 
-export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'>;
+export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'> & { settings?: ArgumentsMap };
