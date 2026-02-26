@@ -136,7 +136,7 @@
                       </div>
                     </Button>
                     <div
-                      class="absolute right-1 top-1/2 hidden -translate-y-1/2 group-hover/action:block"
+                      class="absolute right-3 top-1/2 hidden -translate-y-1/2 group-hover/action:block"
                       use:tooltip={{ content: `Run ${action.name}`, placement: 'right' }}
                       use:permissionHandler={{
                         hasPermission: workspace != null && featurePermissions.actionRun.canCreate(user, workspace),
@@ -151,7 +151,7 @@
                           dispatch('runAction', action);
                         }}
                       >
-                        <Play size={12} />
+                        <Play size={14} />
                       </Button>
                     </div>
                   </div>
