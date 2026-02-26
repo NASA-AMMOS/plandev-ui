@@ -12,6 +12,7 @@
     derivationGroups,
     externalSources,
     externalSourceTypeAssociations,
+    externalSourceTypeAssociationsLoading,
     sourcesUsingExternalEventTypes,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
@@ -76,7 +77,6 @@
   const creationPermissionError: string = 'You do not have permission to upload External Source & Event Types.';
 
   const derivationGroupsLoading = derivationGroups.loading;
-  const externalSourceTypeAssociationsLoading = externalSourceTypeAssociations.loading;
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {

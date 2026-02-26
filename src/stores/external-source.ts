@@ -63,6 +63,13 @@ export const externalSourceTypeAssociations: Readable<ExternalSourceTypeAssociat
   },
 );
 
+export const externalSourceTypeAssociationsLoading: Readable<boolean> = derived(
+  [externalSourceTypes.loading, externalSources.loading, derivationGroups.loading],
+  ([$externalSourceTypesLoading, $externalSourcesLoading, $derivationGroupsLoading]) => {
+    return $externalSourceTypesLoading || $externalSourcesLoading || $derivationGroupsLoading;
+  },
+);
+
 // Reorganization of unacknowledged planDerivationGroupLinks so that it is easy to the derivation groups and when their updates were last acknowledged
 export const derivationGroupsAcknowledged: Readable<Record<string, { last_acknowledged_at: string }>> = derived(
   planDerivationGroupLinks,
