@@ -336,6 +336,7 @@
     }
 
     // successfully navigated, start loading the file contents
+    selectedSequenceOutput = undefined;
     if (nextPath && workspaceTreeMap[nextPath]) {
       const { filename } = separateFilenameFromPath(nextPath);
       const fileType = workspaceTreeMap[nextPath]?.type ?? null;

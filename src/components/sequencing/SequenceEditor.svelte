@@ -176,6 +176,12 @@
     debouncedOutputUpdate.cancel();
     dispatchLintChange.cancel();
     previousSequenceFilePath = sequenceFilePath;
+
+    // Clear stale output and recompute for the new file
+    if (editorOutputView) {
+      editorOutputView.dispatch({ changes: { from: 0, insert: '', to: editorOutputView.state.doc.length } });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
   }
 
   function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
