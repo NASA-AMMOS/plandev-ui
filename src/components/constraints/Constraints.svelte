@@ -243,6 +243,7 @@
         {hasDeletePermission}
         {hasEditPermission}
         itemDisplayText="Constraint"
+        noRowsOverlayText="No Constraints Found"
         items={filteredConstraints}
         {user}
         on:deleteItem={deleteConstraintContext}
