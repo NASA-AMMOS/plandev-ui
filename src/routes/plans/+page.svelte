@@ -866,12 +866,21 @@
                     datatype="number"
                     fitViewport
                   >
-                    {#each orderedModels as model (model.id)}
-                      <Select.Item size="xs" value={model.id} label={getDisplayNameForModel(model)} class="flex gap-1">
-                        {model.name}
-                        <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-                      </Select.Item>
-                    {/each}
+                    {#if orderedModels.length === 0}
+                      <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
+                    {:else}
+                      {#each orderedModels as model (model.id)}
+                        <Select.Item
+                          size="xs"
+                          value={model.id}
+                          label={getDisplayNameForModel(model)}
+                          class="flex gap-1"
+                        >
+                          {model.name}
+                          <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
+                        </Select.Item>
+                      {/each}
+                    {/if}
                   </Select.Content>
                   <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
                 </Select.Root>
