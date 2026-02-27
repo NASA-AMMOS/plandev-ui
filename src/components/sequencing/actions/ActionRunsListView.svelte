@@ -101,7 +101,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 60,
+      width: 80,
     },
     {
       filter: 'text',
@@ -118,7 +118,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 80,
+      width: 100,
     },
     {
       field: 'requested_by',
@@ -127,7 +127,7 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 120,
+      width: 140,
     },
     {
       field: 'requested_at',
@@ -147,7 +147,7 @@
       suppressSizeToFit: true,
       valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
         params.data ? formatMS(params.data.duration) : '',
-      width: 80,
+      width: 100,
     },
     {
       cellRenderer: paramsCellRenderer,
