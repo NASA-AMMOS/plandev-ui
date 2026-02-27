@@ -8,6 +8,7 @@
  */
 
 import type { Browser, BrowserContext, Page } from '@playwright/test';
+import dotenv from 'dotenv';
 import fs from 'fs';
 import nodePath from 'path';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
@@ -45,23 +46,8 @@ import { SchedulingConditions } from '../fixtures/SchedulingConditions.js';
 import { SchedulingGoals } from '../fixtures/SchedulingGoals.js';
 import { View } from '../fixtures/View.js';
 
-// Load .env file if it exists (Node.js doesn't load it automatically)
-const envPath = nodePath.resolve(process.cwd(), '.env');
-if (fs.existsSync(envPath)) {
-  for (const line of fs.readFileSync(envPath, 'utf-8').split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const eqIndex = trimmed.indexOf('=');
-      if (eqIndex > 0) {
-        const key = trimmed.slice(0, eqIndex);
-        const value = trimmed.slice(eqIndex + 1).replace(/^['"]|['"]$/g, '');
-        if (!process.env[key]) {
-          process.env[key] = value;
-        }
-      }
-    }
-  }
-}
+// Load .env file if it exists (won't override existing env vars)
+dotenv.config();
 
 // Default URLs from environment variables, with fallbacks for local development
 const DEFAULT_HASURA_URL = process.env.PUBLIC_HASURA_CLIENT_URL ?? 'http://localhost:8080/v1/graphql';

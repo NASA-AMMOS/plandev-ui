@@ -29,6 +29,7 @@
 
 import fs from 'fs';
 import { animals, uniqueNamesGenerator } from 'unique-names-generator';
+import { AerieApi } from '../e2e-tests/utilities/api.js';
 import { ConstraintDefinitionType } from '../src/enums/constraint.js';
 import { SchedulingDefinitionType } from '../src/enums/scheduling.js';
 import type { ActivityDirectiveInsertInput } from '../src/types/activity.js';
@@ -36,7 +37,6 @@ import type { SchedulingConditionInsertInput } from '../src/types/scheduling.js'
 import { ResourceType } from '../src/types/simulation.js';
 import { getIntervalFromDoyRange, getUnixEpochTime } from '../src/utilities/time.js';
 import { generateDefaultView } from '../src/utilities/view.js';
-import { AerieApi } from '../e2e-tests/utilities/api.js';
 
 // Generate unique suffix for this seed run
 const uniqueSuffix = uniqueNamesGenerator({ dictionaries: [animals], separator: '-' });
@@ -189,14 +189,14 @@ const PLANS: PlanConfig[] = [
     name: 'Monthly Production',
     startTime: '2024-001T00:00:00',
   },
-  // {
-  //   // Quarter-long mission (10K activities)
-  //   activityMix: { BiteBanana: 2500, GrowBanana: 2000, PeelBanana: 2500, PickBanana: 3000 },
-  //   description: 'Full quarterly mission with comprehensive operations',
-  //   endTime: '2024-091T00:00:00',
-  //   name: 'Q1 Mission',
-  //   startTime: '2024-001T00:00:00',
-  // },
+  {
+    // Quarter-long mission (10K activities)
+    activityMix: { BiteBanana: 2500, GrowBanana: 2000, PeelBanana: 2500, PickBanana: 3000 },
+    description: 'Full quarterly mission with comprehensive operations',
+    endTime: '2024-091T00:00:00',
+    name: 'Q1 Mission',
+    startTime: '2024-001T00:00:00',
+  },
 ];
 
 // Constraint definitions (EDSL format)
@@ -693,6 +693,9 @@ async function seed() {
     .replace('mission_name="GENERIC"', `mission_name="${missionName}"`);
   const commandDictResult = await api.createDictionary(commandDictXml);
   const commandDictId = commandDictResult.command?.id;
+  if (commandDictId == null) {
+    throw new Error('Command dictionary creation failed: no command ID returned');
+  }
   console.log(`  - Created command dictionary (ID: ${commandDictId}, mission: ${missionName})`);
 
   // Read and upload channel dictionary with customized mission name
@@ -724,7 +727,7 @@ async function seed() {
   const parcelName = `Seed Parcel (${uniqueSuffix})`;
   const parcel = await api.createParcel({
     channel_dictionary_id: channelDictId ?? null,
-    command_dictionary_id: commandDictId!,
+    command_dictionary_id: commandDictId,
     name: parcelName,
     sequence_adaptation_id: null, // Adaptations are linked separately
   });
@@ -840,7 +843,7 @@ async function seed() {
   // Reusable content
   const sequenceContent = `@ID "seed_sequence"\n\nC FSW_CMD_0 "ON" true 0.5\nC FSW_CMD_1 1.0 10 "2024-001T00:00:00" 100 "0000"\n`;
   const textContent = `Seed Workspace Notes\n====================\n\nCreated by seed script. Suffix: ${uniqueSuffix}\n`;
-  const jsonContent = `{ seeded_json: ${uniqueSuffix} }`;
+  const jsonContent = JSON.stringify({ seeded_json: uniqueSuffix }, null, 2);
   const binaryContent = new Uint8Array(256).map(() => Math.floor(Math.random() * 256));
   // Minimal valid JPEG (1x1 pixel)
   // prettier-ignore
@@ -870,7 +873,7 @@ async function seed() {
     { content: textContent, path: 'seed_notes.txt' },
     { content: binaryContent, path: 'seed_data.bin' },
     { content: jpegContent, path: 'seed_image.jpg' },
-    { content: jsonContent, path: 'seed_image.json' },
+    { content: jsonContent, path: 'seed_data.json' },
     { path: 'seed_folder' }, // folder
     { content: sequenceContent, path: 'seed_folder/folder_sequence.seq' },
     { content: binaryContent, path: 'seed_folder/folder_data.bin' },
@@ -903,7 +906,7 @@ async function seed() {
   let largeWorkspaceItemCount = 0;
 
   for (const project of projects) {
-    // Create project folder
+    // Create project folder (must exist before children)
     await api.createWorkspaceItem(largeWorkspaceId, `project_${project}`);
     largeWorkspaceItemCount++;
 
@@ -913,14 +916,16 @@ async function seed() {
       await api.createWorkspaceItem(largeWorkspaceId, modulePath);
       largeWorkspaceItemCount++;
 
-      // Create regular files in module
+      // Create regular files in module in parallel
+      const filePromises: Promise<void>[] = [];
       for (let f = 1; f <= 15; f++) {
         const ext = fileTypes[(f - 1) % fileTypes.length];
         const filePath = `${modulePath}/file_${f.toString().padStart(3, '0')}${ext}`;
         const content = fileMap[ext];
-        await api.createWorkspaceItem(largeWorkspaceId, filePath, content);
+        filePromises.push(api.createWorkspaceItem(largeWorkspaceId, filePath, content));
         largeWorkspaceItemCount++;
       }
+      await Promise.all(filePromises);
 
       // Add deep nesting for every other module (up to 7 levels deep)
       if (m % 2 === 1) {
@@ -928,15 +933,20 @@ async function seed() {
         let currentPath = modulePath;
         for (const depth of depths) {
           currentPath = `${currentPath}/${depth}`;
+          // Create nested folder (must exist before children)
           await api.createWorkspaceItem(largeWorkspaceId, currentPath);
           largeWorkspaceItemCount++;
-          // Add a few files at each level
+          // Create files at this level in parallel
+          const nestedFilePromises: Promise<void>[] = [];
           for (let f = 1; f <= 3; f++) {
             const ext = fileTypes[(f - 1) % fileTypes.length];
             const content = fileMap[ext];
-            await api.createWorkspaceItem(largeWorkspaceId, `${currentPath}/nested_${f}${ext}`, content);
+            nestedFilePromises.push(
+              api.createWorkspaceItem(largeWorkspaceId, `${currentPath}/nested_${f}${ext}`, content),
+            );
             largeWorkspaceItemCount++;
           }
+          await Promise.all(nestedFilePromises);
         }
       }
     }

@@ -524,6 +524,7 @@
           link => link.plan_id === plan?.id && !($derivationGroupVisibilityMap[link.derivation_group_name] ?? true),
         )
         .map(link => link.derivation_group_name);
+
       // Apply filter for hiding derivation groups
       let externalEventsFilteredByDG = externalEvents.filter(ee => {
         let derivationGroup =

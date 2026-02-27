@@ -11,8 +11,8 @@
 
 import { AerieApi } from '../e2e-tests/utilities/api.js';
 
-// Pattern to identify seeded items: name contains " (" indicating unique suffix
-const isSeedItem = (name: string): boolean => name.includes(' (') && name.includes(')');
+// Pattern to identify seeded items: name ends with " (animal-suffix)" from unique-names-generator
+const isSeedItem = (name: string): boolean => /\(\w+\)$/.test(name);
 
 // External type name prefixes from seed script (actual names have _suffix appended)
 const SEED_EXTERNAL_SOURCE_TYPE_PREFIX = 'BananaSupplySource_';
@@ -160,7 +160,7 @@ async function deseed() {
 
   // Delete in reverse order of creation to respect foreign keys
 
-  // 15. Delete plans (they reference models)
+  // 1. Delete plans (they reference models)
   if (seededPlans.length > 0) {
     console.log('Deleting plans...');
     for (const plan of seededPlans) {
@@ -174,7 +174,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 1. Delete models
+  // 2. Delete models
   if (seededModels.length > 0) {
     console.log('Deleting models...');
     for (const model of seededModels) {
@@ -188,7 +188,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 2. Delete external sources first (they contain events and reference derivation groups)
+  // 3. Delete external sources (they contain events and reference derivation groups)
   if (seededExternalSources.length > 0) {
     console.log('Deleting external sources...');
     // Group sources by derivation group for deletion
@@ -211,7 +211,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 3. Delete derivation groups
+  // 4. Delete derivation groups
   if (seededDerivationGroups.length > 0) {
     console.log('Deleting derivation groups...');
     try {
@@ -226,7 +226,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 4. Delete external event types (after events are deleted with sources)
+  // 5. Delete external event types (after events are deleted with sources)
   if (seededEventTypes.length > 0) {
     console.log('Deleting external event types...');
     try {
@@ -241,7 +241,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 5. Delete external source types (after derivation groups are deleted)
+  // 6. Delete external source types (after derivation groups are deleted)
   if (seededSourceTypes.length > 0) {
     console.log('Deleting external source types...');
     try {
@@ -256,7 +256,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 6. Delete action definitions (they reference workspaces)
+  // 7. Delete action definitions (they reference workspaces)
   if (seededActionDefinitions.length > 0) {
     console.log('Deleting action definitions...');
     for (const action of seededActionDefinitions) {
@@ -270,7 +270,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 7. Delete extensions (no foreign key dependencies)
+  // 8. Delete extensions (no foreign key dependencies)
   if (seededExtensions.length > 0) {
     console.log('Deleting extensions...');
     for (const ext of seededExtensions) {
@@ -284,7 +284,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 8. Delete workspaces (they reference parcels)
+  // 9. Delete workspaces (they reference parcels)
   if (seededWorkspaces.length > 0) {
     console.log('Deleting workspaces...');
     for (const workspace of seededWorkspaces) {
@@ -298,7 +298,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 9. Delete expansion sets (they reference expansion rules)
+  // 10. Delete expansion sets (they reference expansion rules)
   if (seededExpansionSets.length > 0) {
     console.log('Deleting expansion sets...');
     for (const set of seededExpansionSets) {
@@ -312,7 +312,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 10. Delete expansion rules (they reference parcels)
+  // 11. Delete expansion rules (they reference parcels)
   if (seededExpansionRules.length > 0) {
     console.log('Deleting expansion rules...');
     for (const rule of seededExpansionRules) {
@@ -326,7 +326,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 11. Delete parcels (they reference dictionaries and expansion rules reference them)
+  // 12. Delete parcels (they reference dictionaries and expansion rules reference them)
   if (seededParcels.length > 0) {
     console.log('Deleting parcels...');
     for (const parcel of seededParcels) {
@@ -340,7 +340,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 12. Delete dictionaries (after parcels since parcels reference them)
+  // 13. Delete dictionaries (after parcels since parcels reference them)
   if (seededCommandDicts.length > 0) {
     console.log('Deleting command dictionaries...');
     for (const dict of seededCommandDicts) {
@@ -386,7 +386,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 13. Delete sequence adaptations
+  // 14. Delete sequence adaptations
   if (seededAdaptations.length > 0) {
     console.log('Deleting sequence adaptations...');
     for (const adaptation of seededAdaptations) {
@@ -400,7 +400,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 14. Delete views
+  // 15. Delete views
   if (seededViews.length > 0) {
     console.log('Deleting views...');
     for (const view of seededViews) {
@@ -414,7 +414,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 15. Delete scheduling conditions
+  // 16. Delete scheduling conditions
   if (seededConditions.length > 0) {
     console.log('Deleting scheduling conditions...');
     for (const condition of seededConditions) {
@@ -428,7 +428,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 16. Delete scheduling goals
+  // 17. Delete scheduling goals
   if (seededGoals.length > 0) {
     console.log('Deleting scheduling goals...');
     for (const goal of seededGoals) {
@@ -442,7 +442,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 17. Delete constraints
+  // 18. Delete constraints
   if (seededConstraints.length > 0) {
     console.log('Deleting constraints...');
     for (const constraint of seededConstraints) {
@@ -456,7 +456,7 @@ async function deseed() {
     console.log('');
   }
 
-  // 18. Delete tags
+  // 19. Delete tags
   if (seededTags.length > 0) {
     console.log('Deleting tags...');
     for (const tag of seededTags) {

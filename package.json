@@ -123,6 +123,7 @@
     "@vitest/ui": "^1.4.0",
     "autoprefixer": "^10.4.20",
     "cloc": "2.0.0-cloc",
+    "dotenv": "^17.3.1",
     "esbuild": "^0.24.0",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^9.1.0",
