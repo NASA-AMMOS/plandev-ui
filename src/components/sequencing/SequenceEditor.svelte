@@ -200,12 +200,8 @@
     if (!preserveAdaptationLog) {
       clearWorkspaceAdaptationMessages();
     }
-
     try {
-      output =
-        sequenceName === undefined
-          ? undefined
-          : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+      output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
     } catch (e) {
       console.error('Adaptation toOutputFormat error:', e);
       if (sequenceFilePath) {
@@ -370,6 +366,9 @@
       ],
       parent: editorOutputDiv,
     });
+
+    // Compute initial output for the starting content (e.g., untitled empty sequence on page load)
+    debouncedOutputUpdate(editorSequenceView.state.doc.toString());
   });
 
   onDestroy(() => {
