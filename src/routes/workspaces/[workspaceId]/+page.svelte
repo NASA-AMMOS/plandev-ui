@@ -336,6 +336,7 @@
     }
 
     // successfully navigated, start loading the file contents
+    selectedSequenceOutput = undefined;
     if (nextPath && workspaceTreeMap[nextPath]) {
       const { filename } = separateFilenameFromPath(nextPath);
       const fileType = workspaceTreeMap[nextPath]?.type ?? null;
@@ -1054,7 +1055,7 @@
                 previewOnly={!hasEditFilePermission}
                 sequenceAdaptation={$sequenceAdaptation}
                 sequenceDefinition={$activeDocument.originalContent}
-                sequenceName={$activeDocument.fileName ?? undefined}
+                sequenceName={$activeDocument.fileName ?? ''}
                 sequenceFilePath={$activeDocumentPath ?? ''}
                 sequenceOutput={selectedSequenceOutput}
                 shouldListenForKeyboardSave={false}
@@ -1080,7 +1081,7 @@
                 isLoading={$activeDocumentIsLoading}
                 previewOnly={!hasEditFilePermission}
                 shouldListenForKeyboardSave={false}
-                textFileName={$activeDocument.fileName ?? undefined}
+                textFileName={$activeDocument.fileName ?? ''}
                 textFilePath={$activeDocumentPath ?? ''}
                 textFileContent={$activeDocument.originalContent}
                 on:lintChange={onLintChange}

@@ -176,6 +176,12 @@
     debouncedOutputUpdate.cancel();
     dispatchLintChange.cancel();
     previousSequenceFilePath = sequenceFilePath;
+
+    // Clear stale output and recompute for the new file
+    if (editorOutputView) {
+      editorOutputView.dispatch({ changes: { from: 0, insert: '', to: editorOutputView.state.doc.length } });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
   }
 
   function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
@@ -194,12 +200,8 @@
     if (!preserveAdaptationLog) {
       clearWorkspaceAdaptationMessages();
     }
-
     try {
-      output =
-        sequenceName === undefined
-          ? undefined
-          : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+      output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
     } catch (e) {
       console.error('Adaptation toOutputFormat error:', e);
       if (sequenceFilePath) {
@@ -364,6 +366,9 @@
       ],
       parent: editorOutputDiv,
     });
+
+    // Compute initial output for the starting content (e.g., untitled empty sequence on page load)
+    debouncedOutputUpdate(editorSequenceView.state.doc.toString());
   });
 
   onDestroy(() => {
