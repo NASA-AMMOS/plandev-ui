@@ -9,7 +9,7 @@ import type {
 } from '@nasa-jpl/aerie-actions';
 import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
-import type { ActionDefinition, ActionParametersMap, ActionRunSlim } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionVersion, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -34,7 +34,7 @@ export function isActionValueSchemaFile(
  * Transforms a value schema record to a parameters map
  */
 export function valueSchemaRecordToParametersMap(
-  valueSchemaRecord: ActionDefinition['parameter_schema'],
+  valueSchemaRecord: Record<string, ActionValueSchema>,
 ): ActionParametersMap {
   return Object.entries(valueSchemaRecord).reduce((acc: ActionParametersMap, [key, valueSchema], i) => {
     acc[key] = { order: i, schema: valueSchema };
@@ -86,14 +86,8 @@ export function getActionDefinitionForRun(
   return null;
 }
 
-export function getActionParametersOfType(action: ActionDefinition, parameterType: string): string[] {
-  const parametersOfType: string[] = [];
-  for (const [key, value] of Object.entries(action.parameter_schema)) {
-    if (parameterType === value.type) {
-      parametersOfType.push(key);
-    }
-  }
-  return parametersOfType;
+export function getLatestVersion(action: ActionDefinition): ActionDefinitionVersion | null {
+  return action.versions[0] ?? null;
 }
 
 /**

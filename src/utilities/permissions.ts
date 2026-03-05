@@ -391,6 +391,10 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.INSERT_ACTION_DEFINITION];
     return isUserAdmin(user) && getPermission(queries, user);
   },
+  CREATE_ACTION_DEFINITION_VERSION: (user: User | null): boolean => {
+    const queries = [Queries.INSERT_ACTION_DEFINITION_VERSION];
+    return isUserAdmin(user) && getPermission(queries, user);
+  },
   CREATE_ACTION_RUN: (user: User | null, workspace: Workspace): boolean => {
     const queries = [Queries.INSERT_ACTION_RUN];
     return (

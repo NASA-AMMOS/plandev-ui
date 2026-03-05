@@ -4,11 +4,12 @@
   import { Popover } from '@nasa-jpl/stellar-svelte';
   import { Info } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
-  import type { FormParameter, ValueSource } from '../../types/parameter';
+  import type { FormParameter, ParameterType, ValueSource } from '../../types/parameter';
   import ValueSourceBadge from './ValueSourceBadge.svelte';
 
   export let formParameter: FormParameter;
   export let disabled: boolean = false;
+  export let parameterType: ParameterType = 'activity';
 
   const dispatch = createEventDispatcher<{
     reset: FormParameter;
@@ -101,7 +102,7 @@
             {#if source !== 'none'}
               <div>Source</div>
               <div>
-                <ValueSourceBadge {disabled} isCompact={false} {source} on:reset={onReset} />
+                <ValueSourceBadge {disabled} isCompact={false} {source} {parameterType} on:reset={onReset} />
               </div>
             {/if}
             {#if externalEvent}

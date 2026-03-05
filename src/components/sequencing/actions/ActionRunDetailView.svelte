@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
+  import { capitalize } from 'lodash-es';
   import { ArrowLeft, Ban, ExternalLink, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { writable } from 'svelte/store';
@@ -13,11 +14,9 @@
   import type { User } from '../../../types/app';
   import type { LogMessage } from '../../../types/errors';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
-  import type { ValueSchemaOption } from '../../../types/schema';
   import {
     getActionDefinitionForRun,
     getStatusForActionRun,
-    getUserSequenceValueSchemaOptions,
     openActionRun,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
@@ -35,7 +34,7 @@
 
   const dispatch = createEventDispatcher<{
     back: void;
-    rerun: { actionDefinitionId: number; parameters: ArgumentsMap };
+    rerun: { actionDefinitionId: number; parameters: ArgumentsMap; revision: number };
     viewAction: { actionId: number };
   }>();
 
@@ -45,7 +44,6 @@
 
   let actionSettings: FormParameter[] = [];
   let actionParameters: FormParameter[] = [];
-  let sequenceOptions: ValueSchemaOption[] = [];
 
   const actionRunIdStore = writable(actionRunId);
   const actionRunSubscription = gqlSubscribable<ActionRun | null>(
@@ -57,10 +55,6 @@
   $: actionRunIdStore.set(actionRunId);
   $: actionRun = $actionRunSubscription;
 
-  $: if ($workspaceId > 0) {
-    getWorkspaceFileOptions($workspaceId);
-  }
-
   $: if (actionRun) {
     updateActionSettingsAndParameters(actionRun);
   }
@@ -71,19 +65,18 @@
 
   $: status = actionRun ? getStatusForActionRun(actionRun) : null;
 
-  async function getWorkspaceFileOptions(idOfWorkspace: number): Promise<void> {
-    const workspaceFileList = await effects.getWorkspaceFilesList(idOfWorkspace, user);
-    sequenceOptions = getUserSequenceValueSchemaOptions(workspaceFileList, idOfWorkspace);
-  }
-
   function updateActionSettingsAndParameters(run: ActionRun) {
+    const version =
+      run.action_definition.versions.find(v => v.revision === run.action_definition_revision) ??
+      run.action_definition.versions[0];
+
     actionSettings = getFormParameters(
-      valueSchemaRecordToParametersMap(run.action_definition.settings_schema),
+      valueSchemaRecordToParametersMap(version?.settings_schema ?? {}),
       run.settings,
       [],
       undefined,
       undefined,
-      sequenceOptions,
+      undefined,
       'sequence',
       undefined,
       false,
@@ -91,12 +84,12 @@
     );
 
     actionParameters = getFormParameters(
-      valueSchemaRecordToParametersMap(run.action_definition.parameter_schema),
+      valueSchemaRecordToParametersMap(version?.parameter_schema ?? {}),
       run.parameters,
       [],
       undefined,
       undefined,
-      sequenceOptions,
+      undefined,
       'sequence',
       undefined,
       false,
@@ -105,23 +98,47 @@
   }
 
   function parseLogLines(logString: string): LogMessage[] {
-    return logString
-      .split('\n')
-      .filter(line => line.trim())
-      .map(line => {
-        let level: LogMessage['level'] = 'info';
-        if (line.includes('[ERROR]')) {
-          level = 'error';
-        } else if (line.includes('[WARN]')) {
-          level = 'warn';
-        }
-        return {
-          level,
-          message: line,
+    // Action server formats logs as: TIMESTAMP [LEVEL] message
+    // Continuation lines (multi-line errors/stack traces) appear as: [LEVEL] text (indented, no timestamp)
+    const serverLogPattern = /^(\S+)\s+\[(INFO|WARN|ERROR|DEBUG)]\s+(.*)$/;
+    const continuationLevelPattern = /^\s*\[(INFO|WARN|ERROR|DEBUG)]\s+(.*)$/;
+    const results: LogMessage[] = [];
+
+    for (const line of logString.split('\n')) {
+      if (!line.trim()) {
+        continue;
+      }
+
+      const mainMatch = line.match(serverLogPattern);
+      if (mainMatch) {
+        const [, timestamp, rawLevel, message] = mainMatch;
+        results.push({
+          level: rawLevel.toLowerCase() as LogMessage['level'],
+          message,
+          timestamp,
+          type: ErrorTypes.LOG,
+        });
+        continue;
+      }
+
+      // Continuation line — strip [LEVEL] prefix and merge into previous entry's trace
+      const contMatch = line.match(continuationLevelPattern);
+      const cleanLine = contMatch ? contMatch[2] : line.trim();
+
+      if (results.length > 0) {
+        const prev = results[results.length - 1];
+        prev.trace = prev.trace ? `${prev.trace}\n${cleanLine}` : cleanLine;
+      } else {
+        results.push({
+          level: 'info',
+          message: cleanLine,
           timestamp: '',
           type: ErrorTypes.LOG,
-        };
-      });
+        });
+      }
+    }
+
+    return results;
   }
 
   async function onCancelRun() {
@@ -135,6 +152,7 @@
       dispatch('rerun', {
         actionDefinitionId: actionRun.action_definition_id,
         parameters: actionRun.parameters,
+        revision: actionRun.action_definition_revision,
       });
     }
   }
@@ -215,7 +233,10 @@
       {#if actionRun.duration != null}
         <span>Duration: <span class="text-foreground">{formatMS(actionRun.duration)}</span></span>
       {/if}
-      <span>Status: <span class="text-foreground">{actionRun.canceled ? 'Canceled' : actionRun.status}</span></span>
+      <span>
+        Status: <span class="text-foreground">{actionRun.canceled ? 'Canceled' : capitalize(actionRun.status)}</span>
+      </span>
+      <span>Version: <span class="text-foreground">{actionRun.action_definition_revision}</span></span>
     </div>
 
     <!-- Tabbed content -->
@@ -314,7 +335,7 @@
               <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
                 <h3 class="text-sm font-medium text-destructive">Error</h3>
                 <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  <ConsoleLog log={errorLog} showTimestamp={false} showType={false} />
+                  <ConsoleLog log={errorLog} showType={false} />
                 </div>
               </div>
             {/if}
@@ -324,7 +345,7 @@
                 {@const logMessages = parseLogLines(actionRun.logs)}
                 <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
                   {#each logMessages as log}
-                    <ConsoleLog {log} showTimestamp={false} showType={false} />
+                    <ConsoleLog {log} showType={false} />
                   {/each}
                 </div>
               {:else}

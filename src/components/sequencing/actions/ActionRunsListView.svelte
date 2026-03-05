@@ -55,7 +55,7 @@
       return '';
     }
     const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-    return truncateRunParameters(params.data.parameters, def?.parameter_schema);
+    return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
   }
 
   function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
@@ -111,6 +111,16 @@
       width: 140,
     },
     {
+      field: 'action_definition_revision',
+      headerName: 'Version',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
+        params.data ? params.data.action_definition_revision : '',
+      width: 80,
+    },
+    {
       cellRenderer: statusCellRenderer,
       field: 'status',
       filter: 'text',
@@ -162,7 +172,7 @@
           return '';
         }
         const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-        return truncateRunParameters(params.data.parameters, def?.parameter_schema);
+        return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
       },
     },
     {

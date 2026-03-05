@@ -1,8 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
+  import { Alert, Badge, Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
+  import { TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
@@ -19,6 +20,7 @@
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { showConfirmModal } from '../../../utilities/modal';
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
@@ -42,6 +44,7 @@
   export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
   let actionDefinition: ActionDefinition | null = null;
+  let activeTab: string = 'runs';
   let argumentsMap: ArgumentsMap = {};
   let code: string = '';
   let codeAbortController: AbortController | null = null;
@@ -50,9 +53,11 @@
   let isLoadingCode: boolean = false;
   let lastSyncedActionId: number | null = null;
   let name: string = '';
-  let activeTab: string = 'runs';
   let saving: boolean = false;
   let selectedRunId: number | null = null;
+  let selectedVersionRevision: number | null = null;
+  let settingsMismatch: { removedKeys: string[] } | null = null;
+  let uploadFileInput: HTMLInputElement;
 
   $: {
     const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
@@ -67,8 +72,17 @@
       name = actionDefinition.name;
       argumentsMap = actionDefinition.settings;
       isDirty = false;
+      selectedVersionRevision = null;
     }
-    loadCode(actionDefinition.action_file_id);
+  }
+
+  $: selectedVersion =
+    actionDefinition?.versions.find(v => v.revision === selectedVersionRevision) ??
+    actionDefinition?.versions[0] ??
+    null;
+
+  $: if (selectedVersion) {
+    loadCode(selectedVersion.action_file_id);
   }
 
   $: actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
@@ -81,15 +95,36 @@
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
     : false;
 
+  $: {
+    const latestSchemaKeys = new Set(Object.keys(actionDefinition?.versions[0]?.settings_schema ?? {}));
+    const storedKeys = Object.keys(actionDefinition?.settings ?? {});
+    const removedKeys = storedKeys.filter(k => !latestSchemaKeys.has(k));
+    if (removedKeys.length > 0) {
+      // Create a filtered copy — don't mutate in place since argumentsMap may be the same
+      // reference as actionDefinition.settings, which would make checkDirty() see no difference.
+      const removedSet = new Set(removedKeys);
+      argumentsMap = Object.fromEntries(Object.entries(argumentsMap).filter(([k]) => !removedSet.has(k)));
+      checkDirty();
+      settingsMismatch = { removedKeys };
+    } else {
+      settingsMismatch = null;
+    }
+  }
+
   onDestroy(() => {
     if (codeAbortController) {
       codeAbortController.abort();
     }
   });
 
-  async function loadCode(fileId: number) {
+  async function loadCode(fileId: number | undefined) {
     if (codeAbortController) {
       codeAbortController.abort();
+    }
+    if (fileId === undefined) {
+      code = '';
+      isLoadingCode = false;
+      return;
     }
     codeAbortController = new AbortController();
     isLoadingCode = true;
@@ -99,6 +134,15 @@
       code = file;
     }
     isLoadingCode = false;
+  }
+
+  async function uploadNewVersion() {
+    if (!actionDefinition || !uploadFileInput?.files?.[0]) {
+      return;
+    }
+    const file = uploadFileInput.files[0];
+    await effects.createActionDefinitionVersion(file, actionDefinition.id, user);
+    uploadFileInput.value = '';
   }
 
   function checkDirty() {
@@ -121,6 +165,27 @@
     dispatch('dirty', false);
   }
 
+  async function toggleArchive() {
+    if (!actionDefinition) {
+      return;
+    }
+    const action = actionDefinition.archived ? 'unarchive' : 'archive';
+    const { confirm } = await showConfirmModal(
+      actionDefinition.archived ? 'Unarchive' : 'Archive',
+      `Are you sure you want to ${action} "${actionDefinition.name}"?${action === 'archive' ? ' This operation can be undone by unarchiving this action.' : ''}`,
+      `${actionDefinition.archived ? 'Unarchive' : 'Archive'} Action`,
+      true,
+    );
+    if (!confirm) {
+      return;
+    }
+    await effects.updateActionDefinition(
+      actionDefinition.id,
+      { archived: !actionDefinition.archived, description: actionDefinition.description, name: actionDefinition.name },
+      user,
+    );
+  }
+
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     if (formParameter.schema.type === 'options-single') {
@@ -141,6 +206,18 @@
     } else {
       argumentsMap = getArguments(argumentsMap, formParameter);
     }
+    checkDirty();
+  }
+
+  function onResetSettingsParameter(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    const { [formParameter.name]: _, ...rest } = argumentsMap;
+    argumentsMap = rest;
+    checkDirty();
+  }
+
+  function resetAllSettings() {
+    argumentsMap = {};
     checkDirty();
   }
 
@@ -178,7 +255,7 @@
     if (!params.data || !actionDefinition) {
       return '';
     }
-    return truncateRunParameters(params.data.parameters, actionDefinition.parameter_schema);
+    return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
   }
 
   function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
@@ -217,6 +294,16 @@
       sortable: true,
       suppressAutoSize: true,
       suppressSizeToFit: true,
+      width: 80,
+    },
+    {
+      field: 'action_definition_revision',
+      headerName: 'Version',
+      sortable: true,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      valueFormatter: (params: ValueFormatterParams<ActionRunSlim>) =>
+        params.data ? params.data.action_definition_revision : '',
       width: 80,
     },
     {
@@ -269,7 +356,7 @@
         if (!params.data || !actionDefinition) {
           return '';
         }
-        return truncateRunParameters(params.data.parameters, actionDefinition.parameter_schema);
+        return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
       },
     },
     {
@@ -289,7 +376,12 @@
     <!-- Header -->
     <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
       <div class="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
-        <h2 class="truncate text-lg font-bold">{actionDefinition.name}</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="truncate text-lg font-bold">{actionDefinition.name}</h2>
+          {#if actionDefinition.archived}
+            <Badge variant="destructive">Archived</Badge>
+          {/if}
+        </div>
         {#if actionDefinition.description}
           <p class="truncate text-sm text-muted-foreground">{actionDefinition.description}</p>
         {/if}
@@ -307,22 +399,11 @@
       </div>
     </div>
 
-    <!-- Metadata bar -->
-    <div class="flex flex-wrap gap-x-6 gap-y-1 border-b border-border px-4 py-2 text-xs text-muted-foreground">
-      {#if actionDefinition.owner}
-        <span>Owner: <span class="text-foreground">{actionDefinition.owner}</span></span>
-      {/if}
-      <span
-        >Updated: <span class="text-foreground">{new Date(actionDefinition.updated_at).toLocaleDateString()}</span
-        ></span
-      >
-    </div>
-
     <!-- Tabbed content -->
     <div class="flex-1 overflow-hidden">
       <Tabs.Root bind:value={activeTab} class="flex h-full flex-col">
         <Tabs.List
-          class="flex h-[36px] shrink-0 items-center justify-start rounded-none border-b border-border bg-secondary/50 py-0"
+          class="flex h-[36px] shrink-0 items-center justify-between rounded-none border-b border-border bg-secondary/50 py-0"
         >
           <div class="flex items-center py-0.5">
             <Tabs.Trigger
@@ -346,6 +427,39 @@
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Code</div>
             </Tabs.Trigger>
           </div>
+          {#if activeTab === 'code'}
+            <div class="flex items-center gap-2 pr-2">
+              <select
+                class="st-input h-6 bg-white !px-1 text-xs"
+                value={selectedVersionRevision ?? actionDefinition.versions[0]?.revision ?? 0}
+                on:change={e => {
+                  selectedVersionRevision = Number(e.currentTarget.value);
+                }}
+              >
+                {#each actionDefinition.versions as version, i}
+                  <option value={version.revision}>
+                    v{version.revision}{i === 0 ? ' (latest)' : ''}
+                  </option>
+                {/each}
+              </select>
+              {#if selectedVersion}
+                <span class="text-xs text-muted-foreground">
+                  {selectedVersion.author ?? 'Unknown'} • {new Date(selectedVersion.created_at).toLocaleDateString()}
+                </span>
+              {/if}
+              <input bind:this={uploadFileInput} accept=".js" class="hidden" on:change={uploadNewVersion} type="file" />
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: 'You do not have permission to upload a new version',
+                }}
+              >
+                <Button variant="outline" class="h-6 text-xs text-foreground" on:click={() => uploadFileInput?.click()}>
+                  Upload New Version
+                </Button>
+              </div>
+            </div>
+          {/if}
         </Tabs.List>
 
         <!-- Runs tab -->
@@ -375,6 +489,16 @@
           <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
             <div class="flex flex-col gap-3 rounded border border-border p-4">
               <h3 class="text-sm font-medium">Action Metadata</h3>
+              <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                {#if actionDefinition.owner}
+                  <span>Owner: <span class="text-foreground">{actionDefinition.owner}</span></span>
+                {/if}
+                <span>
+                  Updated: <span class="text-foreground"
+                    >{new Date(actionDefinition.updated_at).toLocaleDateString()}</span
+                  >
+                </span>
+              </div>
               <Input layout="inline">
                 <label for="action-name">Name</label>
                 <input
@@ -411,33 +535,61 @@
               </Input>
             </div>
 
+            {#if settingsMismatch}
+              <Alert.Root
+                variant="destructive"
+                class="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+              >
+                <TriangleAlert class="h-4 w-4 stroke-amber-800" />
+                <Alert.Title>Stale settings detected</Alert.Title>
+                <Alert.Description class="mt-1 block leading-none ">
+                  <p>
+                    Found active settings keys no longer in schema: <b>{settingsMismatch.removedKeys.join(', ')}</b>.
+                    Save to remove stale values.
+                  </p>
+                </Alert.Description>
+                <slot name="error-action" />
+              </Alert.Root>
+            {/if}
+
             <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <div>
-                <h3 class="text-sm font-medium">Action Settings</h3>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  Persistent settings provided to every run of this action
-                </p>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium">Action Settings</h3>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Persistent settings provided to every run of this action
+                  </p>
+                </div>
+                {#if Object.keys(argumentsMap).length > 0}
+                  <Button
+                    variant="outline"
+                    class="shrink-0 text-xs"
+                    disabled={!hasUpdatePermission}
+                    on:click={resetAllSettings}
+                  >
+                    Reset All
+                  </Button>
+                {/if}
               </div>
-              {#if Object.keys(actionDefinition.settings_schema).length < 1}
+              {#if Object.keys(actionDefinition.versions[0]?.settings_schema ?? {}).length < 1}
                 <p class="text-xs italic text-muted-foreground">No settings defined</p>
               {:else}
                 <Parameters
                   formParameters={getFormParameters(
-                    valueSchemaRecordToParametersMap(actionDefinition.settings_schema),
+                    valueSchemaRecordToParametersMap(actionDefinition.versions[0]?.settings_schema ?? {}),
                     argumentsMap,
                     [],
                     undefined,
-                    getDefaultsFromSchema(actionDefinition.settings_schema),
+                    getDefaultsFromSchema(actionDefinition.versions[0]?.settings_schema ?? {}),
                     getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
                     'sequence',
                     undefined,
                     false,
-                    false,
                   )}
                   parameterType="action"
                   hideInfo={false}
-                  hideRightAdornments
                   on:change={onChangeFormParameters}
+                  on:reset={onResetSettingsParameter}
                   use={[
                     [
                       permissionHandler,
@@ -451,33 +603,43 @@
               {/if}
             </div>
 
-            <div
-              use:permissionHandler={{
-                hasPermission: hasUpdatePermission,
-                permissionError: 'You do not have permission to update an action',
-              }}
-            >
-              <Button class="w-full" disabled={saveButtonDisabled || !isDirty} on:click={save}>
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
+            <div class="flex items-center gap-2">
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: 'You do not have permission to update an action',
+                }}
+              >
+                <Button disabled={saveButtonDisabled || !isDirty} on:click={save}>
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: 'You do not have permission to archive an action',
+                }}
+              >
+                <Button variant="outline" on:click={toggleArchive}>
+                  {actionDefinition.archived ? 'Unarchive' : 'Archive'}
+                </Button>
+              </div>
             </div>
           </div>
         </Tabs.Content>
 
         <!-- Code tab -->
         <Tabs.Content value="code" class="mt-0 flex-1 overflow-hidden">
-          <div class="h-full">
-            <MonacoEditor
-              automaticLayout={true}
-              language="javascript"
-              lineNumbers="on"
-              minimap={{ enabled: false }}
-              readOnly={true}
-              scrollBeyondLastLine={false}
-              tabSize={2}
-              value={isLoadingCode ? 'Loading...' : code}
-            />
-          </div>
+          <MonacoEditor
+            automaticLayout={true}
+            language="javascript"
+            lineNumbers="on"
+            minimap={{ enabled: false }}
+            readOnly={true}
+            scrollBeyondLastLine={false}
+            tabSize={2}
+            value={isLoadingCode ? 'Loading...' : code}
+          />
         </Tabs.Content>
       </Tabs.Root>
     </div>

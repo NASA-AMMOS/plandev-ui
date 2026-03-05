@@ -11,6 +11,7 @@ const parameterDefinitions = {
     description: 'What the action should do',
     variants: [
       { key: 'fetch', label: 'Fetch URL' },
+      { key: 'adaptation', label: 'Translate File using Adaptation' },
       { key: 'files', label: 'List & Read Files' },
       { key: 'write', label: 'Write a File' },
       { key: 'error', label: 'Throw an Error' },
@@ -27,10 +28,10 @@ const parameterDefinitions = {
     description: 'Content to write to the file (used in "write" mode)',
     defaultValue: 'Hello from aerie-action-demo!',
   },
-  // secret: {
-  //   type: 'secret',
-  //   description: 'A secret value (e.g. API token) — sent securely, never stored in run history',
-  // },
+  secret: {
+    type: 'secret',
+    description: 'A secret value (e.g. API token) — sent securely, never stored in run history',
+  },
   sequence: {
     type: 'sequence',
     description: 'A sequence file parameter (for testing file pickers)',
@@ -45,9 +46,9 @@ const settingDefinitions = {
     defaultValue: 'https://api.github.com',
   },
   verbose: {
-    type: 'boolean',
+    type: 'string',
     description: 'Enable extra-verbose logging',
-    defaultValue: false,
+    defaultValue: "false",
   },
 };
 
@@ -59,9 +60,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
   // Generate requested log output
   emitLogs(logCount, verbose);
 
-  console.log(`[INFO] Action started — mode: ${mode}`);
-  console.log(`[INFO] Secret provided: ${secret ? 'yes (' + secret.length + ' chars)' : 'no'}`);
-  console.log(`[INFO] Parameters: ${JSON.stringify({ ...actionParameters, secret: secret ? '***' : undefined })}`);
+  console.log(`Action started — mode: ${mode}`);
+  console.log(`Secret provided: ${secret ? 'yes (' + secret.length + ' chars)' : 'no'}`);
+  console.log(`Parameters: ${JSON.stringify({ ...actionParameters, secret: secret ? '***' : undefined })}`);
 
   let result;
   switch (mode) {
@@ -70,6 +71,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
       break;
     case 'files':
       result = await runFilesMode(actionsAPI, sequence, verbose);
+      break;
+    case 'adaptation':
+      result = await runAdaptationMode(actionsAPI, sequence);
       break;
     case 'write':
       result = await runWriteMode(actionsAPI, outputFile, outputContent, verbose);
@@ -85,7 +89,7 @@ async function main(actionParameters, actionSettings, actionsAPI) {
   }
 
   const elapsed = (performance.now() - startTime).toFixed(1);
-  console.log(`[INFO] Action completed in ${elapsed}ms with status: ${result.status}`);
+  console.log(`Action completed in ${elapsed}ms with status: ${result.status}`);
 
   return result;
 }
@@ -93,7 +97,6 @@ async function main(actionParameters, actionSettings, actionsAPI) {
 function emitLogs(count, verbose) {
   if (count <= 0) return;
 
-  const levels = ['INFO', 'INFO', 'INFO', 'WARN', 'ERROR'];
   const messages = [
     'Initializing action runtime...',
     'Loading workspace configuration...',
@@ -123,20 +126,19 @@ function emitLogs(count, verbose) {
   ];
 
   for (let i = 0; i < count; i++) {
-    const level = levels[Math.floor(Math.random() * levels.length)];
     const msg = messages[i % messages.length];
-    const ts = new Date().toISOString();
     if (verbose) {
-      console.log(`[${level}] [${ts}] [line ${i + 1}/${count}] ${msg}`);
+      const ts = new Date().toISOString();
+      console.log(`[${ts}] [line ${i + 1}/${count}] ${msg}`);
     } else {
-      console.log(`[${level}] ${msg}`);
+      console.log(msg);
     }
   }
 }
 
 async function runFetchMode(externalUrl, verbose) {
   const url = `${externalUrl}/repos/NASA-AMMOS/aerie`;
-  console.log(`[INFO] Fetching: ${url}`);
+  console.log(`Fetching: ${url}`);
 
   try {
     const response = await fetch(url, {
@@ -145,7 +147,7 @@ async function runFetchMode(externalUrl, verbose) {
     });
 
     if (verbose) {
-      console.log(`[INFO] Response status: ${response.status} ${response.statusText}`);
+      console.log(`Response status: ${response.status} ${response.statusText}`);
     }
 
     let data;
@@ -156,7 +158,7 @@ async function runFetchMode(externalUrl, verbose) {
     }
 
     if (!response.ok) {
-      console.log(`[WARN] Non-OK response: ${response.status}`);
+      console.warn(`Non-OK response: ${response.status}`);
       return { status: 'FAILED', data };
     }
 
@@ -174,29 +176,29 @@ async function runFetchMode(externalUrl, verbose) {
 
     return { status: 'SUCCESS', data: summary };
   } catch (err) {
-    console.log(`[ERROR] Fetch failed: ${err.message}`);
+    console.error(`Fetch failed: ${err.message}`);
     return { status: 'FAILED', data: { error: err.message } };
   }
 }
 
 async function runFilesMode(actionsAPI, sequence, verbose) {
-  console.log('[INFO] Listing workspace files...');
+  console.log('Listing workspace files...');
   try {
     const files = await actionsAPI.listFiles('.');
-    console.log(`[INFO] Found ${files.length} files`);
+    console.log(`Found ${files.length} files`);
 
     if (verbose) {
-      files.forEach((f, i) => console.log(`[INFO]   [${i}] ${f}`));
+      files.forEach((f, i) => console.log(`  [${i}] ${f}`));
     }
 
     let sequenceContent = null;
     if (sequence) {
-      console.log(`[INFO] Reading sequence file: ${sequence}`);
+      console.log(`Reading sequence file: ${sequence}`);
       try {
         sequenceContent = await actionsAPI.readFile(sequence);
-        console.log(`[INFO] Sequence file read successfully (${sequenceContent.length} chars)`);
+        console.log(`Sequence file read successfully (${sequenceContent.length} chars)`);
       } catch (err) {
-        console.log(`[WARN] Could not read sequence file: ${err.message}`);
+        console.warn(`Could not read sequence file: ${err.message}`);
       }
     }
 
@@ -210,7 +212,7 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
       },
     };
   } catch (err) {
-    console.log(`[ERROR] File listing failed: ${err.message}`);
+    console.error(`File listing failed: ${err.message}`);
     return { status: 'FAILED', data: { error: err.message } };
   }
 }
@@ -219,27 +221,59 @@ async function runWriteMode(actionsAPI, filename, content, verbose) {
   const name = filename || 'action_output.txt';
   const body = content || 'Written by aerie-action-demo';
 
-  console.log(`[INFO] Writing file: ${name}`);
+  console.log(`Writing file: ${name}`);
   if (verbose) {
-    console.log(`[INFO] Content length: ${body.length} chars`);
+    console.log(`Content length: ${body.length} chars`);
   }
 
   try {
     const result = await actionsAPI.writeFile(name, body);
-    console.log(`[INFO] File written successfully`);
+    console.log('File written successfully');
     return {
       status: 'SUCCESS',
       data: { filename: name, contentLength: body.length, writeResult: result },
     };
   } catch (err) {
-    console.log(`[ERROR] Write failed: ${err.message}`);
+    console.error(`Write failed: ${err.message}`);
+    return { status: 'FAILED', data: { error: err.message } };
+  }
+}
+
+
+async function runAdaptationMode(actionsAPI, sequence) {
+  console.log('Loading adaptation');
+
+  try {
+    const adaptation = await actionsAPI.loadAdaptation();
+    console.log('Adaptation loaded');
+
+    if (!sequence) {
+      throw new Error('No sequence file provided for adaptation mode');
+    }
+
+    console.log(`Reading sequence file: ${sequence}`);
+    const sequenceContent = await actionsAPI.readFile(sequence);
+    console.log(`Sequence file read successfully (${sequenceContent.length} chars)`);
+    const translated = adaptation.outputs[0].toOutputFormat(
+      sequenceContent,
+      { commandDictionary: null, channelDictionary: null, parameterDictionaries: [], librarySequences: [] },
+      'my-sequence'
+    );
+    console.log(`Sequence translated successfully (${translated.length} chars)`);
+
+    return {
+      status: 'SUCCESS',
+      data: { translated: JSON.parse(translated) },
+    };
+  } catch (err) {
+    console.error(`Translate sequence with adaptation failed: ${err.message}`);
     return { status: 'FAILED', data: { error: err.message } };
   }
 }
 
 function runErrorMode() {
-  console.log('[INFO] Error mode selected — about to throw');
-  console.log('[WARN] This is intentional for testing error display');
+  console.log('Error mode selected — about to throw');
+  console.warn('This is intentional for testing error display');
   throw new Error(
     'Intentional error from aerie-action-demo (error mode).\n' +
     'This tests the error display in the action run detail view.\n' +
@@ -252,14 +286,14 @@ async function runSlowMode(verbose) {
   const steps = 5;
   const stepMs = totalMs / steps;
 
-  console.log(`[INFO] Slow mode: running ${steps} steps over ${totalMs}ms`);
+  console.log(`Slow mode: running ${steps} steps over ${totalMs}ms`);
 
   for (let i = 1; i <= steps; i++) {
     await new Promise(resolve => setTimeout(resolve, stepMs));
     const pct = Math.round((i / steps) * 100);
-    console.log(`[INFO] Step ${i}/${steps} complete (${pct}%)`);
+    console.log(`Step ${i}/${steps} complete (${pct}%)`);
     if (verbose) {
-      console.log(`[INFO]   Elapsed: ${i * stepMs}ms`);
+      console.log(`  Elapsed: ${i * stepMs}ms`);
     }
   }
 

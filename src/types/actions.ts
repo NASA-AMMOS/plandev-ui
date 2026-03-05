@@ -4,24 +4,34 @@ import type { ArgumentsMap, ParameterName } from './parameter';
 export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };
 export type ActionParametersMap = Record<ParameterName, ActionParameter>;
 
-export type ActionDefinition = {
+export type ActionDefinitionVersion = {
+  action_definition_id: number;
   action_file_id: number;
+  author: string | null;
+  created_at: string;
+  parameter_schema: Record<string, ActionValueSchema>;
+  revision: number;
+  settings_schema: Record<string, ActionValueSchema>;
+};
+
+export type ActionDefinition = {
+  archived: boolean;
   created_at: string;
   description: string;
   id: number;
   name: string;
   owner: string | null;
-  parameter_schema: Record<string, ActionValueSchema>;
   settings: ArgumentsMap;
-  settings_schema: Record<string, ActionValueSchema>;
   updated_at: string;
   updated_by: string | null;
+  versions: ActionDefinitionVersion[];
   workspace_id: number;
 };
 
 export type ActionRun = {
   action_definition: ActionDefinition;
   action_definition_id: number;
+  action_definition_revision: number;
   canceled: boolean;
   duration: number | null;
   error: {
@@ -48,4 +58,7 @@ export type ActionRunSlim = Omit<ActionRun, 'action_definition'> & {
   };
 };
 
-export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'> & { settings?: ArgumentsMap };
+export type ActionDefinitionSetInput = Pick<ActionDefinition, 'name' | 'description'> & {
+  archived?: boolean;
+  settings?: ArgumentsMap;
+};

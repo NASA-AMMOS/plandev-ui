@@ -1018,17 +1018,26 @@ describe('Workspace utility function tests', () => {
       id: number,
       paramSchema: Record<string, { pattern?: string; primary?: boolean; type: string }>,
     ): ActionDefinition => ({
-      action_file_id: 1,
+      archived: false,
       created_at: '2024-01-01',
       description: 'Test action',
       id,
       name: `Action ${id}`,
       owner: null,
-      parameter_schema: paramSchema as ActionDefinition['parameter_schema'],
       settings: {},
-      settings_schema: {},
       updated_at: '2024-01-01',
       updated_by: null,
+      versions: [
+        {
+          action_definition_id: id,
+          action_file_id: 1,
+          author: null,
+          created_at: '2024-01-01',
+          parameter_schema: paramSchema as Record<string, any>,
+          revision: 0,
+          settings_schema: {},
+        },
+      ],
       workspace_id: 1,
     });
 

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, Input as InputStellar } from '@nasa-jpl/stellar-svelte';
-  import { ListChecks, Play, Search } from 'lucide-svelte';
+  import { Archive, ListChecks, Play, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../../enums/status';
   import { actionDefinitions, actionRunsByWorkspace } from '../../../stores/actions';
@@ -37,9 +37,13 @@
   export let workspace: Workspace | null | undefined = null;
 
   let filterText: string = '';
+  let showArchived: boolean = false;
 
   $: filteredActions = actions
     .filter(action => {
+      if (!showArchived && action.archived) {
+        return false;
+      }
       if (!filterText) {
         return true;
       }
@@ -59,7 +63,7 @@
 <div class="grid h-full grid-rows-[min-content_auto]">
   <Sidebar.Header className="p-0">
     <div class="flex h-[48px] items-center justify-between gap-1 border-b border-border bg-background p-[6px]">
-      <SectionTitle>Actions</SectionTitle>
+      <SectionTitle>Workspace Actions</SectionTitle>
       <div
         use:permissionHandler={{
           hasPermission: hasCreatePermission,
@@ -84,6 +88,15 @@
                 placeholder="Filter actions..."
                 bind:value={filterText}
               />
+              <button
+                class="shrink-0 rounded p-0.5 {showArchived
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'}"
+                on:click={() => (showArchived = !showArchived)}
+                use:tooltip={{ content: showArchived ? 'Hide archived' : 'Show archived', placement: 'bottom' }}
+              >
+                <Archive size={14} />
+              </button>
             </div>
 
             <div class="border-t border-border" />
@@ -98,7 +111,7 @@
                   on:click={() => dispatch('selectAllRuns')}
                 >
                   <ListChecks size={14} class="shrink-0 text-muted-foreground" />
-                  <span class="truncate font-medium">All Runs</span>
+                  <span class="truncate font-medium">All Actions</span>
                 </Button>
               </div>
               <AsyncContentState
@@ -116,7 +129,7 @@
                   )}
                   {@const latestRun = [...actionRuns].sort((a, b) => b.id - a.id)[0]}
                   {@const latestStatus = latestRun ? getStatusForActionRun(latestRun) : null}
-                  <div class="group/action relative border-b border-border">
+                  <div class="group/action relative border-b border-border {action.archived ? 'opacity-50' : ''}">
                     <Button
                       variant="ghost"
                       class="flex h-min w-full items-center gap-2 rounded-none border-l-2 px-2 text-left text-xs hover:bg-accent {selectedActionId ===
@@ -129,7 +142,12 @@
                         <StatusBadge status={latestStatus ?? Status.Pending} />
                       </div>
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span class="truncate font-medium">{action.name}</span>
+                        <span class="truncate font-medium">
+                          {action.name}
+                          {#if action.archived}
+                            <span class="text-muted-foreground">(archived)</span>
+                          {/if}
+                        </span>
                         <span class="truncate text-muted-foreground">
                           {latestRun ? `Last run ${getTimeAgo(new Date(latestRun.requested_at))}` : 'No runs yet'}
                         </span>

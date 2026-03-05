@@ -115,6 +115,18 @@ const gql = {
     mutation CreateActionDefinition($actionDefinitionInsertInput: action_definition_insert_input!) {
       ${Queries.INSERT_ACTION_DEFINITION}(object: $actionDefinitionInsertInput) {
         id
+        versions {
+          revision
+        }
+      }
+    }
+  `,
+
+  CREATE_ACTION_DEFINITION_VERSION: `#graphql
+    mutation CreateActionDefinitionVersion($version: action_definition_version_insert_input!) {
+      ${Queries.INSERT_ACTION_DEFINITION_VERSION}(object: $version) {
+        action_definition_id
+        revision
       }
     }
   `,
@@ -2056,17 +2068,24 @@ const gql = {
   SUB_ACTION_DEFINITIONS: `#graphql
     subscription SubActionDefinitions {
       ${Queries.ACTION_DEFINITIONS}(order_by: { id: desc }) {
-        action_file_id
+        archived
         created_at
         description
         id
         name
         owner
-        parameter_schema
-        settings_schema
         settings
         updated_at
         updated_by
+        versions(order_by: { revision: desc }) {
+          action_definition_id
+          action_file_id
+          author
+          created_at
+          parameter_schema
+          revision
+          settings_schema
+        }
         workspace_id
       }
     }
@@ -2077,19 +2096,27 @@ const gql = {
       actionRun: ${Queries.ACTION_RUN}(id: $actionRunId) {
         action_definition_id
         action_definition {
-          action_file_id
+          archived
           created_at
           description
           id
           name
           owner
-          parameter_schema
-          settings_schema
           settings
           updated_at
           updated_by
+          versions(order_by: { revision: desc }) {
+            action_definition_id
+            action_file_id
+            author
+            created_at
+            parameter_schema
+            revision
+            settings_schema
+          }
           workspace_id
         }
+        action_definition_revision
         canceled
         duration
         error
@@ -2112,6 +2139,7 @@ const gql = {
         action_definition {
           workspace_id
         }
+        action_definition_revision
         canceled
         duration
         error

@@ -118,6 +118,7 @@ export enum Queries {
   GET_SEQUENCE_SEQ_JSON = 'getSequenceSeqJson',
   GET_USER_SEQUENCE_SEQ_JSON = 'getUserSequenceSeqJson',
   INSERT_ACTION_DEFINITION = 'insert_action_definition_one',
+  INSERT_ACTION_DEFINITION_VERSION = 'insert_action_definition_version_one',
   INSERT_ACTION_RUN = 'insert_action_run_one',
   INSERT_ACTIVITY_DIRECTIVE = 'insert_activity_directive_one',
   INSERT_ACTIVITY_DIRECTIVES = 'insert_activity_directive',

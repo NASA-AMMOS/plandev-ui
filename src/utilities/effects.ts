@@ -903,9 +903,9 @@ const effects = {
 
       if (actionFileId !== null) {
         const actionDefinitionInsertInput = {
-          action_file_id: actionFileId,
           description,
           name,
+          versions: { data: [{ action_file_id: actionFileId }] },
           workspace_id: workspaceId,
         };
         const data = await reqHasura<ActionDefinition>(
@@ -931,6 +931,40 @@ const effects = {
     }
   },
 
+  async createActionDefinitionVersion(file: File, actionDefinitionId: number, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.CREATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('create action definition version');
+      }
+
+      const actionFileId = await effects.uploadFile(file, user);
+
+      if (actionFileId !== null) {
+        const data = await reqHasura<{ action_definition_id: number; revision: number }>(
+          gql.CREATE_ACTION_DEFINITION_VERSION,
+          { version: { action_definition_id: actionDefinitionId, action_file_id: actionFileId } },
+          user,
+        );
+        const { insert_action_definition_version_one } = data;
+        if (insert_action_definition_version_one) {
+          logMessage(
+            `Created version v${insert_action_definition_version_one.revision} for action ID=${actionDefinitionId}.`,
+          );
+          showSuccessToast('New Version Uploaded');
+          return true;
+        } else {
+          throw new Error('Version Upload Failed');
+        }
+      } else {
+        throw new Error('Version Upload Failed');
+      }
+    } catch (e) {
+      catchError('Version Upload Failed', e as Error);
+      showFailureToast('Version Upload Failed');
+      return false;
+    }
+  },
+
   async createActionRun(
     workspace: Workspace,
     actionDefinitionId: number,
@@ -938,6 +972,7 @@ const effects = {
     parameterValues: ArgumentsMap,
     settings: any,
     user: User | null,
+    revision?: number,
   ): Promise<number | null> {
     try {
       const secretParameters: ActionParametersMap = {};
@@ -956,7 +991,7 @@ const effects = {
         throwPermissionError('create action run');
       }
 
-      const actionRunInsertInput = {
+      const actionRunInsertInput: Record<string, unknown> = {
         action_definition_id: actionDefinitionId,
         // we are now sending secrets on every run, to provide JWT token to actions
         // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
@@ -964,6 +999,9 @@ const effects = {
         parameters: nonSecretParameters,
         settings,
       };
+      if (revision !== undefined) {
+        actionRunInsertInput.action_definition_revision = revision;
+      }
       // send initial hasura request to insert the action run in the DB
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunResult } = response;
@@ -7023,6 +7061,7 @@ const effects = {
     workspaceSequences: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
     parameters?: ArgumentsMap,
+    revision?: number,
   ): Promise<number | null> {
     try {
       const { confirm, value } = await showRunActionModal(
@@ -7031,6 +7070,7 @@ const effects = {
         workspace,
         workspaceSequences,
         parameters,
+        revision,
       );
       if (confirm && value) {
         const { id } = value;
