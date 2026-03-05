@@ -7062,6 +7062,8 @@ const effects = {
     user: User | null,
     parameters?: ArgumentsMap,
     revision?: number,
+    isRerun?: boolean,
+    settings?: ArgumentsMap,
   ): Promise<number | null> {
     try {
       const { confirm, value } = await showRunActionModal(
@@ -7071,6 +7073,8 @@ const effects = {
         workspaceSequences,
         parameters,
         revision,
+        isRerun,
+        settings,
       );
       if (confirm && value) {
         const { id } = value;
@@ -7405,6 +7409,30 @@ const effects = {
     } catch (e) {
       catchError('Action Update Failed', e as Error);
       showFailureToast('Action Update Failed');
+    }
+  },
+
+  async updateActionDefinitionVersion(
+    actionDefinitionId: number,
+    revision: number,
+    setInput: { archived: boolean },
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const { update_action_definition_version_by_pk } = await reqHasura(
+        gql.UPDATE_ACTION_DEFINITION_VERSION,
+        { actionDefinitionId, revision, set: setInput },
+        user,
+      );
+
+      if (update_action_definition_version_by_pk != null) {
+        showSuccessToast(setInput.archived ? 'Version Archived' : 'Version Unarchived');
+      } else {
+        throw Error('Unable to update action definition version');
+      }
+    } catch (e) {
+      catchError('Version Update Failed', e as Error);
+      showFailureToast('Version Update Failed');
     }
   },
 

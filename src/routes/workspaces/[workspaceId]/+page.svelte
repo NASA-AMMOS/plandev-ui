@@ -863,21 +863,13 @@
       if (!confirm) {
         return;
       }
+      // Revert content to last-saved state and mark clean
+      activeDocument.updateContent($activeDocument.originalContent);
       activeDocument.markClean();
     }
 
-    // Guard against switching away from dirty action detail
+    // Silently reset dirty action detail state on navigate away
     if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        'There are unsaved action changes. Are you sure you want to navigate away?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-      if (!confirm) {
-        return;
-      }
       actionDetailIsDirty = false;
     }
 
@@ -892,7 +884,9 @@
     }
 
     // Sync sidebar tab with content mode
-    if (mode !== WorkspaceContentMode.File) {
+    if (mode === WorkspaceContentMode.File) {
+      sidebarActiveTab = 'files';
+    } else {
       sidebarActiveTab = 'actions';
     }
 
@@ -931,7 +925,9 @@
   }
 
   function onSidebarTabChange(event: CustomEvent<string>) {
-    if (event.detail !== 'actions') {
+    if (event.detail === 'actions') {
+      switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    } else {
       switchToContentMode(WorkspaceContentMode.File);
     }
   }
@@ -961,14 +957,19 @@
   }
 
   async function onRerunAction(
-    event: CustomEvent<{ actionDefinitionId: number; parameters: ArgumentsMap; revision: number }>,
+    event: CustomEvent<{
+      actionDefinitionId: number;
+      parameters: ArgumentsMap;
+      revision: number;
+      settings: ArgumentsMap;
+    }>,
   ) {
-    const { actionDefinitionId, parameters, revision } = event.detail;
+    const { actionDefinitionId, parameters, revision, settings } = event.detail;
     const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
     const actionDef = defs[actionDefinitionId];
     if (actionDef && $workspace) {
       handleActionRunResult(
-        await effects.runAction(actionDef, $workspace, workspaceFileList, $user, parameters, revision),
+        await effects.runAction(actionDef, $workspace, workspaceFileList, $user, parameters, revision, true, settings),
       );
     }
   }

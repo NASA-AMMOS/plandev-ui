@@ -9,6 +9,8 @@
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import {
     getDefaultsFromSchema,
+    getLatestRunnableVersion,
+    getRunnableVersions,
     getUserSequenceValueSchemaOptions,
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
@@ -22,6 +24,8 @@
 
   export let actionDefinition: ActionDefinition;
   export let initialRevision: number | undefined = undefined;
+  export let initialSettings: ArgumentsMap | undefined = undefined;
+  export let isRerun: boolean = false;
   export let parameters: ArgumentsMap | undefined;
   export let user: User | null;
   export let workspace: Workspace;
@@ -31,10 +35,9 @@
   let isLoadingWorkspace: boolean = false;
   let running: boolean = false;
   let parametersMap: ActionParametersMap = {};
+  const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
   let selectedRevision: string =
-    initialRevision !== undefined && initialRevision !== actionDefinition.versions[0]?.revision
-      ? String(initialRevision)
-      : 'latest';
+    initialRevision !== undefined && initialRevision !== latestRunnable?.revision ? String(initialRevision) : 'latest';
   let settingsArgumentsMap: ArgumentsMap = {};
   let settingsParametersMap: ActionParametersMap = {};
 
@@ -43,11 +46,12 @@
     complete: { actionRunId: number | null };
   }>();
 
-  $: latestVersion = actionDefinition.versions[0] ?? null;
+  $: latestVersion = getLatestRunnableVersion(actionDefinition.versions);
+  $: runnableVersions = getRunnableVersions(actionDefinition.versions, initialRevision);
   $: selectedVersion =
     selectedRevision === 'latest'
       ? latestVersion
-      : (actionDefinition.versions.find(v => v.revision === Number(selectedRevision)) ?? latestVersion);
+      : (runnableVersions.find(v => v.revision === Number(selectedRevision)) ?? latestVersion);
   $: isLatestSelected = selectedRevision === 'latest';
 
   $: if (parameters !== undefined) {
@@ -59,11 +63,36 @@
     parametersMap = valueSchemaRecordToParametersMap(paramSchema);
   }
 
-  // When a non-latest version is selected, build settings form from that version's settings_schema
+  // Build settings form for non-latest versions, or for reruns on latest
+  $: showSettings = !isLatestSelected || (isRerun && isLatestSelected);
+
   $: {
-    if (!isLatestSelected && selectedVersion) {
+    if (showSettings && selectedVersion) {
       settingsParametersMap = valueSchemaRecordToParametersMap(selectedVersion.settings_schema);
-      settingsArgumentsMap = getDefaultsFromSchema(selectedVersion.settings_schema);
+
+      if (isRerun) {
+        // Re-run: pre-fill with the original run's settings, falling back to live settings
+        settingsArgumentsMap = { ...(initialSettings ?? actionDefinition.settings) };
+      } else {
+        // Fresh run on old version: attempt to pull live settings where schemas match exactly
+        const latestSettingsSchema = latestVersion?.settings_schema ?? {};
+        const versionSettingsSchema = selectedVersion.settings_schema;
+        const liveSettings = actionDefinition.settings;
+        const merged: ArgumentsMap = {};
+
+        for (const [key, versionSchema] of Object.entries(versionSettingsSchema)) {
+          const latestSchema = latestSettingsSchema[key];
+          if (latestSchema && JSON.stringify(latestSchema) === JSON.stringify(versionSchema) && key in liveSettings) {
+            merged[key] = liveSettings[key];
+          } else {
+            const defaults = getDefaultsFromSchema({ [key]: versionSchema });
+            if (key in defaults) {
+              merged[key] = defaults[key];
+            }
+          }
+        }
+        settingsArgumentsMap = merged;
+      }
     } else {
       settingsParametersMap = {};
       settingsArgumentsMap = {};
@@ -73,8 +102,6 @@
   function onVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     selectedRevision = target.value;
-    // Clear argumentsMap so getFormParameters uses defaultArgumentsMap with correct 'mission' valueSource
-    // argumentsMap = {};
   }
 
   async function run() {
@@ -91,8 +118,8 @@
       }
     }
 
-    // Use stored settings for latest, user-provided settings for non-latest
-    const settings = isLatestSelected ? actionDefinition.settings : settingsArgumentsMap;
+    // Use stored settings for fresh latest runs, user-provided settings for non-latest or reruns
+    const settings = isLatestSelected && !isRerun ? actionDefinition.settings : settingsArgumentsMap;
     const revision = isLatestSelected ? undefined : selectedVersion?.revision;
 
     const actionRunId = await effects.createActionRun(
@@ -144,30 +171,12 @@
 </script>
 
 <Modal height="max-content" width={500} on:close closeOnEscape={false} closeOnOutsideClick={false}>
-  <ModalHeader on:close>{actionDefinition.name}</ModalHeader>
+  <ModalHeader on:close>{isRerun ? `Re-run: ${actionDefinition.name}` : actionDefinition.name}</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
-    <Parameters
-      formParameters={getFormParameters(
-        parametersMap,
-        argumentsMap,
-        [],
-        undefined,
-        getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
-        getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
-        'sequence',
-        false,
-        false,
-      )}
-      parameterType="action"
-      disabled={isLoadingWorkspace}
-      on:change={onChangeFormParameters}
-      on:reset={onResetFormParameter}
-    />
-
-    {#if !isLatestSelected && Object.keys(settingsParametersMap).length > 0}
-      <div class="mt-4 pt-4">
+    {#if showSettings && Object.keys(settingsParametersMap).length > 0}
+      <div class="pb-4">
         <div class="pb-2 font-medium text-muted-foreground">
-          Action Settings for Version {selectedVersion?.revision}
+          Input settings for this action run using {actionDefinition.name} version {selectedVersion?.revision}
         </div>
         <Parameters
           formParameters={getFormParameters(
@@ -188,13 +197,34 @@
         />
       </div>
     {/if}
+
+    <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run.</div>
+    <Parameters
+      formParameters={getFormParameters(
+        parametersMap,
+        argumentsMap,
+        [],
+        undefined,
+        getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
+        getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
+        'sequence',
+        false,
+        false,
+      )}
+      parameterType="action"
+      disabled={isLoadingWorkspace}
+      on:change={onChangeFormParameters}
+      on:reset={onResetFormParameter}
+    />
   </ModalContent>
 
   <ModalFooter>
     <select class="st-select mr-auto" value={selectedRevision} on:change={onVersionChange}>
-      <option value="latest">v{latestVersion?.revision ?? 0} (latest)</option>
-      {#each actionDefinition.versions.slice(1) as version (version.revision)}
-        <option value={version.revision.toString()}>v{version.revision}</option>
+      {#if latestVersion}
+        <option value="latest">v{latestVersion.revision} (latest)</option>
+      {/if}
+      {#each runnableVersions.filter(v => v !== latestVersion) as version (version.revision)}
+        <option value={version.revision.toString()}>v{version.revision}{version.archived ? ' (archived)' : ''}</option>
       {/each}
     </select>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>

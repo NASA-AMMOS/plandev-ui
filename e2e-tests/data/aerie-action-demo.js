@@ -45,6 +45,10 @@ const settingDefinitions = {
     description: 'Base URL for fetch mode',
     defaultValue: 'https://api.github.com',
   },
+  secretSetting: {
+    type: 'secret',
+    description: 'A secret value (e.g. API token) — sent securely, never stored in run history',
+  },
   verbose: {
     type: 'string',
     description: 'Enable extra-verbose logging',

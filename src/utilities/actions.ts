@@ -16,6 +16,23 @@ import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view
 import { getWorkspacesUrl } from './routes';
 
 /**
+ * Returns the latest non-archived version, or null if all versions are archived.
+ */
+export function getLatestRunnableVersion(versions: ActionDefinitionVersion[]): ActionDefinitionVersion | null {
+  return versions.find(v => !v.archived) ?? null;
+}
+
+/**
+ * Returns non-archived versions, optionally including a specific revision even if archived.
+ */
+export function getRunnableVersions(
+  versions: ActionDefinitionVersion[],
+  includeRevision?: number,
+): ActionDefinitionVersion[] {
+  return versions.filter(v => !v.archived || (includeRevision !== undefined && v.revision === includeRevision));
+}
+
+/**
  * Typeguard for determining if a schema is an action sequence/sequenceList schema
  */
 export function isActionValueSchemaSequence(

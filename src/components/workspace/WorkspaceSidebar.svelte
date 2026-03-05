@@ -70,8 +70,8 @@
       // Clicking active tab toggles the panel
       panelOpen = !panelOpen;
     } else {
-      // Switching tabs or opening closed panel
-      activeTab = tab;
+      // Dispatch the request to the parent — parent controls activeTab via binding
+      // and will update it after any dirty-check modals are resolved.
       panelOpen = true;
       dispatch('sidebarTabChange', tab);
     }

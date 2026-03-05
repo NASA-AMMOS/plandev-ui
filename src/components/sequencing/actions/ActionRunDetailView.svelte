@@ -34,7 +34,7 @@
 
   const dispatch = createEventDispatcher<{
     back: void;
-    rerun: { actionDefinitionId: number; parameters: ArgumentsMap; revision: number };
+    rerun: { actionDefinitionId: number; parameters: ArgumentsMap; revision: number; settings: ArgumentsMap };
     viewAction: { actionId: number };
   }>();
 
@@ -153,6 +153,7 @@
         actionDefinitionId: actionRun.action_definition_id,
         parameters: actionRun.parameters,
         revision: actionRun.action_definition_revision,
+        settings: actionRun.settings,
       });
     }
   }

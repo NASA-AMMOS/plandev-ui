@@ -1,9 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Alert, Badge, Button, Tabs } from '@nasa-jpl/stellar-svelte';
+  import { Badge, Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
-  import { TriangleAlert } from 'lucide-svelte';
+  import { Archive } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
@@ -14,6 +14,7 @@
   import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
     getDefaultsFromSchema,
+    getLatestRunnableVersion,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
     truncateRunParameters,
@@ -56,7 +57,7 @@
   let saving: boolean = false;
   let selectedRunId: number | null = null;
   let selectedVersionRevision: number | null = null;
-  let settingsMismatch: { removedKeys: string[] } | null = null;
+  let showArchivedVersions: boolean = false;
   let uploadFileInput: HTMLInputElement;
 
   $: {
@@ -76,14 +77,20 @@
     }
   }
 
+  $: displayedVersions = showArchivedVersions
+    ? actionDefinition?.versions ?? []
+    : (actionDefinition?.versions ?? []).filter(v => !v.archived);
+
   $: selectedVersion =
     actionDefinition?.versions.find(v => v.revision === selectedVersionRevision) ??
-    actionDefinition?.versions[0] ??
+    displayedVersions[0] ??
     null;
 
   $: if (selectedVersion) {
     loadCode(selectedVersion.action_file_id);
   }
+
+  $: latestNonArchivedVersion = getLatestRunnableVersion(actionDefinition?.versions ?? []);
 
   $: actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
     run => run.action_definition_id === actionDefinitionId,
@@ -94,22 +101,6 @@
   $: hasUpdatePermission = actionDefinition
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
     : false;
-
-  $: {
-    const latestSchemaKeys = new Set(Object.keys(actionDefinition?.versions[0]?.settings_schema ?? {}));
-    const storedKeys = Object.keys(actionDefinition?.settings ?? {});
-    const removedKeys = storedKeys.filter(k => !latestSchemaKeys.has(k));
-    if (removedKeys.length > 0) {
-      // Create a filtered copy — don't mutate in place since argumentsMap may be the same
-      // reference as actionDefinition.settings, which would make checkDirty() see no difference.
-      const removedSet = new Set(removedKeys);
-      argumentsMap = Object.fromEntries(Object.entries(argumentsMap).filter(([k]) => !removedSet.has(k)));
-      checkDirty();
-      settingsMismatch = { removedKeys };
-    } else {
-      settingsMismatch = null;
-    }
-  }
 
   onDestroy(() => {
     if (codeAbortController) {
@@ -395,6 +386,15 @@
         >
           <Button on:click={onRunClick}>Run Action</Button>
         </div>
+        <input bind:this={uploadFileInput} accept=".js" class="hidden" on:change={uploadNewVersion} type="file" />
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdatePermission,
+            permissionError: 'You do not have permission to upload a new version',
+          }}
+        >
+          <Button variant="outline" on:click={() => uploadFileInput?.click()}>Upload New Version</Button>
+        </div>
         <Button on:click={() => dispatch('close')} variant="outline">Close</Button>
       </div>
     </div>
@@ -431,14 +431,16 @@
             <div class="flex items-center gap-2 pr-2">
               <select
                 class="st-input h-6 bg-white !px-1 text-xs"
-                value={selectedVersionRevision ?? actionDefinition.versions[0]?.revision ?? 0}
+                value={selectedVersion?.revision ?? 0}
                 on:change={e => {
                   selectedVersionRevision = Number(e.currentTarget.value);
                 }}
               >
-                {#each actionDefinition.versions as version, i}
+                {#each displayedVersions as version, i}
                   <option value={version.revision}>
-                    v{version.revision}{i === 0 ? ' (latest)' : ''}
+                    v{version.revision}{i === 0 && !version.archived ? ' (latest)' : ''}{version.archived
+                      ? ' (archived)'
+                      : ''}
                   </option>
                 {/each}
               </select>
@@ -447,17 +449,34 @@
                   {selectedVersion.author ?? 'Unknown'} • {new Date(selectedVersion.created_at).toLocaleDateString()}
                 </span>
               {/if}
-              <input bind:this={uploadFileInput} accept=".js" class="hidden" on:change={uploadNewVersion} type="file" />
-              <div
-                use:permissionHandler={{
-                  hasPermission: hasUpdatePermission,
-                  permissionError: 'You do not have permission to upload a new version',
-                }}
+              <button
+                class="flex shrink-0 items-center rounded p-0.5 {showArchivedVersions
+                  ? 'bg-accent'
+                  : 'text-muted-foreground hover:text-foreground'}"
+                title={showArchivedVersions ? 'Hide archived versions' : 'Show archived versions'}
+                on:click={() => (showArchivedVersions = !showArchivedVersions)}
               >
-                <Button variant="outline" class="h-6 text-xs text-foreground" on:click={() => uploadFileInput?.click()}>
-                  Upload New Version
+                <Archive size={14} />
+              </button>
+              {#if selectedVersion && (selectedVersion !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== selectedVersion).length > 0)}
+                <Button
+                  variant="outline"
+                  class="h-6 text-xs"
+                  disabled={!hasUpdatePermission}
+                  on:click={() => {
+                    if (selectedVersion) {
+                      effects.updateActionDefinitionVersion(
+                        actionDefinition.id,
+                        selectedVersion.revision,
+                        { archived: !selectedVersion.archived },
+                        user,
+                      );
+                    }
+                  }}
+                >
+                  {selectedVersion.archived ? 'Unarchive' : 'Archive'}
                 </Button>
-              </div>
+              {/if}
             </div>
           {/if}
         </Tabs.List>
@@ -498,6 +517,11 @@
                     >{new Date(actionDefinition.updated_at).toLocaleDateString()}</span
                   >
                 </span>
+                {#if latestNonArchivedVersion}
+                  <span>
+                    Latest Version: <span class="text-foreground">v{latestNonArchivedVersion.revision}</span>
+                  </span>
+                {/if}
               </div>
               <Input layout="inline">
                 <label for="action-name">Name</label>
@@ -534,23 +558,6 @@
                 />
               </Input>
             </div>
-
-            {#if settingsMismatch}
-              <Alert.Root
-                variant="destructive"
-                class="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
-              >
-                <TriangleAlert class="h-4 w-4 stroke-amber-800" />
-                <Alert.Title>Stale settings detected</Alert.Title>
-                <Alert.Description class="mt-1 block leading-none ">
-                  <p>
-                    Found active settings keys no longer in schema: <b>{settingsMismatch.removedKeys.join(', ')}</b>.
-                    Save to remove stale values.
-                  </p>
-                </Alert.Description>
-                <slot name="error-action" />
-              </Alert.Root>
-            {/if}
 
             <div class="flex flex-col gap-3 rounded border border-border p-4">
               <div class="flex items-center justify-between">

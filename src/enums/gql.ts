@@ -221,6 +221,7 @@ export enum Queries {
   TAGS = 'tags',
   TOPIC = 'topic',
   UPDATE_ACTION_DEFINITION = 'update_action_definition_by_pk',
+  UPDATE_ACTION_DEFINITION_VERSION = 'update_action_definition_version_by_pk',
   UPDATE_ACTION_RUN = 'update_action_run_by_pk',
   UPDATE_ACTIVITY_DIRECTIVE = 'update_activity_directive_by_pk',
   UPDATE_ACTIVITY_DIRECTIVES = 'update_activity_directive_many',

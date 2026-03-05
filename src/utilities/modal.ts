@@ -1331,6 +1331,8 @@ export async function showRunActionModal(
   workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   parameters: ArgumentsMap | undefined,
   initialRevision?: number,
+  isRerun?: boolean,
+  initialSettings?: ArgumentsMap,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
     if (browser) {
@@ -1338,7 +1340,16 @@ export async function showRunActionModal(
 
       if (target) {
         const runActionModal = new RunActionModal({
-          props: { actionDefinition, initialRevision, parameters, user, workspace, workspaceFiles },
+          props: {
+            actionDefinition,
+            initialRevision,
+            initialSettings,
+            isRerun: isRerun ?? false,
+            parameters,
+            user,
+            workspace,
+            workspaceFiles,
+          },
           target,
         });
         target.resolve = resolve;

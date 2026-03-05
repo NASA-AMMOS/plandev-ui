@@ -2080,6 +2080,7 @@ const gql = {
         versions(order_by: { revision: desc }) {
           action_definition_id
           action_file_id
+          archived
           author
           created_at
           parameter_schema
@@ -2108,6 +2109,7 @@ const gql = {
           versions(order_by: { revision: desc }) {
             action_definition_id
             action_file_id
+            archived
             author
             created_at
             parameter_schema
@@ -3682,6 +3684,22 @@ const gql = {
         pk_columns: { id: $id }, _set: $actionDefinitionSetInput
       ) {
         id
+      }
+    }
+  `,
+
+  UPDATE_ACTION_DEFINITION_VERSION: `#graphql
+    mutation UpdateActionDefinitionVersion(
+      $actionDefinitionId: Int!,
+      $revision: Int!,
+      $set: action_definition_version_set_input!
+    ) {
+      ${Queries.UPDATE_ACTION_DEFINITION_VERSION}(
+        pk_columns: { action_definition_id: $actionDefinitionId, revision: $revision },
+        _set: $set
+      ) {
+        action_definition_id
+        revision
       }
     }
   `,

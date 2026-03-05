@@ -7,6 +7,7 @@ export type ActionParametersMap = Record<ParameterName, ActionParameter>;
 export type ActionDefinitionVersion = {
   action_definition_id: number;
   action_file_id: number;
+  archived: boolean;
   author: string | null;
   created_at: string;
   parameter_schema: Record<string, ActionValueSchema>;
