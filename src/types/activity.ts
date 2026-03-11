@@ -45,6 +45,7 @@ export type ActivityDirectiveDB = {
   name: string;
   plan_id: number;
   source_scheduling_goal_id: number | null;
+  source_scheduling_goal_invocation_id: number | null;
   start_offset: string;
   tags: { tag: Tag }[];
   type: string;
