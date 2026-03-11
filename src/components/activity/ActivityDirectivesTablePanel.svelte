@@ -82,7 +82,8 @@
       field: 'anchored_to_start',
       filter: 'text',
       headerName: 'Anchored to Start',
-      headerTooltip: 'True if the activity is anchored to the start of the plan or the start of another activity, false if anchored to the end.',
+      headerTooltip:
+        'True if the activity is anchored to the start of the plan or the start of another activity, false if anchored to the end.',
       hide: true,
       resizable: true,
       sortable: true,
@@ -189,7 +190,7 @@
       hide: true,
       resizable: true,
       sortable: true,
-      tooltipInteraction: true
+      tooltipInteraction: true,
     },
     source_scheduling_goal_invocation_id: {
       field: 'source_scheduling_goal_invocation_id',

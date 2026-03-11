@@ -713,7 +713,11 @@
         <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
           <Input layout="inline">
             <label
-              use:tooltip={{ content: 'Source Scheduling Goal ID - The ID of the scheduling goal that created this activity directive', placement: 'top' }}
+              use:tooltip={{
+                content:
+                  'Source Scheduling Goal ID - The ID of the scheduling goal that created this activity directive',
+                placement: 'top',
+              }}
               for="sourceSchedulingGoalId"
             >
               Source Scheduling Goal ID
@@ -727,11 +731,15 @@
             />
           </Input>
         </Highlight>
-        
+
         <Highlight highlight={highlightKeysMap.source_scheduling_goal_invocation_id}>
           <Input layout="inline">
             <label
-              use:tooltip={{ content: 'Source Scheduling Goal Invocation ID - The ID of the scheduling goal invocation (run) that created this activity directive', placement: 'top' }}
+              use:tooltip={{
+                content:
+                  'Source Scheduling Goal Invocation ID - The ID of the scheduling goal invocation (run) that created this activity directive',
+                placement: 'top',
+              }}
               for="sourceSchedulingGoalInvocationId"
             >
               Source Scheduling Goal Invocation ID
