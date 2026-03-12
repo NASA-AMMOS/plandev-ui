@@ -40,7 +40,6 @@
   type TagsCellRendererParams = ICellRendererParams<Tag> & CellRendererParams;
 
   const tagsStoreLoading = tagsStore.loading;
-  $: console.log('$tagsStore :>> ', $tagsStore);
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -113,7 +112,6 @@
 
   $: tagsStore.updateValue(() => data.initialTags);
   $: tags = $tagsStore;
-  $: console.log('$tags :>> ', tags);
   $: nameField = field<string>('', [required]);
   $: colorField = field<string>('', [required, hex]);
   $: {
