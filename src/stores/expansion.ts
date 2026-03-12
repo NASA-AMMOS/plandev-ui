@@ -16,7 +16,7 @@ export const expansionSets = gqlSubscribable<ExpansionSet[]>(gql.SUB_EXPANSION_S
 
 export const allSequences = gqlSubscribable<
   { expanded_sequence: string; seq_id: string; simulation_dataset_id: number }[]
->(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS, {}, null);
+>(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS, {}, []);
 export const planSimDatasetMapping = gqlSubscribable<{ simulations: { simulation_datasets: { id: number }[] }[] }>(
   gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS,
   { planId: planId },
@@ -25,12 +25,12 @@ export const planSimDatasetMapping = gqlSubscribable<{ simulations: { simulation
 export const lastExpandedSimulationDatasetId = derived(
   [allSequences, planSimDatasetMapping],
   ([$allSequences, $planSimDatasetMapping]) => {
-    if (!$allSequences || !$planSimDatasetMapping) {
+    if (!$planSimDatasetMapping) {
       return -1;
     }
     const filteredDatasets = $planSimDatasetMapping.simulations[0].simulation_datasets.map(entry => entry.id);
 
-    const lastExpansion = $allSequences
+    const lastExpansion = [...$allSequences]
       .filter(entry => filteredDatasets.includes(entry.simulation_dataset_id))
       .sort((a, b) => b.simulation_dataset_id - a.simulation_dataset_id)[0];
     return lastExpansion?.simulation_dataset_id ?? -1;

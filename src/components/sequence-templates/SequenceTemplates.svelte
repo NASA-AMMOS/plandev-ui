@@ -60,14 +60,14 @@
   $: if (parcel) {
     loadSequenceAdaptation(parcel.sequence_adaptation_id);
 
-    const unparsedChannelDictionary = $channelDictionaries?.find(
+    const unparsedChannelDictionary = $channelDictionaries.find(
       channelDictionaryMetadata => channelDictionaryMetadata.id === parcel.channel_dictionary_id,
     );
-    const unparsedCommandDictionary = $commandDictionaries?.find(
+    const unparsedCommandDictionary = $commandDictionaries.find(
       commandDictionaryMetadata => commandDictionaryMetadata.id === parcel.command_dictionary_id,
     );
-    const unparsedParameterDictionaries = ($parameterDictionariesStore || []).filter(parameterDictionaryMetadata => {
-      const parameterDictionary = $parcelToParameterDictionaries?.find(
+    const unparsedParameterDictionaries = $parameterDictionariesStore.filter(parameterDictionaryMetadata => {
+      const parameterDictionary = $parcelToParameterDictionaries.find(
         parcelToParameterDictionary =>
           parcelToParameterDictionary.parameter_dictionary_id === parameterDictionaryMetadata.id &&
           parcelToParameterDictionary.parcel_id === parcel.id,

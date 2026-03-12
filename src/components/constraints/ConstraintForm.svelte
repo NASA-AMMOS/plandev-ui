@@ -242,7 +242,7 @@
 <PageTitle subTitle={pageSubtitle} title={pageTitle} />
 
 <AssociationForm
-  allMetadata={$constraints || []}
+  allMetadata={$constraints}
   defaultDefinitionCode={`export default (): Constraint => {\n\n}\n`}
   definitionTypeConfigurations={{
     code: { label: 'EDSL' },

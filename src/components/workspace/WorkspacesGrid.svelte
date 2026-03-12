@@ -14,6 +14,8 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
+  const workspacesLoading = workspaces.loading;
+
   type CellRendererParams = {
     deleteWorkspace: (workspace: Workspace) => void;
     viewWorkspace: (workspace: Workspace) => void;
@@ -172,25 +174,22 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if filteredWorkspaces.length}
-      <SingleActionDataGrid
-        showLoadingSkeleton
-        loading={$workspaces === null}
-        columnDefs={baseColumnDefs}
-        hasEdit={true}
-        {hasDeletePermission}
-        {hasEditPermission}
-        itemDisplayText="Workspace"
-        items={filteredWorkspaces}
-        selectedItemId={selectedWorkspaceId}
-        {user}
-        on:deleteItem={deleteWorkspaceContext}
-        on:editItem={editWorkspace}
-        on:rowSelected={workspaceSelected}
-        on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
-      />
-    {:else}
-      <div class="p1 st-typography-label">No Workspaces Found</div>
-    {/if}
+    <SingleActionDataGrid
+      showLoadingSkeleton
+      loading={$workspacesLoading}
+      columnDefs={baseColumnDefs}
+      hasEdit={true}
+      {hasDeletePermission}
+      {hasEditPermission}
+      itemDisplayText="Workspace"
+      items={filteredWorkspaces}
+      noRowsOverlayText="No Workspaces Found"
+      selectedItemId={selectedWorkspaceId}
+      {user}
+      on:deleteItem={deleteWorkspaceContext}
+      on:editItem={editWorkspace}
+      on:rowSelected={workspaceSelected}
+      on:rowDoubleClicked={({ detail }) => viewWorkspace(detail.data)}
+    />
   </svelte:fragment>
 </Panel>

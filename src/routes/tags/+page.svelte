@@ -39,6 +39,7 @@
   };
   type TagsCellRendererParams = ICellRendererParams<Tag> & CellRendererParams;
 
+  const tagsStoreLoading = tagsStore.loading;
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -110,7 +111,7 @@
   let updatingTag: boolean = false;
 
   $: tagsStore.updateValue(() => data.initialTags);
-  $: tags = $tagsStore ?? [];
+  $: tags = $tagsStore;
   $: nameField = field<string>('', [required]);
   $: colorField = field<string>('', [required, hex]);
   $: {
@@ -186,8 +187,8 @@
     };
     const newTag = await effects.createTag(tag, $user);
     resetTagFields();
-    if (newTag && !($tagsStore || []).find(({ id }) => newTag.id === id)) {
-      tagsStore.updateValue(tags => [...(tags ?? []), newTag]);
+    if (newTag && !$tagsStore.find(({ id }) => newTag.id === id)) {
+      tagsStore.updateValue(tags => [...tags, newTag]);
     }
     creatingTag = false;
   }
@@ -236,7 +237,7 @@
     if (confirm) {
       const success = await effects.deleteTag(tag, $user);
       if (success) {
-        tagsStore.updateValue(tags => (tags || []).filter(t => t.id !== tag.id));
+        tagsStore.updateValue(tags => tags.filter(t => t.id !== tag.id));
       }
       // Stop editing if the selected tag is the one being deleted
       if (selectedTag?.id === tag.id) {
@@ -454,7 +455,7 @@
           itemDisplayText="Tag"
           items={filteredTags}
           user={$user}
-          loading={$tagsStore === null}
+          loading={$tagsStoreLoading}
           noRowsOverlayText="No Tags Found"
           on:deleteItem={deleteTagContext}
           on:rowClicked={({ detail }) => {

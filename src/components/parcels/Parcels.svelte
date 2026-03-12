@@ -25,6 +25,8 @@
   };
   type ParcelCellRendererParams = ICellRendererParams<Parcel> & CellRendererParams;
 
+  const parcelsLoading = parcels.loading;
+
   const baseColumnDefs: DataGridColumnDef[] = [
     {
       field: 'id',
@@ -151,21 +153,18 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    {#if filteredParcels.length}
-      <SingleActionDataGrid
-        showLoadingSkeleton
-        loading={$parcels === null}
-        {columnDefs}
-        {hasDeletePermission}
-        itemDisplayText="Parcel"
-        items={filteredParcels}
-        {user}
-        on:deleteItem={deleteParcelContext}
-        on:rowSelected={toggleParcel}
-        on:rowDoubleClicked={event => viewParcel(event.detail.data)}
-      />
-    {:else}
-      <div class="p1 st-typography-label">No Parcels Found</div>
-    {/if}
+    <SingleActionDataGrid
+      showLoadingSkeleton
+      loading={$parcelsLoading}
+      {columnDefs}
+      {hasDeletePermission}
+      itemDisplayText="Parcel"
+      noRowsOverlayText="No Parcels Found"
+      items={filteredParcels}
+      {user}
+      on:deleteItem={deleteParcelContext}
+      on:rowSelected={toggleParcel}
+      on:rowDoubleClicked={event => viewParcel(event.detail.data)}
+    />
   </svelte:fragment>
 </Panel>

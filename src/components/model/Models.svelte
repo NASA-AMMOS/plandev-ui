@@ -3,6 +3,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { X } from 'lucide-svelte';
@@ -43,6 +44,8 @@
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
   const extractionPermissionError: string = 'You do not have permission to re-trigger a model extraction';
 
+  const modelsLoading = models.loading;
+
   const baseColumnDefs: DataGridColumnDef[] = [
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     { field: 'owner', filter: 'text', headerName: 'Owner', resizable: true, sortable: true },
@@ -66,6 +69,7 @@
   let createButtonDisabled: boolean = false;
   let description = '';
   let files: FileList | undefined;
+  let filterExpression: string = '';
   let hasCreateModelPermission: boolean = false;
   let hasCreatePlanPermission: boolean = false;
   let hasDeleteModelPermission: boolean = false;
@@ -468,20 +472,31 @@
 
   <Panel>
     <svelte:fragment slot="header">
-      <SectionTitle>Models</SectionTitle>
+      <div class="flex items-center gap-2">
+        <SectionTitle>Models</SectionTitle>
+        <InputStellar
+          bind:value={filterExpression}
+          placeholder="Filter models"
+          autocomplete="off"
+          class="w-[300px]"
+          sizeVariant="xs"
+          aria-label="Filter models"
+        />
+      </div>
     </svelte:fragment>
 
     <svelte:fragment slot="body">
       <SingleActionDataGrid
         {columnDefs}
         columnsToForceRefreshOnDataUpdate={['id']}
+        {filterExpression}
         hasEdit={hasUpdateModelPermission}
         hasEditPermission={hasUpdateModelPermission}
         hasDeletePermission={hasDeleteModelPermission}
         itemDisplayText="Model"
         items={$models}
         showLoadingSkeleton
-        loading={$models === null}
+        loading={$modelsLoading}
         {user}
         selectedItemId={selectedModel?.id ?? null}
         on:deleteItem={deleteModelContext}

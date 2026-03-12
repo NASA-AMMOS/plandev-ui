@@ -299,6 +299,13 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     if (gridApi?.getGridOption('loading')) {
       gridApi?.setGridOption('loading', false);
     }
+    // Show no-rows overlay after loading completes with empty data
+    if (gridApi) {
+      gridApi.setGridOption('suppressNoRowsOverlay', false);
+      if (gridApi.getDisplayedRowCount() === 0) {
+        gridApi.showNoRowsOverlay();
+      }
+    }
   }
 
   onDestroy(() => {

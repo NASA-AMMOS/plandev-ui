@@ -6,9 +6,11 @@
   import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingConditionSpecs,
+    schedulingConditionResponses,
     schedulingConditionSpecifications,
     schedulingConditionsLoading,
     schedulingConditionsMap,
+    schedulingPlanSpecification,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
   import type { SchedulingConditionPlanSpecification } from '../../types/scheduling';
@@ -17,10 +19,13 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
-  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import Panel from '../ui/Panel.svelte';
   import SchedulingCondition from './conditions/SchedulingCondition.svelte';
+
+  const schedulingConditionResponsesError = schedulingConditionResponses.error;
+  const schedulingPlanSpecificationError = schedulingPlanSpecification.error;
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -36,7 +41,7 @@
     hasSpecEditPermission = featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
   }
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingConditionSpecs = ($allowedSchedulingConditionSpecs || []).filter(
+  $: visibleSchedulingConditionSpecs = $allowedSchedulingConditionSpecs.filter(
     ({ condition_metadata: conditionMetadata }) => {
       if (conditionMetadata) {
         const { public: isPublic, owner } = conditionMetadata;
@@ -53,8 +58,7 @@
     const includesName = spec.condition_metadata?.name.toLocaleLowerCase().includes(filterTextLowerCase);
     return includesName;
   });
-  $: numOfPrivateConditions =
-    ($schedulingConditionSpecifications || []).length - visibleSchedulingConditionSpecs.length;
+  $: numOfPrivateConditions = $schedulingConditionSpecifications.length - visibleSchedulingConditionSpecs.length;
 
   function onManageConditions() {
     effects.managePlanSchedulingConditions(user);
@@ -119,19 +123,27 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if $schedulingConditionsLoading}
-        <div class="pt-1">
-          <Loading />
-        </div>
-      {:else if !filteredSchedulingConditionSpecs.length}
-        <div class="st-typography-label pt-1">No scheduling conditions found</div>
-        <div class="private-label">
-          {#if numOfPrivateConditions > 0}
-            {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}
-            {numOfPrivateConditions > 1 ? 'are' : 'is'} private and not shown
-          {/if}
-        </div>
-      {:else}
+      <AsyncContentState
+        loading={$schedulingConditionsLoading}
+        error={$schedulingPlanSpecificationError || $schedulingConditionResponsesError || null}
+        errorMessage="Failed to load scheduling conditions"
+        showRetry
+        empty={!filteredSchedulingConditionSpecs.length}
+        on:retry={() => {
+          schedulingPlanSpecification.restartSocket();
+          schedulingConditionResponses.restartSocket();
+        }}
+      >
+        <svelte:fragment slot="empty">
+          <div class="st-typography-label pt-1">No scheduling conditions found</div>
+          <div class="private-label">
+            {#if numOfPrivateConditions > 0}
+              {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}
+              {numOfPrivateConditions > 1 ? 'are' : 'is'} private and not shown
+            {/if}
+          </div>
+        </svelte:fragment>
+
         <div class="private-label">
           {#if numOfPrivateConditions > 0}
             {numOfPrivateConditions} scheduling condition{numOfPrivateConditions !== 1 ? 's' : ''}
@@ -153,7 +165,7 @@
             />
           {/if}
         {/each}
-      {/if}
+      </AsyncContentState>
     </div>
   </svelte:fragment>
 </Panel>

@@ -127,7 +127,7 @@
       const includesName = condition.name.toLocaleLowerCase().includes(filterTextLowerCase);
       return includesId || includesName;
     });
-  $: selectedConditions = ($allowedSchedulingConditionSpecs || []).reduce(
+  $: selectedConditions = $allowedSchedulingConditionSpecs.reduce(
     (prevBooleanMap: Record<string, boolean>, schedulingConditionPlanSpec: SchedulingConditionPlanSpecification) => {
       return {
         ...prevBooleanMap,
@@ -293,17 +293,14 @@
       </div>
       <hr />
       <div class="conditions-modal-table-container">
-        {#if $schedulingConditionsLoading || filteredConditions.length}
-          <DataGrid
-            bind:this={dataGrid}
-            {columnDefs}
-            loading={$schedulingConditionsLoading}
-            rowData={filteredConditions}
-            on:cellEditingStopped={onToggleCondition}
-          />
-        {:else}
-          <div class="p1 st-typography-label">No Scheduling Conditions Found</div>
-        {/if}
+        <DataGrid
+          bind:this={dataGrid}
+          {columnDefs}
+          loading={$schedulingConditionsLoading}
+          noRowsOverlayText="No Scheduling Conditions Found"
+          rowData={filteredConditions}
+          on:cellEditingStopped={onToggleCondition}
+        />
       </div>
     </div>
   </ModalContent>

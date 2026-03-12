@@ -246,17 +246,14 @@
         </div>
         <hr />
         <div class="derivation-groups-modal-table-container">
-          {#if filteredDerivationGroups.length}
-            <DataGrid
-              bind:this={dataGrid}
-              columnDefs={derivationGroupColumnDefs}
-              rowData={filteredDerivationGroups}
-              getRowId={getDerivationGroupRowId}
-              on:cellEditingStopped={onToggleDerivationGroup}
-            />
-          {:else}
-            <div class="st-typography-label">No Derivation Groups Found</div>
-          {/if}
+          <DataGrid
+            bind:this={dataGrid}
+            columnDefs={derivationGroupColumnDefs}
+            noRowsOverlayText="No Derivation Groups Found"
+            rowData={filteredDerivationGroups}
+            getRowId={getDerivationGroupRowId}
+            on:cellEditingStopped={onToggleDerivationGroup}
+          />
         </div>
       </div>
       {#if selectedDerivationGroup !== undefined}
