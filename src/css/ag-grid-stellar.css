@@ -609,5 +609,5 @@
 }
 
 .ag-theme-stellar .ag-tooltip {
-  background-color: #ffffff;
+  background-color: var(--ag-background-color);
 }
