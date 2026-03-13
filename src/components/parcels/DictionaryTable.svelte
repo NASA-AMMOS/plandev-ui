@@ -11,7 +11,8 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
-  export let dictionaries: DictionaryMetadata[] | null;
+  export let dictionaries: DictionaryMetadata[];
+  export let loading: boolean = false;
   export let selectedDictionaryIds: Record<number, boolean> = {};
   export let isEditingDictionaries: boolean = false;
   export let isEditingParcel: boolean = false;
@@ -207,8 +208,8 @@
       {columnDefs}
       {hasDeletePermission}
       itemDisplayText={displayText}
-      items={dictionaries || []}
-      loading={dictionaries === null}
+      items={dictionaries}
+      {loading}
       noRowsOverlayText={`No ${displayTextPlural} Found`}
       {user}
       on:rowClicked={onRowClicked}

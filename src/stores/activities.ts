@@ -18,11 +18,7 @@ import { viewUpdateGrid } from './views';
 
 /* Subscriptions. */
 
-export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[] | null>(
-  gql.SUB_ACTIVITY_DIRECTIVES,
-  { planId },
-  null,
-);
+export const activityDirectivesDB = gqlSubscribable<ActivityDirectiveDB[]>(gql.SUB_ACTIVITY_DIRECTIVES, { planId }, []);
 
 export const anchorValidationStatuses = gqlSubscribable<AnchorValidationStatus[]>(
   gql.SUB_ANCHOR_VALIDATION_STATUS,
@@ -72,14 +68,14 @@ export const activityDirectivesMap = derived(
     $spansMap,
     $spanUtilityMaps,
   ]) => {
-    if (!$activityDirectivesDB || !$spansMap) {
+    if (!$spansMap) {
       return null;
     }
     if ($initialPlan === null) {
       return {};
     }
     return computeActivityDirectivesMap(
-      $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB || [],
+      $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB,
       $initialPlan,
       $spansMap,
       $spanUtilityMaps,
@@ -88,10 +84,7 @@ export const activityDirectivesMap = derived(
 );
 
 /* Loading stores. */
-export const initialActivityDirectivesLoading: Readable<boolean> = derived(
-  [activityDirectivesMap],
-  ([$activityDirectivesMap]) => !$activityDirectivesMap,
-);
+export const initialActivityDirectivesLoading = activityDirectivesDB.loading;
 
 /* Derived. */
 
@@ -140,7 +133,7 @@ export function selectActivity(
 export function resetActivityStores() {
   activityMetadataDefinitions.updateValue(() => []);
   selectedActivityDirectiveId.set(null);
-  activityDirectivesDB.updateValue(() => null);
+  activityDirectivesDB.updateValue(() => []);
   anchorValidationStatuses.updateValue(() => []);
   activityMetadataDefinitions.updateValue(() => []);
   activityDirectiveValidationStatuses.updateValue(() => []);

@@ -66,6 +66,8 @@
   };
   type SourceCellRendererParams = ICellRendererParams<ExternalSourceSlim> & CellRendererParams;
 
+  const externalSourcesLoading = externalSources.loading;
+
   // Permissions
   const deletePermissionError = 'You do not have permission to delete an external source.';
   const createPermissionError = 'You do not have permission to create an external source.';
@@ -522,7 +524,7 @@
                 {#each selectedSourceLinkedDerivationGroupsPlans as linkedPlanDerivationGroup}
                   <div class="st-typography-body collapse-important-text">
                     <a href="{base}/plans/{linkedPlanDerivationGroup.plan_id}">
-                      {($plans || []).find(plan => {
+                      {$plans.find(plan => {
                         return linkedPlanDerivationGroup.plan_id === plan.id;
                       })?.name}
                     </a>
@@ -648,26 +650,24 @@
         </slot>
       </svelte:fragment>
       <svelte:fragment slot="body">
-        {#if $externalSources.length}
-          <div id="external-sources-table" style:height="100%">
-            <BulkActionDataGrid
-              bind:dataGrid
-              {columnDefs}
-              hasDeletePermission={hasDeleteExternalSourcePermissionOnRow}
-              singleItemDisplayText="External Source"
-              pluralItemDisplayText="External Sources"
-              {filterExpression}
-              items={$externalSources}
-              {user}
-              getRowId={getExternalSourceSlimRowId}
-              on:rowClicked={({ detail }) => selectSource(detail.data)}
-              on:bulkDeleteItems={({ detail }) => onDeleteExternalSource(detail)}
-              bind:selectedItemId={selectedSourceId}
-            />
-          </div>
-        {:else}
-          <p>No external sources matching the selected external source type(s).</p>
-        {/if}
+        <div id="external-sources-table" style:height="100%">
+          <BulkActionDataGrid
+            bind:dataGrid
+            {columnDefs}
+            hasDeletePermission={hasDeleteExternalSourcePermissionOnRow}
+            singleItemDisplayText="External Source"
+            pluralItemDisplayText="External Sources"
+            {filterExpression}
+            items={$externalSources}
+            loading={$externalSourcesLoading}
+            noRowsOverlayText="No External Sources Found"
+            {user}
+            getRowId={getExternalSourceSlimRowId}
+            on:rowClicked={({ detail }) => selectSource(detail.data)}
+            on:bulkDeleteItems={({ detail }) => onDeleteExternalSource(detail)}
+            bind:selectedItemId={selectedSourceId}
+          />
+        </div>
       </svelte:fragment>
     </Panel>
 

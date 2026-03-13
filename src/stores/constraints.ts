@@ -31,12 +31,12 @@ export const constraintsColumns: Writable<string> = writable('1fr 3px 1fr');
 
 /* Subscriptions. */
 
-export const constraints = gqlSubscribable<ConstraintMetadata[] | null>(gql.SUB_CONSTRAINTS, {}, null);
+export const constraints = gqlSubscribable<ConstraintMetadata[]>(gql.SUB_CONSTRAINTS, {}, []);
 
-export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
+export const constraintRuns = gqlSubscribable<ConstraintRun[]>(
   gql.SUB_CONSTRAINT_REQUESTS,
   { simulationDatasetId: simulationDatasetLatestId },
-  null,
+  [],
   (value: ConstraintRequest[]) => {
     return value.flatMap(
       constraintRequest =>
@@ -49,10 +49,10 @@ export const constraintRuns = gqlSubscribable<ConstraintRun[] | null>(
   },
 );
 
-export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpecification[] | null>(
+export const constraintPlanSpecs = gqlSubscribable<ConstraintPlanSpecification[]>(
   gql.SUB_CONSTRAINT_PLAN_SPECIFICATIONS,
   { planId },
-  null,
+  [],
 );
 
 export const constraintMetadata = gqlSubscribable<ConstraintMetadata | null>(
@@ -70,7 +70,7 @@ export const constraintsMap: Readable<Record<string, ConstraintMetadata>> = deri
 export const constraintPlanSpecsMap: Readable<ConstraintPlanSpecMap> = derived(
   [constraintPlanSpecs],
   ([$constraintPlanSpecs]) =>
-    ($constraintPlanSpecs || []).reduce((prevPlanSpecMap: ConstraintPlanSpecMap, constraintPlanSpec) => {
+    $constraintPlanSpecs.reduce((prevPlanSpecMap: ConstraintPlanSpecMap, constraintPlanSpec) => {
       if (!prevPlanSpecMap[constraintPlanSpec.constraint_id]) {
         prevPlanSpecMap[constraintPlanSpec.constraint_id] = {};
       }
@@ -81,8 +81,7 @@ export const constraintPlanSpecsMap: Readable<ConstraintPlanSpecMap> = derived(
 
 export const allowedConstraintPlanSpecs: Readable<ConstraintPlanSpecification[]> = derived(
   [constraintPlanSpecs],
-  ([$constraintPlanSpecs]) =>
-    ($constraintPlanSpecs || []).filter(({ constraint_metadata: metadata }) => metadata !== null),
+  ([$constraintPlanSpecs]) => $constraintPlanSpecs.filter(({ constraint_metadata: metadata }) => metadata !== null),
 );
 
 export const allowedConstraintPlanSpecMap: Readable<ConstraintPlanSpecMap> = derived(
@@ -123,7 +122,7 @@ export const constraintVisibilityMap: Readable<ConstraintPlanSpecVisibilityMap> 
 export const constraintResponses: Readable<ConstraintResponse[]> = derived(
   [constraintRuns, constraintsMap, planStartTimeMs],
   ([$constraintRuns, $constraintsMap, $planStartTimeMs]) => {
-    return ($constraintRuns || []).map(
+    return $constraintRuns.map(
       run =>
         ({
           constraintId: run.constraint_id,
@@ -179,7 +178,7 @@ export const uncheckedConstraintCount: Readable<number> = derived(
 export const relevantConstraintRuns: Readable<ConstraintRun[]> = derived(
   [constraintRuns, constraintPlanSpecsMap],
   ([$constraintRuns, $constraintPlanSpecsMap]) => {
-    return ($constraintRuns || []).filter(constraintRun => {
+    return $constraintRuns.filter(constraintRun => {
       const constraintPlanSpec =
         $constraintPlanSpecsMap[constraintRun.constraint_id]?.[constraintRun.constraint_invocation_id];
 
@@ -274,17 +273,11 @@ export const constraintsStatus: Readable<Status | null> = derived(
 
 /* Loading stores */
 
-export const initialConstraintsLoading: Readable<boolean> = derived([constraints], ([$constraints]) => !$constraints);
+export const initialConstraintsLoading = constraints.loading;
 
-export const initialConstraintRunsLoading: Readable<boolean> = derived(
-  [constraintRuns],
-  ([$constraintRuns]) => !$constraintRuns,
-);
+export const initialConstraintRunsLoading = constraintRuns.loading;
 
-export const initialConstraintPlanSpecsLoading: Readable<boolean> = derived(
-  [constraintPlanSpecs],
-  ([$constraintPlanSpecs]) => !$constraintPlanSpecs,
-);
+export const initialConstraintPlanSpecsLoading = constraintPlanSpecs.loading;
 
 /* Helper Functions. */
 
@@ -305,7 +298,7 @@ export function setConstraintVisibility(
 
 export function setAllConstraintsVisible(visible: boolean) {
   constraintPlanSpecVisibilityMapWritable.set(
-    (get(constraintPlanSpecs) || []).reduce(
+    get(constraintPlanSpecs).reduce(
       (
         prevConstraintPlanSpecVisibilityMap: ConstraintPlanSpecVisibilityMap,
         { constraint_id: constraintId, invocation_id: invocationId }: ConstraintPlanSpecification,

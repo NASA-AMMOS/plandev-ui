@@ -13,9 +13,11 @@
     getSchedulingGoalDefaultsKey,
     schedulingAnalysisStatus,
     schedulingGoalArgumentDefaultsMap,
+    schedulingGoalResponses,
     schedulingGoalSpecifications,
     schedulingGoalsLoading,
     schedulingGoalsMap,
+    schedulingPlanSpecification,
     setSchedulingGoalArgumentDefaults,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -31,12 +33,15 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions, isAdminRole } from '../../utilities/permissions';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
-  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import SchedulingGoal from './goals/SchedulingGoal.svelte';
+
+  const schedulingGoalResponsesError = schedulingGoalResponses.error;
+  const schedulingPlanSpecificationError = schedulingPlanSpecification.error;
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -52,7 +57,7 @@
   let visibleSchedulingGoalSpecs: SchedulingGoalPlanSpecification[] = [];
 
   // TODO: remove this after db merge as it becomes redundant
-  $: visibleSchedulingGoalSpecs = ($allowedSchedulingGoalSpecs || []).filter(({ goal_metadata: goalMetadata }) => {
+  $: visibleSchedulingGoalSpecs = $allowedSchedulingGoalSpecs.filter(({ goal_metadata: goalMetadata }) => {
     if (goalMetadata) {
       const { public: isPublic, owner } = goalMetadata;
       if (!isPublic && !isAdminRole(user?.activeRole)) {
@@ -77,7 +82,7 @@
       }
       return 0;
     });
-  $: numOfPrivateGoals = ($schedulingGoalSpecifications || []).length - visibleSchedulingGoalSpecs.length;
+  $: numOfPrivateGoals = $schedulingGoalSpecifications.length - visibleSchedulingGoalSpecs.length;
   $: if ($plan) {
     hasAnalyzePermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
@@ -165,7 +170,7 @@
 
   // Reactively compute default arguments lookup keyed by invocation_id
   // This ensures the template re-renders when $schedulingGoalArgumentDefaultsMap changes
-  $: goalDefaultArgumentsLookup = ($allowedSchedulingGoalSpecs || []).reduce(
+  $: goalDefaultArgumentsLookup = $allowedSchedulingGoalSpecs.reduce(
     (acc, spec) => {
       acc[spec.goal_invocation_id] = computeDefaultArgumentsForGoal(
         spec,
@@ -323,19 +328,27 @@
       </svelte:fragment>
     </CollapsibleListControls>
     <div class="pt-2">
-      {#if $schedulingGoalsLoading}
-        <div class="pt-1">
-          <Loading />
-        </div>
-      {:else if !filteredSchedulingGoalSpecs.length}
-        <div class="st-typography-label pt-1">No scheduling goals found</div>
-        <div class="private-label">
-          {#if numOfPrivateGoals > 0}
-            {numOfPrivateGoals} scheduling goal{numOfPrivateGoals !== 1 ? 's' : ''}
-            {numOfPrivateGoals > 1 ? 'are' : 'is'} private and not shown
-          {/if}
-        </div>
-      {:else}
+      <AsyncContentState
+        loading={$schedulingGoalsLoading}
+        error={$schedulingPlanSpecificationError || $schedulingGoalResponsesError || null}
+        errorMessage="Failed to load scheduling goals"
+        showRetry
+        empty={!filteredSchedulingGoalSpecs.length}
+        on:retry={() => {
+          schedulingPlanSpecification.restartSocket();
+          schedulingGoalResponses.restartSocket();
+        }}
+      >
+        <svelte:fragment slot="empty">
+          <div class="st-typography-label pt-1">No scheduling goals found</div>
+          <div class="private-label">
+            {#if numOfPrivateGoals > 0}
+              {numOfPrivateGoals} scheduling goal{numOfPrivateGoals !== 1 ? 's' : ''}
+              {numOfPrivateGoals > 1 ? 'are' : 'is'} private and not shown
+            {/if}
+          </div>
+        </svelte:fragment>
+
         <div class="private-label">
           {#if numOfPrivateGoals > 0}
             {numOfPrivateGoals} scheduling goal{numOfPrivateGoals !== 1 ? 's' : ''}
@@ -362,7 +375,7 @@
             />
           {/if}
         {/each}
-      {/if}
+      </AsyncContentState>
     </div>
   </svelte:fragment>
 </Panel>

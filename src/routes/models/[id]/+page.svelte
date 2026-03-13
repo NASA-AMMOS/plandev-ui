@@ -138,6 +138,8 @@
   export let data: PageData;
 
   const user = getUserStore();
+  const schedulingGoalResponsesLoading = schedulingGoalResponses.loading;
+  const schedulingConditionResponsesLoading = schedulingConditionResponses.loading;
 
   let hasCreatePermission: boolean = false;
   let hasEditSpecPermission: boolean = false;
@@ -275,7 +277,7 @@
 
   $: switch (selectedAssociation) {
     case 'goal': {
-      loading = !$schedulingGoalResponses;
+      loading = $schedulingGoalResponsesLoading;
       hasCreatePermission = featurePermissions.schedulingGoals.canCreate($user);
       hasEditSpecPermission = featurePermissions.schedulingGoalsModelSpec.canUpdate($user);
       metadataList = getMetadata($schedulingGoals, $model, 'scheduling_specification_goals').filter(goalMetadata =>
@@ -288,7 +290,7 @@
       break;
     }
     case 'condition':
-      loading = !$schedulingConditionResponses;
+      loading = $schedulingConditionResponsesLoading;
       hasCreatePermission = featurePermissions.schedulingConditions.canCreate($user);
       hasEditSpecPermission = featurePermissions.schedulingConditionsModelSpec.canUpdate($user);
       metadataList = getMetadata($schedulingConditions, $model, 'scheduling_specification_conditions').filter(
@@ -304,7 +306,7 @@
       loading = $initialConstraintsLoading;
       hasCreatePermission = featurePermissions.constraints.canCreate($user);
       hasEditSpecPermission = featurePermissions.constraintsModelSpec.canUpdate($user);
-      metadataList = getMetadata($constraints || [], $model, 'constraint_specification');
+      metadataList = getMetadata($constraints, $model, 'constraint_specification');
 
       selectedMetadata = selectedConstraintMetadataMap;
       selectedSpecificationsList = selectedVisibleConstraintSpecificationsList;

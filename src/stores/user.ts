@@ -1,5 +1,4 @@
 import { getContext } from 'svelte';
-import { derived, type Readable } from 'svelte/store';
 import type { UserId, UserStore } from '../types/app';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
@@ -12,7 +11,7 @@ export const AERIE_DEFAULT_USERS: UserId[] = ['Mission Model', 'Aerie Legacy'];
 
 /* Subscriptions. */
 
-export const users = gqlSubscribable<UserId[] | null>(gql.SUB_USERS, {}, null, users =>
+export const users = gqlSubscribable<UserId[]>(gql.SUB_USERS, {}, [], users =>
   // Filter out Aerie default users as they should not be viewable by UI users
   users
     .filter((user: { default_role: string; username: UserId }) => AERIE_DEFAULT_USERS.indexOf(user.username) < 0)
@@ -20,7 +19,7 @@ export const users = gqlSubscribable<UserId[] | null>(gql.SUB_USERS, {}, null, u
 );
 
 /* Loading stores. */
-export const initialUsersLoading: Readable<boolean> = derived([users], ([$users]) => !$users);
+export const initialUsersLoading = users.loading;
 
 /* Context helpers. */
 export const getUserStore = (): UserStore => getContext('user');

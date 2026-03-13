@@ -19,6 +19,7 @@
     constraintResponseMap,
     constraintResponses,
     constraintVisibilityMap,
+    constraints,
     constraintsMap,
     constraintsStatus,
     getConstraintDefaultsKey,
@@ -51,13 +52,16 @@
   import { required } from '../../utilities/validators';
   import CollapsibleListControls from '../CollapsibleListControls.svelte';
   import DatePickerField from '../form/DatePickerField.svelte';
-  import Loading from '../Loading.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
+  import AsyncContentState from '../ui/AsyncContentState.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActionButton from '../ui/PanelHeaderActionButton.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import ConstraintListItem from './ConstraintListItem.svelte';
+
+  const constraintPlanSpecsError = constraintPlanSpecs.error;
+  const constraintsError = constraints.error;
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -138,7 +142,7 @@
     filterText,
     showConstraintsWithNoViolations,
   );
-  $: numOfPrivateConstraints = ($constraintPlanSpecs || []).length - $allowedConstraintPlanSpecs.length;
+  $: numOfPrivateConstraints = $constraintPlanSpecs.length - $allowedConstraintPlanSpecs.length;
 
   // Fetch effective arguments for JAR type constraints when specs and metadata are available
   // Need to depend on both $allowedConstraintPlanSpecs and $constraintsMap to avoid race condition
@@ -498,21 +502,29 @@
     </CollapsibleListControls>
 
     <div class="pt-2">
-      {#if $initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
-        <div class="p-1">
-          <Loading />
-        </div>
-      {:else if !filteredConstraintPlanSpecifications.length}
-        <div class="st-typography-label filter-label-row pt-1">
-          <div class="filter-label">No constraints found</div>
-          <div class="private-label">
-            {#if numOfPrivateConstraints > 0}
-              {numOfPrivateConstraints} constraint{numOfPrivateConstraints !== 1 ? 's' : ''}
-              {numOfPrivateConstraints > 1 ? 'are' : 'is'} private and not shown
-            {/if}
+      <AsyncContentState
+        loading={$initialConstraintsLoading || $initialConstraintPlanSpecsLoading}
+        error={$constraintsError || $constraintPlanSpecsError || null}
+        errorMessage="Failed to load constraints"
+        showRetry
+        empty={!filteredConstraintPlanSpecifications.length}
+        on:retry={() => {
+          constraints.restartSocket();
+          constraintPlanSpecs.restartSocket();
+        }}
+      >
+        <svelte:fragment slot="empty">
+          <div class="st-typography-label filter-label-row pt-1">
+            <div class="filter-label">No constraints found</div>
+            <div class="private-label">
+              {#if numOfPrivateConstraints > 0}
+                {numOfPrivateConstraints} constraint{numOfPrivateConstraints !== 1 ? 's' : ''}
+                {numOfPrivateConstraints > 1 ? 'are' : 'is'} private and not shown
+              {/if}
+            </div>
           </div>
-        </div>
-      {:else}
+        </svelte:fragment>
+
         <div class="st-typography-label filter-label-row pt-1">
           <div class="filter-label">
             {#if $cachedConstraintsStatus}
@@ -572,7 +584,7 @@
             />
           {/if}
         {/each}
-      {/if}
+      </AsyncContentState>
     </div>
   </svelte:fragment>
 </Panel>

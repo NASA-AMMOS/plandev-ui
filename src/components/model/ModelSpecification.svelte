@@ -219,20 +219,17 @@
   </div>
   <hr />
   <div class="metadata-table-container">
-    {#if loading || filteredMetadata.length}
-      <DataGrid
-        bind:this={dataGrid}
-        {columnDefs}
-        {loading}
-        rowData={filteredMetadata}
-        rowSelection="single"
-        selectedRowIds={selectedMetadata ? [selectedMetadata.metadataId] : []}
-        on:cellEditingStopped={onToggleSpecification}
-        on:selectionChanged={onSelectDefinition}
-      />
-    {:else}
-      <div class="p1 st-typography-label">No {formattedType}s Found</div>
-    {/if}
+    <DataGrid
+      bind:this={dataGrid}
+      {columnDefs}
+      {loading}
+      rowData={filteredMetadata}
+      rowSelection="single"
+      noRowsOverlayText="No {formattedType}s Found"
+      selectedRowIds={selectedMetadata ? [selectedMetadata.metadataId] : []}
+      on:cellEditingStopped={onToggleSpecification}
+      on:selectionChanged={onSelectDefinition}
+    />
   </div>
 </div>
 

@@ -161,11 +161,11 @@
   $: isFilteredBySnapshot = $planSnapshot !== null;
 
   $: if (isFilteredBySnapshot) {
-    filteredSimulationDatasets = ($simulationDatasetsPlan || []).filter(
+    filteredSimulationDatasets = $simulationDatasetsPlan.filter(
       simulationDataset => $planSnapshot === null || simulationDataset.plan_revision === $planSnapshot?.revision,
     );
   } else {
-    filteredSimulationDatasets = $simulationDatasetsPlan || [];
+    filteredSimulationDatasets = $simulationDatasetsPlan;
   }
 
   $: enableReSimulation =
@@ -489,11 +489,11 @@
             empty={!filteredSimulationDatasets?.length}
             emptyMessage="No Simulation Datasets"
           >
-            {#each filteredSimulationDatasets ?? [] as simDataset (simDataset.id)}
+            {#each filteredSimulationDatasets as simDataset (simDataset.id)}
               <SimulationHistoryDataset
                 {modelParametersMap}
                 {defaultSimulationArguments}
-                queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll || [])}
+                queuePosition={getSimulationQueuePosition(simDataset, $simulationDatasetsAll)}
                 simulationDataset={simDataset}
                 planEndTimeMs={$planEndTimeMs}
                 planStartTimeMs={$planStartTimeMs}
