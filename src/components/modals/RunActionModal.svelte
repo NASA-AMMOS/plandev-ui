@@ -198,7 +198,7 @@
       </div>
     {/if}
 
-    <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run.</div>
+    <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
     <Parameters
       formParameters={getFormParameters(
         parametersMap,

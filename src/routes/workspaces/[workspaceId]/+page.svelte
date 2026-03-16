@@ -927,6 +927,8 @@
   function onSidebarTabChange(event: CustomEvent<string>) {
     if (event.detail === 'actions') {
       switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    } else if (event.detail === 'settings') {
+      sidebarActiveTab = 'settings'; // settings doesn't have a content mode, so just update the active tab
     } else {
       switchToContentMode(WorkspaceContentMode.File);
     }

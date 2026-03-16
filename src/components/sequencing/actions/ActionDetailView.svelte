@@ -78,13 +78,11 @@
   }
 
   $: displayedVersions = showArchivedVersions
-    ? actionDefinition?.versions ?? []
+    ? (actionDefinition?.versions ?? [])
     : (actionDefinition?.versions ?? []).filter(v => !v.archived);
 
   $: selectedVersion =
-    actionDefinition?.versions.find(v => v.revision === selectedVersionRevision) ??
-    displayedVersions[0] ??
-    null;
+    actionDefinition?.versions.find(v => v.revision === selectedVersionRevision) ?? displayedVersions[0] ?? null;
 
   $: if (selectedVersion) {
     loadCode(selectedVersion.action_file_id);
@@ -163,7 +161,7 @@
     const action = actionDefinition.archived ? 'unarchive' : 'archive';
     const { confirm } = await showConfirmModal(
       actionDefinition.archived ? 'Unarchive' : 'Archive',
-      `Are you sure you want to ${action} "${actionDefinition.name}"?${action === 'archive' ? ' This operation can be undone by unarchiving this action.' : ''}`,
+      `Are you sure you want to ${action} "${actionDefinition.name}"?${action === 'archive' ? ' This operation can only be undone by an admin.' : ''}`,
       `${actionDefinition.archived ? 'Unarchive' : 'Archive'} Action`,
       true,
     );
@@ -173,6 +171,33 @@
     await effects.updateActionDefinition(
       actionDefinition.id,
       { archived: !actionDefinition.archived, description: actionDefinition.description, name: actionDefinition.name },
+      user,
+    );
+  }
+
+  async function toggleVersionArchive(
+    actionDefinition: ActionDefinition | null,
+    version: ActionDefinition['versions'][0],
+    user: User | null,
+  ) {
+    if (!actionDefinition) {
+      return;
+    }
+
+    const action = version.archived ? 'unarchive' : 'archive';
+    const { confirm } = await showConfirmModal(
+      version.archived ? 'Unarchive Version' : 'Archive Version',
+      `Are you sure you want to ${action} version ${version.revision} of "${actionDefinition.name}"?${action === 'archive' ? ' This operation can only be undone by an admin.' : ''}`,
+      `${version.archived ? 'Unarchive' : 'Archive'} Version`,
+      true,
+    );
+    if (!confirm) {
+      return;
+    }
+    await effects.updateActionDefinitionVersion(
+      actionDefinition.id,
+      version.revision,
+      { archived: !version.archived },
       user,
     );
   }
@@ -408,7 +433,7 @@
           <div class="flex items-center py-0.5">
             <Tabs.Trigger
               value="runs"
-              class="tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5"
+              class="tab-trigger mx-0.5 h-6 border bg-transparent px-1.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none"
             >
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">
                 Runs ({actionRuns.length})
@@ -416,13 +441,13 @@
             </Tabs.Trigger>
             <Tabs.Trigger
               value="configure"
-              class="tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5"
+              class="tab-trigger mx-0.5 h-6 border bg-transparent px-1.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none"
             >
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Configure</div>
             </Tabs.Trigger>
             <Tabs.Trigger
               value="code"
-              class="tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5"
+              class="tab-trigger mx-0.5 h-6 border bg-transparent px-1.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none"
             >
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Code</div>
             </Tabs.Trigger>
@@ -463,16 +488,7 @@
                   variant="outline"
                   class="h-6 text-xs"
                   disabled={!hasUpdatePermission}
-                  on:click={() => {
-                    if (selectedVersion) {
-                      effects.updateActionDefinitionVersion(
-                        actionDefinition.id,
-                        selectedVersion.revision,
-                        { archived: !selectedVersion.archived },
-                        user,
-                      );
-                    }
-                  }}
+                  on:click={() => toggleVersionArchive(actionDefinition, selectedVersion, user)}
                 >
                   {selectedVersion.archived ? 'Unarchive' : 'Archive'}
                 </Button>
