@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
-  import { ArrowLeft, Ban, ExternalLink, RefreshCw } from 'lucide-svelte';
+  import { ArrowLeft, Ban, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { writable } from 'svelte/store';
   import { Status } from '../../../enums/status';
@@ -17,7 +17,6 @@
   import {
     getActionDefinitionForRun,
     getStatusForActionRun,
-    openActionRun,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
@@ -158,10 +157,6 @@
     }
   }
 
-  function onOpenInNewTab() {
-    openActionRun($workspaceId, actionRunId, true);
-  }
-
   function onBack() {
     dispatch('back');
   }
@@ -194,7 +189,7 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        {#if actionDefinition}
+        {#if actionDefinition && !actionDefinition.archived}
           <div
             use:permissionHandler={{ hasPermission, permissionError: 'You do not have permission to run an action' }}
           >
@@ -214,13 +209,6 @@
             Cancel
           </button>
         {/if}
-        <button
-          class="rounded p-1 hover:bg-accent"
-          on:click={onOpenInNewTab}
-          use:tooltip={{ content: 'Open in new tab', placement: 'bottom' }}
-        >
-          <ExternalLink size={14} />
-        </button>
       </div>
     </div>
 

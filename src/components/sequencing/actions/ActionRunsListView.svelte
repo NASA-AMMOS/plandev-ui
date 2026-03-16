@@ -8,8 +8,14 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import { getActionDefinitionForRun, getStatusForActionRun, truncateRunParameters } from '../../../utilities/actions';
+  import {
+    getActionDefinitionForRun,
+    getStatusForActionRun,
+    openActionRun,
+    truncateRunParameters,
+  } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { formatMS } from '../../../utilities/time';
   import AsyncContentState from '../../ui/AsyncContentState.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -85,10 +91,14 @@
     return div;
   }
 
-  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim }>) {
-    const { data } = event.detail;
+  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim; event?: Event | null }>) {
+    const { data, event: originalEvent } = event.detail;
     if (data) {
-      dispatch('viewRun', { runId: data.id });
+      if (originalEvent && isMetaOrCtrlPressed(originalEvent as MouseEvent)) {
+        openActionRun($workspaceId, data.id, true);
+      } else {
+        dispatch('viewRun', { runId: data.id });
+      }
     }
   }
 

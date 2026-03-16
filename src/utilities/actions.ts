@@ -13,6 +13,7 @@ import type { ActionDefinition, ActionDefinitionVersion, ActionParametersMap, Ac
 import type { ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import { isMetaOrCtrlPressed } from './keyboardEvents';
 import { getWorkspacesUrl } from './routes';
 
 /**
@@ -23,13 +24,10 @@ export function getLatestRunnableVersion(versions: ActionDefinitionVersion[]): A
 }
 
 /**
- * Returns non-archived versions, optionally including a specific revision even if archived.
+ * Returns non-archived versions.
  */
-export function getRunnableVersions(
-  versions: ActionDefinitionVersion[],
-  includeRevision?: number,
-): ActionDefinitionVersion[] {
-  return versions.filter(v => !v.archived || (includeRevision !== undefined && v.revision === includeRevision));
+export function getRunnableVersions(versions: ActionDefinitionVersion[]): ActionDefinitionVersion[] {
+  return versions.filter(v => !v.archived);
 }
 
 /**
@@ -143,9 +141,11 @@ export function getActionRunDeepLink(workspaceId: number, runId: number, actionI
   return `${baseUrl}?${params.toString()}`;
 }
 
-export function openActionRun(workspaceId: number, runId: number, newTab?: boolean) {
+export function openActionRun(workspaceId: number, runId: number, eventOrNewTab?: MouseEvent | boolean) {
   const url = getActionRunDeepLink(workspaceId, runId);
-  if (newTab === true) {
+  const newTab =
+    typeof eventOrNewTab === 'boolean' ? eventOrNewTab : eventOrNewTab != null && isMetaOrCtrlPressed(eventOrNewTab);
+  if (newTab) {
     window.open(url, '_blank');
   } else {
     goto(url);

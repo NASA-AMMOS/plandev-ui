@@ -3,7 +3,6 @@
 <script lang="ts">
   import { Badge, Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
-  import { Archive } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
@@ -17,10 +16,12 @@
     getLatestRunnableVersion,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
+    openActionRun,
     truncateRunParameters,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import { getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
@@ -162,7 +163,7 @@
     const { confirm } = await showConfirmModal(
       actionDefinition.archived ? 'Unarchive' : 'Archive',
       `Are you sure you want to ${action} "${actionDefinition.name}"?${action === 'archive' ? ' This operation can only be undone by an admin.' : ''}`,
-      `${actionDefinition.archived ? 'Unarchive' : 'Archive'} Action`,
+      `${actionDefinition.archived ? 'Unarchive' : 'Archive'} action`,
       true,
     );
     if (!confirm) {
@@ -243,10 +244,14 @@
     }
   }
 
-  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim }>) {
-    const { data } = event.detail;
+  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim; event?: Event | null }>) {
+    const { data, event: originalEvent } = event.detail;
     if (data) {
-      dispatch('viewRun', { runId: data.id });
+      if (originalEvent && isMetaOrCtrlPressed(originalEvent as MouseEvent)) {
+        openActionRun($workspaceId, data.id, true);
+      } else {
+        dispatch('viewRun', { runId: data.id });
+      }
     }
   }
 
@@ -409,7 +414,7 @@
             permissionError: 'You do not have permission to run an action',
           }}
         >
-          <Button on:click={onRunClick}>Run Action</Button>
+          <Button on:click={onRunClick} disabled={actionDefinition.archived}>Run Action</Button>
         </div>
         <input bind:this={uploadFileInput} accept=".js" class="hidden" on:change={uploadNewVersion} type="file" />
         <div
@@ -418,7 +423,9 @@
             permissionError: 'You do not have permission to upload a new version',
           }}
         >
-          <Button variant="outline" on:click={() => uploadFileInput?.click()}>Upload New Version</Button>
+          <Button variant="outline" on:click={() => uploadFileInput?.click()} disabled={actionDefinition.archived}>
+            Upload New Version
+          </Button>
         </div>
         <Button on:click={() => dispatch('close')} variant="outline">Close</Button>
       </div>
@@ -454,6 +461,10 @@
           </div>
           {#if activeTab === 'code'}
             <div class="flex items-center gap-2 pr-2">
+              <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
+                <span>Archived</span>
+              </label>
               <select
                 class="st-input h-6 bg-white !px-1 text-xs"
                 value={selectedVersion?.revision ?? 0}
@@ -471,18 +482,13 @@
               </select>
               {#if selectedVersion}
                 <span class="text-xs text-muted-foreground">
-                  {selectedVersion.author ?? 'Unknown'} • {new Date(selectedVersion.created_at).toLocaleDateString()}
+                  Author:
+                  {selectedVersion.author ?? 'Unknown'} • Created: {new Date(
+                    selectedVersion.created_at,
+                  ).toLocaleDateString()}
                 </span>
               {/if}
-              <button
-                class="flex shrink-0 items-center rounded p-0.5 {showArchivedVersions
-                  ? 'bg-accent'
-                  : 'text-muted-foreground hover:text-foreground'}"
-                title={showArchivedVersions ? 'Hide archived versions' : 'Show archived versions'}
-                on:click={() => (showArchivedVersions = !showArchivedVersions)}
-              >
-                <Archive size={14} />
-              </button>
+
               {#if selectedVersion && (selectedVersion !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== selectedVersion).length > 0)}
                 <Button
                   variant="outline"
@@ -490,7 +496,7 @@
                   disabled={!hasUpdatePermission}
                   on:click={() => toggleVersionArchive(actionDefinition, selectedVersion, user)}
                 >
-                  {selectedVersion.archived ? 'Unarchive' : 'Archive'}
+                  {selectedVersion.archived ? 'Unarchive Version' : 'Archive Version'}
                 </Button>
               {/if}
             </div>
@@ -626,6 +632,65 @@
               {/if}
             </div>
 
+            <!-- Versions section -->
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-medium">Versions</h3>
+                <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
+                  Show archived
+                </label>
+              </div>
+              {#if displayedVersions.length === 0}
+                <p class="text-xs italic text-muted-foreground">No versions</p>
+              {:else}
+                <div class="divide-y divide-border rounded border border-border">
+                  {#each displayedVersions as version, i (version.revision)}
+                    <div
+                      class="flex items-center justify-between px-3 py-2 text-xs {version.archived ? 'opacity-50' : ''}"
+                    >
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span class="font-medium">
+                          v{version.revision}
+                          {#if i === 0 && !version.archived}
+                            <span class="text-muted-foreground">(latest)</span>
+                          {/if}
+                        </span>
+                        <span class="text-muted-foreground">
+                          Author: <span class="text-foreground">{version.author ?? 'Unknown'}</span>
+                        </span>
+                        <span class="text-muted-foreground">
+                          Created: <span class="text-foreground"
+                            >{new Date(version.created_at).toLocaleDateString()}</span
+                          >
+                        </span>
+                        {#if version.archived}
+                          <Badge variant="destructive">Archived</Badge>
+                        {/if}
+                      </div>
+                      {#if version !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== version).length > 0}
+                        <div
+                          use:permissionHandler={{
+                            hasPermission: hasUpdatePermission,
+                            permissionError: 'You do not have permission to archive a version',
+                          }}
+                        >
+                          <Button
+                            variant="outline"
+                            class="h-6 shrink-0 text-xs"
+                            disabled={!hasUpdatePermission}
+                            on:click={() => toggleVersionArchive(actionDefinition, version, user)}
+                          >
+                            {version.archived ? 'Unarchive Version' : 'Archive Version'}
+                          </Button>
+                        </div>
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+
             <div class="flex items-center gap-2">
               <div
                 use:permissionHandler={{
@@ -644,7 +709,7 @@
                 }}
               >
                 <Button variant="outline" on:click={toggleArchive}>
-                  {actionDefinition.archived ? 'Unarchive' : 'Archive'}
+                  {actionDefinition.archived ? 'Unarchive Action' : 'Archive Action'}
                 </Button>
               </div>
             </div>

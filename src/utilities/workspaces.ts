@@ -275,6 +275,9 @@ export function getAvailableActionsForNodes(
   const availableActions: ActionParameterPair[] = [];
 
   for (const action of actions) {
+    if (action.archived) {
+      continue;
+    }
     const latestVersion = action.versions[0];
     if (!latestVersion) {
       continue;

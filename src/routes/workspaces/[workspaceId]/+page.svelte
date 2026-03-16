@@ -107,7 +107,7 @@
   import { ErrorTypes } from '../../../utilities/errors';
   import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import { showConfirmModal } from '../../../utilities/modal';
+  import { showConfirmModal, showRunActionResultsModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
   import { getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
@@ -958,6 +958,17 @@
     }
   }
 
+  async function handleActionRunResultFromEditor(runId: number | null) {
+    if (runId === null) {
+      return;
+    }
+    userInitiatedActionRunIds.update(ids => new Set(ids).add(runId));
+    const { confirm } = await showRunActionResultsModal(runId);
+    if (confirm) {
+      switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+    }
+  }
+
   async function onRerunAction(
     event: CustomEvent<{
       actionDefinitionId: number;
@@ -1018,7 +1029,9 @@
     }
 
     if ($workspace) {
-      handleActionRunResult(await effects.runAction(action, $workspace, workspaceFileList, $user, parameters));
+      handleActionRunResultFromEditor(
+        await effects.runAction(action, $workspace, workspaceFileList, $user, parameters),
+      );
     }
   }
 
@@ -1055,7 +1068,9 @@
     }
 
     if ($workspace) {
-      handleActionRunResult(await effects.runAction(action, $workspace, workspaceFileList, $user, parameters));
+      handleActionRunResultFromEditor(
+        await effects.runAction(action, $workspace, workspaceFileList, $user, parameters),
+      );
     }
   }
 

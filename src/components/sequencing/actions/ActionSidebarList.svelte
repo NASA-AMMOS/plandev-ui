@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, Input as InputStellar } from '@nasa-jpl/stellar-svelte';
-  import { Archive, ListChecks, Play, Search } from 'lucide-svelte';
+  import { ListChecks, Play, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../../enums/status';
   import { actionDefinitions, actionRunsByWorkspace } from '../../../stores/actions';
@@ -88,15 +88,10 @@
                 placeholder="Filter actions..."
                 bind:value={filterText}
               />
-              <button
-                class="shrink-0 rounded p-0.5 {showArchived
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'}"
-                on:click={() => (showArchived = !showArchived)}
-                use:tooltip={{ content: showArchived ? 'Hide archived' : 'Show archived', placement: 'bottom' }}
-              >
-                <Archive size={14} />
-              </button>
+              <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                <input type="checkbox" bind:checked={showArchived} class="h-3.5 w-3.5" />
+                <span>Archived</span>
+              </label>
             </div>
 
             <div class="border-t border-border" />
@@ -153,25 +148,27 @@
                         </span>
                       </div>
                     </Button>
-                    <div
-                      class="absolute right-3 top-1/2 hidden -translate-y-1/2 group-hover/action:block"
-                      use:tooltip={{ content: `Run ${action.name}`, placement: 'right' }}
-                      use:permissionHandler={{
-                        hasPermission: workspace != null && featurePermissions.actionRun.canCreate(user, workspace),
-                        permissionError: 'You do not have permission to run an action',
-                      }}
-                    >
-                      <Button
-                        variant="ghost"
-                        class="rounded p-1"
-                        on:click={e => {
-                          e.stopPropagation();
-                          dispatch('runAction', action);
+                    {#if !action.archived}
+                      <div
+                        class="absolute right-3 top-1/2 hidden -translate-y-1/2 group-hover/action:block"
+                        use:tooltip={{ content: `Run ${action.name}`, placement: 'right' }}
+                        use:permissionHandler={{
+                          hasPermission: workspace != null && featurePermissions.actionRun.canCreate(user, workspace),
+                          permissionError: 'You do not have permission to run an action',
                         }}
                       >
-                        <Play size={14} />
-                      </Button>
-                    </div>
+                        <Button
+                          variant="ghost"
+                          class="rounded p-1"
+                          on:click={e => {
+                            e.stopPropagation();
+                            dispatch('runAction', action);
+                          }}
+                        >
+                          <Play size={14} />
+                        </Button>
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               </AsyncContentState>

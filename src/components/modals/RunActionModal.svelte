@@ -1,6 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Alert } from '@nasa-jpl/stellar-svelte';
+  import { TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
@@ -36,8 +38,13 @@
   let running: boolean = false;
   let parametersMap: ActionParametersMap = {};
   const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
+  const initialVersionArchived =
+    initialRevision !== undefined &&
+    actionDefinition.versions.find(v => v.revision === initialRevision)?.archived === true;
   let selectedRevision: string =
-    initialRevision !== undefined && initialRevision !== latestRunnable?.revision ? String(initialRevision) : 'latest';
+    initialRevision !== undefined && !initialVersionArchived && initialRevision !== latestRunnable?.revision
+      ? String(initialRevision)
+      : 'latest';
   let settingsArgumentsMap: ArgumentsMap = {};
   let settingsParametersMap: ActionParametersMap = {};
 
@@ -47,12 +54,14 @@
   }>();
 
   $: latestVersion = getLatestRunnableVersion(actionDefinition.versions);
-  $: runnableVersions = getRunnableVersions(actionDefinition.versions, initialRevision);
+  $: runnableVersions = getRunnableVersions(actionDefinition.versions);
   $: selectedVersion =
     selectedRevision === 'latest'
       ? latestVersion
       : (runnableVersions.find(v => v.revision === Number(selectedRevision)) ?? latestVersion);
   $: isLatestSelected = selectedRevision === 'latest';
+  $: effectiveSelectedRevision = selectedRevision === 'latest' ? latestVersion?.revision : Number(selectedRevision);
+  $: versionMismatch = isRerun && initialRevision !== undefined && effectiveSelectedRevision !== initialRevision;
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;
@@ -173,6 +182,18 @@
 <Modal height="max-content" width={500} on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>{isRerun ? `Re-run: ${actionDefinition.name}` : actionDefinition.name}</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
+    {#if versionMismatch}
+      <Alert.Root variant="destructive" class="mb-3">
+        <TriangleAlert class="h-4 w-4" />
+        <Alert.Description>
+          {#if initialVersionArchived}
+            Version {initialRevision} from the original run has been archived. This re-run will use version {effectiveSelectedRevision}.
+          {:else}
+            The selected version (v{effectiveSelectedRevision}) differs from the original run's version (v{initialRevision}).
+          {/if}
+        </Alert.Description>
+      </Alert.Root>
+    {/if}
     {#if showSettings && Object.keys(settingsParametersMap).length > 0}
       <div class="pb-4">
         <div class="pb-2 font-medium text-muted-foreground">
