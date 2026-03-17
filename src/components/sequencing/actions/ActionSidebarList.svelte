@@ -110,6 +110,7 @@
                 </Button>
               </div>
               <AsyncContentState
+                class="px-2 py-2"
                 loading={$actionDefinitionsLoading}
                 error={$actionDefinitionsError || null}
                 errorMessage="Failed to load actions"
