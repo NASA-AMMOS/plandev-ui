@@ -610,4 +610,5 @@
 
 .ag-theme-stellar .ag-tooltip {
   background-color: var(--ag-background-color);
+  color: var(--ag-data-color);
 }
