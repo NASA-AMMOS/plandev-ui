@@ -25,11 +25,11 @@
   const actionRunsError = actionRuns.error;
   const actionRunsLoading = actionRuns.loading;
 
+  export let user: User | null;
+
   const dispatch = createEventDispatcher<{
     viewRun: { runId: number };
   }>();
-
-  export let user: User | null;
 
   let filterExpression: string = '';
   let selectedRunId: number | null = null;

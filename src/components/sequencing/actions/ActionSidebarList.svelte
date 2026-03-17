@@ -24,17 +24,17 @@
   const actionDefinitionsError = actionDefinitions.error;
   const actionDefinitionsLoading = actionDefinitions.loading;
 
-  const dispatch = createEventDispatcher<{
-    runAction: ActionDefinition;
-    selectAction: { id: number };
-    selectAllRuns: void;
-  }>();
-
   export let actions: ActionDefinition[] = [];
   export let isAllRunsSelected: boolean = false;
   export let selectedActionId: number | null = null;
   export let user: User | null;
   export let workspace: Workspace | null | undefined = null;
+
+  const dispatch = createEventDispatcher<{
+    runAction: ActionDefinition;
+    selectAction: { id: number };
+    selectAllRuns: void;
+  }>();
 
   let filterText: string = '';
   let showArchived: boolean = false;

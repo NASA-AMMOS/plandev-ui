@@ -33,17 +33,17 @@
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
+  export let actionDefinitionId: number;
+  export let user: User | null;
+  export let workspace: Workspace | null | undefined = null;
+  export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
+
   const dispatch = createEventDispatcher<{
     close: void;
     dirty: boolean;
     runAction: ActionDefinition;
     viewRun: { runId: number };
   }>();
-
-  export let actionDefinitionId: number;
-  export let user: User | null;
-  export let workspace: Workspace | null | undefined = null;
-  export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
   let actionDefinition: ActionDefinition | null = null;
   let activeTab: string = 'runs';

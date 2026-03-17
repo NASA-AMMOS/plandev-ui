@@ -41,15 +41,15 @@
   export let hasPermission: boolean;
   export let user: User | null;
 
-  let actionSettings: FormParameter[] = [];
-  let actionParameters: FormParameter[] = [];
-
   const actionRunIdStore = writable(actionRunId);
   const actionRunSubscription = gqlSubscribable<ActionRun | null>(
     gql.SUB_ACTION_RUN,
     { actionRunId: actionRunIdStore },
     null,
   );
+
+  let actionSettings: FormParameter[] = [];
+  let actionParameters: FormParameter[] = [];
 
   $: actionRunIdStore.set(actionRunId);
   $: actionRun = $actionRunSubscription;
