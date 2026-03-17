@@ -1031,6 +1031,7 @@ describe('Workspace utility function tests', () => {
         {
           action_definition_id: id,
           action_file_id: 1,
+          archived: false,
           author: null,
           created_at: '2024-01-01',
           parameter_schema: paramSchema as Record<string, any>,
@@ -1154,6 +1155,28 @@ describe('Workspace utility function tests', () => {
       const result = getAvailableActionsForNodes(actions, nodes);
 
       expect(result).toHaveLength(1);
+    });
+
+    test('Should exclude archived actions', () => {
+      const actions = [
+        { ...createMockAction(1, { input: { type: 'file' } }), archived: true },
+        createMockAction(2, { input: { type: 'file' } }),
+      ];
+      const nodes: WorkspaceTreeNode[] = [{ name: 'file.txt', type: WorkspaceContentType.Text }];
+
+      const result = getAvailableActionsForNodes(actions, nodes);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].action.id).toBe(2);
+    });
+
+    test('Should return empty when all actions are archived', () => {
+      const actions = [{ ...createMockAction(1, { input: { type: 'file' } }), archived: true }];
+      const nodes: WorkspaceTreeNode[] = [{ name: 'file.txt', type: WorkspaceContentType.Text }];
+
+      const result = getAvailableActionsForNodes(actions, nodes);
+
+      expect(result).toEqual([]);
     });
   });
 
