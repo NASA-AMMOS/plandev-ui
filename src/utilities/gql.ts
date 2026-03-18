@@ -141,6 +141,7 @@ const gql = {
         name
         plan_id
         source_scheduling_goal_id
+        source_scheduling_goal_invocation_id
         start_offset
         tags {
           tag {
@@ -1656,6 +1657,7 @@ const gql = {
         metadata
         name
         source_scheduling_goal_id
+        source_scheduling_goal_invocation_id
         start_offset
         tags {
           tag {
@@ -2156,6 +2158,7 @@ const gql = {
         name
         plan_id
         source_scheduling_goal_id
+        source_scheduling_goal_invocation_id
         start_offset
         tags {
           tag {
@@ -3678,6 +3681,7 @@ const gql = {
         name
         plan_id
         source_scheduling_goal_id
+        source_scheduling_goal_invocation_id
         start_offset
         tags {
           tag {

@@ -620,24 +620,6 @@
           on:updateStartOffset={updateStartOffset}
         />
 
-        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
-          <Input layout="inline">
-            <label
-              use:tooltip={{ content: 'Source Scheduling Goal ID', placement: 'top' }}
-              for="sourceSchedulingGoalId"
-            >
-              Source Scheduling Goal ID
-            </label>
-            <input
-              class="st-input w-full"
-              disabled
-              name="sourceSchedulingGoalId"
-              id="sourceSchedulingGoalId"
-              value={activityDirective.source_scheduling_goal_id ?? 'None'}
-            />
-          </Input>
-        </Highlight>
-
         <Highlight highlight={highlightKeysMap.tags}>
           <Input layout="inline">
             <label use:tooltip={{ content: 'Tags', placement: 'top' }} for="activityDirectiveTags"> Tags </label>
@@ -724,6 +706,50 @@
               name="createdBy"
               value={activityDirective.created_by}
               id="createdBy"
+            />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.source_scheduling_goal_id}>
+          <Input layout="inline">
+            <label
+              use:tooltip={{
+                content:
+                  'Source Scheduling Goal ID - The ID of the scheduling goal that created this activity directive',
+                placement: 'top',
+              }}
+              for="sourceSchedulingGoalId"
+            >
+              Source Scheduling Goal ID
+            </label>
+            <input
+              class="st-input w-full"
+              disabled
+              name="sourceSchedulingGoalId"
+              id="sourceSchedulingGoalId"
+              value={activityDirective.source_scheduling_goal_id ?? 'None'}
+            />
+          </Input>
+        </Highlight>
+
+        <Highlight highlight={highlightKeysMap.source_scheduling_goal_invocation_id}>
+          <Input layout="inline">
+            <label
+              use:tooltip={{
+                content:
+                  'Source Scheduling Goal Invocation ID - The ID of the scheduling goal invocation (run) that created this activity directive',
+                placement: 'top',
+              }}
+              for="sourceSchedulingGoalInvocationId"
+            >
+              Source Scheduling Goal Invocation ID
+            </label>
+            <input
+              class="st-input w-full"
+              disabled
+              name="sourceSchedulingGoalInvocationId"
+              id="sourceSchedulingGoalInvocationId"
+              value={activityDirective.source_scheduling_goal_invocation_id ?? 'None'}
             />
           </Input>
         </Highlight>
