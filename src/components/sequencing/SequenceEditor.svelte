@@ -25,6 +25,7 @@
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
+  import { safeStringify } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -86,6 +87,7 @@
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
+  let previousOutputEditorExtension: Extension | null = null;
   let previousSequenceFilePath: string = sequenceFilePath;
 
   // Debounce only the expensive output format computation, not the state sync
@@ -158,7 +160,15 @@
     selectedOutputFormat = sequenceAdaptation.outputs[0];
   }
 
-  $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
+  $: if (
+    showOutputs &&
+    (previousShowOutputs !== showOutputs ||
+      safeStringify(previousOutputEditorExtension) !== safeStringify(outputEditorExtension)) &&
+    editorOutputDiv
+  ) {
+    if (safeStringify(previousOutputEditorExtension) !== safeStringify(outputEditorExtension)) {
+      previousOutputEditorExtension = outputEditorExtension;
+    }
     if (editorOutputView) {
       editorOutputView.destroy();
     }
@@ -176,6 +186,7 @@
       ],
       parent: editorOutputDiv,
     });
+    debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
   }
 
   $: updatedSequenceDefinition = sequenceDefinition;
