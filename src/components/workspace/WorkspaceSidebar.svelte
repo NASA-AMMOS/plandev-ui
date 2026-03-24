@@ -251,7 +251,7 @@
           <ActionSidebarList
             {actions}
             {isAllRunsSelected}
-            selectedActionId={selectedActionId}
+            {selectedActionId}
             {user}
             {workspace}
             on:selectAction
