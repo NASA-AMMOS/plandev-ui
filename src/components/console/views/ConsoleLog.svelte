@@ -5,9 +5,7 @@
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { selectActivity } from '../../../stores/activities';
-  import { workspaceId } from '../../../stores/workspaces';
   import type { BaseError, LogMessage } from '../../../types/errors';
-  import { openActionRun } from '../../../utilities/actions';
   import { ErrorTypes, getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
 
   import { safeStringify } from '../../../utilities/text';
@@ -20,6 +18,7 @@
 
   const dispatch = createEventDispatcher<{
     gotoLine: { column: number; line: number };
+    viewRun: { runId: number };
   }>();
 
   let expandable: boolean = false;
@@ -77,7 +76,7 @@
 
   function handleActionRunClick(event: MouseEvent, actionRunId: number) {
     event.stopPropagation();
-    openActionRun($workspaceId, actionRunId, true);
+    dispatch('viewRun', { runId: actionRunId });
   }
 
   function handleGotoLine(event: MouseEvent, line: number, column: number) {

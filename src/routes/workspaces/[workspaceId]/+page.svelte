@@ -1464,6 +1464,7 @@
           logs={$workspaceActionRunMessages}
           autoScroll
           emptyStateMessage="No action runs"
+          on:viewRun={onViewActionRun}
         />
         <ConsoleLogs
           value="adaptation"
