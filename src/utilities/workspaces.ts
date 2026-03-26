@@ -5,10 +5,15 @@ import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
 import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
-import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import type {
+  WorkspaceFileMetadata,
+  WorkspaceTreeMap,
+  WorkspaceTreeNode,
+  WorkspaceTreeNodeWithFullPath,
+} from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace } from './requests';
+import { reqWorkspace, reqWorkspaceMetadata } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -382,6 +387,9 @@ export const WorkspaceApi = {
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
     return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
   },
+  async deleteFileMetadata(workspaceId: number, filePath: string, user: User | null): Promise<void> {
+    return reqWorkspaceMetadata<void>(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
+  },
   async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
     return reqWorkspace(
       joinPath(['bulk', workspaceId]),
@@ -405,12 +413,21 @@ export const WorkspaceApi = {
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
   },
+  async getFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<WorkspaceFileMetadata | null> {
+    return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
+  },
   async getWorkspaceContents(
     workspaceId: number,
     path: string = '',
     user: User | null,
+    withMetadata: boolean = false,
   ): Promise<WorkspaceTreeNode[] | null> {
-    return reqWorkspace<WorkspaceTreeNode[]>(`${joinPath([workspaceId, path])}`, 'GET', null, user);
+    const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
+    return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
   },
   async moveFile(
     workspaceId: number,
@@ -521,6 +538,32 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+    );
+  },
+  async setFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
+    user: User | null,
+  ): Promise<WorkspaceFileMetadata> {
+    return reqWorkspaceMetadata<WorkspaceFileMetadata>(
+      joinPath([workspaceId, filePath]),
+      'POST',
+      JSON.stringify(metadata),
+      user,
+    );
+  },
+  async unsetFileMetadataKeys(
+    workspaceId: number,
+    filePath: string,
+    keys: string[],
+    user: User | null,
+  ): Promise<WorkspaceFileMetadata> {
+    return reqWorkspaceMetadata<WorkspaceFileMetadata>(
+      joinPath(['unset', workspaceId, filePath]),
+      'POST',
+      JSON.stringify(keys),
+      user,
     );
   },
   async uploadFile(
