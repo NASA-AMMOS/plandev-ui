@@ -1070,6 +1070,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   UPDATE_ACTION_DEFINITION: (user: User | null): boolean => {
     return isUserAdmin(user) && getPermission([Queries.UPDATE_ACTION_DEFINITION], user);
   },
+  UPDATE_ACTION_DEFINITION_VERSION: (user: User | null): boolean => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_ACTION_DEFINITION_VERSION], user);
+  },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
