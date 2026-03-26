@@ -5757,10 +5757,11 @@ const effects = {
     workspaceId: number,
     path: string = '',
     user: User | null,
+    withMetadata: boolean = false,
   ): Promise<WorkspaceTreeNode[] | null> {
     try {
       const startTime = performance.now();
-      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user);
+      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user, withMetadata);
 
       if (workspaceContents != null) {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
@@ -5816,8 +5817,12 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
-    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
+  async getWorkspaceFilesList(
+    workspaceId: number,
+    user: User | null,
+    withMetadata: boolean = false,
+  ): Promise<WorkspaceTreeNodeWithFullPath[]> {
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user, withMetadata);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
   },
 

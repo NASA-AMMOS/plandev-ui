@@ -32,6 +32,7 @@ const mockNavigator = {
 };
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
+const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -260,12 +261,52 @@ describe('Workspace utility function tests', () => {
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
     });
 
+    test('deleteFileMetadata', async () => {
+      await WorkspaceApi.deleteFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith('1/foo/bar.seqn', 'DELETE', null, null, undefined, false);
+    });
+
+    test('getFileMetadata', async () => {
+      await WorkspaceApi.getFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith('1/foo/bar.seqn', 'GET', null, null);
+    });
+
     test('getWorkspaceContents', async () => {
       await WorkspaceApi.getWorkspaceContents(1, '', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
 
       await WorkspaceApi.getWorkspaceContents(1, 'foo', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo', 'GET', null, null);
+    });
+
+    test('getWorkspaceContents with metadata', async () => {
+      await WorkspaceApi.getWorkspaceContents(1, '', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1?withMetadata=true', 'GET', null, null);
+
+      await WorkspaceApi.getWorkspaceContents(1, 'foo', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo?withMetadata=true', 'GET', null, null);
+    });
+
+    test('setFileMetadata', async () => {
+      const metadata = { readOnly: true, user: { status: 'draft' } };
+      await WorkspaceApi.setFileMetadata(1, 'foo/bar.seqn', metadata, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(metadata),
+        null,
+      );
+    });
+
+    test('unsetFileMetadataKeys', async () => {
+      const keys = ['readOnly', 'user.status'];
+      await WorkspaceApi.unsetFileMetadataKeys(1, 'foo/bar.seqn', keys, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        'unset/1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(keys),
+        null,
+      );
     });
 
     test('moveFile - move', async () => {

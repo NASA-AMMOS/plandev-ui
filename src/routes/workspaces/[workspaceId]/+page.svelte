@@ -361,7 +361,7 @@
   async function getWorkspaceContents(workspace: Workspace | null) {
     if (workspace) {
       isWorkspaceLoading = true;
-      const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', $user);
+      const workspaceContents = await effects.getWorkspaceContents(workspace.id, '', $user, true);
       if (workspaceContents) {
         workspaceTree = {
           contents: workspaceContents,
