@@ -366,6 +366,17 @@ export function isFileConflictResponse(response: BulkOperationResponse) {
   return response.status === 409;
 }
 
+export function doesFilenameMatchExtension(extension: string, filename: string) {
+  return new RegExp(`\\.${extension.replace(/^\./, '')}$`, 'i').test(filename);
+}
+
+export function replaceFileExtension(filename: string, fromExtension: string, toExtension: string) {
+  return filename.replace(
+    new RegExp(`\\.${fromExtension.replace(/^\./, '')}$`, 'i'),
+    `.${toExtension.replace(/^\./, '')}`,
+  );
+}
+
 export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);

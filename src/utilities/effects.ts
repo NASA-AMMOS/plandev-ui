@@ -320,6 +320,7 @@ import {
 } from './view';
 import {
   cleanPath,
+  doesFilenameMatchExtension,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
@@ -328,6 +329,7 @@ import {
   isFileConflictResponse,
   joinPath,
   mapWorkspaceTreePaths,
+  replaceFileExtension,
   separateFilenameFromPath,
   WorkspaceApi,
   type BulkOperationResponses,
@@ -6057,20 +6059,28 @@ const effects = {
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
             const outputLanguage = sequenceAdaptation.outputs.find(language =>
-              file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
+              doesFilenameMatchExtension(language.fileExtension, file.name),
             );
 
             if (outputLanguage) {
-              const fileName = file.name.replace(
-                outputLanguage.fileExtension.replace(/^\./, ''),
-                sequenceAdaptation.input.fileExtension.replace(/^\./, ''),
-              );
-              const lastModified = Date.now();
-              const content = await file.text();
-              const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
+              try {
+                const fileName = replaceFileExtension(
+                  file.name,
+                  outputLanguage.fileExtension,
+                  sequenceAdaptation.input.fileExtension,
+                );
+                const lastModified = Date.now();
+                const content = await file.text();
+                const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
 
-              convertedFileMap[file.name] = fileName;
-              return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+                convertedFileMap[file.name] = fileName;
+                return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+              } catch (error) {
+                throw Error(
+                  `There was an error trying to convert the file ${file.name}. Please check that it is formatted correctly.`,
+                  { cause: error },
+                );
+              }
             }
 
             return file;

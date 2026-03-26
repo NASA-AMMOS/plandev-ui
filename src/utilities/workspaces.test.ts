@@ -9,6 +9,7 @@ import {
   computeMovedFilePath,
   computeTreeFilter,
   defaultTreeSortComparator,
+  doesFilenameMatchExtension,
   findNodeByPath,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
@@ -21,6 +22,7 @@ import {
   mapWorkspaceTreePaths,
   removeFirstPathSegment,
   removeRedundantNodes,
+  replaceFileExtension,
   separateFilenameFromPath,
   shouldNodeBeVisible,
   sortWorkspaceTree,
@@ -1383,6 +1385,95 @@ describe('Workspace utility function tests', () => {
     });
   });
 
+  describe('doesFileMatchExtension', () => {
+    test('Should match extension without leading dot', () => {
+      expect(doesFilenameMatchExtension('txt', 'file.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('seq', 'test.seq')).toBe(true);
+      expect(doesFilenameMatchExtension('json', 'data.json')).toBe(true);
+    });
+
+    test('Should match extension with leading dot', () => {
+      expect(doesFilenameMatchExtension('.txt', 'file.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('.seq', 'test.seq')).toBe(true);
+      expect(doesFilenameMatchExtension('.json', 'data.json')).toBe(true);
+    });
+
+    test('Should be case-insensitive', () => {
+      expect(doesFilenameMatchExtension('TXT', 'file.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('txt', 'file.TXT')).toBe(true);
+      expect(doesFilenameMatchExtension('TxT', 'file.TxT')).toBe(true);
+      expect(doesFilenameMatchExtension('SEQ', 'test.seq')).toBe(true);
+    });
+
+    test('Should not match wrong extension', () => {
+      expect(doesFilenameMatchExtension('txt', 'file.json')).toBe(false);
+      expect(doesFilenameMatchExtension('seq', 'test.txt')).toBe(false);
+      expect(doesFilenameMatchExtension('json', 'data.xml')).toBe(false);
+    });
+
+    test('Should only match extension at the end of filename', () => {
+      expect(doesFilenameMatchExtension('txt', 'file.txt.bak')).toBe(false);
+      expect(doesFilenameMatchExtension('txt', 'txt.json')).toBe(false);
+    });
+
+    test('Should handle files with multiple dots', () => {
+      expect(doesFilenameMatchExtension('js', 'script.min.js')).toBe(true);
+      expect(doesFilenameMatchExtension('json', 'config.test.json')).toBe(true);
+      expect(doesFilenameMatchExtension('txt', 'my.file.name.txt')).toBe(true);
+    });
+
+    test('Should not match files without extension', () => {
+      expect(doesFilenameMatchExtension('txt', 'README')).toBe(false);
+      expect(doesFilenameMatchExtension('js', 'Makefile')).toBe(false);
+    });
+
+    test('Should not match partial extension', () => {
+      expect(doesFilenameMatchExtension('tx', 'file.txt')).toBe(false);
+      expect(doesFilenameMatchExtension('t', 'file.txt')).toBe(false);
+      expect(doesFilenameMatchExtension('son', 'file.json')).toBe(false);
+    });
+
+    test('Should handle empty filename', () => {
+      expect(doesFilenameMatchExtension('txt', '')).toBe(false);
+    });
+
+    test('Should handle empty extension', () => {
+      expect(doesFilenameMatchExtension('', 'file.')).toBe(true); // matches files ending with a dot
+      expect(doesFilenameMatchExtension('', 'file.txt')).toBe(false);
+      expect(doesFilenameMatchExtension('', 'file')).toBe(false);
+    });
+
+    test('Should handle filename with path', () => {
+      expect(doesFilenameMatchExtension('txt', 'path/to/file.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('seq', 'folder/subfolder/test.seq')).toBe(true);
+      expect(doesFilenameMatchExtension('json', 'a/b/c/data.json')).toBe(true);
+    });
+
+    test('Should handle hidden files (starting with dot)', () => {
+      expect(doesFilenameMatchExtension('json', '.config.json')).toBe(true);
+      expect(doesFilenameMatchExtension('txt', '.gitignore.txt')).toBe(true);
+    });
+
+    test('Should not match if extension appears in middle of filename', () => {
+      expect(doesFilenameMatchExtension('txt', 'file-txt.json')).toBe(false);
+      expect(doesFilenameMatchExtension('seq', 'sequential.js')).toBe(false);
+    });
+
+    test('Should handle special regex characters in extension', () => {
+      // Note: The function does NOT escape regex special characters
+      // So these are treated as regex patterns, not literal strings
+      expect(doesFilenameMatchExtension('t*t', 'file.tt')).toBe(true); // t*t means "zero or more t" + "t"
+      expect(doesFilenameMatchExtension('t+t', 'file.ttt')).toBe(true); // t+t means "one or more t" + "t"
+      expect(doesFilenameMatchExtension('t*t', 'file.t')).toBe(true); // matches .t (zero t's + t)
+    });
+
+    test('Should match exact extension only', () => {
+      expect(doesFilenameMatchExtension('js', 'file.js')).toBe(true);
+      expect(doesFilenameMatchExtension('js', 'file.json')).toBe(false);
+      expect(doesFilenameMatchExtension('js', 'file.jsx')).toBe(false);
+    });
+  });
+
   describe('getCommonPathPrefix', () => {
     test('Should return empty string for empty array', () => {
       const result = getCommonPathPrefix([]);
@@ -1432,6 +1523,93 @@ describe('Workspace utility function tests', () => {
     test('Should handle multiple paths with varying common depths', () => {
       const result = getCommonPathPrefix(['a/b/c/file1.txt', 'a/b/file2.txt', 'a/b/d/file3.txt']);
       expect(result).toBe('a/b');
+    });
+  });
+
+  describe('replaceFileExtension', () => {
+    test('Should replace extension without leading dots', () => {
+      expect(replaceFileExtension('file.txt', 'txt', 'json')).toBe('file.json');
+      expect(replaceFileExtension('test.seq.json', 'seq.json', 'seqN.txt')).toBe('test.seqN.txt');
+      expect(replaceFileExtension('data.xml', 'xml', 'json')).toBe('data.json');
+    });
+
+    test('Should replace extension with leading dots', () => {
+      expect(replaceFileExtension('file.txt', '.txt', '.json')).toBe('file.json');
+      expect(replaceFileExtension('test.seq', '.seq', '.seqN')).toBe('test.seqN');
+      expect(replaceFileExtension('data.xml', '.xml', '.json')).toBe('data.json');
+    });
+
+    test('Should replace extension with mixed dot usage', () => {
+      expect(replaceFileExtension('file.txt', 'txt', '.json')).toBe('file.json');
+      expect(replaceFileExtension('test.seq', '.seq', 'seqN')).toBe('test.seqN');
+    });
+
+    test('Should be case-insensitive when matching extension', () => {
+      expect(replaceFileExtension('file.TXT', 'txt', 'json')).toBe('file.json');
+      expect(replaceFileExtension('test.SEQ', 'seq', 'seqN')).toBe('test.seqN');
+      expect(replaceFileExtension('data.Xml', 'XML', 'json')).toBe('data.json');
+    });
+
+    test('Should not replace if extension does not match', () => {
+      expect(replaceFileExtension('file.txt', 'json', 'xml')).toBe('file.txt');
+      expect(replaceFileExtension('test.seq', 'txt', 'json')).toBe('test.seq');
+      expect(replaceFileExtension('data.xml', 'seq', 'json')).toBe('data.xml');
+    });
+
+    test('Should only replace extension at the end of filename', () => {
+      expect(replaceFileExtension('file.txt.bak', 'txt', 'json')).toBe('file.txt.bak');
+      expect(replaceFileExtension('test.seq.old', 'seq', 'seqN')).toBe('test.seq.old');
+    });
+
+    test('Should handle files with multiple dots correctly', () => {
+      expect(replaceFileExtension('script.min.js', 'min.js', 'ts')).toBe('script.ts');
+      expect(replaceFileExtension('config.test.json', 'json', 'xml')).toBe('config.test.xml');
+      expect(replaceFileExtension('my.file.name.txt', 'txt', 'md')).toBe('my.file.name.md');
+    });
+
+    test('Should not replace if filename has no extension', () => {
+      expect(replaceFileExtension('README', 'txt', 'md')).toBe('README');
+      expect(replaceFileExtension('Makefile', 'txt', 'json')).toBe('Makefile');
+    });
+
+    test('Should handle files with path', () => {
+      expect(replaceFileExtension('path/to/file.txt', 'txt', 'json')).toBe('path/to/file.json');
+      expect(replaceFileExtension('folder/subfolder/test.seq', 'seq', 'seqN')).toBe('folder/subfolder/test.seqN');
+      expect(replaceFileExtension('a/b/c/data.xml', 'xml', 'json')).toBe('a/b/c/data.json');
+    });
+
+    test('Should handle hidden files (starting with dot)', () => {
+      expect(replaceFileExtension('.config.json', 'json', 'xml')).toBe('.config.xml');
+      expect(replaceFileExtension('.gitignore.txt', 'txt', 'bak')).toBe('.gitignore.bak');
+    });
+
+    test('Should not match partial extension', () => {
+      expect(replaceFileExtension('file.txt', 'tx', 'json')).toBe('file.txt');
+      expect(replaceFileExtension('file.txt', 't', 'json')).toBe('file.txt');
+      expect(replaceFileExtension('file.json', 'son', 'xml')).toBe('file.json');
+    });
+
+    test('Should not replace extension in middle of filename', () => {
+      expect(replaceFileExtension('file-txt.json', 'txt', 'xml')).toBe('file-txt.json');
+      expect(replaceFileExtension('sequential.js', 'seq', 'seqN')).toBe('sequential.js');
+    });
+
+    test('Should handle empty filename', () => {
+      expect(replaceFileExtension('', 'txt', 'json')).toBe('');
+    });
+
+    test('Should preserve target extension case', () => {
+      expect(replaceFileExtension('file.txt', 'txt', 'JSON')).toBe('file.JSON');
+      expect(replaceFileExtension('test.seq', 'seq', 'SeqN')).toBe('test.SeqN');
+    });
+
+    test('Should handle complex file extensions', () => {
+      expect(replaceFileExtension('archive.tar.gz', 'gz', 'bz2')).toBe('archive.tar.bz2');
+      expect(replaceFileExtension('script.min.js', 'min.js', 'js')).toBe('script.js');
+    });
+
+    test('Should replace when only extension matches without filename', () => {
+      expect(replaceFileExtension('.txt', 'txt', 'json')).toBe('.json');
     });
   });
 });
