@@ -10,7 +10,7 @@
   type T = $$Generic<TRowData>;
 
   import type { ColDef, ColumnState } from 'ag-grid-community';
-  import { MoreHorizontal } from 'lucide-svelte';
+  import { Ellipsis } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { TRowData } from '../../types/data-grid';
 
@@ -88,7 +88,7 @@
         variant="outline"
         class="flex-shrink-0 [&+div]:hidden"
       >
-        <MoreHorizontal size={16} />
+        <Ellipsis size={16} />
       </Button>
     </Select.Trigger>
     <Select.Content

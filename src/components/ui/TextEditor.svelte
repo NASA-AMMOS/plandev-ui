@@ -12,18 +12,22 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
+  import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
+  import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let includeActions: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let shouldListenForKeyboardSave: boolean = true;
@@ -200,7 +204,7 @@
   });
 </script>
 
-<Panel>
+<Panel padBody={false}>
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
@@ -226,7 +230,11 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    {#if fileMetadata}
+      <FileMetadataBanner {fileMetadata} {onReadOnlyChange} />
+    {/if}
     <div
+      class="p-2"
       bind:this={editorDiv}
       use:permissionHandler={{
         hasPermission: !readOnly,

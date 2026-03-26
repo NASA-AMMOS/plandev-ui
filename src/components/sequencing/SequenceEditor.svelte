@@ -21,6 +21,7 @@
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
+  import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -31,10 +32,13 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
+  import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let fileMetadata: WorkspaceFileMetadata | null = null;
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
@@ -381,11 +385,11 @@
 
 <CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'} columnMinSizes={{ 0: 400, 2: 292 }}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
-    <Panel>
+    <Panel padBody={false}>
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading
+          {sequenceName || 'Untitled'}{readOnly ? ' (Read only)' : ''}{previewOnly && !readOnly && !isLoading
             ? ' (Preview-only)'
             : ''}
         </SectionTitle>
@@ -419,7 +423,11 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
+        {#if fileMetadata}
+          <FileMetadataBanner {fileMetadata} {onReadOnlyChange} />
+        {/if}
         <div
+          class="p-2"
           bind:this={editorSequenceDiv}
           use:permissionHandler={{
             hasPermission: !readOnly,
