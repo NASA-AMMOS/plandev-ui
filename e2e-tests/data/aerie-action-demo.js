@@ -49,6 +49,10 @@ const settingDefinitions = {
     type: 'secret',
     description: 'A secret value (e.g. API token) — sent securely, never stored in run history',
   },
+  files: {
+    type: 'fileList',
+    description: 'A list of files to process',
+  },
   verbose: {
     type: 'string',
     description: 'Enable extra-verbose logging',

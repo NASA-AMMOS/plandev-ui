@@ -16,6 +16,8 @@
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import {
     getActionDefinitionForRun,
+    getDefaultsFromSchema,
+    getLatestRunnableVersion,
     getStatusForActionRun,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
@@ -28,7 +30,6 @@
   import { tooltip } from '../../../utilities/tooltip';
   import ConsoleLog from '../../console/views/ConsoleLog.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
-  import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -62,6 +63,8 @@
     ? getActionDefinitionForRun(actionRun, $actionDefinitionsByWorkspace, $workspaceId)
     : null;
 
+  $: latestVersion = getLatestRunnableVersion(actionRun?.action_definition.versions ?? []);
+  $: isLatestVersion = latestVersion != null && actionRun?.action_definition_revision === latestVersion.revision;
   $: status = actionRun ? getStatusForActionRun(actionRun) : null;
 
   function updateActionSettingsAndParameters(run: ActionRun) {
@@ -74,10 +77,9 @@
       run.settings,
       [],
       undefined,
-      undefined,
+      getDefaultsFromSchema(version?.settings_schema ?? {}),
       undefined,
       'sequence',
-      undefined,
       false,
       false,
     );
@@ -87,10 +89,9 @@
       run.parameters,
       [],
       undefined,
-      undefined,
+      getDefaultsFromSchema(version?.parameter_schema ?? {}),
       undefined,
       'sequence',
-      undefined,
       false,
       false,
     );
@@ -225,21 +226,25 @@
       <span>
         Status: <span class="text-foreground">{actionRun.canceled ? 'Canceled' : capitalize(actionRun.status)}</span>
       </span>
-      <span>Version: <span class="text-foreground">{actionRun.action_definition_revision}</span></span>
+      <span
+        >Version: <span class="text-foreground"
+          >{actionRun.action_definition_revision}{isLatestVersion ? ' (latest)' : ''}</span
+        ></span
+      >
     </div>
 
     <!-- Tabbed content -->
     <div class="flex-1 overflow-hidden">
-      <Tabs.Root value="results" class="flex h-full flex-col">
+      <Tabs.Root value="output" class="flex h-full flex-col">
         <Tabs.List
           class="flex h-[36px] shrink-0 items-center justify-start rounded-none border-b border-border bg-secondary/50 py-0"
         >
           <div class="flex items-center py-0.5">
             <Tabs.Trigger
-              value="results"
+              value="output"
               class="tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5"
             >
-              <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Results</div>
+              <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Output</div>
             </Tabs.Trigger>
             <Tabs.Trigger
               value="parameters"
@@ -247,33 +252,54 @@
             >
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Parameters</div>
             </Tabs.Trigger>
-            <Tabs.Trigger
-              value="logs"
-              class="tab-trigger mx-0.5 h-6 border bg-transparent px-0.5 hover:text-neutral-800 data-[state=active]:border data-[state=inactive]:border-transparent data-[state=active]:shadow-none lg:px-1.5"
-            >
-              <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Logs</div>
-            </Tabs.Trigger>
           </div>
         </Tabs.List>
 
-        <!-- Results tab -->
-        <Tabs.Content value="results" class="mt-0 flex-1 overflow-hidden">
-          {#if actionRun.results?.data}
-            <div class="h-full">
-              <MonacoEditor
-                automaticLayout={true}
-                language="json"
-                lineNumbers="on"
-                minimap={{ enabled: false }}
-                readOnly={true}
-                scrollBeyondLastLine={false}
-                tabSize={2}
-                value={JSON.stringify(actionRun.results.data, undefined, 2)}
-              />
+        <!-- Output tab (errors, results, logs) -->
+        <Tabs.Content value="output" class="mt-0 flex-1 overflow-y-auto">
+          <div class="mx-auto flex max-w-5xl flex-col gap-4 p-6">
+            {#if actionRun.error?.message}
+              {@const errorLog = {
+                level: 'error',
+                message: actionRun.error.message,
+                timestamp: actionRun.requested_at,
+                trace: actionRun.error.stack,
+                type: ErrorTypes.CAUGHT_ERROR,
+              }}
+              <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
+                <h3 class="text-sm font-medium text-destructive">Error</h3>
+                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                  <ConsoleLog log={errorLog} showType={false} />
+                </div>
+              </div>
+            {/if}
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
+              <h3 class="text-sm font-medium">Results</h3>
+              {#if actionRun.results?.data}
+                <pre
+                  class="max-h-[600px] overflow-auto whitespace-pre-wrap rounded bg-muted p-3 font-mono text-xs">{JSON.stringify(
+                    actionRun.results.data,
+                    undefined,
+                    2,
+                  )}</pre>
+              {:else}
+                <p class="text-xs italic text-muted-foreground">No results data</p>
+              {/if}
             </div>
-          {:else}
-            <div class="flex h-full items-center justify-center text-xs text-muted-foreground">No results data</div>
-          {/if}
+            <div class="flex flex-col gap-3 rounded border border-border p-4">
+              <h3 class="text-sm font-medium">Logs</h3>
+              {#if actionRun.logs}
+                {@const logMessages = parseLogLines(actionRun.logs)}
+                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                  {#each logMessages as log}
+                    <ConsoleLog {log} showType={false} />
+                  {/each}
+                </div>
+              {:else}
+                <p class="text-xs italic text-muted-foreground">No logs</p>
+              {/if}
+            </div>
+          </div>
         </Tabs.Content>
 
         <!-- Parameters tab -->
@@ -305,40 +331,6 @@
                 />
               {:else}
                 <p class="text-xs italic text-muted-foreground">No settings</p>
-              {/if}
-            </div>
-          </div>
-        </Tabs.Content>
-
-        <!-- Logs tab -->
-        <Tabs.Content value="logs" class="mt-0 flex-1 overflow-y-auto">
-          <div class="mx-auto flex max-w-5xl flex-col gap-4 p-6">
-            {#if actionRun.error?.message}
-              {@const errorLog = {
-                level: 'error',
-                message: actionRun.error.message,
-                timestamp: actionRun.requested_at,
-                trace: actionRun.error.stack,
-                type: ErrorTypes.CAUGHT_ERROR,
-              }}
-              <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
-                <h3 class="text-sm font-medium text-destructive">Error</h3>
-                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  <ConsoleLog log={errorLog} showType={false} />
-                </div>
-              </div>
-            {/if}
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Logs</h3>
-              {#if actionRun.logs}
-                {@const logMessages = parseLogLines(actionRun.logs)}
-                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  {#each logMessages as log}
-                    <ConsoleLog {log} showType={false} />
-                  {/each}
-                </div>
-              {:else}
-                <p class="text-xs italic text-muted-foreground">No logs</p>
               {/if}
             </div>
           </div>

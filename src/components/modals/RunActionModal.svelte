@@ -179,12 +179,13 @@
   }
 </script>
 
-<Modal height="max-content" width={500} on:close closeOnEscape={false} closeOnOutsideClick={false}>
+<Modal height="max-content" width={550} on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>{isRerun ? `Re-run: ${actionDefinition.name}` : actionDefinition.name}</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
     {#if versionMismatch}
       <Alert.Root variant="destructive" class="mb-3">
         <TriangleAlert class="h-4 w-4" />
+        <Alert.Title>Warning</Alert.Title>
         <Alert.Description>
           {#if initialVersionArchived}
             Version {initialRevision} from the original run has been archived. This re-run will use version {effectiveSelectedRevision}.
@@ -206,7 +207,7 @@
             [],
             undefined,
             getDefaultsFromSchema(selectedVersion?.settings_schema ?? {}),
-            undefined,
+            getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
             'sequence',
             false,
             false,

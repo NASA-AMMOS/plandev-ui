@@ -459,7 +459,30 @@
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Code</div>
             </Tabs.Trigger>
           </div>
-          {#if activeTab === 'code'}
+          {#if activeTab === 'configure'}
+            <div class="flex items-center gap-2 pr-2">
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: 'You do not have permission to update an action',
+                }}
+              >
+                <Button class="h-6 text-xs" disabled={saveButtonDisabled || !isDirty} on:click={save}>
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasUpdatePermission,
+                  permissionError: 'You do not have permission to archive an action',
+                }}
+              >
+                <Button variant="outline" class="h-6 text-xs text-foreground" on:click={toggleArchive}>
+                  {actionDefinition.archived ? 'Unarchive Action' : 'Archive Action'}
+                </Button>
+              </div>
+            </div>
+          {:else if activeTab === 'code'}
             <div class="flex items-center gap-2 pr-2">
               <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
                 <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
@@ -492,7 +515,7 @@
               {#if selectedVersion && (selectedVersion !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== selectedVersion).length > 0)}
                 <Button
                   variant="outline"
-                  class="h-6 text-xs"
+                  class="h-6 text-xs text-foreground"
                   disabled={!hasUpdatePermission}
                   on:click={() => toggleVersionArchive(actionDefinition, selectedVersion, user)}
                 >
@@ -689,29 +712,6 @@
                   {/each}
                 </div>
               {/if}
-            </div>
-
-            <div class="flex items-center gap-2">
-              <div
-                use:permissionHandler={{
-                  hasPermission: hasUpdatePermission,
-                  permissionError: 'You do not have permission to update an action',
-                }}
-              >
-                <Button disabled={saveButtonDisabled || !isDirty} on:click={save}>
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-              <div
-                use:permissionHandler={{
-                  hasPermission: hasUpdatePermission,
-                  permissionError: 'You do not have permission to archive an action',
-                }}
-              >
-                <Button variant="outline" on:click={toggleArchive}>
-                  {actionDefinition.archived ? 'Unarchive Action' : 'Archive Action'}
-                </Button>
-              </div>
             </div>
           </div>
         </Tabs.Content>
