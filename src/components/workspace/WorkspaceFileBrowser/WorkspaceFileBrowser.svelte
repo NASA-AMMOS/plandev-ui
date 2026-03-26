@@ -2,7 +2,13 @@
 
 <script lang="ts">
   import { Input } from '@nasa-jpl/stellar-svelte';
-  import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
+  import type {
+    CellContextMenuEvent,
+    ColumnState,
+    ICellRendererParams,
+    IRowNode,
+    SortChangedEvent,
+  } from 'ag-grid-community';
   import { Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
@@ -28,6 +34,7 @@
     sortWorkspaceTree,
     type TreeSortComparator,
   } from '../../../utilities/workspaces';
+  import ActivityTableMenu from '../../activity/ActivityTableMenu.svelte';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
@@ -44,7 +51,6 @@
   export let user: User | null;
 
   type CellRendererParams = {
-    deleteNode: (node: WorkspaceTreeNodeWithFullPath) => void;
     showMenu: (node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) => void;
     viewNode: (node: WorkspaceTreeNodeWithFullPath) => void;
   };
@@ -67,6 +73,7 @@
 
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
+  let columnStates: ColumnState[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
   let hasEditPermission: boolean = false;
@@ -94,6 +101,135 @@
     hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
   }
 
+  function formatTimeAgo(isoString: string | undefined): string {
+    if (!isoString) {
+      return '';
+    }
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+      return isoString;
+    }
+    const now = Date.now();
+    const diffMs = now - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) {
+      return 'just now';
+    }
+    if (diffMin < 60) {
+      return `${diffMin}m ago`;
+    }
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) {
+      return `${diffHr}h ago`;
+    }
+    const diffDays = Math.floor(diffHr / 24);
+    if (diffDays < 30) {
+      return `${diffDays}d ago`;
+    }
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return `${diffMonths}mo ago`;
+    }
+    return `${Math.floor(diffMonths / 12)}y ago`;
+  }
+
+  function dateTimeCellRenderer(params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) {
+    const value = params.valueFormatted ?? params.value;
+    if (!value) {
+      return '';
+    }
+    const span = document.createElement('span');
+    span.textContent = formatTimeAgo(value);
+    span.title = value;
+    return span;
+  }
+
+  // Metadata column definitions (reusable for column picker)
+  const metadataColumnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [
+    {
+      comparator: () => 0,
+      field: 'lastEditedBy' as any,
+      headerName: 'Last Editor',
+      hide: false,
+      minWidth: 90,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => params.data?.metadata?.lastEditedBy ?? '',
+    },
+    {
+      cellRenderer: dateTimeCellRenderer,
+      comparator: () => 0,
+      field: 'lastEditedAt' as any,
+      headerName: 'Last Edited',
+      hide: false,
+      minWidth: 90,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => params.data?.metadata?.lastEditedAt ?? '',
+    },
+    {
+      comparator: () => 0,
+      field: 'createdBy' as any,
+      headerName: 'Created By',
+      hide: true,
+      minWidth: 100,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => params.data?.metadata?.createdBy ?? '',
+    },
+    {
+      cellRenderer: dateTimeCellRenderer,
+      comparator: () => 0,
+      field: 'createdAt' as any,
+      headerName: 'Created',
+      hide: true,
+      minWidth: 90,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => params.data?.metadata?.createdAt ?? '',
+    },
+    {
+      comparator: () => 0,
+      field: 'version' as any,
+      headerName: 'Version',
+      hide: true,
+      minWidth: 70,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => params.data?.metadata?.version ?? '',
+    },
+    {
+      comparator: () => 0,
+      field: 'user' as any,
+      headerName: 'User Metadata',
+      hide: true,
+      minWidth: 100,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      valueGetter: params => {
+        const userMeta = params.data?.metadata?.user;
+        return userMeta ? JSON.stringify(userMeta) : '';
+      },
+    },
+  ];
+
+  // Initialize column states — include Name first to preserve column order when applyOrder is true
+  $: if (columnStates.length === 0 && metadataColumnDefs.length > 0) {
+    columnStates = [
+      { colId: 'name', hide: false },
+      ...metadataColumnDefs.map(col => ({
+        colId: col.field as string,
+        hide: col.hide ?? false,
+      })),
+    ];
+  }
+
   $: columnDefs = [
     {
       cellClass: 'tree-cell-container',
@@ -113,8 +249,9 @@
       // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
       comparator: () => 0,
       field: 'name',
+      flex: 1,
       headerName: 'Name',
-      minWidth: 200,
+      minWidth: 150,
       resizable: true,
       sort: 'asc',
       sortable: true,
@@ -122,6 +259,7 @@
       suppressAutoSize: false,
       suppressSizeToFit: false,
     },
+    ...metadataColumnDefs,
     {
       cellClass: 'action-cell-container action-cell-container-compact',
       cellRenderer: (params: WorkspaceTreeNodeCellRendererParams) => {
@@ -129,12 +267,6 @@
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteNode,
-            deleteTooltip: {
-              content: 'Delete',
-              placement: 'top',
-            },
-            hasDeletePermission,
             menuCallback: params.showMenu,
             menuTooltip: {
               content: 'More actions',
@@ -157,7 +289,6 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteNode: onDeleteNode,
         showMenu: onShowMenu,
         viewNode: onViewNode,
       } as CellRendererParams,
@@ -166,7 +297,7 @@
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 74,
+      width: 50,
     },
   ];
 
@@ -274,6 +405,15 @@
           comparison = aPath.localeCompare(bPath);
         } else if (colId === 'type') {
           comparison = (a.type ?? '').localeCompare(b.type ?? '');
+        } else if (colId === 'user') {
+          const aVal = a.metadata?.user ? JSON.stringify(a.metadata.user) : '';
+          const bVal = b.metadata?.user ? JSON.stringify(b.metadata.user) : '';
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          // Generic metadata field sorting (lastEditedBy, lastEditedAt, createdBy, etc.)
+          const aVal = String((a.metadata as Record<string, unknown>)?.[colId] ?? '');
+          const bVal = String((b.metadata as Record<string, unknown>)?.[colId] ?? '');
+          comparison = aVal.localeCompare(bVal);
         }
         if (comparison !== 0) {
           return multiplier * comparison;
@@ -474,6 +614,19 @@
     actionsMenuFocused = event.detail;
   }
 
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    columnStates = columnStates.map(state => ({
+      ...state,
+      hide: columns.find(col => col.field === state.colId)?.isHidden ?? state.hide,
+    }));
+  }
+
+  function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
+    columnStates = columnStates.map(state => ({ ...state, hide }));
+  }
+
   $: if (selectedTreeNodePath) {
     expandToPath(selectedTreeNodePath);
   }
@@ -503,6 +656,12 @@
       sizeVariant="xs"
       class="flex-1"
     />
+    <ActivityTableMenu
+      columnDefs={metadataColumnDefs}
+      {columnStates}
+      on:columns-changed={onColumnsChanged}
+      on:show-hide-all-columns={onShowHideAllColumns}
+    />
   </div>
   <BulkActionDataGrid
     bind:dataGrid
@@ -518,6 +677,7 @@
     rowHeight={26}
     class="workspace-file-browser"
     {columnDefs}
+    {columnStates}
     getRowId={node => node.fullPath}
     {hasDeletePermission}
     singleItemDisplayText="File"

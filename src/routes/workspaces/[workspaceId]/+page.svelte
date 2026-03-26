@@ -123,6 +123,7 @@
     mapWorkspaceTreePaths,
     removeRedundantNodes,
     separateFilenameFromPath,
+    WorkspaceApi,
   } from '../../../utilities/workspaces';
   import type { PageData } from './$types';
 
@@ -259,6 +260,9 @@
     }
     hasRunActionPermission = featurePermissions.actionRun.canCreate($user, ws);
   }
+
+  $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
+  $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
   $: if ($parcel) {
     loadSequenceAdaptation($parcel.sequence_adaptation_id);
@@ -819,6 +823,23 @@
     }
   }
 
+  async function onReadOnlyChange(readOnly: boolean) {
+    if (!$activeDocumentPath || !$workspaceId) {
+      return;
+    }
+    try {
+      await WorkspaceApi.setFileMetadata($workspaceId, $activeDocumentPath, { readOnly }, $user);
+      // Update local metadata optimistically
+      const node = workspaceTreeMap[$activeDocumentPath];
+      if (node) {
+        node.metadata = { ...node.metadata, readOnly };
+        workspaceTreeMap = { ...workspaceTreeMap };
+      }
+    } catch (e) {
+      showFailureToast('Failed to update read-only status');
+    }
+  }
+
   function onSaveWorkspaceFile(event: CustomEvent<string>) {
     saveCurrentFile(event.detail);
   }
@@ -1286,10 +1307,13 @@
                   bind:this={sequenceEditorRef}
                   {phoenixContext}
                   availableActions={availableActionsForActiveFile}
+                  fileMetadata={activeFileMetadata}
                   includeActions={hasRunActionPermission}
                   isLoading={$activeDocumentIsLoading}
+                  onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                   {preserveAdaptationLog}
                   previewOnly={!hasEditFilePermission}
+                  readOnly={isFileReadOnly}
                   sequenceAdaptation={$sequenceAdaptation}
                   sequenceDefinition={$activeDocument.originalContent}
                   sequenceName={$activeDocument.fileName ?? undefined}
@@ -1313,10 +1337,13 @@
               <div class="flex h-full">
                 <TextEditor
                   availableActions={availableActionsForActiveFile}
+                  fileMetadata={activeFileMetadata}
                   includeActions={true}
                   isJSON={$activeDocument.type === WorkspaceContentType.Json}
                   isLoading={$activeDocumentIsLoading}
+                  onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                   previewOnly={!hasEditFilePermission}
+                  readOnly={isFileReadOnly}
                   shouldListenForKeyboardSave={false}
                   textFileName={$activeDocument.fileName ?? undefined}
                   textFilePath={$activeDocumentPath ?? ''}
