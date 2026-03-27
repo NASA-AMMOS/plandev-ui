@@ -60,9 +60,10 @@
 
   const permissionError = 'You do not have permission to edit this workspace';
 
+  export let currentBreadcrumbPath: string = '';
+
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
-  let currentBreadcrumbPath: string = '';
 
   $: workspaceTree && didUpdate(isWorkspaceLoading);
 

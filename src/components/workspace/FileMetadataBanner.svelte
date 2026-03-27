@@ -3,9 +3,11 @@
 <script lang="ts">
   import { Checkbox, Label } from '@nasa-jpl/stellar-svelte';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { getShortISOForDate } from '../../utilities/time';
 
   export let fileMetadata: WorkspaceFileMetadata;
+  export let hasEditPermission: boolean = false;
   export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 </script>
 
@@ -16,7 +18,13 @@
   {#if fileMetadata.lastEditedAt}
     <span><span class="font-medium">Last edited:</span> {getShortISOForDate(new Date(fileMetadata.lastEditedAt))}</span>
   {/if}
-  <div class="ml-auto flex items-center gap-1.5">
+  <div
+    class="ml-auto flex items-center gap-1.5"
+    use:permissionHandler={{
+      hasPermission: hasEditPermission,
+      permissionError: 'You do not have permission to change the read-only status of this file',
+    }}
+  >
     <Checkbox
       checked={fileMetadata.readOnly ?? false}
       on:click={() => onReadOnlyChange?.(!(fileMetadata?.readOnly ?? false))}

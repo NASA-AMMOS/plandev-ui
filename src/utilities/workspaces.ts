@@ -678,7 +678,16 @@ export function computeTreeFilter(nodes: WorkspaceTreeNodeWithFullPath[], filter
 
   for (const node of nodes) {
     const name = node.name?.toLowerCase() ?? '';
-    if (name.includes(lowerFilter)) {
+    const metadata = node.metadata;
+    const matchesName = name.includes(lowerFilter);
+    const matchesMetadata =
+      metadata &&
+      ((metadata.lastEditedBy?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.createdBy?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.version?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.user ? JSON.stringify(metadata.user).toLowerCase().includes(lowerFilter) : false));
+
+    if (matchesName || matchesMetadata) {
       matchingPaths.add(node.fullPath);
 
       // Add all ancestors to keep them visible

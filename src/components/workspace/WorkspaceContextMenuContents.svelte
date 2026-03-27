@@ -28,6 +28,7 @@
     moveToWorkspace: WorkspaceTreeNodeWithFullPath[];
     newFile: void;
     newFolder: void;
+    openFolder: void;
     openInNewTab: void;
     rename: void;
     runAction: ActionParameterPair;
@@ -67,6 +68,11 @@
 <ContextMenu.Group>
   <!-- Single node actions -->
   {#if selectedWorkspaceNodes.length === 1}
+    {#if selectedFolderCount === 1}
+      <ContextMenu.Item size="sm" on:click={() => dispatch('openFolder')} aria-label="Open folder">
+        Open Folder
+      </ContextMenu.Item>
+    {/if}
     <ContextMenu.Item size="sm" on:click={() => dispatch('openInNewTab')} aria-label="Open in new tab">
       Open in New Tab
     </ContextMenu.Item>

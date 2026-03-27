@@ -991,6 +991,45 @@ describe('Workspace utility function tests', () => {
       expect(result.matchingPaths.size).toBe(0);
       expect(result.ancestorPaths.size).toBe(0);
     });
+
+    test('Should search metadata text fields', () => {
+      const nodesWithMetadata: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+        {
+          depth: 1,
+          fullPath: 'folder/file.txt',
+          hasChildren: false,
+          metadata: { createdBy: 'alice', lastEditedBy: 'bob', version: '2.0' },
+          name: 'file.txt',
+          type: WorkspaceContentType.Text,
+        },
+        {
+          depth: 0,
+          fullPath: 'other.seq',
+          hasChildren: false,
+          metadata: { user: { mission: 'europa-clipper' } },
+          name: 'other.seq',
+          type: WorkspaceContentType.Sequence,
+        },
+      ];
+
+      // Search by lastEditedBy
+      const byEditor = computeTreeFilter(nodesWithMetadata, 'bob');
+      expect(byEditor.matchingPaths.has('folder/file.txt')).toBe(true);
+      expect(byEditor.ancestorPaths.has('folder')).toBe(true);
+
+      // Search by createdBy
+      const byCreator = computeTreeFilter(nodesWithMetadata, 'alice');
+      expect(byCreator.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by version
+      const byVersion = computeTreeFilter(nodesWithMetadata, '2.0');
+      expect(byVersion.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by user metadata
+      const byUserMeta = computeTreeFilter(nodesWithMetadata, 'europa');
+      expect(byUserMeta.matchingPaths.has('other.seq')).toBe(true);
+    });
   });
 
   describe('shouldNodeBeVisible', () => {

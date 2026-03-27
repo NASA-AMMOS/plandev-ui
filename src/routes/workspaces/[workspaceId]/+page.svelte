@@ -112,7 +112,7 @@
   import { getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
-  import { showFailureToast } from '../../../utilities/toast';
+  import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import {
     computeMovedFilePath,
     downloadWorkspaceNodesAsZip,
@@ -162,6 +162,7 @@
   let phoenixContext: PhoenixContext;
   let isWorkspaceLoading: boolean = false;
   let refreshInterval: NodeJS.Timeout | null = null;
+  let sidebarBreadcrumbPath: string = '';
   let selectedFilePath: string | null = null;
   let selectedSequenceOutput: string | undefined = undefined;
   let rightPanelOpen: boolean = true;
@@ -681,6 +682,14 @@
     }
   }
 
+  async function onOpenFolder(filePath: string) {
+    if ($workspace && $user) {
+      sidebarBreadcrumbPath = filePath;
+      leftPanelActiveTab = 'files';
+      sidebarPanelOpen = true;
+    }
+  }
+
   function downloadFileContent(content: string, filename: string) {
     const blob = new Blob([content], { type: 'text/plain' });
     downloadBlob(blob, filename);
@@ -852,9 +861,28 @@
         node.metadata = { ...node.metadata, readOnly };
         workspaceTreeMap = { ...workspaceTreeMap };
       }
+      showSuccessToast(`File marked as ${readOnly ? 'read only' : 'editable'}`);
     } catch (e) {
       catchError('Failed to update read-only status', e as Error);
       showFailureToast('Failed to update read-only status');
+    }
+  }
+
+  async function onUpdateUserMetadata(event: CustomEvent<Record<string, unknown>>) {
+    if (!$activeDocumentPath || !$workspaceId) {
+      return;
+    }
+    try {
+      await WorkspaceApi.setFileMetadata($workspaceId, $activeDocumentPath, { user: event.detail }, $user);
+      const node = workspaceTreeMap[$activeDocumentPath];
+      if (node) {
+        node.metadata = { ...node.metadata, user: event.detail };
+        workspaceTreeMap = { ...workspaceTreeMap };
+      }
+      showSuccessToast('User metadata updated');
+    } catch (e) {
+      catchError('Failed to update user metadata', e as Error);
+      showFailureToast('Failed to update user metadata');
     }
   }
 
@@ -1273,6 +1301,7 @@
             className="min-h-0 h-full"
           >
             <WorkspaceSidebar
+              bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
               bind:selectedFilePath
               activeTab={leftPanelActiveTab}
               actions={allActionsForWorkspace}
@@ -1474,11 +1503,13 @@
               bind:activeTab={rightPanelActiveTab}
               bind:commandNodeName={rightPanelCommandNodeName}
               editorSequenceView={$workspaceEditorView}
+              filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
+              hasEditPermission={hasEditFilePermission}
               isSequenceFile={activeFileIsSequence}
-              onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
               {phoenixContext}
               {commandInfoMapper}
+              on:updateUserMetadata={onUpdateUserMetadata}
             />
           </Sidebar.Provider>
         </Resizable.Pane>
