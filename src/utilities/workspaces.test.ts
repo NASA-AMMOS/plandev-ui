@@ -295,6 +295,8 @@ describe('Workspace utility function tests', () => {
         'POST',
         JSON.stringify(metadata),
         null,
+        undefined,
+        false,
       );
     });
 
@@ -306,6 +308,8 @@ describe('Workspace utility function tests', () => {
         'POST',
         JSON.stringify(keys),
         null,
+        undefined,
+        false,
       );
     });
 

@@ -40,14 +40,14 @@
 
 <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
   <SectionTitle>{title}</SectionTitle>
-  <div class="flex gap-1">
+  <div class="flex gap-1.5">
     <Tooltip content={`Refresh (last refreshed ${getTimeAgo(lastRefreshTime, new Date())})`}>
       {#if didWorkspaceUpdate}
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" class="pointer-events-none">
           <Check size={16} />
         </Button>
       {:else}
-        <Button variant="ghost" size="icon" on:click={onRefreshWorkspace}>
+        <Button variant="outline" size="icon" on:click={onRefreshWorkspace}>
           <RefreshCw size={16} />
         </Button>
       {/if}
@@ -55,7 +55,7 @@
     <DropdownMenu.Root>
       <Tooltip content="New Workspace Item">
         <DropdownMenu.Trigger asChild let:builder>
-          <Button builders={[builder]} variant="ghost" size="icon" aria-label="New Workspace Item">
+          <Button builders={[builder]} variant="outline" size="icon" aria-label="New Workspace Item">
             <Plus size={16} />
           </Button>
         </DropdownMenu.Trigger>

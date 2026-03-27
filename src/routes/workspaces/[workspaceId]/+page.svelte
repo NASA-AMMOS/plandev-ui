@@ -23,10 +23,11 @@
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
-  import CssGrid from '../../../components/ui/CssGrid.svelte';
-  import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
   import * as Sidebar from '../../../components/ui/Sidebar/index.js';
   import TextEditor from '../../../components/ui/TextEditor.svelte';
+  import WorkspaceLeftIconRail from '../../../components/workspace/WorkspaceLeftIconRail.svelte';
+  import WorkspaceRightIconRail from '../../../components/workspace/WorkspaceRightIconRail.svelte';
+  import WorkspaceRightPanel from '../../../components/workspace/WorkspaceRightPanel.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { WorkspaceContentType } from '../../../enums/workspace';
@@ -37,7 +38,7 @@
     activeDocumentIsLoading,
     activeDocumentPath,
   } from '../../../stores/activeDocument';
-  import { allLogs, clearLogs, errorLogs, logMessage } from '../../../stores/errors';
+  import { allLogs, catchError, clearLogs, errorLogs, logMessage } from '../../../stores/errors';
   import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
@@ -47,8 +48,7 @@
     getParsedParameterDictionary,
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
-    userSequenceEditorColumns,
-    userSequenceEditorColumnsWithFormBuilder,
+    workspaceEditorView,
   } from '../../../stores/sequencing';
   import { initialUsersLoading, users } from '../../../stores/user';
   import {
@@ -65,7 +65,7 @@
     workspaceAdaptationMessages,
     workspaceLintErrors,
   } from '../../../stores/workspaceErrors';
-  import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
+  import { parcel, parcels, workspace, workspaceId, workspaces } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
   import type { LintDiagnostic, LogLevel } from '../../../types/errors';
@@ -121,15 +121,20 @@
   const { initialWorkspace } = data;
   const user: UserStore = getContext('user');
   const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
-  const contentMinWidth = 700;
-  const sidebarMinWidth = 100;
-  const defaultWorkspaceColumns = '1fr 3px 3fr';
+  const resizableHandleClass =
+    'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
   let availableActionsForActiveFile: ActionParameterPair[] = [];
+  let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
   let consolePaneApi: PaneAPI;
+  let leftPaneApi: PaneAPI;
+  let leftPanelActiveTab: string = 'files';
+  let rightPaneApi: PaneAPI;
+  let rightPanelActiveTab: string = 'metadata';
+  let rightPanelCommandNodeName: string | null = null;
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
@@ -141,6 +146,7 @@
   let refreshInterval: NodeJS.Timeout | null = null;
   let selectedFilePath: string | null = null;
   let selectedSequenceOutput: string | undefined = undefined;
+  let rightPanelOpen: boolean = true;
   let sidebarPanelOpen: boolean = true;
   let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
   let sequenceEditorRef: SequenceEditor;
@@ -149,30 +155,27 @@
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
-  let previousSidebarPanelOpen: boolean = true;
-  let previousWorkspaceColumns: string = '1fr 3px 3fr';
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
 
-  // Ensure columns are consistent with sidebar state on mount.
-  // The workspaceColumns store persists across navigations, but sidebarPanelOpen resets to true.
-  // If the store has 2-column layout (sidebar closed) but sidebarPanelOpen is true, reset to default.
-  if (sidebarPanelOpen && $workspaceColumns.split(' ').length === 2) {
-    $workspaceColumns = defaultWorkspaceColumns;
+  // Programmatic collapse/expand of left sidebar content pane
+  $: if (leftPaneApi) {
+    if (sidebarPanelOpen) {
+      leftPaneApi.expand();
+    } else {
+      leftPaneApi.collapse();
+    }
   }
 
-  $: if (sidebarPanelOpen !== previousSidebarPanelOpen) {
-    if (sidebarPanelOpen) {
-      // Panel is opening - restore previous columns
-      $workspaceColumns = previousWorkspaceColumns;
+  // Programmatic collapse/expand of right panel content pane
+  $: if (rightPaneApi) {
+    if (rightPanelOpen) {
+      rightPaneApi.expand();
     } else {
-      // Panel is closing - save current columns and collapse (no gutter space)
-      previousWorkspaceColumns = $workspaceColumns;
-      $workspaceColumns = '45px 1fr';
+      rightPaneApi.collapse();
     }
-    previousSidebarPanelOpen = sidebarPanelOpen;
   }
 
   // Show loading spinner after a delay to avoid flashing for fast loads
@@ -219,7 +222,23 @@
   }
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
+  $: activeFileIsSequence =
+    $activeDocumentPath !== null &&
+    $activeDocument.type !== null &&
+    $activeDocument.type === WorkspaceContentType.Sequence;
+  $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
+
+  // Switch right panel tab when file type changes
+  let previousActiveFileIsSequence: boolean = activeFileIsSequence;
+  $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
+    previousActiveFileIsSequence = activeFileIsSequence;
+    if (!activeFileIsSequence) {
+      rightPanelActiveTab = 'metadata';
+    } else {
+      rightPanelActiveTab = 'command';
+    }
+  }
 
   $: if ($parcel) {
     loadSequenceAdaptation($parcel.sequence_adaptation_id);
@@ -774,6 +793,7 @@
         workspaceTreeMap = { ...workspaceTreeMap };
       }
     } catch (e) {
+      catchError('Failed to update read-only status', e as Error);
       showFailureToast('Failed to update read-only status');
     }
   }
@@ -982,12 +1002,15 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
       selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
       getWorkspaceContents(initialWorkspace);
     }
+    // Wait a tick for paneforge to restore saved sizes from localStorage before showing panels
+    await tick();
+    panelsReady = true;
   });
 
   onDestroy(() => {
@@ -1011,160 +1034,218 @@
 
 <Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
   <Resizable.Pane defaultSize={84}>
-    <CssGrid
-      bind:columns={$workspaceColumns}
-      columnMinSizes={{ 0: sidebarMinWidth, 2: contentMinWidth }}
-      class="h-full"
-    >
-      <Sidebar.Provider bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0">
-        <WorkspaceSidebar
-          bind:selectedFilePath
+    <div class="flex h-full" class:invisible={!panelsReady}>
+      <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
+      <Sidebar.Provider disableShortcut bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+        <WorkspaceLeftIconRail
+          bind:activeTab={leftPanelActiveTab}
           bind:panelOpen={sidebarPanelOpen}
-          actions={allActionsForWorkspace}
-          {workspaceTree}
-          {isWorkspaceLoading}
-          {hasEditWorkspacePermission}
-          {hasEditWorkspaceCollaboratorsPermission}
-          parcels={$parcels}
-          user={$user}
-          users={$users}
-          usersLoading={$initialUsersLoading}
-          workspace={$workspace}
-          workspaces={$workspaces}
           on:actionsClick={onActionsClicked}
-          on:addCollaborator={onAddCollaborator}
-          on:deleteCollaborator={onDeleteCollaborator}
-          on:download={onDownloadNodes}
-          on:deleteNodes={onDeleteNodes}
-          on:moveNodes={onMoveNodes}
-          on:renameNode={onRenameNode}
-          on:newFolder={onNewFolder}
-          on:newFile={onNewFile}
-          on:importFile={onImportFile}
-          on:copyFileLocation={onCopyFileLocation}
-          on:copyFullPath={onCopyFullPath}
-          on:moveNodesToWorkspace={onMoveNodesToWorkspace}
-          on:refreshWorkspace={refreshWorkspaceContents}
-          on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
-          on:runAction={onRunActionOnFileSelection}
-          on:openInNewTab={onOpenInNewTab}
         />
       </Sidebar.Provider>
-      {#if sidebarPanelOpen}
-        <CssGridGutter track={1} type="column" />
-      {/if}
-      <Sidebar.Inset className="min-h-0">
-        {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-        {@const isSequenceFile =
-          $activeDocumentPath === null ||
-          ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
-        <div class="relative grid h-full grid-cols-1 grid-rows-1">
-          {#if showLoadingSpinner && isTextOrEmpty}
-            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-              <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-            </div>
-          {/if}
-          {#if isTextOrEmpty && isSequenceFile}
-            <div class="flex h-full">
-              <SequenceEditor
-                bind:this={sequenceEditorRef}
-                {phoenixContext}
-                availableActions={availableActionsForActiveFile}
-                fileMetadata={activeFileMetadata}
-                includeActions={hasRunActionPermission}
-                isLoading={$activeDocumentIsLoading}
-                onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                {preserveAdaptationLog}
-                previewOnly={!hasEditFilePermission}
-                readOnly={isFileReadOnly}
-                sequenceAdaptation={$sequenceAdaptation}
-                sequenceDefinition={$activeDocument.originalContent}
-                sequenceName={$activeDocument.fileName ?? ''}
-                sequenceFilePath={$activeDocumentPath ?? ''}
-                sequenceOutput={selectedSequenceOutput}
-                shouldListenForKeyboardSave={false}
-                showCommandFormBuilder
-                userSequenceEditorColumns={$userSequenceEditorColumns}
-                userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-                on:adaptationError={onAdaptationError}
-                on:lintChange={onLintChange}
-                on:runAction={onRunActionOnActiveFile}
-                on:save={onSaveWorkspaceFile}
-                on:downloadInput={onDownloadInput}
-                on:downloadOutput={onDownloadOutput}
-                on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-                on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-              />
-            </div>
-          {:else if isTextOrEmpty}
-            <div class="flex h-full">
-              <TextEditor
-                availableActions={availableActionsForActiveFile}
-                fileMetadata={activeFileMetadata}
-                includeActions={true}
-                isJSON={$activeDocument.type === WorkspaceContentType.Json}
-                isLoading={$activeDocumentIsLoading}
-                onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                previewOnly={!hasEditFilePermission}
-                readOnly={isFileReadOnly}
-                shouldListenForKeyboardSave={false}
-                textFileName={$activeDocument.fileName ?? ''}
-                textFilePath={$activeDocumentPath ?? ''}
-                textFileContent={$activeDocument.originalContent}
-                on:lintChange={onLintChange}
-                on:runAction={onRunActionOnActiveFile}
-                on:save={onSaveWorkspaceFile}
-                on:download={onDownloadInput}
-                on:textContentUpdated={onWorkspaceInputFileUpdated}
-              />
-            </div>
-          {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
-            {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
-            {@const folderFiles =
-              (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
-            {@const folderSubfolders =
-              (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
-            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-              <Folder size={70} class="text-muted-foreground" />
-              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                The selected folder
-                <code class="font-bold">
-                  {$activeDocumentPath}
-                </code>
-                {#if folderFiles.length === 0 && folderSubfolders.length === 0}
-                  is empty.
-                {:else}
-                  contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
-                  {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
-                  {folderSubfolders.length
-                    ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                    : ''}.
-                {/if}
-              </p>
-            </div>
-          {:else if !isTextOrEmpty}
-            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-              <TriangleAlert size={70} class="text-muted-foreground" />
-              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                The selected file
-                <code class="font-bold">
-                  {$activeDocumentPath}
-                </code>
-                is not displayed in the editor because it is either binary or an unsupported extension.
-              </p>
-              <div>
-                <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+
+      <!-- All resizable panel content -->
+      <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
+        <!-- Left sidebar content (collapses to 0, icon rail is outside) -->
+        <Resizable.Pane
+          defaultSize={20}
+          minSize={3}
+          collapsible
+          collapsedSize={0}
+          onCollapse={() => (sidebarPanelOpen = false)}
+          onExpand={() => (sidebarPanelOpen = true)}
+          bind:pane={leftPaneApi}
+        >
+          <Sidebar.Provider disableShortcut bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+            <WorkspaceSidebar
+              bind:selectedFilePath
+              activeTab={leftPanelActiveTab}
+              actions={allActionsForWorkspace}
+              {workspaceTree}
+              {isWorkspaceLoading}
+              {hasEditWorkspacePermission}
+              {hasEditWorkspaceCollaboratorsPermission}
+              parcels={$parcels}
+              user={$user}
+              users={$users}
+              usersLoading={$initialUsersLoading}
+              workspace={$workspace}
+              workspaces={$workspaces}
+              on:addCollaborator={onAddCollaborator}
+              on:deleteCollaborator={onDeleteCollaborator}
+              on:download={onDownloadNodes}
+              on:deleteNodes={onDeleteNodes}
+              on:moveNodes={onMoveNodes}
+              on:renameNode={onRenameNode}
+              on:newFolder={onNewFolder}
+              on:newFile={onNewFile}
+              on:importFile={onImportFile}
+              on:copyFileLocation={onCopyFileLocation}
+              on:copyFullPath={onCopyFullPath}
+              on:moveNodesToWorkspace={onMoveNodesToWorkspace}
+              on:refreshWorkspace={refreshWorkspaceContents}
+              on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
+              on:runAction={onRunActionOnFileSelection}
+              on:openInNewTab={onOpenInNewTab}
+            />
+          </Sidebar.Provider>
+        </Resizable.Pane>
+
+        <Resizable.Handle class={resizableHandleClass} />
+
+        <!-- Content area -->
+        <Resizable.Pane defaultSize={60} minSize={30}>
+          {@const isTextOrEmpty =
+            $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+          {@const isSequenceFile =
+            $activeDocumentPath === null ||
+            ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
+          <div class="relative grid h-full grid-cols-1 grid-rows-1">
+            {#if showLoadingSpinner && isTextOrEmpty}
+              <div
+                class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
+              >
+                <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
               </div>
-            </div>
-          {/if}
-        </div>
-      </Sidebar.Inset>
-    </CssGrid>
+            {/if}
+            {#if isTextOrEmpty && isSequenceFile}
+              <div class="flex h-full">
+                <SequenceEditor
+                  bind:this={sequenceEditorRef}
+                  {phoenixContext}
+                  availableActions={availableActionsForActiveFile}
+                  fileMetadata={activeFileMetadata}
+                  includeActions={hasRunActionPermission}
+                  isLoading={$activeDocumentIsLoading}
+                  onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                  {preserveAdaptationLog}
+                  previewOnly={!hasEditFilePermission}
+                  readOnly={isFileReadOnly}
+                  sequenceAdaptation={$sequenceAdaptation}
+                  sequenceDefinition={$activeDocument.originalContent}
+                  sequenceName={$activeDocument.fileName ?? ''}
+                  sequenceFilePath={$activeDocumentPath ?? ''}
+                  sequenceOutput={selectedSequenceOutput}
+                  shouldListenForKeyboardSave={false}
+                  showCommandFormBuilder={false}
+                  userSequenceEditorColumns="1fr"
+                  userSequenceEditorColumnsWithFormBuilder="1fr"
+                  on:adaptationError={onAdaptationError}
+                  on:lintChange={onLintChange}
+                  on:runAction={onRunActionOnActiveFile}
+                  on:save={onSaveWorkspaceFile}
+                  on:downloadInput={onDownloadInput}
+                  on:downloadOutput={onDownloadOutput}
+                  on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                  on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+                />
+              </div>
+            {:else if isTextOrEmpty}
+              <div class="flex h-full">
+                <TextEditor
+                  availableActions={availableActionsForActiveFile}
+                  fileMetadata={activeFileMetadata}
+                  includeActions={true}
+                  isJSON={$activeDocument.type === WorkspaceContentType.Json}
+                  isLoading={$activeDocumentIsLoading}
+                  onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                  previewOnly={!hasEditFilePermission}
+                  readOnly={isFileReadOnly}
+                  shouldListenForKeyboardSave={false}
+                  textFileName={$activeDocument.fileName ?? ''}
+                  textFilePath={$activeDocumentPath ?? ''}
+                  textFileContent={$activeDocument.originalContent}
+                  on:lintChange={onLintChange}
+                  on:runAction={onRunActionOnActiveFile}
+                  on:save={onSaveWorkspaceFile}
+                  on:download={onDownloadInput}
+                  on:textContentUpdated={onWorkspaceInputFileUpdated}
+                />
+              </div>
+            {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
+              {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
+              {@const folderFiles =
+                (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+              {@const folderSubfolders =
+                (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+              <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                <Folder size={70} class="text-muted-foreground" />
+                <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                  The selected folder
+                  <code class="font-bold">
+                    {$activeDocumentPath}
+                  </code>
+                  {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+                    is empty.
+                  {:else}
+                    contains{folderFiles.length
+                      ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}`
+                      : ''}
+                    {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+                    {folderSubfolders.length
+                      ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                      : ''}.
+                  {/if}
+                </p>
+              </div>
+            {:else if !isTextOrEmpty}
+              <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                <TriangleAlert size={70} class="text-muted-foreground" />
+                <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                  The selected file
+                  <code class="font-bold">
+                    {$activeDocumentPath}
+                  </code>
+                  is not displayed in the editor because it is either binary or an unsupported extension.
+                </p>
+                <div>
+                  <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+                </div>
+              </div>
+            {/if}
+          </div>
+        </Resizable.Pane>
+
+        <Resizable.Handle class={resizableHandleClass} />
+
+        <!-- Right panel content (collapses to 0, icon rail is outside) -->
+        <Resizable.Pane
+          defaultSize={20}
+          minSize={3}
+          collapsible
+          collapsedSize={0}
+          onCollapse={() => (rightPanelOpen = false)}
+          onExpand={() => (rightPanelOpen = true)}
+          bind:pane={rightPaneApi}
+        >
+          <Sidebar.Provider disableShortcut open={rightPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+            <WorkspaceRightPanel
+              bind:activeTab={rightPanelActiveTab}
+              bind:commandNodeName={rightPanelCommandNodeName}
+              editorSequenceView={$workspaceEditorView}
+              fileMetadata={activeFileMetadata}
+              isSequenceFile={activeFileIsSequence}
+              onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+              {phoenixContext}
+              {commandInfoMapper}
+            />
+          </Sidebar.Provider>
+        </Resizable.Pane>
+      </Resizable.PaneGroup>
+
+      <!-- Right icon rail (fixed 45px, always visible, outside Resizable) -->
+      <Sidebar.Provider disableShortcut open={rightPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+        <WorkspaceRightIconRail
+          bind:activeTab={rightPanelActiveTab}
+          bind:panelOpen={rightPanelOpen}
+          commandNodeName={rightPanelCommandNodeName}
+          isSequenceFile={activeFileIsSequence}
+        />
+      </Sidebar.Provider>
+    </div>
   </Resizable.Pane>
 
-  <Resizable.Handle
-    class="hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all"
-  />
+  <Resizable.Handle class={resizableHandleClass} />
 
   <Resizable.Pane
     defaultSize={!isConsoleExpanded ? 0 : 24}
