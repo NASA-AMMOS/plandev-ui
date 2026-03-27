@@ -545,12 +545,14 @@ export const WorkspaceApi = {
     filePath: string,
     metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
     user: User | null,
-  ): Promise<WorkspaceFileMetadata> {
-    return reqWorkspaceMetadata<WorkspaceFileMetadata>(
+  ): Promise<void> {
+    return reqWorkspaceMetadata<void>(
       joinPath([workspaceId, filePath]),
       'POST',
       JSON.stringify(metadata),
       user,
+      undefined,
+      false,
     );
   },
   async unsetFileMetadataKeys(
@@ -558,12 +560,14 @@ export const WorkspaceApi = {
     filePath: string,
     keys: string[],
     user: User | null,
-  ): Promise<WorkspaceFileMetadata> {
-    return reqWorkspaceMetadata<WorkspaceFileMetadata>(
+  ): Promise<void> {
+    return reqWorkspaceMetadata<void>(
       joinPath(['unset', workspaceId, filePath]),
       'POST',
       JSON.stringify(keys),
       user,
+      undefined,
+      false,
     );
   },
   async uploadFile(

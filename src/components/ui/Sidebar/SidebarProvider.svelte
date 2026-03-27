@@ -5,6 +5,7 @@
   import { setSidebar } from './context.js';
 
   // Props
+  export let disableShortcut: boolean = false;
   export let ref: HTMLDivElement | null = null;
   export let open: boolean = true;
   export let className: string = '';
@@ -30,7 +31,7 @@
   });
 </script>
 
-<svelte:window on:keydown={sidebar.handleShortcutKeydown} />
+<svelte:window on:keydown={e => !disableShortcut && sidebar.handleShortcutKeydown(e)} />
 
 <div
   data-slot="sidebar-wrapper"
