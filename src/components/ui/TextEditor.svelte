@@ -15,7 +15,6 @@
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
   import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
@@ -208,7 +207,7 @@
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
-      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading ? ' (Preview-only)' : ''}
+      {textFileName || 'Untitled'}{readOnly || (previewOnly && !isLoading) ? ' (Read only)' : ''}
     </SectionTitle>
 
     <EditorToolbar
@@ -231,15 +230,8 @@
 
   <svelte:fragment slot="body">
     {#if fileMetadata}
-      <FileMetadataBanner {fileMetadata} {onReadOnlyChange} />
+      <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
     {/if}
-    <div
-      class="p-2"
-      bind:this={editorDiv}
-      use:permissionHandler={{
-        hasPermission: !readOnly,
-        permissionError: 'This sequence has been marked as readonly.',
-      }}
-    />
+    <div class="p-2" bind:this={editorDiv} />
   </svelte:fragment>
 </Panel>

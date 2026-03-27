@@ -25,7 +25,6 @@
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -393,9 +392,7 @@
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName || 'Untitled'}{readOnly ? ' (Read only)' : ''}{previewOnly && !readOnly && !isLoading
-            ? ' (Preview-only)'
-            : ''}
+          {sequenceName || 'Untitled'}{readOnly || (previewOnly && !isLoading) ? ' (Read only)' : ''}
         </SectionTitle>
 
         <EditorToolbar
@@ -428,16 +425,9 @@
 
       <svelte:fragment slot="body">
         {#if fileMetadata}
-          <FileMetadataBanner {fileMetadata} {onReadOnlyChange} />
+          <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
         {/if}
-        <div
-          class="p-2"
-          bind:this={editorSequenceDiv}
-          use:permissionHandler={{
-            hasPermission: !readOnly,
-            permissionError: 'This sequence has been marked as readonly.',
-          }}
-        />
+        <div class="p-2" bind:this={editorSequenceDiv} />
       </svelte:fragment>
     </Panel>
 

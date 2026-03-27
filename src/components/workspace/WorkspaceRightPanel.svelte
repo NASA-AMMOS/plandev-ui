@@ -21,9 +21,10 @@
   export let commandNodeName: string | null = null;
   export let editorSequenceView: EditorView | null = null;
   export let commandInfoMapper: CommandInfoMapper | null = null;
+  export let filePath: string | null = null;
   export let fileMetadata: WorkspaceFileMetadata | null = null;
+  export let hasEditPermission: boolean = false;
   export let isSequenceFile: boolean = false;
-  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
   export let phoenixContext: PhoenixContext;
 
   const emptyCommandDictionary: CommandDictionary = {
@@ -179,6 +180,6 @@
       </Panel>
     {/if}
   {:else if activeTab === 'metadata'}
-    <WorkspaceMetadataPanel {fileMetadata} {onReadOnlyChange} />
+    <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
   {/if}
 </div>

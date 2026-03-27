@@ -100,7 +100,7 @@
   import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
-  import { showFailureToast } from '../../../utilities/toast';
+  import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import {
     computeMovedFilePath,
     downloadWorkspaceNodesAsZip,
@@ -144,6 +144,7 @@
   let phoenixContext: PhoenixContext;
   let isWorkspaceLoading: boolean = false;
   let refreshInterval: NodeJS.Timeout | null = null;
+  let sidebarBreadcrumbPath: string = '';
   let selectedFilePath: string | null = null;
   let selectedSequenceOutput: string | undefined = undefined;
   let rightPanelOpen: boolean = true;
@@ -621,6 +622,14 @@
     }
   }
 
+  async function onOpenFolder(filePath: string) {
+    if ($workspace && $user) {
+      sidebarBreadcrumbPath = filePath;
+      leftPanelActiveTab = 'files';
+      sidebarPanelOpen = true;
+    }
+  }
+
   function downloadFileContent(content: string, filename: string) {
     const blob = new Blob([content], { type: 'text/plain' });
     downloadBlob(blob, filename);
@@ -792,9 +801,28 @@
         node.metadata = { ...node.metadata, readOnly };
         workspaceTreeMap = { ...workspaceTreeMap };
       }
+      showSuccessToast(`File marked as ${readOnly ? 'read only' : 'editable'}`);
     } catch (e) {
       catchError('Failed to update read-only status', e as Error);
       showFailureToast('Failed to update read-only status');
+    }
+  }
+
+  async function onUpdateUserMetadata(event: CustomEvent<Record<string, unknown>>) {
+    if (!$activeDocumentPath || !$workspaceId) {
+      return;
+    }
+    try {
+      await WorkspaceApi.setFileMetadata($workspaceId, $activeDocumentPath, { user: event.detail }, $user);
+      const node = workspaceTreeMap[$activeDocumentPath];
+      if (node) {
+        node.metadata = { ...node.metadata, user: event.detail };
+        workspaceTreeMap = { ...workspaceTreeMap };
+      }
+      showSuccessToast('User metadata updated');
+    } catch (e) {
+      catchError('Failed to update user metadata', e as Error);
+      showFailureToast('Failed to update user metadata');
     }
   }
 
@@ -1036,7 +1064,12 @@
   <Resizable.Pane defaultSize={84}>
     <div class="flex h-full" class:invisible={!panelsReady}>
       <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
-      <Sidebar.Provider disableShortcut bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+      <Sidebar.Provider
+        disableShortcut
+        bind:open={sidebarPanelOpen}
+        style="--sidebar-width: auto"
+        className="min-h-0 h-full"
+      >
         <WorkspaceLeftIconRail
           bind:activeTab={leftPanelActiveTab}
           bind:panelOpen={sidebarPanelOpen}
@@ -1056,8 +1089,14 @@
           onExpand={() => (sidebarPanelOpen = true)}
           bind:pane={leftPaneApi}
         >
-          <Sidebar.Provider disableShortcut bind:open={sidebarPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+          <Sidebar.Provider
+            disableShortcut
+            bind:open={sidebarPanelOpen}
+            style="--sidebar-width: auto"
+            className="min-h-0 h-full"
+          >
             <WorkspaceSidebar
+              bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
               bind:selectedFilePath
               activeTab={leftPanelActiveTab}
               actions={allActionsForWorkspace}
@@ -1102,9 +1141,7 @@
             ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
           <div class="relative grid h-full grid-cols-1 grid-rows-1">
             {#if showLoadingSpinner && isTextOrEmpty}
-              <div
-                class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
-              >
+              <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
                 <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
               </div>
             {/if}
@@ -1178,15 +1215,14 @@
                   {#if folderFiles.length === 0 && folderSubfolders.length === 0}
                     is empty.
                   {:else}
-                    contains{folderFiles.length
-                      ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}`
-                      : ''}
+                    contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
                     {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
                     {folderSubfolders.length
                       ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                      : ''}.
+                      : ''}
                   {/if}
                 </p>
+                <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
               </div>
             {:else if !isTextOrEmpty}
               <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
@@ -1198,9 +1234,7 @@
                   </code>
                   is not displayed in the editor because it is either binary or an unsupported extension.
                 </p>
-                <div>
-                  <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
-                </div>
+                <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
               </div>
             {/if}
           </div>
@@ -1218,16 +1252,23 @@
           onExpand={() => (rightPanelOpen = true)}
           bind:pane={rightPaneApi}
         >
-          <Sidebar.Provider disableShortcut open={rightPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
+          <Sidebar.Provider
+            disableShortcut
+            open={rightPanelOpen}
+            style="--sidebar-width: auto"
+            className="min-h-0 h-full"
+          >
             <WorkspaceRightPanel
               bind:activeTab={rightPanelActiveTab}
               bind:commandNodeName={rightPanelCommandNodeName}
               editorSequenceView={$workspaceEditorView}
+              filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
+              hasEditPermission={hasEditFilePermission}
               isSequenceFile={activeFileIsSequence}
-              onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
               {phoenixContext}
               {commandInfoMapper}
+              on:updateUserMetadata={onUpdateUserMetadata}
             />
           </Sidebar.Provider>
         </Resizable.Pane>

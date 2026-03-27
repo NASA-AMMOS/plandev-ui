@@ -273,15 +273,6 @@
               placement: 'top',
             },
             rowData: params.data,
-            viewCallback:
-              params.data?.type === WorkspaceContentType.Directory ||
-              params.data?.type === WorkspaceContentType.Workspace
-                ? data => user && params.viewNode(data)
-                : undefined,
-            viewTooltip: {
-              content: 'Open',
-              placement: 'top',
-            },
           },
           target: actionsDiv,
         });
@@ -293,11 +284,12 @@
         viewNode: onViewNode,
       } as CellRendererParams,
       headerName: '',
+      minWidth: 28,
       resizable: false,
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 50,
+      width: 28,
     },
   ];
 
@@ -713,6 +705,7 @@
         on:newFile={() => contextMenuNode && onNewFile(contextMenuNode)}
         on:newFolder={() => contextMenuNode && onNewFolder(contextMenuNode)}
         on:importFile={() => contextMenuNode && onImportFile(contextMenuNode)}
+        on:openFolder={() => contextMenuNode && navigateToFolder(contextMenuNode.fullPath)}
         on:openInNewTab={() => contextMenuNode && onOpenInNewTab(contextMenuNode)}
       />
     </svelte:fragment>
