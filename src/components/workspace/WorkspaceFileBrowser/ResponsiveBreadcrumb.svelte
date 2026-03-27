@@ -135,7 +135,7 @@
 
   <Breadcrumb.Root>
     <Breadcrumb.List
-      class="breadcrumbs relative h-8 flex-nowrap gap-0.5 overflow-hidden border-b px-1 py-[3px] text-xs sm:gap-0.5 [&_li:last-child]:min-w-10 [&_li:last-child]:flex-shrink [&_li:last-child]:overflow-hidden"
+      class="breadcrumbs relative h-8 flex-nowrap gap-0.5 overflow-hidden border-b px-1.5 py-[3px] text-xs sm:gap-0.5 [&_li:last-child]:min-w-10 [&_li:last-child]:flex-shrink [&_li:last-child]:overflow-hidden"
     >
       <!-- Root item - always visible -->
       <Breadcrumb.Item class="inline-flex min-w-0 flex-shrink-0 whitespace-nowrap">
