@@ -367,14 +367,24 @@ export function isFileConflictResponse(response: BulkOperationResponse) {
 }
 
 export function doesFilenameMatchExtension(extension: string, filename: string) {
-  return new RegExp(`\\.${extension.replace(/^\./, '')}$`, 'i').test(filename);
+  // Normalize extension to include leading dot
+  const normalizedExtension = extension.startsWith('.') ? extension : `.${extension}`;
+  // Case-insensitive check if filename ends with the extension
+  return filename.toLowerCase().endsWith(normalizedExtension.toLowerCase());
 }
 
 export function replaceFileExtension(filename: string, fromExtension: string, toExtension: string) {
-  return filename.replace(
-    new RegExp(`\\.${fromExtension.replace(/^\./, '')}$`, 'i'),
-    `.${toExtension.replace(/^\./, '')}`,
-  );
+  // Normalize extensions to include leading dots
+  const normalizedFromExtension = fromExtension.startsWith('.') ? fromExtension : `.${fromExtension}`;
+  const normalizedToExtension = toExtension.startsWith('.') ? toExtension : `.${toExtension}`;
+
+  // Check if filename ends with the fromExtension (case-insensitive)
+  if (!doesFilenameMatchExtension(normalizedFromExtension, filename)) {
+    return filename;
+  }
+
+  // Replace only the extension at the end, preserving the original case of the filename
+  return `${filename.slice(0, -normalizedFromExtension.length)}${normalizedToExtension}`;
 }
 
 export const WorkspaceApi = {

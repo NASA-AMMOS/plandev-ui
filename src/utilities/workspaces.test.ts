@@ -1390,6 +1390,12 @@ describe('Workspace utility function tests', () => {
       expect(doesFilenameMatchExtension('txt', 'file.txt')).toBe(true);
       expect(doesFilenameMatchExtension('seq', 'test.seq')).toBe(true);
       expect(doesFilenameMatchExtension('json', 'data.json')).toBe(true);
+      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.thing.seqn.txt')).toBe(true);
+      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn.txt.thing')).toBe(false);
+      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn')).toBe(false);
+      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.txt')).toBe(false);
+      expect(doesFilenameMatchExtension('seqn.txt', 'seqn.txt')).toBe(false);
     });
 
     test('Should match extension with leading dot', () => {
@@ -1457,14 +1463,6 @@ describe('Workspace utility function tests', () => {
     test('Should not match if extension appears in middle of filename', () => {
       expect(doesFilenameMatchExtension('txt', 'file-txt.json')).toBe(false);
       expect(doesFilenameMatchExtension('seq', 'sequential.js')).toBe(false);
-    });
-
-    test('Should handle special regex characters in extension', () => {
-      // Note: The function does NOT escape regex special characters
-      // So these are treated as regex patterns, not literal strings
-      expect(doesFilenameMatchExtension('t*t', 'file.tt')).toBe(true); // t*t means "zero or more t" + "t"
-      expect(doesFilenameMatchExtension('t+t', 'file.ttt')).toBe(true); // t+t means "one or more t" + "t"
-      expect(doesFilenameMatchExtension('t*t', 'file.t')).toBe(true); // matches .t (zero t's + t)
     });
 
     test('Should match exact extension only', () => {
