@@ -1,10 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
+  import { CirclePlus } from 'lucide-svelte';
   import { plan, planModelActivityTypes, subsystemTags } from '../stores/plan';
-  import type { ActivityType } from '../types/activity';
+  import type { ActivityDirectiveInsertInput, ActivityType } from '../types/activity';
   import type { User } from '../types/app';
   import type { TimelineItemType } from '../types/timeline';
   import effects from '../utilities/effects';
@@ -12,6 +14,7 @@
   import { featurePermissions } from '../utilities/permissions';
   import { tooltip } from '../utilities/tooltip';
   import TimelineItemList from './TimelineItemList.svelte';
+  import ActivityDirectiveBuilder from './activity/ActivityDirectiveBuilder.svelte';
   import Input from './form/Input.svelte';
 
   export let user: User | null;
@@ -22,6 +25,8 @@
   let isUploadVisible: boolean = false;
   let uploadFiles: FileList | undefined;
   let uploadFileInput: HTMLInputElement;
+  let directiveBuilder: ActivityDirectiveBuilder;
+  let activeDirectiveName: string = '';
 
   $: if (user !== null && $plan !== null) {
     hasUploadPermission = featurePermissions.activityDirective.canCreate(user, $plan);
@@ -49,8 +54,38 @@
       onHideUpload();
     }
   }
+
+  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    console.log('onCreateActivityDirective');
+    if ($plan !== null && $plan.model) {
+      console.log('onCreateActivityDirective - Passed Check');
+      effects.createActivityDirectivePredefined(directive, $plan, user);
+      directiveBuilder.toggle();
+    }
+  }
+
+  function onShowDirectiveBuilder() {
+    directiveBuilder.toggle();
+  }
 </script>
 
+<ActivityDirectiveBuilder
+  bind:this={directiveBuilder}
+  directiveName={activeDirectiveName}
+  directiveWidth={200}
+  on:directiveChange={directive => {
+    directiveBuilderActiveDirective = directive.detail.directive;
+  }}
+  on:visibilityChange={visibility => {
+    if (!visibility.detail.isShown) {
+      activeDirectiveName = '';
+    }
+  }}
+  on:createActivityDirective={directive => {
+    onCreateActivityDirective(directive.detail.directive);
+  }}
+  {user}
+/>
 <TimelineItemList
   items={$planModelActivityTypes}
   chartType="activity"
@@ -59,6 +94,7 @@
   {getFilterValueFromItem}
   filterOptions={$subsystemTags.map(s => ({ color: s.color || '', label: s.name, value: s.id }))}
   filterName="Subsystem"
+  {user}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
     <button class="close-upload" type="button" on:click={onHideUpload}>
@@ -105,6 +141,9 @@
     >
       <UploadIcon />
     </button>
+    <Button variant="ghost" size="icon-sm" aria-label="Add Activity" on:click={onShowDirectiveBuilder}>
+      <CirclePlus size={16} />
+    </Button>
   </svelte:fragment>
 </TimelineItemList>
 

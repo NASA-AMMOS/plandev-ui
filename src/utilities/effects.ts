@@ -1107,6 +1107,52 @@ const effects = {
     }
   },
 
+  async createActivityDirectivePredefined(
+    activityDirective: ActivityDirectiveInsertInput,
+    plan: Plan | null,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if ((plan && !queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) || !plan) {
+        throwPermissionError('add a directive to the plan');
+      }
+
+      if (plan !== null) {
+        const data = await reqHasura<ActivityDirectiveDB>(
+          gql.CREATE_ACTIVITY_DIRECTIVE,
+          {
+            activityDirectiveInsertInput: activityDirective,
+          },
+          user,
+        );
+        const { insert_activity_directive_one: newActivityDirective } = data;
+        if (newActivityDirective != null) {
+          const { id } = newActivityDirective;
+          activityDirectivesDBStore.updateValue(directives => {
+            return (directives || []).map(directive => {
+              if (directive.id === id) {
+                return newActivityDirective;
+              }
+              return directive;
+            });
+          });
+          selectedActivityDirectiveIdStore.set(id);
+          selectedSpanIdStore.set(null);
+
+          showSuccessToast('Activity Directive Created Successfully');
+          logMessage(`Created activity directive "${name}" (ID=${id}).`);
+        } else {
+          throw Error(`Unable to create activity directive "${activityDirective.name}" on plan with ID ${plan.id}`);
+        }
+      } else {
+        throw Error('Plan is not defined.');
+      }
+    } catch (e) {
+      catchError('Activity Directive Create Failed', e as Error);
+      showFailureToast('Activity Directive Create Failed');
+    }
+  },
+
   async createActivityDirectiveTags(
     tags: ActivityDirectiveTagsInsertInput[],
     user: User | null,
@@ -8903,7 +8949,7 @@ const effects = {
 
   async validateActivityArguments(
     activityTypeName: string,
-    activityId: number,
+    activityId: number | undefined,
     modelId: number,
     argumentsMap: ArgumentsMap,
     user: User | null,
@@ -8921,7 +8967,11 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
-        logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
+        if (activityId) {
+          logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
+        } else {
+          logMessage(`Validated activity arguments for pending directive of "${activityTypeName}"`);
+        }
         return validateActivityArguments;
       } else {
         throw Error('Unable to validate activity arguments');

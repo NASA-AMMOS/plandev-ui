@@ -4,8 +4,11 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
-  import { CirclePlus, GripVertical } from 'lucide-svelte';
+  import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
+  import { plan } from '../stores/plan';
   import { view, viewAddFilterToRow } from '../stores/views';
+  import type { ActivityDirectiveInsertInput } from '../types/activity';
+  import type { User } from '../types/app';
   import type {
     ChartType,
     Layer,
@@ -14,7 +17,9 @@
     TimelineItemListFilterOption,
     TimelineItemType,
   } from '../types/timeline';
+  import effects from '../utilities/effects';
   import { tooltip } from '../utilities/tooltip';
+  import ActivityDirectiveBuilder from './activity/ActivityDirectiveBuilder.svelte';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
   import Loading from './Loading.svelte';
@@ -38,6 +43,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let user: User | null;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -48,6 +54,8 @@
   let layerPicker: LayerPicker;
   let layerPickerIndividual: LayerPicker;
   let timelines: Timeline[] = [];
+  let directiveBuilder: ActivityDirectiveBuilder;
+  let activeDirectiveName: string = '';
 
   $: filteredItems = filterItems(items, filterText ? textFilters.concat(filterText) : textFilters, selectedFilters);
   $: timelines = $view?.definition.plan.timelines || [];
@@ -145,8 +153,39 @@
     }
     return undefined;
   }
+
+  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    console.log('onCreateActivityDirective');
+    if ($plan !== null && $plan.model) {
+      console.log('onCreateActivityDirective - Passed Check');
+      effects.createActivityDirectivePredefined(directive, $plan, user);
+      directiveBuilder.toggle();
+    }
+  }
+
+  function onShowDirectiveBuilder(activityType: string) {
+    directiveBuilder.setCurrentActivityType(activityType);
+    directiveBuilder.toggle();
+  }
 </script>
 
+<ActivityDirectiveBuilder
+  bind:this={directiveBuilder}
+  directiveName={activeDirectiveName}
+  directiveWidth={200}
+  on:directiveChange={directive => {
+    directiveBuilderActiveDirective = directive.detail.directive;
+  }}
+  on:visibilityChange={visibility => {
+    if (!visibility.detail.isShown) {
+      activeDirectiveName = '';
+    }
+  }}
+  on:createActivityDirective={directive => {
+    onCreateActivityDirective(directive.detail.directive);
+  }}
+  {user}
+/>
 <div class="timeline-item-list">
   <div class="timeline-item-list-filters">
     <input
@@ -305,9 +344,19 @@
                 let:builders
               >
                 <Button {builders} variant="ghost" size="icon-sm" aria-label="Add{capitalize(typeName)}-{item.name}">
-                  <CirclePlus size={16} />
+                  <Filter size={16} />
                 </Button>
               </LayerPicker>
+            </div>
+            <div use:tooltip={{ content: 'Add New Directive', placement: 'top' }} class="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Add{capitalize(typeName)}-{item.name}"
+                on:click={() => onShowDirectiveBuilder(item.name)}
+              >
+                <CirclePlus size={16} />
+              </Button>
             </div>
             <div class="drag">
               <GripVertical size={16} />
