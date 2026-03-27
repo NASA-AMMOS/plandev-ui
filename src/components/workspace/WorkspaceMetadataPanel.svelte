@@ -6,6 +6,7 @@
   import { getShortISOForDate } from '../../utilities/time';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
+  import PanelHeader from './PanelHeader.svelte';
 
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
@@ -13,9 +14,9 @@
 
 <div class="grid h-full grid-rows-[min-content_auto]">
   <Sidebar.Header className="p-0">
-    <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+    <PanelHeader>
       <SectionTitle>Metadata</SectionTitle>
-    </div>
+    </PanelHeader>
   </Sidebar.Header>
   <Sidebar.Content className="h-full">
     <Sidebar.Group className="h-full p-0">

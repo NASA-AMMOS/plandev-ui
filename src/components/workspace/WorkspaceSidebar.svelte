@@ -17,6 +17,7 @@
   import Input from '../form/Input.svelte';
   import Loading from '../Loading.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import PanelHeader from './PanelHeader.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
   import WorkspaceFileBrowser from './WorkspaceFileBrowser/WorkspaceFileBrowser.svelte';
@@ -168,11 +169,9 @@
     {:else if activeTab === 'settings'}
       <div class="grid h-full grid-rows-[min-content_auto]">
         <Sidebar.Header className="p-0">
-          <div
-            class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]"
-          >
+          <PanelHeader>
             <SectionTitle>Workspace Settings</SectionTitle>
-          </div>
+          </PanelHeader>
         </Sidebar.Header>
         <Sidebar.Content className="h-full">
           <Sidebar.Group className="h-full p-0">

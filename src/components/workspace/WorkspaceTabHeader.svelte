@@ -8,6 +8,7 @@
   import { getTimeAgo } from '../../utilities/time';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
+  import PanelHeader from './PanelHeader.svelte';
 
   export let title: string;
   export let didWorkspaceUpdate: boolean;
@@ -38,7 +39,7 @@
   }
 </script>
 
-<div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+<PanelHeader>
   <SectionTitle>{title}</SectionTitle>
   <div class="flex gap-1.5">
     <Tooltip content={`Refresh (last refreshed ${getTimeAgo(lastRefreshTime, new Date())})`}>
@@ -119,4 +120,4 @@
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   </div>
-</div>
+</PanelHeader>

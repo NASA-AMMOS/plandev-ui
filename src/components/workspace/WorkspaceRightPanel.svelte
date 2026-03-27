@@ -14,6 +14,7 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
+  import PanelHeader from './PanelHeader.svelte';
   import WorkspaceMetadataPanel from './WorkspaceMetadataPanel.svelte';
 
   export let activeTab: string = 'metadata';
@@ -119,11 +120,11 @@
     {#if phoenixContext.commandDictionary !== null}
       <div class="grid h-full grid-rows-[min-content_auto]">
         <Sidebar.Header className="p-0">
-          <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+          <PanelHeader>
             <SectionTitle>
               {commandNode ? `Selected ${formatTypeName(commandNode.name)}` : 'Selected Command'}
             </SectionTitle>
-          </div>
+          </PanelHeader>
         </Sidebar.Header>
         <Sidebar.Content className="h-full overflow-auto">
           <SelectedCommand
@@ -155,9 +156,9 @@
     {#if phoenixContext.commandDictionary !== null}
       <div class="grid h-full grid-rows-[min-content_auto]">
         <Sidebar.Header className="p-0">
-          <div class="flex h-[48px] items-center justify-between gap-0 border-b border-border bg-background p-[6px]">
+          <PanelHeader>
             <SectionTitle>Command Dictionary</SectionTitle>
-          </div>
+          </PanelHeader>
         </Sidebar.Header>
         <Sidebar.Content className="h-full overflow-auto">
           <CommandDictionaryComponent
