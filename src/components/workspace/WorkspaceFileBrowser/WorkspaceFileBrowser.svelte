@@ -151,11 +151,13 @@
       field: 'lastEditedBy' as any,
       headerName: 'Last Editor',
       hide: false,
-      minWidth: 90,
+      minWidth: 110,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedBy ?? '',
+      width: 110,
     },
     {
       cellRenderer: dateTimeCellRenderer,
@@ -163,22 +165,26 @@
       field: 'lastEditedAt' as any,
       headerName: 'Last Edited',
       hide: false,
-      minWidth: 90,
+      minWidth: 110,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedAt ?? '',
+      width: 110,
     },
     {
       comparator: () => 0,
       field: 'createdBy' as any,
       headerName: 'Created By',
       hide: true,
-      minWidth: 100,
+      minWidth: 110,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.createdBy ?? '',
+      width: 100,
     },
     {
       cellRenderer: dateTimeCellRenderer,
@@ -190,18 +196,22 @@
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.createdAt ?? '',
+      width: 90,
     },
     {
       comparator: () => 0,
       field: 'version' as any,
       headerName: 'Version',
       hide: true,
-      minWidth: 70,
+      minWidth: 90,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.version ?? '',
+      width: 90,
     },
     {
       comparator: () => 0,
@@ -212,10 +222,12 @@
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
       valueGetter: params => {
         const userMeta = params.data?.metadata?.user;
         return userMeta ? JSON.stringify(userMeta) : '';
       },
+      width: 120,
     },
   ];
 
@@ -616,7 +628,7 @@
   }
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
-    columnStates = columnStates.map(state => ({ ...state, hide }));
+    columnStates = columnStates.map(state => (state.colId === 'name' ? state : { ...state, hide }));
   }
 
   $: if (selectedTreeNodePath) {
