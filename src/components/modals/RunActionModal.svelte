@@ -33,25 +33,26 @@
   export let workspace: Workspace;
   export let workspaceFiles: WorkspaceTreeNodeWithFullPath[] = [];
 
-  let argumentsMap: ArgumentsMap = {};
-  let isLoadingWorkspace: boolean = false;
-  let running: boolean = false;
-  let parametersMap: ActionParametersMap = {};
+  const dispatch = createEventDispatcher<{
+    close: void;
+    complete: { actionRunId: number | null };
+  }>();
+
   const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
   const initialVersionArchived =
     initialRevision !== undefined &&
     actionDefinition.versions.find(v => v.revision === initialRevision)?.archived === true;
+
+  let argumentsMap: ArgumentsMap = {};
+  let isLoadingWorkspace: boolean = false;
+  let running: boolean = false;
+  let parametersMap: ActionParametersMap = {};
   let selectedRevision: string =
     initialRevision !== undefined && !initialVersionArchived && initialRevision !== latestRunnable?.revision
       ? String(initialRevision)
       : 'latest';
   let settingsArgumentsMap: ArgumentsMap = {};
   let settingsParametersMap: ActionParametersMap = {};
-
-  const dispatch = createEventDispatcher<{
-    close: void;
-    complete: { actionRunId: number | null };
-  }>();
 
   $: latestVersion = getLatestRunnableVersion(actionDefinition.versions);
   $: runnableVersions = getRunnableVersions(actionDefinition.versions);
