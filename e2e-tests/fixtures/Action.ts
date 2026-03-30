@@ -66,8 +66,8 @@ export class Action {
     // Click action in sidebar to open detail view
     await this.page.getByRole('button', { name: this.actionName }).click();
     // Verify action detail view shows name and description
-    await expect(this.page.locator('h2', { hasText: this.actionName })).toBeVisible();
-    await expect(this.page.locator('p', { hasText: this.actionDescription })).toBeVisible();
+    await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
+    await expect(this.page.getByText(this.actionDescription)).toBeVisible();
     // Verify tabs are present
     await expect(this.page.getByRole('tab', { name: /Runs/ })).toBeVisible();
     await expect(this.page.getByRole('tab', { name: 'Configure' })).toBeVisible();
@@ -83,7 +83,7 @@ export class Action {
     // Click the Run button in the modal footer
     await runModal.getByRole('button', { exact: true, name: 'Run' }).click();
     // Verify we navigated to the run detail view
-    await expect(this.page.locator('h2', { hasText: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
+    await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
     // Wait for a terminal status (Complete or Failed) in the main content area
     const mainContent = this.page.getByRole('main');
     await expect(mainContent.getByLabel('Complete').or(mainContent.getByLabel('Failed'))).toBeVisible({
@@ -94,7 +94,7 @@ export class Action {
   async selectActionInSidebar(): Promise<void> {
     // Click the action in the sidebar list (scoped to complementary to avoid matching other elements)
     await this.page.getByRole('complementary').getByRole('button', { name: this.actionName }).click();
-    await expect(this.page.locator('h2', { hasText: this.actionName })).toBeVisible();
+    await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
   }
 
   async switchToActionsTab(): Promise<void> {
