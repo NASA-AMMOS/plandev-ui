@@ -192,7 +192,9 @@ async function runFetchMode(externalUrl, verbose) {
 async function runFilesMode(actionsAPI, sequence, verbose) {
   console.log('Listing workspace files...');
   try {
-    const files = await actionsAPI.listFiles('.');
+    // For now treat files as a JSON string that needs parsing. This should be fixed in the API to return an array directly.
+    const filesString = await actionsAPI.listFiles('.');
+    const files = JSON.parse(filesString);
     console.log(`Found ${files.length} files`);
 
     if (verbose) {
