@@ -112,7 +112,15 @@
           <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
         {/if}
         {#each filteredLogs as log}
-          <ConsoleLog {showLevel} {showTimestamp} {showType} {log} on:gotoLine on:viewRun />
+          {#if $$slots.message}
+            <ConsoleLog {showLevel} {showTimestamp} {showType} {log}>
+              <svelte:fragment slot="message" let:log={slotLog}>
+                <slot name="message" log={slotLog} />
+              </svelte:fragment>
+            </ConsoleLog>
+          {:else}
+            <ConsoleLog {showLevel} {showTimestamp} {showType} {log} />
+          {/if}
         {/each}
       </div>
     </div>

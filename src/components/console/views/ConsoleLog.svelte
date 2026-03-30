@@ -3,10 +3,9 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { selectActivity } from '../../../stores/activities';
+  import { onMount } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
-  import { ErrorTypes, getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
+  import { isLogMessage } from '../../../utilities/errors';
 
   import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
@@ -15,11 +14,6 @@
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
   export let showType: boolean = true;
-
-  const dispatch = createEventDispatcher<{
-    gotoLine: { column: number; line: number };
-    viewRun: { runId: number };
-  }>();
 
   let expandable: boolean = false;
   let leftContents: HTMLDivElement;
@@ -69,20 +63,6 @@
     }
   }
 
-  function handleActivityClick(event: MouseEvent, activityId: number) {
-    event.stopPropagation();
-    selectActivity(activityId, null);
-  }
-
-  function handleActionRunClick(event: MouseEvent, actionRunId: number) {
-    event.stopPropagation();
-    dispatch('viewRun', { runId: actionRunId });
-  }
-
-  function handleGotoLine(event: MouseEvent, line: number, column: number) {
-    event.stopPropagation();
-    dispatch('gotoLine', { column, line });
-  }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -148,75 +128,14 @@
             {/if}
           </div>
         </div>
-        {#if log.message}
-          {@const activityIds = getActivityIdsFromError(log)}
-          <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-            {#if log.type === ErrorTypes.WORKSPACE_LINT_ERROR && typeof log.data?.line === 'number' && log.data?.filePath}
-              {@const location = `${log.data.filePath}:${log.data.line}:${log.data.column ?? 0}`}
-              {@const messagePrefix = `${location} - `}
-              {@const messageBody = log.message.startsWith(messagePrefix)
-                ? log.message.slice(messagePrefix.length)
-                : log.message}
-              <button
-                class="mr-1 cursor-pointer text-left text-amber-700 underline decoration-amber-400/50 underline-offset-2 hover:text-amber-900 hover:decoration-amber-600"
-                on:click={e => handleGotoLine(e, log.data?.line, log.data?.column ?? 0)}
-              >
-                {location}
-              </button>
-              {messageBody}
-            {:else if log.type === ErrorTypes.WORKSPACE_ACTION_RUN && log.data?.actionRunId && log.data?.actionName}
-              <button
-                class="inline-flex cursor-pointer items-center gap-0.5 text-violet-700 underline decoration-violet-400/50 underline-offset-2 hover:text-violet-900 hover:decoration-violet-600"
-                on:click={e => handleActionRunClick(e, log.data?.actionRunId)}
-              >
-                {log.data.actionName}•
-                <span class="">Run #{log.data.actionRunId}</span>
-              </button>
-              {#if log.data.status === 'failed'}
-                <span class="ml-0.5"> failed</span>
-              {:else}
-                <span class="ml-0.5 text-muted-foreground"> {log.data.status}</span>
-              {/if}
-            {:else if activityIds.length === 1 && log.message}
-              {@const activityId = activityIds[0]}
-              {@const activityMatch = log.message.match(/^(.*?)(Activity Directive \d+)(.*)$/)}
-              {#if activityMatch}
-                {activityMatch[1]}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  {activityMatch[2]}
-                </button>
-                {activityMatch[3]}
-              {:else}
-                {log.message}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  Activity {activityId}
-                </button>
-              {/if}
-            {:else if activityIds.length > 1 && log.message}
-              {log.message}
-              {#each activityIds as activityId, i}
-                {#if i > 0}<span class="text-muted-foreground">,</span>{/if}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  Activity {activityId}
-                </button>
-              {/each}
-            {:else}
-              {log.message}
-            {/if}
-            {#if isLogMessage(log) && typeof log.duration === 'number'}
-              <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
-            {/if}
-          </div>
-        {/if}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          <slot name="message" {log}>
+            {log.message ?? ''}
+          </slot>
+          {#if isLogMessage(log) && typeof log.duration === 'number'}
+            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
+          {/if}
+        </div>
       </div>
     </div>
   </summary>

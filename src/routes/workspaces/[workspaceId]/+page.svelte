@@ -22,6 +22,7 @@
   import Console from '../../../components/console/Console.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
+  import WorkspaceLogMessage from '../../../components/console/views/WorkspaceLogMessage.svelte';
   import ActionDetailView from '../../../components/sequencing/actions/ActionDetailView.svelte';
   import ActionRunDetailView from '../../../components/sequencing/actions/ActionRunDetailView.svelte';
   import ActionRunsListView from '../../../components/sequencing/actions/ActionRunsListView.svelte';
@@ -1464,8 +1465,9 @@
           logs={$workspaceActionRunMessages}
           autoScroll
           emptyStateMessage="No action runs"
-          on:viewRun={onViewActionRun}
-        />
+        >
+          <WorkspaceLogMessage slot="message" let:log {log} on:viewRun={onViewActionRun} />
+        </ConsoleLogs>
         <ConsoleLogs
           value="adaptation"
           showTimestamp
@@ -1482,8 +1484,9 @@
           logs={$workspaceLintErrors}
           {logLevels}
           emptyStateMessage="No linting errors"
-          on:gotoLine={onGotoLine}
-        />
+        >
+          <WorkspaceLogMessage slot="message" let:log {log} on:gotoLine={onGotoLine} />
+        </ConsoleLogs>
         <ConsoleLogs
           value="logs"
           logs={$allLogs}
