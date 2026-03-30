@@ -138,6 +138,22 @@
       }
     }
 
+    // Post-process: when a message ends with '{' and trace contains the rest of
+    // a JSON object, reassemble and parse it into `data` for clean rendering.
+    for (const entry of results) {
+      if (entry.message.endsWith('{') && entry.trace) {
+        const jsonCandidate = '{\n' + entry.trace;
+        try {
+          const parsed = JSON.parse(jsonCandidate);
+          entry.message = entry.message.slice(0, -1).trimEnd();
+          entry.data = parsed;
+          entry.trace = undefined;
+        } catch {
+          // Not valid JSON, leave as-is
+        }
+      }
+    }
+
     return results;
   }
 
