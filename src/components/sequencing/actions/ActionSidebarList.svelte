@@ -110,7 +110,7 @@
                 </Button>
               </div>
               <AsyncContentState
-                class="px-2 py-2"
+                class="mx-2 my-2 w-[calc(100%-16px)]"
                 loading={$actionDefinitionsLoading}
                 error={$actionDefinitionsError || null}
                 errorMessage="Failed to load actions"
