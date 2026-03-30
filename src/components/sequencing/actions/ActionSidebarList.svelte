@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, Input as InputStellar } from '@nasa-jpl/stellar-svelte';
-  import { ListChecks, Play, Search } from 'lucide-svelte';
+  import { Button, Input as InputStellar, Popover } from '@nasa-jpl/stellar-svelte';
+  import { ListChecks, ListFilter, Play, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../../enums/status';
   import { actionDefinitions, actionRunsByWorkspace } from '../../../stores/actions';
@@ -88,10 +88,19 @@
                 placeholder="Filter actions..."
                 bind:value={filterText}
               />
-              <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-                <input type="checkbox" bind:checked={showArchived} class="h-3.5 w-3.5" />
-                <span>Archived</span>
-              </label>
+              <Popover.Root>
+                <Popover.Trigger asChild let:builder>
+                  <Button builders={[builder]} variant="ghost" class="h-6 w-6 shrink-0 p-0" aria-label="Filter actions">
+                    <ListFilter size={14} class={showArchived ? 'text-primary' : ''} />
+                  </Button>
+                </Popover.Trigger>
+                <Popover.Content align="end" class="w-auto p-2">
+                  <div class="flex cursor-pointer select-none items-center gap-2 text-xs text-foreground">
+                    <input id="show-archived" type="checkbox" bind:checked={showArchived} class="h-3.5 w-3.5" />
+                    <label for="show-archived">Show archived actions</label>
+                  </div>
+                </Popover.Content>
+              </Popover.Root>
             </div>
 
             <div class="border-t border-border" />

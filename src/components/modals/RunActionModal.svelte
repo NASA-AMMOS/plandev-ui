@@ -221,28 +221,38 @@
       </div>
     {/if}
 
-    {#if Object.keys(parametersMap).length === 0}
-      <i class="flex text-muted-foreground">No parameters defined for this action</i>
+    {#if !selectedVersion}
+      <Alert.Root variant="destructive" class="mb-3">
+        <TriangleAlert class="h-4 w-4" />
+        <Alert.Title>No runnable versions</Alert.Title>
+        <Alert.Description>
+          All versions of this action have been archived. Unarchive a version before running.
+        </Alert.Description>
+      </Alert.Root>
     {:else}
-      <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
+      {#if Object.keys(parametersMap).length === 0}
+        <i class="flex text-muted-foreground">No parameters defined for this action</i>
+      {:else}
+        <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
+      {/if}
+      <Parameters
+        formParameters={getFormParameters(
+          parametersMap,
+          argumentsMap,
+          [],
+          undefined,
+          getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
+          getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
+          'sequence',
+          false,
+          false,
+        )}
+        parameterType="action"
+        disabled={isLoadingWorkspace}
+        on:change={onChangeFormParameters}
+        on:reset={onResetFormParameter}
+      />
     {/if}
-    <Parameters
-      formParameters={getFormParameters(
-        parametersMap,
-        argumentsMap,
-        [],
-        undefined,
-        getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
-        getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
-        'sequence',
-        false,
-        false,
-      )}
-      parameterType="action"
-      disabled={isLoadingWorkspace}
-      on:change={onChangeFormParameters}
-      on:reset={onResetFormParameter}
-    />
   </ModalContent>
 
   <ModalFooter>
@@ -255,7 +265,7 @@
       {/each}
     </select>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={running} on:click={run}>
+    <button class="st-button" disabled={running || !selectedVersion} on:click={run}>
       {running ? 'Running...' : 'Run'}
     </button>
   </ModalFooter>

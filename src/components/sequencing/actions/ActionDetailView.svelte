@@ -1,8 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Badge, Button, Tabs } from '@nasa-jpl/stellar-svelte';
+  import { Badge, Button, Input as InputStellar, Popover, Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
+  import { ChevronDown, TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
@@ -47,6 +48,7 @@
 
   let actionDefinition: ActionDefinition | null = null;
   let activeTab: string = 'runs';
+  let filterExpression: string = '';
   let argumentsMap: ArgumentsMap = {};
   let code: string = '';
   let codeAbortController: AbortController | null = null;
@@ -59,6 +61,7 @@
   let selectedRunId: number | null = null;
   let selectedVersionRevision: number | null = null;
   let showArchivedVersions: boolean = false;
+  let versionPopoverOpen: boolean = false;
   let uploadFileInput: HTMLInputElement;
 
   $: {
@@ -87,6 +90,8 @@
 
   $: if (selectedVersion) {
     loadCode(selectedVersion.action_file_id);
+  } else {
+    code = '';
   }
 
   $: latestNonArchivedVersion = getLatestRunnableVersion(actionDefinition?.versions ?? []);
@@ -131,8 +136,11 @@
       return;
     }
     const file = uploadFileInput.files[0];
-    await effects.createActionDefinitionVersion(file, actionDefinition.id, user);
+    const success = await effects.createActionDefinitionVersion(file, actionDefinition.id, user);
     uploadFileInput.value = '';
+    if (success) {
+      selectedVersionRevision = null;
+    }
   }
 
   function checkDirty() {
@@ -414,7 +422,9 @@
             permissionError: 'You do not have permission to run an action',
           }}
         >
-          <Button on:click={onRunClick} disabled={actionDefinition.archived}>Run Action</Button>
+          <Button on:click={onRunClick} disabled={actionDefinition.archived || !latestNonArchivedVersion}
+            >Run Action</Button
+          >
         </div>
         <input bind:this={uploadFileInput} accept=".js" class="hidden" on:change={uploadNewVersion} type="file" />
         <div
@@ -459,7 +469,17 @@
               <div class="flex h-2 items-center gap-1 text-xs data-[state=active]:text-neutral-800">Code</div>
             </Tabs.Trigger>
           </div>
-          {#if activeTab === 'configure'}
+          {#if activeTab === 'runs'}
+            <div class="flex items-center gap-2 pr-2">
+              <InputStellar
+                autocomplete="off"
+                class="w-48"
+                sizeVariant="xs"
+                placeholder="Filter runs..."
+                bind:value={filterExpression}
+              />
+            </div>
+          {:else if activeTab === 'configure'}
             <div class="flex items-center gap-2 pr-2">
               <div
                 use:permissionHandler={{
@@ -484,25 +504,57 @@
             </div>
           {:else if activeTab === 'code'}
             <div class="flex items-center gap-2 pr-2">
-              <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-                <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
-                <span>Archived</span>
-              </label>
-              <select
-                class="st-input h-6 bg-white !px-1 text-xs"
-                value={selectedVersion?.revision ?? 0}
-                on:change={e => {
-                  selectedVersionRevision = Number(e.currentTarget.value);
-                }}
-              >
-                {#each displayedVersions as version, i}
-                  <option value={version.revision}>
-                    v{version.revision}{i === 0 && !version.archived ? ' (latest)' : ''}{version.archived
-                      ? ' (archived)'
-                      : ''}
-                  </option>
-                {/each}
-              </select>
+              <Popover.Root bind:open={versionPopoverOpen}>
+                <Popover.Trigger asChild let:builder>
+                  <button
+                    use:builder.action
+                    {...builder}
+                    aria-label="Select version"
+                    class="flex h-6 items-center gap-1 rounded border border-border bg-white px-2 text-xs hover:bg-accent"
+                  >
+                    {#if selectedVersion}
+                      v{selectedVersion.revision}{selectedVersion === displayedVersions[0] && !selectedVersion.archived
+                        ? ' (latest)'
+                        : ''}{selectedVersion.archived ? ' (archived)' : ''}
+                    {:else}
+                      Select version
+                    {/if}
+                    <ChevronDown size={12} />
+                  </button>
+                </Popover.Trigger>
+                <Popover.Content align="start" avoidCollisions fitViewport class="max-h-64 w-auto min-w-[180px] overflow-y-auto p-1">
+                  {#if displayedVersions.length === 0}
+                    <div class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-500">
+                      <TriangleAlert size={14} /> No unarchived versions available
+                    </div>
+                  {/if}
+                  {#each displayedVersions as version, i}
+                    <button
+                      class="flex w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent {version.revision === selectedVersion?.revision ? 'bg-accent' : ''}"
+                      on:click={() => {
+                        selectedVersionRevision = version.revision;
+                        versionPopoverOpen = false;
+                      }}
+                    >
+                      v{version.revision}{i === 0 && !version.archived ? ' (latest)' : ''}{version.archived
+                        ? ' (archived)'
+                        : ''}
+                    </button>
+                  {/each}
+                  <hr class="my-1 border-border" />
+                  <label class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-accent">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedVersions}
+                      on:change={() => {
+                        showArchivedVersions = !showArchivedVersions;
+                      }}
+                      class="h-3.5 w-3.5"
+                    />
+                    Show archived versions
+                  </label>
+                </Popover.Content>
+              </Popover.Root>
               {#if selectedVersion}
                 <span class="text-xs text-muted-foreground">
                   Author:
@@ -512,7 +564,7 @@
                 </span>
               {/if}
 
-              {#if selectedVersion && (selectedVersion !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== selectedVersion).length > 0)}
+              {#if selectedVersion && (selectedVersion.archived || actionDefinition.versions.filter(v => !v.archived && v !== selectedVersion).length > 0)}
                 <Button
                   variant="outline"
                   class="h-6 text-xs text-foreground"
@@ -536,6 +588,7 @@
             {:else}
               <SingleActionDataGrid
                 columnDefs={runsColumnDefs}
+                {filterExpression}
                 items={actionRuns}
                 itemDisplayText="Action Run"
                 {user}
@@ -691,7 +744,7 @@
                           <Badge variant="destructive">Archived</Badge>
                         {/if}
                       </div>
-                      {#if version !== actionDefinition.versions[0] || actionDefinition.versions.filter(v => !v.archived && v !== version).length > 0}
+                      {#if version.archived || actionDefinition.versions.filter(v => !v.archived && v !== version).length > 0}
                         <div
                           use:permissionHandler={{
                             hasPermission: hasUpdatePermission,
