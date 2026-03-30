@@ -221,7 +221,11 @@
       </div>
     {/if}
 
-    <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
+    {#if Object.keys(parametersMap).length === 0}
+      <i class="flex text-muted-foreground">No parameters defined for this action</i>
+    {:else}
+      <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
+    {/if}
     <Parameters
       formParameters={getFormParameters(
         parametersMap,
