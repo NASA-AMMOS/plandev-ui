@@ -224,7 +224,7 @@
         <span>Duration: <span class="text-foreground">{formatMS(actionRun.duration)}</span></span>
       {/if}
       <span>
-        Status: <span class="text-foreground">{actionRun.canceled ? 'Canceled' : capitalize(actionRun.status)}</span>
+        Status: <span class="text-foreground">{capitalize(status ?? 'unknown')}</span>
       </span>
       <span
         >Version: <span class="text-foreground"
