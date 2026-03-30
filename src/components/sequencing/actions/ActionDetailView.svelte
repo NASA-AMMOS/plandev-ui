@@ -522,7 +522,12 @@
                     <ChevronDown size={12} />
                   </button>
                 </Popover.Trigger>
-                <Popover.Content align="start" avoidCollisions fitViewport class="max-h-64 w-auto min-w-[180px] overflow-y-auto p-1">
+                <Popover.Content
+                  align="start"
+                  avoidCollisions
+                  fitViewport
+                  class="max-h-64 w-auto min-w-[180px] overflow-y-auto p-1"
+                >
                   {#if displayedVersions.length === 0}
                     <div class="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-red-500">
                       <TriangleAlert size={14} /> No unarchived versions available
@@ -530,7 +535,10 @@
                   {/if}
                   {#each displayedVersions as version, i}
                     <button
-                      class="flex w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent {version.revision === selectedVersion?.revision ? 'bg-accent' : ''}"
+                      class="flex w-full cursor-pointer rounded-sm px-2 py-1.5 text-left text-xs hover:bg-accent {version.revision ===
+                      selectedVersion?.revision
+                        ? 'bg-accent'
+                        : ''}"
                       on:click={() => {
                         selectedVersionRevision = version.revision;
                         versionPopoverOpen = false;

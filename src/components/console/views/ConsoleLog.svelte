@@ -62,7 +62,6 @@
       return timestamp; // Return original if any error occurs
     }
   }
-
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
