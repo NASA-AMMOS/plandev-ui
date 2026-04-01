@@ -213,7 +213,10 @@
       <div class="flex items-center gap-2">
         {#if actionDefinition && !actionDefinition.archived}
           <div
-            use:permissionHandler={{ hasRunPermission, permissionError: 'You do not have permission to run an action' }}
+            use:permissionHandler={{
+              hasPermission: hasRunPermission,
+              permissionError: 'You do not have permission to run an action',
+            }}
           >
             <Button variant="outline" on:click={onRerun}>
               <RefreshCw size={12} class="mr-1" />
@@ -223,9 +226,12 @@
         {/if}
         {#if status === Status['Pending'] || status === Status['Incomplete']}
           <div
-            use:permissionHandler={{ hasRunPermission, permissionError: 'You do not have permission to run an action' }}
+            use:permissionHandler={{
+              hasPermission: hasRunPermission,
+              permissionError: 'You do not have permission to run an action',
+            }}
           >
-            <Button variant="outline" on:click={onRerun}>
+            <Button variant="outline" on:click={onCancelRun}>
               <Ban size={12} class="mr-1" />
               Cancel
             </Button>
@@ -247,11 +253,11 @@
       <span>
         Status: <span class="text-foreground">{capitalize(status ?? 'unknown')}</span>
       </span>
-      <span
-        >Version: <span class="text-foreground"
-          >{actionRun.action_definition_revision}{isLatestVersion ? ' (latest)' : ''}</span
-        ></span
-      >
+      <span>
+        Version: <span class="text-foreground">
+          {actionRun.action_definition_revision}{isLatestVersion ? ' (latest)' : ''}
+        </span>
+      </span>
     </div>
 
     <!-- Tabbed content -->
