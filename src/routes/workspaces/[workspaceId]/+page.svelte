@@ -1261,7 +1261,7 @@
           <ActionRunDetailView
             actionRunId={$selectedActionRunId}
             user={$user}
-            hasPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
+            hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
             on:back={onActionRunBack}
             on:rerun={onRerunAction}
             on:viewAction={e => switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
