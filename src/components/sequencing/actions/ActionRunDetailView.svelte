@@ -222,14 +222,14 @@
           </div>
         {/if}
         {#if status === Status['Pending'] || status === Status['Incomplete']}
-          <button
-            class="st-button secondary"
-            style="font-size: 12px; height: 28px; padding: 0 12px;"
-            on:click={onCancelRun}
+          <div
+            use:permissionHandler={{ hasPermission, permissionError: 'You do not have permission to run an action' }}
           >
-            <Ban size={12} class="mr-1" />
-            Cancel
-          </button>
+            <Button variant="outline" on:click={onRerun}>
+              <Ban size={12} class="mr-1" />
+              Cancel
+            </Button>
+          </div>
         {/if}
       </div>
     </div>
