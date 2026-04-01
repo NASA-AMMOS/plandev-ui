@@ -39,7 +39,7 @@
   }>();
 
   export let actionRunId: number;
-  export let hasPermission: boolean;
+  export let hasRunPermission: boolean;
   export let user: User | null;
 
   const actionRunIdStore = writable(actionRunId);
@@ -213,7 +213,7 @@
       <div class="flex items-center gap-2">
         {#if actionDefinition && !actionDefinition.archived}
           <div
-            use:permissionHandler={{ hasPermission, permissionError: 'You do not have permission to run an action' }}
+            use:permissionHandler={{ hasRunPermission, permissionError: 'You do not have permission to run an action' }}
           >
             <Button variant="outline" on:click={onRerun}>
               <RefreshCw size={12} class="mr-1" />
@@ -223,7 +223,7 @@
         {/if}
         {#if status === Status['Pending'] || status === Status['Incomplete']}
           <div
-            use:permissionHandler={{ hasPermission, permissionError: 'You do not have permission to run an action' }}
+            use:permissionHandler={{ hasRunPermission, permissionError: 'You do not have permission to run an action' }}
           >
             <Button variant="outline" on:click={onRerun}>
               <Ban size={12} class="mr-1" />
