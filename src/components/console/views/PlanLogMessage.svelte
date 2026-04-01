@@ -7,6 +7,8 @@
 
   export let log: BaseError;
 
+  let activityIds: number[] = [];
+
   $: activityIds = getActivityIdsFromError(log);
 
   function handleActivityClick(event: MouseEvent, activityId: number) {

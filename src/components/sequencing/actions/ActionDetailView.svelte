@@ -7,7 +7,7 @@
   import { createEventDispatcher, onDestroy } from 'svelte';
   import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from '../../../stores/actions';
   import { workspaceId } from '../../../stores/workspaces';
-  import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
+  import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import type { Workspace } from '../../../types/workspace';
@@ -48,18 +48,25 @@
 
   let actionDefinition: ActionDefinition | null = null;
   let activeTab: string = 'runs';
+  let actionRuns: ActionRunSlim[] = [];
   let filterExpression: string = '';
   let argumentsMap: ArgumentsMap = {};
   let code: string = '';
   let codeAbortController: AbortController | null = null;
   let description: string = '';
+  let displayedVersions: ActionDefinitionVersion[] = [];
+  let hasUpdatePermission: boolean = false;
   let isDirty: boolean = false;
   let isLoadingCode: boolean = false;
   let lastSyncedActionId: number | null = null;
+  let latestNonArchivedVersion: ActionDefinitionVersion | null = null;
   let name: string = '';
+  let runsColumnDefs: ColDef<ActionRunSlim>[] = [];
+  let saveButtonDisabled: boolean = true;
   let saving: boolean = false;
   let selectedRunId: number | null = null;
   let selectedVersionRevision: number | null = null;
+  let selectedVersion: ActionDefinitionVersion | null = null;
   let showArchivedVersions: boolean = false;
   let versionPopoverOpen: boolean = false;
   let uploadFileInput: HTMLInputElement;

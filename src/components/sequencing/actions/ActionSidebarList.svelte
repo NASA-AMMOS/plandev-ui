@@ -37,6 +37,7 @@
   }>();
 
   let filterText: string = '';
+  let filteredActions: ActionDefinition[] = [];
   let showArchived: boolean = false;
 
   $: filteredActions = actions

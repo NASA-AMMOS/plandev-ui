@@ -10,7 +10,7 @@
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import { gqlSubscribable } from '../../../stores/subscribable';
   import { workspaceId } from '../../../stores/workspaces';
-  import type { ActionRun } from '../../../types/actions';
+  import type { ActionDefinition, ActionDefinitionVersion, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
   import type { LogMessage } from '../../../types/errors';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
@@ -51,6 +51,11 @@
 
   let actionSettings: FormParameter[] = [];
   let actionParameters: FormParameter[] = [];
+  let actionRun: ActionRun | null = null;
+  let actionDefinition: ActionDefinition | null = null;
+  let latestVersion: ActionDefinitionVersion | null = null;
+  let isLatestVersion: boolean = false;
+  let status: Status | null = null;
 
   $: actionRunIdStore.set(actionRunId);
   $: actionRun = $actionRunSubscription;

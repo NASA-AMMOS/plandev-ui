@@ -33,6 +33,7 @@
 
   let filterExpression: string = '';
   let selectedRunId: number | null = null;
+  let workspaceActionRuns: ActionRunSlim[] = [];
 
   $: workspaceActionRuns = $actionRunsByWorkspace[$workspaceId] || [];
 
