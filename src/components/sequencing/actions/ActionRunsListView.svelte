@@ -31,79 +31,7 @@
     viewRun: { runId: number };
   }>();
 
-  let filterExpression: string = '';
-  let selectedRunId: number | null = null;
-  let workspaceActionRuns: ActionRunSlim[] = [];
-
-  $: workspaceActionRuns = $actionRunsByWorkspace[$workspaceId] || [];
-
-  function statusCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
-    const div = document.createElement('div');
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.height = '100%';
-    if (params.data) {
-      const status = getStatusForActionRun(params.data);
-      new StatusBadge({ props: { status }, target: div });
-    }
-    return div;
-  }
-
-  function actionNameValueGetter(params: { data: ActionRunSlim }) {
-    if (!params.data) {
-      return '';
-    }
-    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-    return def?.name ?? 'Deleted Action';
-  }
-
-  function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
-    if (!params.data) {
-      return '';
-    }
-    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-    return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
-  }
-
-  function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
-    if (
-      !params.data ||
-      params.data.canceled ||
-      (params.data.status !== 'pending' && params.data.status !== 'incomplete')
-    ) {
-      return '';
-    }
-    const div = document.createElement('div');
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.justifyContent = 'center';
-    div.style.height = '100%';
-    const btn = document.createElement('button');
-    btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
-    btn.title = 'Cancel Action Run';
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (params.data) {
-        effects.cancelActionRun(params.data.id, user);
-      }
-    });
-    div.appendChild(btn);
-    return div;
-  }
-
-  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim; event?: Event | null }>) {
-    const { data, event: originalEvent } = event.detail;
-    if (data) {
-      if (originalEvent && isMetaOrCtrlPressed(originalEvent as MouseEvent)) {
-        openActionRun($workspaceId, data.id, true);
-      } else {
-        dispatch('viewRun', { runId: data.id });
-      }
-    }
-  }
-
-  $: columnDefs = [
+  const columnDefs = [
     {
       field: 'id',
       filter: 'number',
@@ -196,6 +124,78 @@
       width: 40,
     },
   ] as ColDef<ActionRunSlim>[];
+
+  let filterExpression: string = '';
+  let selectedRunId: number | null = null;
+  let workspaceActionRuns: ActionRunSlim[] = [];
+
+  $: workspaceActionRuns = $actionRunsByWorkspace[$workspaceId] || [];
+
+  function statusCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.height = '100%';
+    if (params.data) {
+      const status = getStatusForActionRun(params.data);
+      new StatusBadge({ props: { status }, target: div });
+    }
+    return div;
+  }
+
+  function actionNameValueGetter(params: { data: ActionRunSlim }) {
+    if (!params.data) {
+      return '';
+    }
+    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
+    return def?.name ?? 'Deleted Action';
+  }
+
+  function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    if (!params.data) {
+      return '';
+    }
+    const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
+    return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
+  }
+
+  function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    if (
+      !params.data ||
+      params.data.canceled ||
+      (params.data.status !== 'pending' && params.data.status !== 'incomplete')
+    ) {
+      return '';
+    }
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'center';
+    div.style.height = '100%';
+    const btn = document.createElement('button');
+    btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
+    btn.title = 'Cancel Action Run';
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (params.data) {
+        effects.cancelActionRun(params.data.id, user);
+      }
+    });
+    div.appendChild(btn);
+    return div;
+  }
+
+  function onRowClicked(event: CustomEvent<{ data: ActionRunSlim; event?: Event | null }>) {
+    const { data, event: originalEvent } = event.detail;
+    if (data) {
+      if (originalEvent && isMetaOrCtrlPressed(originalEvent as MouseEvent)) {
+        openActionRun($workspaceId, data.id, true);
+      } else {
+        dispatch('viewRun', { runId: data.id });
+      }
+    }
+  }
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
