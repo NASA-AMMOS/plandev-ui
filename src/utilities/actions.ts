@@ -7,14 +7,13 @@ import type {
   ActionValueSchemaSequence,
   ActionValueSchemaSequenceList,
 } from '@nasa-jpl/aerie-actions';
-import { SearchParameters } from '../enums/searchParameters';
 import { Status } from '../enums/status';
 import type { ActionDefinition, ActionDefinitionVersion, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { isMetaOrCtrlPressed } from './keyboardEvents';
-import { getWorkspacesUrl } from './routes';
+import { getActionsUrl } from './routes';
 
 /**
  * Returns the latest non-archived version, or null if all versions are archived.
@@ -132,13 +131,7 @@ export function getStatusForActionRun(actionRun: ActionRunSlim): Status {
 }
 
 export function getActionRunDeepLink(workspaceId: number, runId: number, actionId?: number | null): string {
-  const baseUrl = getWorkspacesUrl(base, workspaceId);
-  const params = new URLSearchParams();
-  params.set(SearchParameters.ACTION_RUN_ID, String(runId));
-  if (actionId != null) {
-    params.set(SearchParameters.ACTION_ID, String(actionId));
-  }
-  return `${baseUrl}?${params.toString()}`;
+  return getActionsUrl(base, workspaceId, runId, actionId);
 }
 
 export function openActionRun(workspaceId: number, runId: number, eventOrNewTab?: MouseEvent | boolean) {
