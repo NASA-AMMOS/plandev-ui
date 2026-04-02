@@ -42,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          images: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
