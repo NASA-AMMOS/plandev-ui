@@ -1,6 +1,6 @@
 # Contributing
 
-We would love for you to contribute to aerie-ui and help make it even better than it is
+We would love for you to contribute to plandev-ui and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
 - [Question or Problem?](#question)
@@ -18,7 +18,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 1. Search [GitHub][github-pulls] for an open or closed PR that relates to your submission. You don't want to duplicate effort.
 1. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add. Discussing the design up front helps to ensure that we're ready to accept your work.
-1. Clone the [Aerie/aerie-ui repo][github].
+1. Clone the [NASA-AMMOS/plandev-ui repo][github].
 1. Make your changes in a new git branch:
    ```shell
    git checkout develop
@@ -36,7 +36,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    ```shell
    git push origin my-fix-branch
    ```
-1. In GitHub, send a pull request to `aerie-ui:develop`.
+1. In GitHub, send a pull request to `plandev-ui:develop`.
 
 - If we suggest changes, then:
 
@@ -130,7 +130,7 @@ fix: need to depend on latest rxjs and zone.js
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
 
-([more samples](https://github.com/NASA-AMMOS/aerie-ui/commits/develop))
+([more samples](https://github.com/NASA-AMMOS/plandev-ui/commits/develop))
 
 ### Revert
 
@@ -165,8 +165,8 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 
 **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
 
-[github]: https://github.com/NASA-AMMOS/aerie-ui
-[github-pulls]: https://github.com/NASA-AMMOS/aerie-ui/pulls
+[github]: https://github.com/NASA-AMMOS/plandev-ui
+[github-pulls]: https://github.com/NASA-AMMOS/plandev-ui/pulls
 [prettier]: https://prettier.io/
 [rebase]: https://dev.to/maxwell_dev/the-git-rebase-introduction-i-wish-id-had
 [slack]: https://app.slack.com/client/T024LMMEZ/C0163E42UBF

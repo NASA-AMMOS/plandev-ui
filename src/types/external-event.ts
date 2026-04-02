@@ -15,7 +15,7 @@ export type ExternalEventPkey = {
 //    are some places, such as LayerDiscrete, where we need to use this ID type in a record (i.e. IdToColorMap). Records admit
 //    keys of type string | number | symbol, so an ExternalEventPkey would not work. Thus we require a simpler type; a string
 //    is clearly our best candidate. See this string of comments for more detail:
-//      https://github.com/NASA-AMMOS/aerie-ui/pull/1396#discussion_r1746175203
+//      https://github.com/NASA-AMMOS/plandev-ui/pull/1396#discussion_r1746175203
 export type ExternalEventId = string;
 export type ExternalEventTypeId = string;
 

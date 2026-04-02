@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/NASA-AMMOS/aerie-ui/blob/develop/src/schemas/ui-view-schema-v0.json",
+  "$id": "https://github.com/NASA-AMMOS/plandev-ui/blob/develop/src/schemas/ui-view-schema-v0.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "additionalProperties": false,
   "definitions": {
