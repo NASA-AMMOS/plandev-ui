@@ -40,10 +40,10 @@ jobs:
       - name: NASA Scrub
         run: |
           pip install nasa-scrub
-          python3 -m scrub.tools.parsers.translate_results /home/runner/work/aerie-ui/results/*.sarif /home/runner/work/aerie-ui/results/codeql.scrub ${{ github.workspace }} scrub
-          python3 -m scrub.tools.parsers.csv_parser /home/runner/work/aerie-ui/results
+          python3 -m scrub.tools.parsers.translate_results /home/runner/work/plandev-ui/results/*.sarif /home/runner/work/plandev-ui/results/codeql.scrub ${{ github.workspace }} scrub
+          python3 -m scrub.tools.parsers.csv_parser /home/runner/work/plandev-ui/results
       - name: Upload Security Scan Results
         uses: actions/upload-artifact@v4
         with:
           name: Security Scan Results
-          path: /home/runner/work/aerie-ui/results/*
+          path: /home/runner/work/plandev-ui/results/*
