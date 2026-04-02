@@ -18,7 +18,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 1. Search [GitHub][github-pulls] for an open or closed PR that relates to your submission. You don't want to duplicate effort.
 1. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add. Discussing the design up front helps to ensure that we're ready to accept your work.
-1. Clone the [plandev/plandev-ui repo][github].
+1. Clone the [NASA-AMMOS/plandev-ui repo][github].
 1. Make your changes in a new git branch:
    ```shell
    git checkout develop
