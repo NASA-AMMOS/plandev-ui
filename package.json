@@ -1,13 +1,13 @@
 {
-  "name": "aerie-ui",
-  "description": "The client application for Aerie.",
+  "name": "plandev-ui",
+  "description": "The client application for PlanDev.",
   "version": "4.1.1",
   "type": "module",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/NASA-AMMOS/aerie-ui.git"
+    "url": "https://github.com/NASA-AMMOS/plandev-ui.git"
   },
   "engines": {
     "node": ">=22.0.0",

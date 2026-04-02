@@ -1,6 +1,6 @@
 # Environment
 
-This document provides detailed information about environment variables for Aerie UI.
+This document provides detailed information about environment variables for PlanDev UI.
 
 | Name                                | Description                                                                                                                   | Type     | Default                          |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------- |

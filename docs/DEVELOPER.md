@@ -1,6 +1,6 @@
 # Developer
 
-This document describes how to set up your development environment to build and develop aerie-ui.
+This document describes how to set up your development environment to build and develop plandev-ui.
 
 - [Prerequisite Knowledge](#prerequisite-knowledge)
 - [Prerequisite Software](#prerequisite-software)
@@ -22,20 +22,20 @@ Before getting started with developing in this repository read/watch all of the 
 
 ## Prerequisite Software
 
-Before you can run aerie-ui you must install and configure the following products on your development machine:
+Before you can run plandev-ui you must install and configure the following products on your development machine:
 
 - [Git](http://git-scm.com) and/or the [GitHub app](https://desktop.github.com/); [GitHub's Guide to Installing Git](https://help.github.com/articles/set-up-git) is a good source of information.
 
 - [Node.js LTS](http://nodejs.org) which is used to run a development web server, and generate distributable files. We recommend using the [Node Version Manager (NVM)](https://github.com/nvm-sh/nvm) to install Node.js and [NPM](https://www.npmjs.com/) on your machine. Once you have NVM installed you can use the required Node.js/NPM versions via:
 
   ```shell
-  cd aerie-ui
+  cd plandev-ui
   nvm use
   ```
 
   **Note**: Ensure that you have your shell loading your profile settings (e.g. .bashrc_profile, .profile, etc), otherwise the VSCode tasks won't be starting the terminal up with the correct settings
 
-- [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based Aerie services. If you're on OSX you can use [brew](https://brew.sh/):
+- [OpenJDK Temurin LTS](https://adoptium.net/temurin/) which is used to build the Java-based PlanDev services. If you're on OSX you can use [brew](https://brew.sh/):
 
   ```shell
   brew tap homebrew/cask-versions
@@ -48,15 +48,15 @@ Before you can run aerie-ui you must install and configure the following product
   export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-19.jdk/Contents/Home"
   ```
 
-- [Docker](https://www.docker.com/) which is used to run the Aerie services.
+- [Docker](https://www.docker.com/) which is used to run the PlanDev services.
 
-- [Aerie](https://github.com/NASA-AMMOS/aerie) which contains the main backend services. You can use the following commands to download, build, and run Aerie:
+- [PlanDev](https://github.com/NASA-AMMOS/plandev) which contains the main backend services. You can use the following commands to download, build, and run PlanDev:
 
-  (NOTE: For compatibility with VSCode tasks, ensure that both Aerie UI and Aerie repos share the same parent directory and that NVM is installed for node version management)
+  (NOTE: For compatibility with VSCode tasks, ensure that both PlanDev UI and PlanDev repos share the same parent directory and that NVM is installed for node version management)
 
   ```sh
-  git clone https://github.com/NASA-AMMOS/aerie.git
-  cd aerie
+  git clone https://github.com/NASA-AMMOS/plandev.git
+  cd plandev
   cp .env.template .env
   ```
 
@@ -71,12 +71,12 @@ Before you can run aerie-ui you must install and configure the following product
   POSTGRES_USER=postgres
   ```
 
-  Next build Aerie, and start the services via Docker:
+  Next build PlanDev, and start the services via Docker:
 
   Via VSCode tasks: (refer to to the [development section](#development))
 
-  - Run the `Build Aerie` task to build Aerie
-  - Run the `Aerie Containers` task, to bring up all the containers
+  - Run the `Build PlanDev` task to build PlanDev
+  - Run the `PlanDev Containers` task, to bring up all the containers
 
   Via CLI:
 
@@ -87,25 +87,25 @@ Before you can run aerie-ui you must install and configure the following product
   docker-compose up --build --detach aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres
   ```
 
-  To stop and clean the Aerie services:
+  To stop and clean the PlanDev services:
 
   Via VSCode task:
 
-  Run the `Clean Aerie` task
+  Run the `Clean PlanDev` task
 
   ```sh
-  cd aerie
+  cd plandev
   docker-compose down
   docker rmi aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing
   docker volume prune --force
   ./gradlew clean
   ```
 
-  You should stop and clean the Aerie services after each use (e.g. at the end of the day), or right after pulling down the latest changes.
+  You should stop and clean the PlanDev services after each use (e.g. at the end of the day), or right after pulling down the latest changes.
 
 ## Code Editor
 
-The recommended editor for developing aerie-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate the code formatting settings.
+The recommended editor for developing plandev-ui is [VS Code](https://code.visualstudio.com/) with the following settings and extensions. You can easily use another editor of your choice as long as you can replicate the code formatting settings.
 
 ### Settings.json
 
@@ -125,16 +125,16 @@ Your editor should follow the same settings found in [.vscode/settings.json](../
 
 ## Getting the Sources
 
-[Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the aerie-ui repository:
+[Clone](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository) the plandev-ui repository:
 
 ```shell
-git clone https://github.com/NASA-AMMOS/aerie-ui.git
-cd aerie-ui
+git clone https://github.com/NASA-AMMOS/plandev-ui.git
+cd plandev-ui
 ```
 
 ## Installing NPM Modules
 
-Install the JavaScript modules needed to build aerie-ui:
+Install the JavaScript modules needed to build plandev-ui:
 
 ```shell
 npm install
@@ -144,12 +144,12 @@ npm install
 
 Via VSCode task:
 
-Run the `Development` task to start everything including the Aerie containers.
+Run the `Development` task to start everything including the PlanDev containers.
 
 The `Development` task runs the following tasks:
 
-- `Aerie UI`
-- `Aerie Containers`
+- `PlanDev UI`
+- `PlanDev Backend`
 - `Svelte Check`
 - `Unit Tests`
 
@@ -169,10 +169,10 @@ Run `npm run build` to build a production version of the project. The build arti
 
 ## Cleaning
 
-Run the following commands to clean dependencies and build artifacts of aerie-ui. To be safe you should do this anytime you pull down the latest changes.
+Run the following commands to clean dependencies and build artifacts of plandev-ui. To be safe you should do this anytime you pull down the latest changes.
 
 ```sh
-cd aerie-ui
+cd plandev-ui
 rm -rf node_modules
 rm -rf .svelte-kit
 rm -rf build
@@ -182,4 +182,4 @@ After cleaning you can [re-install NPM modules](#installing-npm-modules) and sta
 
 ## Styling
 
-Aerie UI uses TailwindCSS version 3 as its CSS styling solution. TailwindCSS is a CSS framework that provides dynamic utility classes that increase consistency and themability in the UI. TailwindCSS classes are preferred over semantic class names in Aerie UI (this is an ongoing process). If semantic class names are needed for a particular case, it is recommended that you use a tailwind `@apply` directive to include the tailwind classes within the semantic class instead of writing vanilla CSS so that all of the themeing variables are properly included.
+PlanDev UI uses TailwindCSS version 3 as its CSS styling solution. TailwindCSS is a CSS framework that provides dynamic utility classes that increase consistency and themability in the UI. TailwindCSS classes are preferred over semantic class names in PlanDev UI (this is an ongoing process). If semantic class names are needed for a particular case, it is recommended that you use a tailwind `@apply` directive to include the tailwind classes within the semantic class instead of writing vanilla CSS so that all of the themeing variables are properly included.

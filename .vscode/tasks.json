@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Aerie UI",
+      "label": "PlanDev UI",
       "type": "shell",
       "command": "nvm use && npm run dev",
-      "detail": "Task to run the Aerie UI in development mode.",
+      "detail": "Task to run the PlanDev UI in development mode.",
       "isBackground": true,
       "problemMatcher": [
         {
@@ -44,40 +44,40 @@
       }
     },
     {
-      "label": "Update Aerie",
+      "label": "Update PlanDev",
       "type": "shell",
-      "command": "cd ../aerie && git pull && ./gradlew assemble",
-      "detail": "Task to update your local Aerie repo and rebuild it.",
+      "command": "cd ../plandev && git pull && ./gradlew assemble",
+      "detail": "Task to update your local PlanDev repo and rebuild it.",
       "problemMatcher": [],
       "presentation": {
         "group": "groupB"
       }
     },
     {
-      "label": "Build Aerie",
+      "label": "Build PlanDev",
       "type": "shell",
-      "command": "cd ../aerie && ./gradlew assemble",
-      "detail": "Task to just rebuild Aerie without updating the repo.",
+      "command": "cd ../plandev && ./gradlew assemble",
+      "detail": "Task to just rebuild PlanDev without updating the repo.",
       "problemMatcher": [],
       "presentation": {
         "group": "groupB"
       }
     },
     {
-      "label": "Clean Aerie",
+      "label": "Clean PlanDev",
       "type": "shell",
-      "command": "cd ../aerie && docker compose down && docker compose rm -f && docker compose down -v && docker compose down --rmi all && ./gradlew clean",
-      "detail": "Task to completely clean Aerie.",
+      "command": "cd ../plandev && docker compose down && docker compose rm -f && docker compose down -v && docker compose down --rmi all && ./gradlew clean",
+      "detail": "Task to completely clean PlanDev.",
       "problemMatcher": [],
       "presentation": {
         "group": "groupB"
       }
     },
     {
-      "label": "Aerie Backend",
+      "label": "PlanDev Backend",
       "type": "shell",
-      "command": "cd ../aerie && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing aerie_workspace aerie_action hasura postgres",
-      "detail": "Task to start up Aerie containers.",
+      "command": "cd ../plandev && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing aerie_workspace aerie_action hasura postgres",
+      "detail": "Task to start up PlanDev containers.",
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
@@ -85,25 +85,25 @@
       }
     },
     {
-      "label": "Clear Aerie DB",
+      "label": "Clear PlanDev DB",
       "type": "shell",
-      "command": "cd ../aerie && docker compose down -v",
-      "detail": "Task to clear the Aerie DB.",
+      "command": "cd ../plandev && docker compose down -v",
+      "detail": "Task to clear the PlanDev DB.",
       "problemMatcher": [],
       "presentation": {
         "group": "groupB"
       }
     },
     {
-      "label": "Reset Aerie DB",
+      "label": "Reset PlanDev DB",
       "type": "shell",
-      "dependsOn": ["Clear Aerie DB", "Aerie Backend"],
+      "dependsOn": ["Clear PlanDev DB", "PlanDev Backend"],
       "dependsOrder": "sequence",
-      "detail": "Task to clear and restart the Aerie DB."
+      "detail": "Task to clear and restart the PlanDev DB."
     },
     {
       "label": "Run Development",
-      "dependsOn": ["Aerie Backend", "Aerie UI", "Svelte Check", "Unit Tests"],
+      "dependsOn": ["PlanDev Backend", "PlanDev UI", "Svelte Check", "Unit Tests"],
       "dependsOrder": "parallel",
       "detail": "Task to start up local development.",
       "problemMatcher": []
@@ -117,14 +117,14 @@
     {
       "label": "e2e Debug",
       "type": "shell",
-      "dependsOn": ["Aerie UI"],
+      "dependsOn": ["PlanDev UI"],
       "command": "nvm use && npm run test:e2e:debug",
       "detail": "Task to run the e2e tests in debug mode."
     },
     {
       "label": "e2e Codegen",
       "type": "shell",
-      "dependsOn": ["Aerie UI"],
+      "dependsOn": ["PlanDev UI"],
       "dependsOrder": "sequence",
       "command": "nvm use && npm run test:e2e:codegen",
       "detail": "Task to run Playwright codegen"
@@ -132,14 +132,14 @@
     {
       "label": "e2e Tests",
       "type": "shell",
-      "dependsOn": ["Aerie UI"],
+      "dependsOn": ["PlanDev UI"],
       "command": "nvm use && npm run test:e2e",
       "detail": "Task to run e2e tests"
     },
     {
       "label": "e2e Tests - With UI",
       "type": "shell",
-      "dependsOn": ["Aerie UI"],
+      "dependsOn": ["PlanDev UI"],
       "command": "nvm use && npm run test:e2e:with-ui",
       "detail": "Task to run e2e tests with Playwright UI."
     }

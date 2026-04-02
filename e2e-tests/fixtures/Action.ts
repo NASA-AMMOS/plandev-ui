@@ -63,7 +63,7 @@ export class Action {
     await expect(this.runModal).toBeVisible();
     // Provide the aerie repository path to the action found in `actionPath` so that it can
     // successfully query the api
-    await this.runModal.locator(".parameter-base-string:has-text('repository') input").fill('repos/NASA-AMMOS/aerie');
+    await this.runModal.locator(".parameter-base-string:has-text('repository') input").fill('repos/NASA-AMMOS/plandev');
     await this.runModal.getByRole('button', { name: 'Run' }).click();
     await this.page.waitForURL(`/workspaces/${this.workspaceId}/actions/runs/**`);
     await this.page.getByLabel('Complete');
