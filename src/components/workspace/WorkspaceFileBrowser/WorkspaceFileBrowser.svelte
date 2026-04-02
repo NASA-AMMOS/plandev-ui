@@ -151,13 +151,13 @@
       field: 'lastEditedBy' as any,
       headerName: 'Last Editor',
       hide: false,
-      minWidth: 110,
+      minWidth: 60,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedBy ?? '',
-      width: 110,
+      width: 96,
     },
     {
       cellRenderer: dateTimeCellRenderer,
@@ -165,20 +165,20 @@
       field: 'lastEditedAt' as any,
       headerName: 'Last Edited',
       hide: false,
-      minWidth: 110,
+      minWidth: 70,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedAt ?? '',
-      width: 110,
+      width: 100,
     },
     {
       comparator: () => 0,
       field: 'createdBy' as any,
       headerName: 'Created By',
       hide: true,
-      minWidth: 110,
+      minWidth: 70,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
@@ -192,33 +192,33 @@
       field: 'createdAt' as any,
       headerName: 'Created',
       hide: true,
-      minWidth: 90,
+      minWidth: 70,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.createdAt ?? '',
-      width: 90,
+      width: 80,
     },
     {
       comparator: () => 0,
       field: 'version' as any,
       headerName: 'Version',
       hide: true,
-      minWidth: 90,
+      minWidth: 60,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.version ?? '',
-      width: 90,
+      width: 80,
     },
     {
       comparator: () => 0,
       field: 'user' as any,
       headerName: 'User Metadata',
       hide: true,
-      minWidth: 100,
+      minWidth: 70,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
@@ -550,10 +550,6 @@
     dispatch('deleteNodes', { treeNodes: nodes });
   }
 
-  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
-    onDeleteNodes([node]);
-  }
-
   function onDownload(nodes: WorkspaceTreeNodeWithFullPath[]) {
     dispatch('download', { treeNodes: nodes });
   }
@@ -728,5 +724,7 @@
   :global(.workspace-file-browser .ag-root-wrapper) {
     --ag-borders: none;
     --ag-wrapper-border-radius: 0;
+    --ag-cell-horizontal-padding: calc(var(--ag-grid-size) * 2);
+    --ag-icon-size: 14px;
   }
 </style>
