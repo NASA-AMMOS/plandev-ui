@@ -18,7 +18,6 @@
   import { debounce } from 'lodash-es';
   import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { workspaceEditorView } from '../../stores/sequencing';
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
@@ -59,6 +58,7 @@
     adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    editorViewChange: EditorView | null;
     lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
@@ -374,7 +374,7 @@
     // Compute initial output for the starting content (e.g., untitled empty sequence on page load)
     debouncedOutputUpdate(editorSequenceView.state.doc.toString());
 
-    $workspaceEditorView = editorSequenceView;
+    dispatch('editorViewChange', editorSequenceView);
   });
 
   onDestroy(() => {
@@ -382,7 +382,7 @@
     editorSequenceView?.destroy();
     editorOutputView?.destroy();
     debouncedOutputUpdate.cancel();
-    $workspaceEditorView = null;
+    dispatch('editorViewChange', null);
   });
 </script>
 
