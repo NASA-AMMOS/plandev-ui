@@ -5,6 +5,7 @@
   import { linter } from '@codemirror/lint';
   import { Compartment, EditorState, Transaction } from '@codemirror/state';
   import { EditorView } from '@codemirror/view';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { minimalSetup } from 'codemirror';
   import { createEventDispatcher, onDestroy } from 'svelte';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
@@ -24,26 +25,25 @@
   let editorView: EditorView | null = null;
   let compartmentReadonly: Compartment = new Compartment();
   let hasJsonError: boolean = false;
+  let isEditing: boolean = false;
   let lastSavedContent: string = '';
   let previousFilePath: string | null = null;
 
-  $: readOnly = !hasEditPermission;
+  $: editorReadOnly = !hasEditPermission || !isEditing;
   $: if (editorView && compartmentReadonly) {
     editorView.dispatch({
-      effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly)]),
+      effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(editorReadOnly)]),
     });
   }
 
   // Detect file switches and external metadata changes
   $: if (filePath !== previousFilePath) {
-    tryAutoSave();
+    isEditing = false;
     previousFilePath = filePath;
     syncEditorContent(fileMetadata);
-  } else if (fileMetadata) {
+  } else if (fileMetadata && !isEditing) {
     const newContent = serializeUserMetadata(fileMetadata);
-    if (editorView && newContent === lastSavedContent && editorView.state.doc.toString() !== newContent) {
-      // Metadata was updated to match what we just saved (optimistic update) — skip
-    } else if (newContent !== lastSavedContent) {
+    if (newContent !== lastSavedContent) {
       syncEditorContent(fileMetadata);
     }
   }
@@ -55,31 +55,12 @@
   function syncEditorContent(metadata: WorkspaceFileMetadata | null) {
     const newContent = serializeUserMetadata(metadata);
     lastSavedContent = newContent;
+    hasJsonError = false;
     if (editorView && editorView.state.doc.toString() !== newContent) {
       editorView.dispatch({
         annotations: [Transaction.addToHistory.of(false)],
         changes: { from: 0, insert: newContent, to: editorView.state.doc.length },
       });
-    }
-  }
-
-  function tryAutoSave() {
-    if (!editorView || readOnly) {
-      return;
-    }
-    const currentText = editorView.state.doc.toString();
-    if (currentText === lastSavedContent) {
-      return;
-    }
-    try {
-      const parsed = JSON.parse(currentText);
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        return;
-      }
-      lastSavedContent = currentText;
-      dispatch('updateUserMetadata', parsed);
-    } catch {
-      // Invalid JSON — discard silently
     }
   }
 
@@ -93,12 +74,44 @@
   }
 
   function updateValidationState(node: HTMLDivElement, text: string) {
-    const isInvalid = text !== lastSavedContent && !isValidJsonObject(text);
-    hasJsonError = isInvalid;
-    if (isInvalid) {
+    hasJsonError = !isValidJsonObject(text);
+    if (hasJsonError) {
       node.classList.add('invalid');
     } else {
       node.classList.remove('invalid');
+    }
+  }
+
+  function onEdit() {
+    isEditing = true;
+  }
+
+  function onSave() {
+    if (!editorView) {
+      return;
+    }
+    const currentText = editorView.state.doc.toString();
+    try {
+      const parsed = JSON.parse(currentText);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return;
+      }
+      lastSavedContent = currentText;
+      isEditing = false;
+      dispatch('updateUserMetadata', parsed);
+    } catch {
+      // Invalid JSON — don't save
+    }
+  }
+
+  function onCancel() {
+    isEditing = false;
+    hasJsonError = false;
+    if (editorView && editorView.state.doc.toString() !== lastSavedContent) {
+      editorView.dispatch({
+        annotations: [Transaction.addToHistory.of(false)],
+        changes: { from: 0, insert: lastSavedContent, to: editorView.state.doc.length },
+      });
     }
   }
 
@@ -125,20 +138,13 @@
             updateValidationState(node, viewUpdate.state.doc.toString());
           }
         }),
-        EditorView.domEventHandlers({
-          blur: () => {
-            tryAutoSave();
-            return false;
-          },
-        }),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly)]),
+        compartmentReadonly.of([EditorState.readOnly.of(editorReadOnly)]),
       ],
       parent: node,
     });
 
     return {
       destroy() {
-        tryAutoSave();
         editorView?.destroy();
         editorView = null;
       },
@@ -146,7 +152,6 @@
   }
 
   onDestroy(() => {
-    tryAutoSave();
     editorView?.destroy();
     editorView = null;
   });
@@ -196,13 +201,26 @@
               {/if}
 
               <div class="flex flex-col gap-1">
-                <div class="flex items-center justify-between">
+                <div class="mb-0.5 flex h-4 items-center justify-between">
                   <span class="font-medium text-muted-foreground">User metadata</span>
-                  {#if hasJsonError}
-                    <span class="text-xxs text-destructive">Invalid JSON</span>
-                  {/if}
+                  <div class="flex items-center gap-1">
+                    {#if hasJsonError}
+                      <span class="text-xxs text-destructive">Invalid JSON</span>
+                    {/if}
+                    {#if hasEditPermission && !isEditing}
+                      <Button size="sm" variant="outline" on:click={onEdit} aria-label="Edit user metadata">
+                        Edit
+                      </Button>
+                    {/if}
+                  </div>
                 </div>
                 <div class="user-metadata-editor overflow-hidden rounded border border-border" use:initEditor />
+                {#if isEditing}
+                  <div class="flex justify-end gap-1">
+                    <Button size="sm" variant="outline" on:click={onCancel}>Cancel</Button>
+                    <Button size="sm" variant="default" disabled={hasJsonError} on:click={onSave}>Save</Button>
+                  </div>
+                {/if}
               </div>
             </div>
           {:else}
