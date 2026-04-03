@@ -479,6 +479,15 @@
     return getWorkspaceContents(initialWorkspace);
   }
 
+  /**
+   * Force Svelte reactivity for the workspace tree by creating a new contents array reference.
+   */
+  function invalidateWorkspaceTree() {
+    if (workspaceTree?.contents) {
+      workspaceTree = { ...workspaceTree, contents: [...workspaceTree.contents] };
+    }
+  }
+
   function isTextFile(fileType: WorkspaceContentType) {
     return (
       fileType === WorkspaceContentType.Sequence ||
@@ -490,17 +499,41 @@
   }
 
   async function getSelectedFileContent(filePath: string) {
-    let content = '';
+    let content: string | null = '';
 
     if ($user) {
       const node = workspaceTreeMap[filePath];
       if (node?.type !== WorkspaceContentType.Directory) {
-        content = (await effects.getWorkspaceFileContent($workspaceId, filePath, $user)) ?? '';
+        content = await effects.getWorkspaceFileContent($workspaceId, filePath, $user);
       }
+    }
+
+    if (content === null) {
+      // File may have been deleted or renamed — refresh tree so the UI self-corrects
+      activeDocument.close();
+      refreshWorkspaceContents();
+      return;
     }
 
     // activeDocument.open handles the stale check internally (compares filePath with loadingPath)
     activeDocument.open(filePath, content);
+
+    // Fetch fresh metadata so readOnly/user fields are current when the user opens the file
+    const fileNode = workspaceTreeMap[filePath];
+    if ($workspaceId && $user && fileNode?.type !== WorkspaceContentType.Directory) {
+      WorkspaceApi.getFileMetadata($workspaceId, filePath, $user)
+        .then(metadata => {
+          if (metadata) {
+            const treeNode = workspaceTreeMap[filePath];
+            if (treeNode) {
+              treeNode.metadata = metadata;
+              workspaceTreeMap = { ...workspaceTreeMap };
+              invalidateWorkspaceTree();
+            }
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   async function loadSequenceAdaptation(id: number | null | undefined) {
@@ -860,6 +893,7 @@
       if (node) {
         node.metadata = { ...node.metadata, readOnly };
         workspaceTreeMap = { ...workspaceTreeMap };
+        invalidateWorkspaceTree();
       }
       showSuccessToast(`File marked as ${readOnly ? 'read only' : 'editable'}`);
     } catch (e) {
@@ -878,6 +912,7 @@
       if (node) {
         node.metadata = { ...node.metadata, user: event.detail };
         workspaceTreeMap = { ...workspaceTreeMap };
+        invalidateWorkspaceTree();
       }
       showSuccessToast('User metadata updated');
     } catch (e) {

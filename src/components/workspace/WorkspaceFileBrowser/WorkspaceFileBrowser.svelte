@@ -23,7 +23,11 @@
     WorkspaceNodeRunActionEvent,
     WorkspaceNodesEvent,
   } from '../../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
+  import type {
+    WorkspaceFileMetadata,
+    WorkspaceTreeNode,
+    WorkspaceTreeNodeWithFullPath,
+  } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
@@ -147,8 +151,9 @@
   // Metadata column definitions (reusable for column picker)
   const metadataColumnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [
     {
+      colId: 'lastEditedBy',
       comparator: () => 0,
-      field: 'lastEditedBy' as any,
+      field: 'metadata.lastEditedBy',
       headerName: 'Last Editor',
       hide: false,
       minWidth: 60,
@@ -161,8 +166,9 @@
     },
     {
       cellRenderer: dateTimeCellRenderer,
+      colId: 'lastEditedAt',
       comparator: () => 0,
-      field: 'lastEditedAt' as any,
+      field: 'metadata.lastEditedAt',
       headerName: 'Last Edited',
       hide: false,
       minWidth: 70,
@@ -174,8 +180,9 @@
       width: 100,
     },
     {
+      colId: 'createdBy',
       comparator: () => 0,
-      field: 'createdBy' as any,
+      field: 'metadata.createdBy',
       headerName: 'Created By',
       hide: true,
       minWidth: 70,
@@ -188,8 +195,9 @@
     },
     {
       cellRenderer: dateTimeCellRenderer,
+      colId: 'createdAt',
       comparator: () => 0,
-      field: 'createdAt' as any,
+      field: 'metadata.createdAt',
       headerName: 'Created',
       hide: true,
       minWidth: 70,
@@ -201,8 +209,9 @@
       width: 80,
     },
     {
+      colId: 'version',
       comparator: () => 0,
-      field: 'version' as any,
+      field: 'metadata.version',
       headerName: 'Version',
       hide: true,
       minWidth: 60,
@@ -214,8 +223,24 @@
       width: 80,
     },
     {
+      cellDataType: 'boolean',
+      colId: 'readOnly',
       comparator: () => 0,
-      field: 'user' as any,
+      field: 'metadata.readOnly',
+      headerName: 'Read-Only',
+      hide: true,
+      minWidth: 60,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.readOnly ?? '',
+      width: 80,
+    },
+    {
+      colId: 'user',
+      comparator: () => 0,
+      field: 'metadata.user',
       headerName: 'User Metadata',
       hide: true,
       minWidth: 70,
@@ -236,7 +261,7 @@
     columnStates = [
       { colId: 'name', hide: false },
       ...metadataColumnDefs.map(col => ({
-        colId: col.field as string,
+        colId: (col.colId ?? col.field) as string,
         hide: col.hide ?? false,
       })),
     ];
@@ -415,8 +440,9 @@
           comparison = aVal.localeCompare(bVal);
         } else {
           // Generic metadata field sorting (lastEditedBy, lastEditedAt, createdBy, etc.)
-          const aVal = String((a.metadata as Record<string, unknown>)?.[colId] ?? '');
-          const bVal = String((b.metadata as Record<string, unknown>)?.[colId] ?? '');
+          const metadataKey = colId as keyof WorkspaceFileMetadata;
+          const aVal = String(a.metadata?.[metadataKey] ?? '');
+          const bVal = String(b.metadata?.[metadataKey] ?? '');
           comparison = aVal.localeCompare(bVal);
         }
         if (comparison !== 0) {

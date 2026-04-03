@@ -64,16 +64,20 @@
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
+  let wasLoading: boolean = false;
 
-  $: workspaceTree && didUpdate(isWorkspaceLoading);
+  $: if (isWorkspaceLoading) {
+    wasLoading = true;
+  } else if (wasLoading) {
+    wasLoading = false;
+    showRefreshIndicator();
+  }
 
-  async function didUpdate(loading: boolean) {
-    if (loading === false) {
-      didWorkspaceUpdate = true;
-      lastRefreshTime = new Date();
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      didWorkspaceUpdate = false;
-    }
+  async function showRefreshIndicator() {
+    didWorkspaceUpdate = true;
+    lastRefreshTime = new Date();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    didWorkspaceUpdate = false;
   }
 
   function onNewFolder() {
