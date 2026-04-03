@@ -35,18 +35,19 @@
   let id = uniqueId();
 
   $: columnMenuItems = (columnDefs ?? []).map((derivedColumnDef: ColDef) => {
-    const columnState = columnStates?.find((columnState: ColumnState) => columnState.colId === derivedColumnDef.field);
+    const colId = (derivedColumnDef.colId ?? derivedColumnDef.field) as keyof T;
+    const columnState = columnStates?.find((columnState: ColumnState) => columnState.colId === colId);
 
     if (columnState) {
       return {
-        field: (derivedColumnDef.field as keyof T) ?? '',
+        field: colId ?? '',
         isHidden: columnState?.hide ?? derivedColumnDef.hide ?? false,
         name: derivedColumnDef.headerName ?? '',
       };
     }
 
     return {
-      field: (derivedColumnDef.field as keyof T) ?? '',
+      field: colId ?? '',
       isHidden: true,
       name: derivedColumnDef.headerName ?? '',
     };
