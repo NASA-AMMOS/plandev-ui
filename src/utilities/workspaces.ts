@@ -555,12 +555,7 @@ export const WorkspaceApi = {
       false,
     );
   },
-  async unsetFileMetadataKeys(
-    workspaceId: number,
-    filePath: string,
-    keys: string[],
-    user: User | null,
-  ): Promise<void> {
+  async unsetFileMetadataKeys(workspaceId: number, filePath: string, keys: string[], user: User | null): Promise<void> {
     return reqWorkspaceMetadata<void>(
       joinPath(['unset', workspaceId, filePath]),
       'POST',

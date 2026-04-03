@@ -54,7 +54,13 @@
     </Sidebar.MenuButton>
   </div>
   <div class="flex w-full flex-col items-center pb-2">
-    <Tooltip content={panelOpen ? 'Collapse panel' : 'Expand panel'} openDelay={0} closeDelay={0} side="right" sideOffset={8}>
+    <Tooltip
+      content={panelOpen ? 'Collapse panel' : 'Expand panel'}
+      openDelay={0}
+      closeDelay={0}
+      side="right"
+      sideOffset={8}
+    >
       <Button
         class="h-[32px] w-[32px] rounded-md p-0 ring-inset hover:bg-[var(--sidebar-accent)]"
         variant="ghost"
