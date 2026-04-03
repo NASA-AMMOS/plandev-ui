@@ -14,6 +14,7 @@
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
   import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
+  import type { EditorView } from 'codemirror';
   import { capitalize, startCase } from 'lodash-es';
   import { Folder, ListX, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
@@ -52,7 +53,6 @@
     getParsedParameterDictionary,
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
-    workspaceEditorView,
   } from '../../../stores/sequencing';
   import { initialUsersLoading, users } from '../../../stores/user';
   import {
@@ -168,6 +168,7 @@
   let rightPanelOpen: boolean = true;
   let sidebarPanelOpen: boolean = true;
   let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
+  let activeEditorView: EditorView | null = null;
   let sequenceEditorRef: SequenceEditor;
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
@@ -1439,6 +1440,7 @@
                       userSequenceEditorColumns="1fr"
                       userSequenceEditorColumnsWithFormBuilder="1fr"
                       on:adaptationError={onAdaptationError}
+                      on:editorViewChange={e => (activeEditorView = e.detail)}
                       on:lintChange={onLintChange}
                       on:runAction={onRunActionOnActiveFile}
                       on:save={onSaveWorkspaceFile}
@@ -1537,7 +1539,7 @@
             <WorkspaceRightPanel
               bind:activeTab={rightPanelActiveTab}
               bind:commandNodeName={rightPanelCommandNodeName}
-              editorSequenceView={$workspaceEditorView}
+              editorSequenceView={activeEditorView}
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}

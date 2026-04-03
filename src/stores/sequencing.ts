@@ -5,7 +5,6 @@ import type {
 } from '@nasa-jpl/aerie-ampcs';
 import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
-import type { EditorView } from 'codemirror';
 import type { User } from '../types/app';
 import type { SequenceFilter } from '../types/expansion';
 import {
@@ -93,7 +92,6 @@ export const userSequenceEditorColumns: Writable<string> = writable('3fr 3px');
 
 export const userSequenceEditorColumnsWithFormBuilder: Writable<string> = writable('3fr 3px 1.125fr');
 
-export const workspaceEditorView: Writable<EditorView | null> = writable(null);
 
 /* Helper Functions */
 
