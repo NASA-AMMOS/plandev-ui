@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Button, cn, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { tv, type VariantProps } from 'tailwind-variants';
+  import Tooltip from '../../Tooltip.svelte';
 
   const dispatch = createEventDispatcher<{
     click: { event: MouseEvent; wasActive: boolean };
@@ -48,32 +49,18 @@
   }
 </script>
 
-{#if showTooltip}
-  <Tooltip.Root>
-    <Tooltip.Trigger asChild let:builder>
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        bind:this={ref}
-        aria-label={tooltipContent}
-        data-slot="sidebar-menu-button"
-        data-sidebar="menu-button"
-        data-size={size}
-        data-active={isActive}
-        class={cn(buttonClass, className)}
-        on:click={handleClick}
-      >
-        <slot />
-      </Button>
-    </Tooltip.Trigger>
-    <Tooltip.Content>
-      {tooltipContent}
-    </Tooltip.Content>
-  </Tooltip.Root>
-{:else}
+<Tooltip
+  content={tooltipContent}
+  disabled={!showTooltip}
+  openDelay={0}
+  closeDelay={0}
+  side="right"
+  wrapperClass="w-full"
+>
   <Button
     variant="ghost"
     bind:this={ref}
+    aria-label={tooltipContent || undefined}
     data-slot="sidebar-menu-button"
     data-sidebar="menu-button"
     data-size={size}
@@ -83,4 +70,4 @@
   >
     <slot />
   </Button>
-{/if}
+</Tooltip>

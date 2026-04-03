@@ -1,10 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
+  import Tooltip from '../ui/Tooltip.svelte';
 
   const dispatch = createEventDispatcher<{
     actionsClick: void;
@@ -33,22 +34,16 @@
     >
       <Files size={16} />
     </Sidebar.MenuButton>
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild let:builder>
-        <Button
-          class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
-          builders={[builder]}
-          variant="ghost"
-          aria-label="Actions"
-          on:click={() => dispatch('actionsClick')}
-        >
-          <Clapperboard size={16} />
-        </Button>
-      </Tooltip.Trigger>
-      <Tooltip.Content sideOffset={8}>
-        <div>Actions</div>
-      </Tooltip.Content>
-    </Tooltip.Root>
+    <Tooltip content="Actions" openDelay={0} closeDelay={0} side="right" sideOffset={8}>
+      <Button
+        class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
+        variant="ghost"
+        aria-label="Actions"
+        on:click={() => dispatch('actionsClick')}
+      >
+        <Clapperboard size={16} />
+      </Button>
+    </Tooltip>
     <Sidebar.MenuButton
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
       isActive={activeTab === 'settings' && panelOpen}
@@ -59,25 +54,19 @@
     </Sidebar.MenuButton>
   </div>
   <div class="flex w-full flex-col items-center pb-2">
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild let:builder>
-        <Button
-          class="h-[32px] w-[32px] rounded-md p-0 ring-inset hover:bg-[var(--sidebar-accent)]"
-          builders={[builder]}
-          variant="ghost"
-          aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
-          on:click={() => (panelOpen = !panelOpen)}
-        >
-          {#if panelOpen}
-            <PanelLeftClose size={16} />
-          {:else}
-            <PanelLeftOpen size={16} />
-          {/if}
-        </Button>
-      </Tooltip.Trigger>
-      <Tooltip.Content sideOffset={8}>
-        <div>{panelOpen ? 'Collapse panel' : 'Expand panel'}</div>
-      </Tooltip.Content>
-    </Tooltip.Root>
+    <Tooltip content={panelOpen ? 'Collapse panel' : 'Expand panel'} openDelay={0} closeDelay={0} side="right" sideOffset={8}>
+      <Button
+        class="h-[32px] w-[32px] rounded-md p-0 ring-inset hover:bg-[var(--sidebar-accent)]"
+        variant="ghost"
+        aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
+        on:click={() => (panelOpen = !panelOpen)}
+      >
+        {#if panelOpen}
+          <PanelLeftClose size={16} />
+        {:else}
+          <PanelLeftOpen size={16} />
+        {/if}
+      </Button>
+    </Tooltip>
   </div>
 </div>
