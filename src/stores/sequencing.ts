@@ -92,7 +92,6 @@ export const userSequenceEditorColumns: Writable<string> = writable('3fr 3px');
 
 export const userSequenceEditorColumnsWithFormBuilder: Writable<string> = writable('3fr 3px 1.125fr');
 
-
 /* Helper Functions */
 
 export async function getParsedChannelDictionary(

@@ -263,7 +263,14 @@ describe('Workspace utility function tests', () => {
 
     test('deleteFileMetadata', async () => {
       await WorkspaceApi.deleteFileMetadata(1, 'foo/bar.seqn', null);
-      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith('1/foo/bar.seqn', 'DELETE', null, null, undefined, false);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'DELETE',
+        null,
+        null,
+        undefined,
+        false,
+      );
     });
 
     test('getFileMetadata', async () => {
