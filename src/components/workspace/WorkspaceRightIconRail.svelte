@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, Tooltip } from '@nasa-jpl/stellar-svelte';
-  import { BookOpen, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
+  import { BookA, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
 
   export let activeTab: string = 'metadata';
@@ -61,7 +61,7 @@
           }
         }}
       >
-        <BookOpen size={16} />
+        <BookA size={16} />
       </Sidebar.MenuButton>
     {/if}
   </div>
