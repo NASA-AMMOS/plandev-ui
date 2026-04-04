@@ -410,31 +410,35 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Workspace panel toggling', async () => {
-    // Get the sidebar wrapper (has data-state) and the inner sidebar (has the button)
-    const sidebarWrapper = setup.page.locator('[data-slot="sidebar"]');
+    // The left icon rail has a collapse/expand button whose label reflects the panel state.
+    // Initially the panel is open, so the button should say "Collapse panel".
+    const leftPanelToggle = setup.page.getByRole('button', { name: /Collapse panel|Expand panel/ }).first();
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Collapse panel');
 
-    // Verify sidebar is initially expanded
-    await expect(sidebarWrapper).toHaveAttribute('data-state', 'expanded');
+    // Click to collapse
+    await leftPanelToggle.click();
 
-    // Click expand/collapse button to collapse
-    await sidebarWrapper.getByRole('button', { name: 'Collapse panel' }).click();
-    await expect(sidebarWrapper).toHaveAttribute('data-state', 'collapsed');
+    // After collapsing, the button label should change to "Expand panel"
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Expand panel');
 
-    // Click again to expand
-    await sidebarWrapper.getByRole('button', { name: 'Expand panel' }).click();
-    await expect(sidebarWrapper).toHaveAttribute('data-state', 'expanded');
+    // Click to re-expand
+    await leftPanelToggle.click();
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Collapse panel');
 
-    // Test active tab toggling - clicking settings should open it
+    // Test active tab toggling - clicking settings should activate it and open the panel
     await workspace.workspaceSettingsButton.click();
-    await expect(workspace.workspaceCollaboratorInput).toBeVisible();
+    await expect(workspace.workspaceSettingsButton).toHaveAttribute('data-active', 'true');
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Collapse panel');
 
-    // Clicking settings again should close it (toggle off)
+    // Clicking settings again should deactivate it and collapse the panel
     await workspace.workspaceSettingsButton.click();
-    await expect(workspace.workspaceCollaboratorInput).not.toBeVisible();
+    await expect(workspace.workspaceSettingsButton).toHaveAttribute('data-active', 'false');
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Expand panel');
 
-    // Reopen the sidebar
+    // Clicking settings again should reactivate it and expand the panel
     await workspace.workspaceSettingsButton.click();
-    await expect(workspace.workspaceCollaboratorInput).toBeVisible();
+    await expect(workspace.workspaceSettingsButton).toHaveAttribute('data-active', 'true');
+    await expect(leftPanelToggle).toHaveAttribute('aria-label', 'Collapse panel');
   });
 
   test('Add collaborator to workspace', async () => {
@@ -477,7 +481,7 @@ test.describe.serial('Workspace', () => {
 
     // Verify files were moved (no longer in root, now in folder1)
     await workspace.clearSearch();
-    const sidebar = setup.page.getByRole('complementary');
+    const sidebar = workspace.workspaceFileGrid;
     // Files should NOT be at root path (just filename)
     await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
@@ -531,6 +535,176 @@ test.describe.serial('Workspace', () => {
     await expect(workspace.getFileRow(folder2)).not.toBeVisible();
     await workspace.searchForFileAndWait(file4);
     await workspace.deleteFile(file4);
+  });
+
+  test('Toggle file read-only and verify editor is locked', async () => {
+    // Create a sequence file to test with
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Wait for the editor to load and the file metadata banner to appear
+    await expect(workspace.readOnlyCheckbox).toBeVisible({ timeout: 10000 });
+
+    // Verify the file is initially editable — title should NOT contain "(Read only)"
+    await expect(setup.page.getByText('(Read only)')).not.toBeVisible();
+    await expect(workspace.saveSequenceButton).toBeVisible();
+
+    // Toggle read-only ON
+    await workspace.readOnlyCheckbox.click();
+    await workspace.waitForToast('File marked as read only');
+
+    // Verify editor title now shows "(Read only)"
+    await expect(setup.page.getByText('(Read only)')).toBeVisible();
+
+    // Verify the Save button is hidden (read-only files can't be saved)
+    await expect(workspace.saveSequenceButton).not.toBeVisible();
+
+    // Verify the editor rejects input — type something and confirm content didn't change
+    await workspace.sequenceEditor.click();
+    await setup.page.keyboard.type('this should not appear');
+    await expect(workspace.sequenceEditor).not.toContainText('this should not appear');
+
+    // Toggle read-only OFF
+    await workspace.readOnlyCheckbox.click();
+    await workspace.waitForToast('File marked as editable');
+
+    // Verify editor title no longer shows "(Read only)"
+    await expect(setup.page.getByText('(Read only)')).not.toBeVisible();
+
+    // Verify the Save button reappears
+    await expect(workspace.saveSequenceButton).toBeVisible();
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Edit and save user metadata', async () => {
+    // Create a file
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Open the metadata panel
+    await workspace.openMetadataPanel();
+
+    // Click Edit to enter edit mode
+    await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
+    await workspace.metadataEditButton.click();
+
+    // Save and Cancel buttons should now appear, Edit button should be gone
+    await expect(workspace.metadataSaveButton).toBeVisible();
+    await expect(workspace.metadataCancelButton).toBeVisible();
+    await expect(workspace.metadataEditButton).not.toBeVisible();
+
+    // Type valid JSON user metadata
+    await workspace.fillUserMetadata('{"testKey": "testValue"}');
+
+    // Save should be enabled for valid JSON
+    await expect(workspace.metadataSaveButton).toBeEnabled();
+    await workspace.metadataSaveButton.click();
+    await workspace.waitForToast('User metadata updated');
+
+    // After save, should exit edit mode — Edit button reappears
+    await expect(workspace.metadataEditButton).toBeVisible();
+    await expect(workspace.metadataSaveButton).not.toBeVisible();
+
+    // Verify the saved content persists — re-enter edit mode and check
+    await workspace.metadataEditButton.click();
+    await expect(workspace.userMetadataEditor).toContainText('testKey');
+    await expect(workspace.userMetadataEditor).toContainText('testValue');
+    await workspace.metadataCancelButton.click();
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Cancel discards user metadata changes', async () => {
+    // Create a file
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Open metadata panel and enter edit mode
+    await workspace.openMetadataPanel();
+    await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
+    await workspace.metadataEditButton.click();
+
+    // Type some content
+    await workspace.fillUserMetadata('{"unsaved": "changes"}');
+
+    // Cancel should revert to the original content
+    await workspace.metadataCancelButton.click();
+
+    // Verify we're back to the original empty object
+    await expect(workspace.metadataEditButton).toBeVisible();
+    await expect(workspace.userMetadataEditor).not.toContainText('unsaved');
+
+    // Cleanup
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Invalid JSON disables user metadata save button', async () => {
+    // Create a file
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Open metadata panel and enter edit mode
+    await workspace.openMetadataPanel();
+    await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
+    await workspace.metadataEditButton.click();
+
+    // Type invalid JSON (missing closing brace)
+    await workspace.fillUserMetadata('{"broken": ');
+
+    // Save button should be disabled and "Invalid JSON" error should show
+    await expect(workspace.metadataSaveButton).toBeDisabled();
+    await expect(setup.page.getByText('Invalid JSON')).toBeVisible();
+
+    // Fix the JSON
+    await workspace.fillUserMetadata('{"fixed": true}');
+
+    // Save button should now be enabled and error should be gone
+    await expect(workspace.metadataSaveButton).toBeEnabled();
+    await expect(setup.page.getByText('Invalid JSON')).not.toBeVisible();
+
+    // Cancel and cleanup
+    await workspace.metadataCancelButton.click();
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
+  test('Switching files discards unsaved user metadata edits', async () => {
+    // Create two files
+    const { sequenceName: file1 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName: file2 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+
+    // Open first file and start editing metadata
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.openMetadataPanel();
+    await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
+    await workspace.metadataEditButton.click();
+    await workspace.fillUserMetadata('{"shouldBeDiscarded": true}');
+
+    // Switch to second file
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2);
+
+    // Metadata panel should show the second file's metadata, edit mode should be exited
+    await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
+    await expect(workspace.metadataSaveButton).not.toBeVisible();
+    await expect(workspace.userMetadataEditor).not.toContainText('shouldBeDiscarded');
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
   });
 
   test('Error console is visible with tabs', async () => {
