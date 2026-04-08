@@ -5696,7 +5696,7 @@ const effects = {
         commit: 'unknown',
         commitUrl: '',
         date: new Date().toLocaleString(),
-        name: 'aerie-ui',
+        name: 'plandev-ui',
       };
     }
   },

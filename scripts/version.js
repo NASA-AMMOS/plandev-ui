@@ -18,7 +18,7 @@ function getCommit() {
 function main() {
   const branch = getBranch();
   const commit = getCommit();
-  const commitUrl = `https://github.com/NASA-AMMOS/aerie-ui/commit/${commit}`;
+  const commitUrl = `https://github.com/NASA-AMMOS/plandev-ui/commit/${commit}`;
   const date = new Date().toLocaleString();
   const packageName = process.env.npm_package_name;
   const packageVersion = process.env.npm_package_version;

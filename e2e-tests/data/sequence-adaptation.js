@@ -27069,7 +27069,7 @@ const KNOWN_DIRECTIVES = [
   'METADATA',
 ].map(name => `@${name}`);
 /**
- * These error messages are ported from helpers in `customCodes.ts` from aerie-ui
+ * These error messages are ported from helpers in `customCodes.ts` from plandev-ui
  */
 const ERROR_MESSAGES = {
   INVALID_ABSOLUTE_TIME: `Time Error: Incorrectly formatted absolute time string.
