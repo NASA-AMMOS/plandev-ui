@@ -145,7 +145,7 @@ function emitLogs(count, verbose) {
 }
 
 async function runFetchMode(externalUrl, verbose) {
-  const url = `${externalUrl}/repos/NASA-AMMOS/aerie`;
+  const url = `${externalUrl}/repos/NASA-AMMOS/plandev`;
   console.log(`Fetching: ${url}`);
 
   try {
