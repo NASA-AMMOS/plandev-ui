@@ -14,6 +14,15 @@
   function formatTypeName(s: string) {
     return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
   }
+
+  function togglePanel(nextTab: 'metadata' | 'command' | 'dictionary') {
+    if (activeTab === nextTab && panelOpen) {
+      panelOpen = false;
+    } else {
+      activeTab = nextTab;
+      panelOpen = true;
+    }
+  }
 </script>
 
 <div class="flex h-full w-[45px] flex-shrink-0 flex-col justify-between border-l border-border bg-muted">
@@ -22,14 +31,7 @@
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
       isActive={activeTab === 'metadata' && panelOpen}
       tooltipContent="Metadata"
-      on:click={() => {
-        if (activeTab === 'metadata' && panelOpen) {
-          panelOpen = false;
-        } else {
-          activeTab = 'metadata';
-          panelOpen = true;
-        }
-      }}
+      on:click={() => togglePanel('metadata')}
     >
       <Info size={16} />
     </Sidebar.MenuButton>
@@ -38,14 +40,7 @@
         className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
         isActive={activeTab === 'command' && panelOpen}
         tooltipContent={commandNodeName ? `Selected ${formatTypeName(commandNodeName)}` : 'Selected Command'}
-        on:click={() => {
-          if (activeTab === 'command' && panelOpen) {
-            panelOpen = false;
-          } else {
-            activeTab = 'command';
-            panelOpen = true;
-          }
-        }}
+        on:click={() => togglePanel('command')}
       >
         <TextCursorInput size={16} />
       </Sidebar.MenuButton>
@@ -53,14 +48,7 @@
         className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
         isActive={activeTab === 'dictionary' && panelOpen}
         tooltipContent="Command Dictionary"
-        on:click={() => {
-          if (activeTab === 'dictionary' && panelOpen) {
-            panelOpen = false;
-          } else {
-            activeTab = 'dictionary';
-            panelOpen = true;
-          }
-        }}
+        on:click={() => togglePanel('dictionary')}
       >
         <BookA size={16} />
       </Sidebar.MenuButton>
