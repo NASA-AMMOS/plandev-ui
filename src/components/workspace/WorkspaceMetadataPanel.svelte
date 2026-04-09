@@ -32,7 +32,10 @@
   $: editorReadOnly = !hasEditPermission || !isEditing;
   $: if (editorView && compartmentReadonly) {
     editorView.dispatch({
-      effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(editorReadOnly)]),
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(editorReadOnly),
+        EditorView.editable.of(!editorReadOnly),
+      ]),
     });
   }
 

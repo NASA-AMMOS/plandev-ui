@@ -37,7 +37,6 @@
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let fileMetadata: WorkspaceFileMetadata | null = null;
-  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
@@ -53,6 +52,7 @@
   export let showCommandFormBuilder: boolean = false;
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 
   const dispatch = createEventDispatcher<{
     adaptationError: { error: Error; filePath: string };
@@ -133,9 +133,15 @@
     }
   }
 
-  $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
-  });
+  $: {
+    const isEditable = !(readOnly || previewOnly || isLoading);
+    editorSequenceView?.dispatch({
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(!isEditable),
+        EditorView.editable.of(isEditable),
+      ]),
+    });
+  }
 
   $: {
     previousShowOutputs = showOutputs;
