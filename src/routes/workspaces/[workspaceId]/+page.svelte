@@ -871,8 +871,9 @@
 
   async function saveCurrentFile(content: string) {
     if ($activeDocumentPath) {
-      effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, $user);
+      await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, $user);
       activeDocument.markClean(content);
+      refreshWorkspaceContents();
     } else if ($workspace && workspaceTree && content) {
       const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, $user);
       if (newFilePath !== null) {
