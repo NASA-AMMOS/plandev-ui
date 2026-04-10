@@ -4,13 +4,14 @@
   import { Input } from '@nasa-jpl/stellar-svelte';
   import type {
     CellContextMenuEvent,
+    ColumnResizedEvent,
     ColumnState,
     ICellRendererParams,
     IRowNode,
-    SortChangedEvent,
   } from 'ag-grid-community';
   import { Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { COLUMN_STATE_COOKIE_NAME } from '../../../constants/cookies';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { ActionDefinition } from '../../../types/actions';
@@ -28,6 +29,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
+  import { getJsonCookie, setJsonCookie } from '../../../utilities/cookies';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
@@ -77,7 +79,7 @@
 
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
-  let columnStates: ColumnState[] = [];
+  let columnStates: ColumnState[] = getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
   let hasEditPermission: boolean = false;
@@ -486,19 +488,6 @@
     );
   }
 
-  function onSortChanged(event: CustomEvent<SortChangedEvent<WorkspaceTreeNodeWithFullPath>>) {
-    const columnState = event.detail.api.getColumnState();
-
-    const sortedColumns = columnState
-      .filter(col => col.sort != null)
-      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
-      .map(col => ({ colId: col.colId, direction: col.sort as 'asc' | 'desc' }));
-
-    if (sortedColumns.length > 0) {
-      sortState = sortedColumns;
-    }
-  }
-
   function onSearchInput(event: Event) {
     const target = event.target as HTMLInputElement;
     filterText = target.value;
@@ -626,17 +615,70 @@
     actionsMenuFocused = event.detail;
   }
 
-  function onColumnsChanged({
+  function saveColumnStateToCookie() {
+    if (columnStates && columnStates.length > 0) {
+      setJsonCookie(COLUMN_STATE_COOKIE_NAME, columnStates);
+    }
+  }
+
+  function updateColumnState(updatedColumnStates?: ColumnState[]) {
+    const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
+    if (columnStatesToUpdate) {
+      columnStates = columnStatesToUpdate;
+      saveColumnStateToCookie();
+    }
+  }
+
+  function onColumnMoved() {
+    updateColumnState();
+  }
+
+  function onColumnPinned() {
+    updateColumnState();
+  }
+
+  function onColumnResized(event: CustomEvent<ColumnResizedEvent>) {
+    const { source, finished } = event.detail;
+    if ((source === 'uiColumnResized' || source === 'sizeColumnsToFit') && finished) {
+      updateColumnState();
+    }
+  }
+
+  async function onColumnsChanged({
     detail: { columns },
   }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
-    columnStates = columnStates.map(state => ({
+    const currentColumnStates = dataGrid?.getColumnState() ?? [];
+    const updatedColumnStates = currentColumnStates.map(state => ({
       ...state,
       hide: columns.find(col => col.field === state.colId)?.isHidden ?? state.hide,
     }));
+    updateColumnState(updatedColumnStates);
+
+    await tick();
+    dataGrid?.sizeColumnsToFit();
   }
 
-  function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
-    columnStates = columnStates.map(state => (state.colId === 'name' ? state : { ...state, hide }));
+  function onSortChanged() {
+    updateColumnState();
+
+    const sortedColumns = columnStates
+      .filter(col => col.sort != null)
+      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+      .map(col => ({ colId: col.colId, direction: col.sort as 'asc' | 'desc' }));
+
+    if (sortedColumns.length > 0) {
+      sortState = sortedColumns;
+    }
+  }
+
+  async function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
+    const currentColumnStates = dataGrid?.getColumnState() ?? [];
+    const updatedColumnStates = currentColumnStates.map(state => (state.colId === 'name' ? state : { ...state, hide }));
+
+    updateColumnState(updatedColumnStates);
+
+    await tick();
+    dataGrid?.sizeColumnsToFit();
   }
 
   $: if (selectedTreeNodePath) {
@@ -690,6 +732,7 @@
     class="workspace-file-browser"
     {columnDefs}
     {columnStates}
+    columnShiftResize
     getRowId={node => node.fullPath}
     {hasDeletePermission}
     singleItemDisplayText="File"
@@ -701,6 +744,9 @@
     isExternalFilterPresent={() => true}
     showDeleteMenu={false}
     {doesExternalFilterPass}
+    on:columnMoved={onColumnMoved}
+    on:columnPinned={onColumnPinned}
+    on:columnResized={onColumnResized}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
