@@ -6,34 +6,34 @@ import { getWorkspacesUrl } from '../../src/utilities/routes';
 import { generateRandomName, hoverRowAndWaitForButton, setFileInputByBuffer } from '../utilities/helpers';
 
 export class Workspace {
-  editSequenceButton: Locator;
-  fileInput: Locator;
-  folderNameInput: Locator;
+  editSequenceButton!: Locator;
+  fileInput!: Locator;
+  folderNameInput!: Locator;
   jsonPath: string = 'e2e-tests/data/ban00001.json';
-  metadataEditButton: Locator;
-  metadataCancelButton: Locator;
-  metadataPanel: Locator;
-  metadataSaveButton: Locator;
-  metadataTabButton: Locator;
-  navButtonSequences: Locator;
-  navButtonSequencesMenu: Locator;
-  pageLoadingLocatorWithData: Locator;
-  readOnlyCheckbox: Locator;
-  rightPanelCollapseButton: Locator;
-  saveSequenceButton: Locator;
-  searchInput: Locator;
-  sequenceEditor: Locator;
-  sequenceNameInput: Locator;
-  textEditor: Locator;
-  userMetadataEditor: Locator;
-  workspaceCollaboratorInput: Locator;
-  workspaceContextMenuButton: Locator;
-  workspaceFileBrowserButton: Locator;
-  workspaceFileContextMenu: Locator;
-  workspaceFileGrid: Locator;
-  workspaceHeaderMenu: Locator;
-  workspaceSettingsButton: Locator;
-  workspaceSidebar: Locator;
+  metadataCancelButton!: Locator;
+  metadataEditButton!: Locator;
+  metadataPanel!: Locator;
+  metadataSaveButton!: Locator;
+  metadataTabButton!: Locator;
+  navButtonSequences!: Locator;
+  navButtonSequencesMenu!: Locator;
+  pageLoadingLocatorWithData!: Locator;
+  readOnlyCheckbox!: Locator;
+  rightPanelCollapseButton!: Locator;
+  saveSequenceButton!: Locator;
+  searchInput!: Locator;
+  sequenceEditor!: Locator;
+  sequenceNameInput!: Locator;
+  textEditor!: Locator;
+  userMetadataEditor!: Locator;
+  workspaceCollaboratorInput!: Locator;
+  workspaceContextMenuButton!: Locator;
+  workspaceFileBrowserButton!: Locator;
+  workspaceFileContextMenu!: Locator;
+  workspaceFileGrid!: Locator;
+  workspaceHeaderMenu!: Locator;
+  workspaceSettingsButton!: Locator;
+  workspaceSidebar!: Locator;
 
   constructor(
     public page: Page,
@@ -159,6 +159,18 @@ export class Workspace {
     await this.sequenceNameInput.blur();
   }
 
+  /**
+   * Type content into the user metadata JSON editor (CodeMirror).
+   * Clears existing content first.
+   */
+  async fillUserMetadata(content: string): Promise<void> {
+    // Focus the CodeMirror editor
+    await this.userMetadataEditor.click();
+    // Select all and replace
+    await this.page.keyboard.press('ControlOrMeta+a');
+    await this.page.keyboard.type(content);
+  }
+
   getFileRow(name: string): Locator {
     return this.workspaceFileGrid.getByRole('row', { name });
   }
@@ -205,6 +217,17 @@ export class Workspace {
     await hoverRowAndWaitForButton(this.page, row, moreActionsButton);
     await moreActionsButton.click();
     await this.workspaceFileContextMenu.waitFor({ state: 'visible' });
+  }
+
+  /**
+   * Open the right-side metadata panel by clicking the metadata tab icon.
+   * If the panel is already open on the metadata tab, this is a no-op.
+   */
+  async openMetadataPanel(): Promise<void> {
+    // Click the Metadata tab button in the right icon rail
+    await this.metadataTabButton.click();
+    // Wait for the metadata panel content to appear
+    await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
   }
 
   async openWorkspaceContextMenu(): Promise<void> {
@@ -276,29 +299,6 @@ export class Workspace {
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceFileBrowserButton = page.getByRole('button', { name: 'Files' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
-  }
-
-  /**
-   * Open the right-side metadata panel by clicking the metadata tab icon.
-   * If the panel is already open on the metadata tab, this is a no-op.
-   */
-  async openMetadataPanel(): Promise<void> {
-    // Click the Metadata tab button in the right icon rail
-    await this.metadataTabButton.click();
-    // Wait for the metadata panel content to appear
-    await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
-  }
-
-  /**
-   * Type content into the user metadata JSON editor (CodeMirror).
-   * Clears existing content first.
-   */
-  async fillUserMetadata(content: string): Promise<void> {
-    // Focus the CodeMirror editor
-    await this.userMetadataEditor.click();
-    // Select all and replace
-    await this.page.keyboard.press('ControlOrMeta+a');
-    await this.page.keyboard.type(content);
   }
 
   async uploadFile(filePath: string, fileName: string): Promise<void> {
