@@ -196,12 +196,6 @@
                   <span>{getShortISOForDate(new Date(fileMetadata.lastEditedAt))}</span>
                 </div>
               {/if}
-              {#if fileMetadata.version}
-                <div class="flex flex-col gap-0.5">
-                  <span class="font-medium text-muted-foreground">Version</span>
-                  <span>{fileMetadata.version}</span>
-                </div>
-              {/if}
 
               <div class="flex flex-col gap-1">
                 <div class="mb-0.5 flex h-4 items-center justify-between">
