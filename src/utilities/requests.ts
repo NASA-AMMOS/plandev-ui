@@ -337,7 +337,8 @@ export async function reqWorkspaceMetadata<T = any>(
     options.body = body;
   }
 
-  const response = await fetch(`${WORKSPACE_URL}/metadata/${url}`, options);
+  const postSearchParameters = method.toLowerCase() === 'post' ? '?mergeBehavior=overwrite' : '';
+  const response = await fetch(`${WORKSPACE_URL}/metadata/${url}${postSearchParameters}`, options);
 
   if (!response.ok) {
     throw new Error(response.statusText);
