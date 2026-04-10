@@ -102,6 +102,9 @@
       lastSavedContent = currentText;
       isEditing = false;
       dispatch('updateUserMetadata', parsed);
+      if (fileMetadata) {
+        fileMetadata.user = parsed;
+      }
     } catch {
       // Invalid JSON — don't save
     }
