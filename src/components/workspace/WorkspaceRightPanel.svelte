@@ -5,7 +5,7 @@
   import { StateEffect } from '@codemirror/state';
   import type { SyntaxNode, Tree } from '@lezer/common';
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
-  import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
+  import type { ArgTextDef, CommandInfoMapper, PhoenixContext, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
   import { EditorView } from 'codemirror';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
@@ -44,10 +44,18 @@
     path: null,
   };
 
+  let argInfoArray: ArgTextDef[] = [];
+  let commandDef: FswCommand | null = null;
+  let commandDictionary: CommandDictionary = emptyCommandDictionary;
+  let commandName: string | null = null;
+  let commandNameNode: SyntaxNode | null = null;
+  let commandNode: SyntaxNode | null = null;
   let currentTree: Tree;
   let listenerAttached: boolean = false;
   let selectedCommandDefinition: (FswCommand | HwCommand) | null = null;
   let selectedNode: SyntaxNode | null = null;
+  let timeTagNode: TimeTagInfo | null = null;
+  let variablesInScope: string[] = [];
 
   $: commandDictionary = phoenixContext?.commandDictionary ?? emptyCommandDictionary;
 
@@ -57,9 +65,7 @@
     commandNameNode &&
     editorSequenceView &&
     unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
-  $: timeTagNode = editorSequenceView
-    ? (commandInfoMapper?.getTimeTagInfo?.(editorSequenceView, commandNode) ?? null)
-    : null;
+  $: timeTagNode = editorSequenceView ? commandInfoMapper?.getTimeTagInfo?.(editorSequenceView, commandNode) : null;
   $: argInfoArray = editorSequenceView
     ? (commandInfoMapper?.getArgumentInfo?.(
         commandDef,
