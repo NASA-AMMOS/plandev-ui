@@ -227,7 +227,8 @@
               </div>
             </div>
           {:else}
-            <div class="p-3 text-muted-foreground">No metadata available for this file.</div>
+            <!-- This message only displays when a folder (not a file) is selected, as folders currently don't have metadata -->
+            <div class="p-3 text-muted-foreground">No metadata available for this folder.</div>
           {/if}
         </Sidebar.Menu>
       </Sidebar.GroupContent>
