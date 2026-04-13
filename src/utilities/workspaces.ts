@@ -377,7 +377,7 @@ export const WorkspaceApi = {
     return reqWorkspace<number>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
   },
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
-    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
+    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, true);
   },
   async deleteFileMetadata(workspaceId: number, filePath: string, user: User | null): Promise<void> {
     return reqWorkspaceMetadata<void>(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
@@ -389,7 +389,7 @@ export const WorkspaceApi = {
       JSON.stringify(filePaths),
       user,
       undefined,
-      false,
+      true,
       false,
       {
         'Content-Type': 'application/json',
@@ -629,7 +629,7 @@ export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): 
 
   let currentNodes = nodes;
   let currentNode: WorkspaceTreeNode | null = null;
-
+  console.log('currentNodes :>> ', currentNodes, pathParts);
   for (const part of pathParts) {
     currentNode = currentNodes.find(n => n.name === part) ?? null;
     if (!currentNode) {
@@ -819,6 +819,25 @@ export function getCommonPathPrefix(paths: string[]): string {
   }
 
   return commonParts.join('/');
+}
+
+/**
+ * Recursively checks if a node or any of its descendants have readonly files
+ * @param node The WorkspaceTreeNode to check
+ * @returns true if the node or any descendant has readOnly metadata set to true
+ */
+export function hasReadonlyInTree(node: WorkspaceTreeNode): boolean {
+  // Check if the current node itself is readonly
+  if (node.metadata?.readOnly) {
+    return true;
+  }
+
+  // If it's a directory, recursively check all contents
+  if (node.type === WorkspaceContentType.Directory && node.contents) {
+    return node.contents.some(childNode => hasReadonlyInTree(childNode));
+  }
+
+  return false;
 }
 
 /**

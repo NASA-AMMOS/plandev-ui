@@ -36,6 +36,7 @@
     findNodeByPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    hasReadonlyInTree,
     shouldNodeBeVisible,
     sortWorkspaceTree,
     type TreeSortComparator,
@@ -85,6 +86,7 @@
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasCreateActionPermission: boolean = false;
+  let hasReadOnlyNodes: boolean = false;
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let expandedPaths: Set<string> = new Set();
   let selectedItemIds: RowId[] = [];
@@ -370,6 +372,26 @@
       ? [contextMenuNode]
       : [];
   $: actionsForSelection = getAvailableActionsForNodes(actions, effectiveSelectedNodes);
+
+  // Check if any of the effective selected nodes are read-only
+  $: hasReadOnlyNodes = effectiveSelectedNodes.some(node => {
+    // First check if the node itself is readonly
+    if (node.metadata?.readOnly) {
+      return true;
+    }
+
+    // If it's a folder, recursively check its contents
+    if (node.type === WorkspaceContentType.Directory && treeNode) {
+      const fullNode = findNodeByPath(treeNode?.contents ?? [], node.fullPath);
+
+      if (fullNode) {
+        return hasReadonlyInTree(fullNode);
+      }
+    }
+
+    return false;
+  });
+
   // Get all non-directory nodes that are either directly selected or descendants of selected directories
   $: nonDirectorySelectedNodes = flattenedTree.filter(node => {
     if (node.type === WorkspaceContentType.Directory) {
@@ -759,6 +781,7 @@
         {hasEditPermission}
         {hasDeletePermission}
         {hasCreateActionPermission}
+        {hasReadOnlyNodes}
         on:actionsMenuFocused={onActionsMenuFocused}
         on:rename={() => contextMenuNode && onRenameNode(contextMenuNode)}
         on:move={() => onMoveNodes(effectiveSelectedNodes)}

@@ -14,6 +14,7 @@
   export let hasEditPermission: boolean = false;
   export let hasDeletePermission: boolean = false;
   export let hasCreateActionPermission: boolean = false;
+  export let hasReadOnlyNodes: boolean = false;
   export let selectedWorkspaceNodes: WorkspaceTreeNodeWithFullPath[] = [];
 
   const dispatch = createEventDispatcher<{
@@ -36,9 +37,12 @@
 
   const editPermissionError = 'You do not have permission to edit this workspace';
   const deletePermissionError = 'You do not have permission to delete files in this workspace';
+  const readOnlyError = 'Some read-only files selected. You cannot modify read-only files.';
 
   let areMultipleFilesSelected: boolean = false;
   let actionPhrase: string = '';
+  let deleteError: string = deletePermissionError;
+  let editError: string = editPermissionError;
   let selectedFolderCount: number = 0;
   let selectedFileCount: number = 0;
   let fileCountPhrase: string = '';
@@ -46,6 +50,7 @@
   $: {
     selectedFolderCount = 0;
     selectedFileCount = 0;
+
     selectedWorkspaceNodes.forEach(node => {
       if (node.type === WorkspaceContentType.Directory) {
         selectedFolderCount++;
@@ -62,6 +67,10 @@
       selectedFileCount > 0 && selectedFolderCount < 1
         ? `${selectedFileCount} File${pluralize(selectedFileCount)}`
         : 'All Files within Selection';
+
+    // Set appropriate error message
+    deleteError = hasReadOnlyNodes ? readOnlyError : deletePermissionError;
+    editError = hasReadOnlyNodes ? readOnlyError : editPermissionError;
   }
 </script>
 
@@ -79,11 +88,19 @@
     <ContextMenu.Separator />
     <div
       use:permissionHandler={{
-        hasPermission: hasEditPermission,
-        permissionError: editPermissionError,
+        hasPermission:
+          hasDeletePermission &&
+          !(selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes),
+        permissionError: editError,
       }}
     >
-      <ContextMenu.Item disabled={!hasEditPermission} size="sm" on:click={() => dispatch('rename')} aria-label="Rename">
+      <ContextMenu.Item
+        disabled={!hasEditPermission ||
+          (selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes)}
+        size="sm"
+        on:click={() => dispatch('rename')}
+        aria-label="Rename"
+      >
         Rename
       </ContextMenu.Item>
     </div>
@@ -100,17 +117,17 @@
       on:click={() => dispatch('move', selectedWorkspaceNodes)}
       aria-label="Move/Copy"
     >
-      Move/Copy {fileCountPhrase}
+      <span class={hasReadOnlyNodes ? 'opacity-50' : ''}>Move</span>/Copy {fileCountPhrase}
     </ContextMenu.Item>
   </div>
   <div
     use:permissionHandler={{
-      hasPermission: hasDeletePermission,
-      permissionError: deletePermissionError,
+      hasPermission: hasDeletePermission && !hasReadOnlyNodes,
+      permissionError: deleteError,
     }}
   >
     <ContextMenu.Item
-      disabled={!hasDeletePermission}
+      disabled={!hasDeletePermission || hasReadOnlyNodes}
       size="sm"
       on:click={() => dispatch('delete', selectedWorkspaceNodes)}
       aria-label="Delete"
@@ -143,7 +160,7 @@
     on:click={() => dispatch('moveToWorkspace', selectedWorkspaceNodes)}
     aria-label="Move/Copy to Workspace"
   >
-    Move/Copy {fileCountPhrase} to Workspace
+    <span class={hasReadOnlyNodes ? 'opacity-50' : ''}>Move</span>/Copy {fileCountPhrase} to Workspace
   </ContextMenu.Item>
 </div>
 <ContextMenu.Separator />

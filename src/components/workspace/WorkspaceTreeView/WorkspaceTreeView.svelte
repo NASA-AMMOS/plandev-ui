@@ -15,7 +15,7 @@
   } from '../../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import { featurePermissions } from '../../../utilities/permissions';
-  import { getAvailableActionsForNodes } from '../../../utilities/workspaces';
+  import { findNodeByPath, getAvailableActionsForNodes, hasReadonlyInTree } from '../../../utilities/workspaces';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import WorkspaceContextMenuContents from '../WorkspaceContextMenuContents.svelte';
   import WorkspaceTreeViewNode from './WorkspaceTreeViewNode.svelte';
@@ -49,6 +49,7 @@
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasCreateActionPermission: boolean = false;
+  let hasReadOnlyNodes: boolean = false;
 
   $: if (contextMenuNode) {
     actionsForSelection = getAvailableActionsForNodes(actions, [contextMenuNode]);
@@ -72,6 +73,19 @@
         hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace, contextMenuNode ?? undefined);
         hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
       }
+
+      // Check if the selected node is read-only
+      hasReadOnlyNodes = false;
+      if (contextMenuNode.metadata?.readOnly) {
+        hasReadOnlyNodes = true;
+      } else if (contextMenuNode.type === WorkspaceContentType.Directory && treeNode) {
+        // If it's a folder, recursively check its contents
+        const fullNode = findNodeByPath(treeNode?.contents ?? [], contextMenuNode.fullPath);
+        if (fullNode) {
+          hasReadOnlyNodes = hasReadonlyInTree(fullNode);
+        }
+      }
+
       contextMenu.show(event);
     }
   }
@@ -144,6 +158,7 @@
         {hasEditPermission}
         {hasDeletePermission}
         {hasCreateActionPermission}
+        {hasReadOnlyNodes}
         selectedWorkspaceNodes={contextMenuNode ? [contextMenuNode] : []}
         on:rename={onRenameNode}
         on:move={onMoveNode}
