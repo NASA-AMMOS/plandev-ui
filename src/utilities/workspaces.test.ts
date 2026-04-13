@@ -1,5 +1,5 @@
 /* eslint-disable sort-keys */
-import { afterAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -209,6 +209,10 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('WorkspaceApi', () => {
+    afterEach(() => {
+      reqWorkspaceMock.mockReset();
+    });
+
     test('createFolder', async () => {
       await WorkspaceApi.createFolder(1, 'foo/bar', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
@@ -233,7 +237,7 @@ describe('Workspace utility function tests', () => {
 
     test('deleteFile', async () => {
       await WorkspaceApi.deleteFile(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, false);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, true);
     });
 
     test('deleteFiles', async () => {
@@ -244,7 +248,7 @@ describe('Workspace utility function tests', () => {
         JSON.stringify(['foo_bar', 'baz', 'buzz']),
         null,
         undefined,
-        false,
+        true,
         false,
         {
           'Content-Type': 'application/json',
