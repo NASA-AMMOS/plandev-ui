@@ -113,6 +113,7 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
+import type { LogMessage } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -4049,42 +4050,6 @@ const effects = {
     }
   },
 
-  async deleteWorkspaceItem(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<boolean> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
-    try {
-      if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
-        throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        await WorkspaceApi.deleteFile(workspace.id, originalPath, user);
-
-        logMessage(
-          `Deleted ${typeString.toLowerCase()} (${originalPath}) in "${workspace.name}" (ID=${workspace.id}).`,
-        );
-        showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
-      }
-
-      return confirm;
-    } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeString} Delete Failed`);
-    }
-
-    return false;
-  },
-
   async deleteWorkspaceItems(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
@@ -4102,12 +4067,31 @@ const effects = {
         'Delete Permanently',
       );
 
+      let responses: BulkOperationResponses = [];
+
       if (confirm) {
-        await WorkspaceApi.deleteFiles(
+        responses = await WorkspaceApi.deleteFiles(
           workspace.id,
           originalNodes.map(({ fullPath }) => fullPath),
           user,
         );
+
+        const failedFileOperations: BulkOperationResponses = [];
+
+        while (responses.length > 0) {
+          const response = responses.shift();
+
+          if (response && !isBulkOperationSuccess(response)) {
+            failedFileOperations.push(response);
+          }
+        }
+        if (failedFileOperations.length) {
+          throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to delete`, {
+            cause: JSON.stringify(
+              failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+            ),
+          });
+        }
 
         logMessage(
           `Deleted ${originalNodes.length} ${typeDisplayString.toLowerCase()} in "${workspace.name}" (ID=${workspace.id}).`,

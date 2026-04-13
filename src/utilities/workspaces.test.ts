@@ -16,6 +16,7 @@ import {
   getCommonPathPrefix,
   getSelectedFilesDisplay,
   getWorkspaceFileFolderDisplay,
+  hasReadonlyInTree,
   incrementFilename,
   joinPath,
   mapWorkspaceTreePaths,
@@ -1523,6 +1524,170 @@ describe('Workspace utility function tests', () => {
     test('Should handle multiple paths with varying common depths', () => {
       const result = getCommonPathPrefix(['a/b/c/file1.txt', 'a/b/file2.txt', 'a/b/d/file3.txt']);
       expect(result).toBe('a/b');
+    });
+  });
+
+  describe('hasReadonlyInTree', () => {
+    test('Should return false for a file without metadata', () => {
+      const node: WorkspaceTreeNode = {
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return false for a file with metadata but readOnly is false', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: false,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a file with readOnly set to true', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: true,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return false for a directory with all non-readonly files', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            name: 'file2.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a directory containing a readonly file', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            metadata: {
+              readOnly: true,
+            },
+            name: 'readonly.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for nested directory with readonly file in child', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            contents: [
+              {
+                metadata: {
+                  readOnly: true,
+                },
+                name: 'readonly.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'subfolder',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'parent',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for complex tree with readonly in one branch', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            contents: [
+              {
+                name: 'file1.txt',
+                type: WorkspaceContentType.Text,
+              },
+              {
+                name: 'file2.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch1',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                contents: [
+                  {
+                    metadata: {
+                      readOnly: true,
+                    },
+                    name: 'readonly.seq',
+                    type: WorkspaceContentType.Sequence,
+                  },
+                ],
+                name: 'subfolder',
+                type: WorkspaceContentType.Directory,
+              },
+            ],
+            name: 'branch2',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                name: 'file3.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch3',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'root',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
     });
   });
 });
