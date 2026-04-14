@@ -275,8 +275,16 @@ export function getAvailableActionsForNodes(
   const availableActions: ActionParameterPair[] = [];
 
   for (const action of actions) {
+    if (action.archived) {
+      continue;
+    }
+    const latestVersion = action.versions[0];
+    if (!latestVersion) {
+      continue;
+    }
+
     // params where the user has set a "primary: true" flag to be used as primary input for files/sequences
-    const userPrimaryParams = Object.entries(action.parameter_schema)
+    const userPrimaryParams = Object.entries(latestVersion.parameter_schema)
       // @ts-expect-error only some types in the schema tagged union have `primary` :-/
       .filter(([_k, schema]) => schema.primary === true);
 
@@ -293,7 +301,7 @@ export function getAvailableActionsForNodes(
       // no user-specified primary, pick the best one if possible
       const allowedParams = allowedParamTypes
         .map(allowedType => {
-          return Object.entries(action.parameter_schema).find(([_k, schema]) => {
+          return Object.entries(latestVersion.parameter_schema).find(([_k, schema]) => {
             return schema.type === allowedType && nodesMatchParamSchema(nonDirectoryNodes, schema);
           });
         })

@@ -493,7 +493,7 @@
     onNavigateToRoot={handleNavigateToRoot}
     onNavigateToSegment={navigateToBreadcrumb}
   />
-  <div class="flex items-center gap-2 border-b border-[color:var(--st-gray-20,#e0e0e0)] p-2">
+  <div class="flex items-center gap-2 border-b border-border p-2">
     <Search size={14} />
     <Input
       type="text"

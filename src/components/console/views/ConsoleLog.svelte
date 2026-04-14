@@ -3,12 +3,9 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { selectActivity } from '../../../stores/activities';
-  import { workspaceId } from '../../../stores/workspaces';
+  import { onMount } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
-  import { openActionRun } from '../../../utilities/actions';
-  import { ErrorTypes, getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
+  import { isLogMessage } from '../../../utilities/errors';
 
   import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
@@ -16,11 +13,8 @@
   export let log: BaseError;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
+  export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
-
-  const dispatch = createEventDispatcher<{
-    gotoLine: { column: number; line: number };
-  }>();
 
   let expandable: boolean = false;
   let leftContents: HTMLDivElement;
@@ -69,21 +63,6 @@
       return timestamp; // Return original if any error occurs
     }
   }
-
-  function handleActivityClick(event: MouseEvent, activityId: number) {
-    event.stopPropagation();
-    selectActivity(activityId, null);
-  }
-
-  function handleActionRunClick(event: MouseEvent, actionRunId: number) {
-    event.stopPropagation();
-    openActionRun($workspaceId, actionRunId, true);
-  }
-
-  function handleGotoLine(event: MouseEvent, line: number, column: number) {
-    event.stopPropagation();
-    dispatch('gotoLine', { column, line });
-  }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -111,7 +90,7 @@
         expandable ? 'cursor-pointer hover:bg-neutral-200/50' : '',
       )}
     >
-      <div class="flex items-start gap-2">
+      <div class="flex w-full items-start gap-2">
         <div class="flex flex-shrink-0 items-center gap-0.5" bind:this={leftContents}>
           {#if expandable}
             {#if open}
@@ -149,81 +128,25 @@
             {/if}
           </div>
         </div>
-        {#if log.message}
-          {@const activityIds = getActivityIdsFromError(log)}
-          <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-            {#if log.type === ErrorTypes.WORKSPACE_LINT_ERROR && typeof log.data?.line === 'number' && log.data?.filePath}
-              {@const location = `${log.data.filePath}:${log.data.line}:${log.data.column ?? 0}`}
-              {@const messagePrefix = `${location} - `}
-              {@const messageBody = log.message.startsWith(messagePrefix)
-                ? log.message.slice(messagePrefix.length)
-                : log.message}
-              <button
-                class="mr-1 cursor-pointer text-left text-amber-700 underline decoration-amber-400/50 underline-offset-2 hover:text-amber-900 hover:decoration-amber-600"
-                on:click={e => handleGotoLine(e, log.data?.line, log.data?.column ?? 0)}
-              >
-                {location}
-              </button>
-              {messageBody}
-            {:else if log.type === ErrorTypes.WORKSPACE_ACTION_RUN && log.data?.actionRunId && log.data?.actionName}
-              <button
-                class="inline-flex cursor-pointer items-center gap-0.5 text-violet-700 underline decoration-violet-400/50 underline-offset-2 hover:text-violet-900 hover:decoration-violet-600"
-                on:click={e => handleActionRunClick(e, log.data?.actionRunId)}
-              >
-                {log.data.actionName}•
-                <span class="">Run #{log.data.actionRunId}</span>
-              </button>
-              {#if log.data.status === 'failed'}
-                <span class="ml-0.5"> failed</span>
-              {:else}
-                <span class="ml-0.5 text-muted-foreground"> {log.data.status}</span>
-              {/if}
-            {:else if activityIds.length === 1 && log.message}
-              {@const activityId = activityIds[0]}
-              {@const activityMatch = log.message.match(/^(.*?)(Activity Directive \d+)(.*)$/)}
-              {#if activityMatch}
-                {activityMatch[1]}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  {activityMatch[2]}
-                </button>
-                {activityMatch[3]}
-              {:else}
-                {log.message}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  Activity {activityId}
-                </button>
-              {/if}
-            {:else if activityIds.length > 1 && log.message}
-              {log.message}
-              {#each activityIds as activityId, i}
-                {#if i > 0}<span class="text-muted-foreground">,</span>{/if}
-                <button
-                  class="cursor-pointer text-blue-700 underline decoration-blue-400/50 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600"
-                  on:click={e => handleActivityClick(e, activityId)}
-                >
-                  Activity {activityId}
-                </button>
-              {/each}
-            {:else}
-              {log.message}
-            {/if}
-            {#if isLogMessage(log) && typeof log.duration === 'number'}
-              <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
-            {/if}
-          </div>
-        {/if}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          {#if !log.message.trim() && log.data && !(expandable && open)}
+            <pre class="m-0 w-full overflow-hidden text-ellipsis break-words"><slot name="message" {log}
+                >{safeStringify(log.data)}</slot
+              ></pre>
+          {:else}
+            <pre class="m-0 whitespace-pre-wrap break-words"><slot name="message" {log}>{log.message ?? ''}</slot></pre>
+          {/if}
+
+          {#if isLogMessage(log) && typeof log.duration === 'number'}
+            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
+          {/if}
+        </div>
       </div>
     </div>
   </summary>
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
-      {#if log.timestamp}
+      {#if log.timestamp && showLongTimestamp}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>

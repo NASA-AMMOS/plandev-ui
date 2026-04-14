@@ -22,6 +22,10 @@
   import Console from '../../../components/console/Console.svelte';
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
+  import WorkspaceLogMessage from '../../../components/console/views/WorkspaceLogMessage.svelte';
+  import ActionDetailView from '../../../components/sequencing/actions/ActionDetailView.svelte';
+  import ActionRunDetailView from '../../../components/sequencing/actions/ActionRunDetailView.svelte';
+  import ActionRunsListView from '../../../components/sequencing/actions/ActionRunsListView.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import CssGrid from '../../../components/ui/CssGrid.svelte';
   import CssGridGutter from '../../../components/ui/CssGridGutter.svelte';
@@ -29,7 +33,7 @@
   import TextEditor from '../../../components/ui/TextEditor.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { WorkspaceContentType } from '../../../enums/workspace';
+  import { WorkspaceContentMode, WorkspaceContentType } from '../../../enums/workspace';
   import { actionDefinitionsByWorkspace } from '../../../stores/actions';
   import {
     activeDocument,
@@ -65,7 +69,17 @@
     workspaceAdaptationMessages,
     workspaceLintErrors,
   } from '../../../stores/workspaceErrors';
-  import { parcel, parcels, workspace, workspaceColumns, workspaceId, workspaces } from '../../../stores/workspaces';
+  import {
+    parcel,
+    parcels,
+    selectedActionDefinitionId,
+    selectedActionRunId,
+    workspace,
+    workspaceColumns,
+    workspaceContentMode,
+    workspaceId,
+    workspaces,
+  } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
   import type { LintDiagnostic, LogLevel } from '../../../types/errors';
@@ -89,15 +103,14 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { openActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
   import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import { showConfirmModal } from '../../../utilities/modal';
+  import { showConfirmModal, showRunActionResultsModal } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
-  import { getActionsUrl, getWorkspacesUrl } from '../../../utilities/routes';
+  import { getWorkspacesUrl } from '../../../utilities/routes';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast } from '../../../utilities/toast';
@@ -154,6 +167,36 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
+  let actionDetailIsDirty: boolean = false;
+  // Initialize sidebar tab and content mode from URL params before first render to avoid flash
+  const initialActionRunIdParam = $page.url.searchParams.get(SearchParameters.ACTION_RUN_ID);
+  const initialActionIdParam = $page.url.searchParams.get(SearchParameters.ACTION_ID);
+  const initialSidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+
+  let sidebarActiveTab: string =
+    initialActionRunIdParam || initialActionIdParam || initialSidebarTab === 'actions' ? 'actions' : 'files';
+
+  if (initialActionRunIdParam) {
+    const runId = parseInt(initialActionRunIdParam, 10);
+    if (!isNaN(runId)) {
+      $selectedActionRunId = runId;
+      $workspaceContentMode = WorkspaceContentMode.ActionRunDetail;
+      if (initialActionIdParam) {
+        const actionId = parseInt(initialActionIdParam, 10);
+        if (!isNaN(actionId)) {
+          $selectedActionDefinitionId = actionId;
+        }
+      }
+    }
+  } else if (initialActionIdParam) {
+    const actionId = parseInt(initialActionIdParam, 10);
+    if (!isNaN(actionId)) {
+      $selectedActionDefinitionId = actionId;
+      $workspaceContentMode = WorkspaceContentMode.ActionDetail;
+    }
+  } else if (initialSidebarTab === 'actions') {
+    $workspaceContentMode = WorkspaceContentMode.ActionRunsList;
+  }
 
   // Ensure columns are consistent with sidebar state on mount.
   // The workspaceColumns store persists across navigations, but sidebarPanelOpen resets to true.
@@ -323,6 +366,25 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
+    // If we're in a non-file mode, guard against dirty action detail before switching
+    if ($workspaceContentMode !== WorkspaceContentMode.File && actionDetailIsDirty) {
+      const { confirm } = await showConfirmModal(
+        'Navigate Away',
+        'There are unsaved action changes. Are you sure you want to navigate away?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      );
+      if (!confirm) {
+        selectedFilePath = $activeDocumentPath;
+        return;
+      }
+      actionDetailIsDirty = false;
+    }
+    // Switch back to file mode
+    $workspaceContentMode = WorkspaceContentMode.File;
+    $selectedActionDefinitionId = null;
+
     const didNavigate = await confirmAndNavigate(nextPath);
     if (!didNavigate) {
       // user decided not to navigate away due to unsaved changes, set selected UI back to active file
@@ -786,8 +848,158 @@
     }
   }
 
-  function onActionsClicked() {
-    window.open(getActionsUrl(base, $workspaceId), '_blank');
+  async function switchToContentMode(
+    mode: WorkspaceContentMode,
+    options?: { actionId?: number | null; runId?: number | null },
+  ) {
+    // Guard against switching away from dirty file
+    if ($workspaceContentMode === WorkspaceContentMode.File && $activeDocumentIsDirty) {
+      const { confirm } = await showConfirmModal(
+        'Navigate Away',
+        'There are unsaved changes. Are you sure you want to navigate away from the current file?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      );
+      if (!confirm) {
+        return;
+      }
+      // Revert content to last-saved state and mark clean
+      activeDocument.updateContent($activeDocument.originalContent);
+      activeDocument.markClean();
+    }
+
+    // Silently reset dirty action detail state on navigate away
+    if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
+      actionDetailIsDirty = false;
+    }
+
+    $workspaceContentMode = mode;
+    if (options?.actionId !== undefined) {
+      $selectedActionDefinitionId = options.actionId ?? null;
+    } else if (mode === WorkspaceContentMode.ActionRunsList) {
+      $selectedActionDefinitionId = null;
+    }
+    if (options?.runId !== undefined) {
+      $selectedActionRunId = options.runId ?? null;
+    }
+
+    // Sync sidebar tab with content mode
+    if (mode === WorkspaceContentMode.File) {
+      sidebarActiveTab = 'files';
+    } else {
+      sidebarActiveTab = 'actions';
+    }
+
+    // Update URL to reflect current content mode for deep linking
+    updateContentModeUrl(mode, options);
+  }
+
+  function updateContentModeUrl(
+    mode: WorkspaceContentMode,
+    options?: { actionId?: number | null; runId?: number | null },
+  ) {
+    const baseUrl = getWorkspacesUrl(base, $workspaceId);
+    const params = new URLSearchParams();
+
+    if (mode === WorkspaceContentMode.ActionRunDetail && options?.runId != null) {
+      params.set(SearchParameters.ACTION_RUN_ID, String(options.runId));
+      if ($selectedActionDefinitionId != null) {
+        params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
+      }
+    } else if (mode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId != null) {
+      params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
+    } else if (mode === WorkspaceContentMode.ActionRunsList) {
+      params.set(SearchParameters.SIDEBAR_TAB, 'actions');
+    }
+
+    const query = params.toString();
+    replaceState(query ? `${baseUrl}?${query}` : baseUrl, {});
+  }
+
+  function onSelectAction(event: CustomEvent<{ id: number }>) {
+    switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: event.detail.id });
+  }
+
+  function onSelectAllRuns() {
+    switchToContentMode(WorkspaceContentMode.ActionRunsList);
+  }
+
+  function onSidebarTabChange(event: CustomEvent<string>) {
+    if (event.detail === 'actions') {
+      switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    } else if (event.detail === 'settings') {
+      sidebarActiveTab = 'settings'; // settings doesn't have a content mode, so just update the active tab
+    } else {
+      switchToContentMode(WorkspaceContentMode.File);
+    }
+  }
+
+  function onActionDetailDirty(event: CustomEvent<boolean>) {
+    actionDetailIsDirty = event.detail;
+  }
+
+  function onViewActionRun(event: CustomEvent<{ runId: number }>) {
+    switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: event.detail.runId });
+  }
+
+  function onActionRunBack() {
+    // Navigate back to the previous action view
+    if ($selectedActionDefinitionId !== null) {
+      switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: $selectedActionDefinitionId });
+    } else {
+      switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    }
+  }
+
+  function handleActionRunResult(runId: number | null) {
+    if (runId !== null) {
+      userInitiatedActionRunIds.update(ids => new Set(ids).add(runId));
+      switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+    }
+  }
+
+  async function handleActionRunResultFromEditor(runId: number | null) {
+    if (runId === null) {
+      return;
+    }
+    userInitiatedActionRunIds.update(ids => new Set(ids).add(runId));
+    const { confirm } = await showRunActionResultsModal(runId);
+    if (confirm) {
+      switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId });
+    }
+  }
+
+  async function onRerunAction(
+    event: CustomEvent<{
+      actionDefinitionId: number;
+      parameters: ArgumentsMap;
+      revision: number;
+      settings: ArgumentsMap;
+    }>,
+  ) {
+    const { actionDefinitionId, parameters, revision, settings } = event.detail;
+    const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
+    const actionDef = defs[actionDefinitionId];
+    if (actionDef && $workspace) {
+      handleActionRunResult(
+        await effects.runAction(actionDef, $workspace, workspaceFileList, $user, parameters, revision, true, settings),
+      );
+    }
+  }
+
+  async function onRunActionFromSidebar(event: CustomEvent<ActionDefinition>) {
+    const action = event.detail;
+    if ($workspace) {
+      handleActionRunResult(await effects.runAction(action, $workspace, workspaceFileList, $user));
+    }
+  }
+
+  async function onRunActionFromDetailView(event: CustomEvent<ActionDefinition>) {
+    const action = event.detail;
+    if ($workspace) {
+      handleActionRunResult(await effects.runAction(action, $workspace, workspaceFileList, $user));
+    }
   }
 
   async function onRunActionOnActiveFile(event: CustomEvent<{ action: ActionDefinition; parameter: string }>) {
@@ -803,9 +1015,10 @@
     }
 
     let parameters: ArgumentsMap = {};
+    const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
-    if (primaryParameter in action.parameter_schema) {
-      const paramDefinition = action.parameter_schema[primaryParameter];
+    if (primaryParameter in latestParamSchema) {
+      const paramDefinition = latestParamSchema[primaryParameter];
       const paramValue =
         paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
           ? [$activeDocumentPath]
@@ -817,14 +1030,9 @@
     }
 
     if ($workspace) {
-      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
-      if (actionRunId !== null) {
-        userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
-        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-        if (goToRun === true) {
-          openActionRun($workspaceId, actionRunId, true);
-        }
-      }
+      handleActionRunResultFromEditor(
+        await effects.runAction(action, $workspace, workspaceFileList, $user, parameters),
+      );
     }
   }
 
@@ -846,9 +1054,10 @@
     const { action, parameter: primaryParameter } = actionParameterPair;
 
     let parameters: ArgumentsMap = {};
+    const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
-    if (primaryParameter in action.parameter_schema) {
-      const paramDefinition = action.parameter_schema[primaryParameter];
+    if (primaryParameter in latestParamSchema) {
+      const paramDefinition = latestParamSchema[primaryParameter];
       const paramValue =
         paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
           ? treeNodePaths
@@ -860,14 +1069,9 @@
     }
 
     if ($workspace) {
-      const actionRunId = await effects.runAction(action, $workspace, workspaceFileList, $user, parameters);
-      if (actionRunId !== null) {
-        userInitiatedActionRunIds.update(ids => new Set(ids).add(actionRunId));
-        const goToRun = await effects.confirmOpenActionRunResults(actionRunId);
-        if (goToRun === true) {
-          openActionRun($workspaceId, actionRunId, true);
-        }
-      }
+      handleActionRunResultFromEditor(
+        await effects.runAction(action, $workspace, workspaceFileList, $user, parameters),
+      );
     }
   }
 
@@ -973,6 +1177,9 @@
     resetSequenceAdaptation();
     activeDocument.reset();
     resetWorkspaceErrorStores();
+    $workspaceContentMode = WorkspaceContentMode.File;
+    $selectedActionDefinitionId = null;
+    $selectedActionRunId = null;
 
     if (refreshInterval !== null) {
       clearInterval(refreshInterval);
@@ -999,7 +1206,10 @@
         <WorkspaceSidebar
           bind:selectedFilePath
           bind:panelOpen={sidebarPanelOpen}
+          bind:activeTab={sidebarActiveTab}
           actions={allActionsForWorkspace}
+          isAllRunsSelected={$workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+          selectedActionId={$selectedActionDefinitionId}
           {workspaceTree}
           {isWorkspaceLoading}
           {hasEditWorkspacePermission}
@@ -1010,7 +1220,6 @@
           usersLoading={$initialUsersLoading}
           workspace={$workspace}
           workspaces={$workspaces}
-          on:actionsClick={onActionsClicked}
           on:addCollaborator={onAddCollaborator}
           on:deleteCollaborator={onDeleteCollaborator}
           on:download={onDownloadNodes}
@@ -1026,111 +1235,140 @@
           on:refreshWorkspace={refreshWorkspaceContents}
           on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
           on:runAction={onRunActionOnFileSelection}
+          on:runActionFromSidebar={onRunActionFromSidebar}
+          on:selectAction={onSelectAction}
+          on:selectAllRuns={onSelectAllRuns}
+          on:sidebarTabChange={onSidebarTabChange}
           on:openInNewTab={onOpenInNewTab}
         />
       </Sidebar.Provider>
       {#if sidebarPanelOpen}
         <CssGridGutter track={1} type="column" />
       {/if}
-      <Sidebar.Inset className="min-h-0">
-        {@const isTextOrEmpty = $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-        {@const isSequenceFile =
-          $activeDocumentPath === null ||
-          ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
-        <div class="relative grid h-full grid-cols-1 grid-rows-1">
-          {#if showLoadingSpinner && isTextOrEmpty}
-            <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-              <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-            </div>
-          {/if}
-          {#if isTextOrEmpty && isSequenceFile}
-            <div class="flex h-full">
-              <SequenceEditor
-                bind:this={sequenceEditorRef}
-                {phoenixContext}
-                availableActions={availableActionsForActiveFile}
-                includeActions={hasRunActionPermission}
-                isLoading={$activeDocumentIsLoading}
-                {preserveAdaptationLog}
-                previewOnly={!hasEditFilePermission}
-                sequenceAdaptation={$sequenceAdaptation}
-                sequenceDefinition={$activeDocument.originalContent}
-                sequenceName={$activeDocument.fileName ?? ''}
-                sequenceFilePath={$activeDocumentPath ?? ''}
-                sequenceOutput={selectedSequenceOutput}
-                shouldListenForKeyboardSave={false}
-                showCommandFormBuilder
-                userSequenceEditorColumns={$userSequenceEditorColumns}
-                userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
-                on:adaptationError={onAdaptationError}
-                on:lintChange={onLintChange}
-                on:runAction={onRunActionOnActiveFile}
-                on:save={onSaveWorkspaceFile}
-                on:downloadInput={onDownloadInput}
-                on:downloadOutput={onDownloadOutput}
-                on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-                on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-              />
-            </div>
-          {:else if isTextOrEmpty}
-            <div class="flex h-full">
-              <TextEditor
-                availableActions={availableActionsForActiveFile}
-                includeActions={true}
-                isJSON={$activeDocument.type === WorkspaceContentType.Json}
-                isLoading={$activeDocumentIsLoading}
-                previewOnly={!hasEditFilePermission}
-                shouldListenForKeyboardSave={false}
-                textFileName={$activeDocument.fileName ?? ''}
-                textFilePath={$activeDocumentPath ?? ''}
-                textFileContent={$activeDocument.originalContent}
-                on:lintChange={onLintChange}
-                on:runAction={onRunActionOnActiveFile}
-                on:save={onSaveWorkspaceFile}
-                on:download={onDownloadInput}
-                on:textContentUpdated={onWorkspaceInputFileUpdated}
-              />
-            </div>
-          {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
-            {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
-            {@const folderFiles =
-              (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
-            {@const folderSubfolders =
-              (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
-            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-              <Folder size={70} class="text-muted-foreground" />
-              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                The selected folder
-                <code class="font-bold">
-                  {$activeDocumentPath}
-                </code>
-                {#if folderFiles.length === 0 && folderSubfolders.length === 0}
-                  is empty.
-                {:else}
-                  contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
-                  {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
-                  {folderSubfolders.length
-                    ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                    : ''}.
-                {/if}
-              </p>
-            </div>
-          {:else if !isTextOrEmpty}
-            <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-              <TriangleAlert size={70} class="text-muted-foreground" />
-              <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                The selected file
-                <code class="font-bold">
-                  {$activeDocumentPath}
-                </code>
-                is not displayed in the editor because it is either binary or an unsupported extension.
-              </p>
-              <div>
-                <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+      <Sidebar.Inset className="min-h-0 min-w-0 overflow-hidden">
+        {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
+          <ActionDetailView
+            actionDefinitionId={$selectedActionDefinitionId}
+            user={$user}
+            workspace={$workspace}
+            workspaceFiles={workspaceFileList}
+            on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
+            on:dirty={onActionDetailDirty}
+            on:runAction={onRunActionFromDetailView}
+            on:viewRun={onViewActionRun}
+          />
+        {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
+          <ActionRunDetailView
+            actionRunId={$selectedActionRunId}
+            user={$user}
+            hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
+            on:back={onActionRunBack}
+            on:rerun={onRerunAction}
+            on:viewAction={e => switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
+          />
+        {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+          <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
+        {:else}
+          {@const isTextOrEmpty =
+            $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+          {@const isSequenceFile =
+            $activeDocumentPath === null ||
+            ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
+          <div class="relative grid h-full grid-cols-1 grid-rows-1">
+            {#if showLoadingSpinner && isTextOrEmpty}
+              <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+                <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
               </div>
-            </div>
-          {/if}
-        </div>
+            {/if}
+            {#if isTextOrEmpty && isSequenceFile}
+              <div class="flex h-full">
+                <SequenceEditor
+                  bind:this={sequenceEditorRef}
+                  {phoenixContext}
+                  availableActions={availableActionsForActiveFile}
+                  includeActions={hasRunActionPermission}
+                  isLoading={$activeDocumentIsLoading}
+                  {preserveAdaptationLog}
+                  previewOnly={!hasEditFilePermission}
+                  sequenceAdaptation={$sequenceAdaptation}
+                  sequenceDefinition={$activeDocument.originalContent}
+                  sequenceName={$activeDocument.fileName ?? undefined}
+                  sequenceFilePath={$activeDocumentPath ?? ''}
+                  sequenceOutput={selectedSequenceOutput}
+                  shouldListenForKeyboardSave={false}
+                  showCommandFormBuilder
+                  userSequenceEditorColumns={$userSequenceEditorColumns}
+                  userSequenceEditorColumnsWithFormBuilder={$userSequenceEditorColumnsWithFormBuilder}
+                  on:adaptationError={onAdaptationError}
+                  on:lintChange={onLintChange}
+                  on:runAction={onRunActionOnActiveFile}
+                  on:save={onSaveWorkspaceFile}
+                  on:downloadInput={onDownloadInput}
+                  on:downloadOutput={onDownloadOutput}
+                  on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                  on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+                />
+              </div>
+            {:else if isTextOrEmpty}
+              <div class="flex h-full">
+                <TextEditor
+                  availableActions={availableActionsForActiveFile}
+                  includeActions={true}
+                  isJSON={$activeDocument.type === WorkspaceContentType.Json}
+                  isLoading={$activeDocumentIsLoading}
+                  previewOnly={!hasEditFilePermission}
+                  shouldListenForKeyboardSave={false}
+                  textFileName={$activeDocument.fileName ?? undefined}
+                  textFilePath={$activeDocumentPath ?? ''}
+                  textFileContent={$activeDocument.originalContent}
+                  on:lintChange={onLintChange}
+                  on:runAction={onRunActionOnActiveFile}
+                  on:save={onSaveWorkspaceFile}
+                  on:download={onDownloadInput}
+                  on:textContentUpdated={onWorkspaceInputFileUpdated}
+                />
+              </div>
+            {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
+              {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
+              {@const folderFiles =
+                (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+              {@const folderSubfolders =
+                (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+              <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                <Folder size={70} class="text-muted-foreground" />
+                <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                  The selected folder
+                  <code class="font-bold">
+                    {$activeDocumentPath}
+                  </code>
+                  {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+                    is empty.
+                  {:else}
+                    contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
+                    {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+                    {folderSubfolders.length
+                      ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                      : ''}.
+                  {/if}
+                </p>
+              </div>
+            {:else if !isTextOrEmpty}
+              <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                <TriangleAlert size={70} class="text-muted-foreground" />
+                <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                  The selected file
+                  <code class="font-bold">
+                    {$activeDocumentPath}
+                  </code>
+                  is not displayed in the editor because it is either binary or an unsupported extension.
+                </p>
+                <div>
+                  <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/if}
       </Sidebar.Inset>
     </CssGrid>
   </Resizable.Pane>
@@ -1227,7 +1465,9 @@
           logs={$workspaceActionRunMessages}
           autoScroll
           emptyStateMessage="No action runs"
-        />
+        >
+          <WorkspaceLogMessage slot="message" let:log {log} on:viewRun={onViewActionRun} />
+        </ConsoleLogs>
         <ConsoleLogs
           value="adaptation"
           showTimestamp
@@ -1244,8 +1484,9 @@
           logs={$workspaceLintErrors}
           {logLevels}
           emptyStateMessage="No linting errors"
-          on:gotoLine={onGotoLine}
-        />
+        >
+          <WorkspaceLogMessage slot="message" let:log {log} on:gotoLine={onGotoLine} />
+        </ConsoleLogs>
         <ConsoleLogs
           value="logs"
           logs={$allLogs}

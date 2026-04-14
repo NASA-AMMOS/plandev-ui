@@ -46,14 +46,8 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Actions', () => {
-  test('Navigate to workspace actions from sidebar', async () => {
-    const newPagePromise = setup.context.waitForEvent('page');
-    await setup.page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
-    const newTab = await newPagePromise;
-    await newTab.waitForLoadState();
-    await newTab.getByText('Loading...').first().waitFor({ state: 'hidden' });
-    await newTab.waitForURL(`/workspaces/${workspaceId}/actions`);
-    await action.updatePage(newTab);
+  test('Navigate to workspace actions tab', async () => {
+    await action.switchToActionsTab();
   });
 
   test('Create an action', async () => {
@@ -70,5 +64,15 @@ test.describe.serial('Actions', () => {
 
   test('Run an action', async () => {
     await action.runAction();
+  });
+
+  test('Archive an action prevents running', async () => {
+    // Go back to the action detail view by clicking action name in sidebar
+    await action.selectActionInSidebar();
+    await action.archiveAction();
+  });
+
+  test('Unarchive an action allows running again', async () => {
+    await action.unarchiveAction();
   });
 });

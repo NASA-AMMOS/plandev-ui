@@ -25,6 +25,7 @@
   import ConsoleTab from '../../../components/console/ConsoleTab.svelte';
   import ConsoleActivityErrors from '../../../components/console/views/ActivityErrors.svelte';
   import ConsoleLogs from '../../../components/console/views/ConsoleLogs.svelte';
+  import PlanLogMessage from '../../../components/console/views/PlanLogMessage.svelte';
   import ActivityStatusMenu from '../../../components/menus/ActivityStatusMenu.svelte';
   import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
@@ -1083,16 +1084,26 @@
             </div>
           </svelte:fragment>
 
-          <ConsoleLogs value="all" showTimestamp={false} showLevel={false} logs={$allProblems} />
-          <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors} />
-          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors} />
-          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors} />
+          <ConsoleLogs value="all" showTimestamp={false} showLevel={false} logs={$allProblems}>
+            <PlanLogMessage slot="message" let:log {log} />
+          </ConsoleLogs>
+          <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors}>
+            <PlanLogMessage slot="message" let:log {log} />
+          </ConsoleLogs>
+          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors}>
+            <PlanLogMessage slot="message" let:log {log} />
+          </ConsoleLogs>
+          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors}>
+            <PlanLogMessage slot="message" let:log {log} />
+          </ConsoleLogs>
           <ConsoleActivityErrors
             activityValidationErrorTotalRollup={activityErrorCounts}
             activityValidationErrorRollups={$activityErrorRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
-          <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors} />
+          <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors}>
+            <PlanLogMessage slot="message" let:log {log} />
+          </ConsoleLogs>
           <ConsoleLogs
             value="logs"
             logs={$allLogs}

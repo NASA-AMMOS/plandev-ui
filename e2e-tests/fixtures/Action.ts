@@ -3,17 +3,12 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 import { setFileInputByFilepath } from '../utilities/helpers';
 
 export class Action {
-  actionDefinitionButton: Locator;
   actionDescription: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
-  actionFormDescription: Locator;
-  actionFormName: Locator;
-  actionFormPath: Locator;
   actionName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   actionPath: string = 'e2e-tests/data/aerie-action-demo.js';
+  actionsSidebarTab: Locator;
   createActionButton: Locator;
   createModal: Locator;
-  createModalDeleteButton: Locator;
-  runModal: Locator;
 
   constructor(
     public page: Page,
@@ -22,14 +17,30 @@ export class Action {
     this.updatePage(page);
   }
 
+  async archiveAction(): Promise<void> {
+    // Navigate to Configure tab and click Archive Action
+    await this.page.getByRole('tab', { name: 'Configure' }).click();
+    await this.page.getByRole('button', { name: 'Archive Action' }).click();
+    // Confirm the archive modal
+    const confirmModal = this.page.locator('#modal-container');
+    await expect(confirmModal).toBeVisible();
+    await confirmModal.getByRole('button', { name: 'Archive' }).click();
+    // Verify the Archived badge appears in the detail view header
+    await expect(this.page.getByText('Archived', { exact: true })).toBeVisible();
+    // Verify Run Action button is disabled
+    await expect(this.page.getByRole('button', { name: 'Run Action' })).toBeDisabled();
+  }
+
   async configureAction(): Promise<void> {
     await this.page.getByRole('tab', { name: 'Configure' }).click();
-    // Provide the github api url to the action found in `actionPath` so that it can
-    // successfully query the api
-    await this.page
-      .locator(".configure .parameter-base-string:has-text('externalUrl') input")
-      .fill('https://api.github.com/');
-    await this.page.getByRole('button', { name: 'Save' }).click();
+    // Fill in the externalUrl setting and blur to trigger change event
+    const externalUrlInput = this.page.locator(".parameter-base-string:has-text('externalUrl') input");
+    await externalUrlInput.fill('https://api.github.com/');
+    await externalUrlInput.dispatchEvent('change');
+    // Wait for Save button to become enabled (isDirty must be true)
+    const saveButton = this.page.getByRole('button', { name: 'Save' });
+    await expect(saveButton).toBeEnabled({ timeout: 5000 });
+    await saveButton.click();
     await this.waitForToast('Action Updated Successfully');
   }
 
@@ -38,46 +49,75 @@ export class Action {
     await this.createActionButton.click();
     await expect(this.createModal).toBeVisible();
     await expect(createButton).toBeDisabled();
-    await this.actionFormName.fill(this.actionName);
-    await this.actionFormDescription.fill(this.actionDescription);
-    await this.actionFormPath.waitFor({ state: 'attached' });
-    await setFileInputByFilepath(this.page, this.actionFormPath, this.actionPath, createButton);
+    await this.page.getByLabel('name').fill(this.actionName);
+    await this.page.getByLabel('description').fill(this.actionDescription);
+    const fileInput = this.page.locator('input[name="file"]');
+    await fileInput.waitFor({ state: 'attached' });
+    await setFileInputByFilepath(this.page, fileInput, this.actionPath, createButton);
     await expect(createButton).toBeEnabled();
     await createButton.click();
     await this.waitForToast('Action Created Successfully');
-    await this.page.getByRole('button', { name: this.actionName });
-    await expect(this.actionDefinitionButton).toBeVisible();
+    // Verify action appears in sidebar
+    await expect(this.page.getByRole('button', { name: this.actionName })).toBeVisible();
     return this.actionName;
   }
 
   async inspectAction(): Promise<void> {
-    await expect(this.actionDefinitionButton).toBeVisible();
-    await this.actionDefinitionButton.click();
-    await expect(
-      this.page.locator(`.action-definition-runs-container:has-text("${this.actionDescription}")`),
-    ).toBeVisible();
+    // Click action in sidebar to open detail view
+    await this.page.getByRole('button', { name: this.actionName }).click();
+    // Verify action detail view shows name and description
+    await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
+    await expect(this.page.getByText(this.actionDescription)).toBeVisible();
+    // Verify tabs are present
+    await expect(this.page.getByRole('tab', { name: /Runs/ })).toBeVisible();
+    await expect(this.page.getByRole('tab', { name: 'Configure' })).toBeVisible();
+    await expect(this.page.getByRole('tab', { name: 'Code' })).toBeVisible();
   }
 
   async runAction(): Promise<void> {
-    await this.actionDefinitionButton.getByRole('button', { name: 'Run' }).click();
-    await expect(this.runModal).toBeVisible();
-    // Provide the aerie repository path to the action found in `actionPath` so that it can
-    // successfully query the api
-    await this.runModal.locator(".parameter-base-string:has-text('repository') input").fill('repos/NASA-AMMOS/plandev');
-    await this.runModal.getByRole('button', { name: 'Run' }).click();
-    await this.page.waitForURL(`/workspaces/${this.workspaceId}/actions/runs/**`);
-    await this.page.getByLabel('Complete');
+    // Click "Run Action" button in the detail view header
+    await this.page.getByRole('button', { name: 'Run Action' }).click();
+    // Wait for the run modal to appear
+    const runModal = this.page.locator('#modal-container');
+    await expect(runModal).toBeVisible();
+    // Click the Run button in the modal footer
+    await runModal.getByRole('button', { exact: true, name: 'Run' }).click();
+    // Verify we navigated to the run detail view
+    await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
+    // Wait for a terminal status (Complete or Failed) in the main content area
+    const mainContent = this.page.getByRole('main');
+    await expect(mainContent.getByLabel('Complete').or(mainContent.getByLabel('Failed'))).toBeVisible({
+      timeout: 30000,
+    });
+  }
+
+  async selectActionInSidebar(): Promise<void> {
+    // Click the action in the sidebar list (scoped to complementary to avoid matching other elements)
+    await this.page.getByRole('complementary').getByRole('button', { name: this.actionName }).click();
+    await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
+  }
+
+  async switchToActionsTab(): Promise<void> {
+    await this.actionsSidebarTab.click();
+    await expect(this.page.getByText('Workspace Actions')).toBeVisible();
+  }
+
+  async unarchiveAction(): Promise<void> {
+    // Navigate to Configure tab and click Unarchive Action
+    await this.page.getByRole('tab', { name: 'Configure' }).click();
+    await this.page.getByRole('button', { name: 'Unarchive Action' }).click();
+    // Confirm the unarchive modal
+    const confirmModal = this.page.locator('#modal-container');
+    await expect(confirmModal).toBeVisible();
+    await confirmModal.getByRole('button', { name: 'Unarchive' }).click();
+    // Verify Run Action button is enabled again
+    await expect(this.page.getByRole('button', { name: 'Run Action' })).toBeEnabled();
   }
 
   updatePage(page: Page) {
-    this.actionDefinitionButton = page.getByRole('button', { name: this.actionName });
-    this.actionFormDescription = page.getByLabel('description');
-    this.actionFormPath = page.locator('input[name="file"]');
-    this.actionFormName = page.getByLabel('name');
+    this.actionsSidebarTab = page.getByLabel('Actions', { exact: true });
     this.createActionButton = page.getByRole('button', { name: 'New Action' });
-    this.createModal = page.locator(`.modal:has-text("New Action")`);
-    this.createModalDeleteButton = this.createModal.getByRole('button', { name: 'Delete' });
-    this.runModal = page.locator(`.modal:has-text("Run Action")`);
+    this.createModal = page.locator('.modal:has-text("New Action")');
     this.page = page;
   }
 

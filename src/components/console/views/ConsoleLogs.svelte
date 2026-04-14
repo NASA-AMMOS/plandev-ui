@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import { createEventDispatcher, getContext } from 'svelte';
+  import { getContext } from 'svelte';
   import type { BaseError, LogLevel, LogMessage } from '../../../types/errors';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
@@ -17,10 +17,6 @@
   export let showTimestamp: boolean = true;
   export let showType: boolean = true;
   export let value: string = '';
-
-  const dispatch = createEventDispatcher<{
-    gotoLine: { column: number; line: number };
-  }>();
 
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
@@ -116,7 +112,15 @@
           <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
         {/if}
         {#each filteredLogs as log}
-          <ConsoleLog {showLevel} {showTimestamp} {showType} {log} on:gotoLine={e => dispatch('gotoLine', e.detail)} />
+          {#if $$slots.message}
+            <ConsoleLog {showLevel} {showTimestamp} {showType} {log}>
+              <svelte:fragment slot="message" let:log={slotLog}>
+                <slot name="message" log={slotLog} />
+              </svelte:fragment>
+            </ConsoleLog>
+          {:else}
+            <ConsoleLog {showLevel} {showTimestamp} {showType} {log} />
+          {/if}
         {/each}
       </div>
     </div>

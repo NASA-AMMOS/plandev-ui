@@ -435,6 +435,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
         const isSelected = node.isSelected();
         dispatch('rowClicked', {
           data,
+          event,
           isSelected,
         } as DataGridRowSelection<RowData>);
 
