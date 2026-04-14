@@ -32,6 +32,7 @@ export type WorkspaceNodeEvent = {
 };
 
 export type WorkspaceNodesEvent = {
+  hasReadOnlyNodes?: boolean;
   treeNodes: WorkspaceTreeNodeWithFullPath[];
 };
 

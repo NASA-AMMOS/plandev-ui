@@ -6023,8 +6023,6 @@ const effects = {
         sequenceAdaptation.input.name,
         sequenceAdaptation.outputs.map(language => language.fileExtension),
         startingPath,
-        workspace,
-        user,
       );
       if (confirm) {
         const {
@@ -6432,6 +6430,7 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
@@ -6440,7 +6439,12 @@ const effects = {
         throwPermissionError(`update this workspace's ${displayString.toLowerCase()}`);
       }
 
-      const { confirm, value } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNodes, user);
+      const { confirm, value } = await showMoveWorkspaceItemModal(
+        workspace,
+        workspaceContents,
+        originalNodes,
+        hasReadOnlyNodes,
+      );
       if (confirm) {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
 
@@ -6479,10 +6483,11 @@ const effects = {
   async moveWorkspaceItemsToWorkspace(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<string | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, user);
+    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, hasReadOnlyNodes, user);
 
     if (confirm) {
       const { shouldCopy, shouldOverwrite, targetPath, targetWorkspace } = value;
@@ -6526,7 +6531,7 @@ const effects = {
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { folderPath } = value;
       try {
@@ -6551,7 +6556,7 @@ const effects = {
     sequenceDefinition: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { filePath } = value;
       try {
@@ -7250,7 +7255,6 @@ const effects = {
         workspaceId,
         workspaceTree,
         workspaceName,
-        user,
       );
 
       if (confirmNewFile && confirmNewFileValue) {

@@ -4,9 +4,9 @@
   import { Checkbox } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
-  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
+  import { permissionHandler } from '../../utilities/permissionHandler.js';
   import {
     getSelectedFilesDisplay,
     getWorkspaceFileFolderDisplay,
@@ -23,7 +23,7 @@
   export let currentWorkspace: Workspace;
   export let currentWorkspaceContents: WorkspaceTreeNode | null;
   export let originalNodes: WorkspaceTreeNodeWithFullPath[];
-  export let user: User | null;
+  export let selectionHasReadOnlyNodes: boolean = false;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -49,13 +49,16 @@
   }
 
   function onMove() {
-    // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
-    // Remove it since the API expects paths relative to the workspace root
-    dispatch('confirm', {
-      shouldCopy: false,
-      shouldOverwrite,
-      targetPath: removeFirstPathSegment(targetDirectory),
-    });
+    // Only move files that
+    if (!selectionHasReadOnlyNodes) {
+      // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
+      // Remove it since the API expects paths relative to the workspace root
+      dispatch('confirm', {
+        shouldCopy: false,
+        shouldOverwrite,
+        targetPath: removeFirstPathSegment(targetDirectory),
+      });
+    }
   }
 
   function onDuplicate() {
@@ -90,11 +93,8 @@
             <WorkspaceTreeView
               selectedTreeNodePath={targetDirectory}
               treeNode={currentWorkspaceContents}
-              enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
-              workspace={currentWorkspace}
-              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>
@@ -108,7 +108,14 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={onMove}>
+    <button
+      class="st-button"
+      on:click={onMove}
+      use:permissionHandler={{
+        hasPermission: !selectionHasReadOnlyNodes,
+        permissionError: 'Some read-only files selected. You cannot move read-only files.',
+      }}
+    >
       Move {displayString}
     </button>
     <button class="st-button" on:click={onDuplicate}>

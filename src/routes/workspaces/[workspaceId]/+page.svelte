@@ -28,7 +28,6 @@
   import ActionRunDetailView from '../../../components/sequencing/actions/ActionRunDetailView.svelte';
   import ActionRunsListView from '../../../components/sequencing/actions/ActionRunsListView.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
-  import * as Sidebar from '../../../components/ui/Sidebar/index.js';
   import TextEditor from '../../../components/ui/TextEditor.svelte';
   import WorkspaceLeftIconRail from '../../../components/workspace/WorkspaceLeftIconRail.svelte';
   import WorkspaceRightIconRail from '../../../components/workspace/WorkspaceRightIconRail.svelte';
@@ -791,7 +790,7 @@
     });
   }
 
-  async function onMoveNodes({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
+  async function onMoveNodes({ detail: { hasReadOnlyNodes = false, treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
     if ($workspace && workspaceTree) {
       const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
@@ -805,7 +804,7 @@
       // Remove redundant nodes that would already be moved by a selected parent node
       const minimalNodes = removeRedundantNodes(treeNodes);
 
-      const result = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, $user);
+      const result = await effects.moveWorkspaceItems($workspace, workspaceTree, minimalNodes, hasReadOnlyNodes, $user);
       await refreshWorkspaceContents();
 
       if (movedActiveNode && result) {
@@ -936,7 +935,9 @@
     setClipboardContent(copyPath);
   }
 
-  async function onMoveNodesToWorkspace({ detail: { treeNodes } }: CustomEvent<WorkspaceNodesEvent>) {
+  async function onMoveNodesToWorkspace({
+    detail: { hasReadOnlyNodes = false, treeNodes },
+  }: CustomEvent<WorkspaceNodesEvent>) {
     if (initialWorkspace) {
       const movedActiveNode = findNodeAffectingPath(treeNodes, $activeDocumentPath);
 
@@ -947,7 +948,7 @@
         }
       }
 
-      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, $user);
+      await effects.moveWorkspaceItemsToWorkspace(initialWorkspace, treeNodes, hasReadOnlyNodes, $user);
       refreshWorkspaceContents();
     }
   }
@@ -1306,14 +1307,7 @@
   <Resizable.Pane defaultSize={84}>
     <div class="flex h-full" class:invisible={!panelsReady}>
       <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
-      <Sidebar.Provider
-        disableShortcut
-        bind:open={sidebarPanelOpen}
-        style="--sidebar-width: auto"
-        className="min-h-0 h-full"
-      >
-        <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} />
-      </Sidebar.Provider>
+      <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} />
 
       <!-- All resizable panel content -->
       <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
@@ -1327,49 +1321,42 @@
           onExpand={() => (sidebarPanelOpen = true)}
           bind:pane={leftPaneApi}
         >
-          <Sidebar.Provider
-            disableShortcut
-            bind:open={sidebarPanelOpen}
-            style="--sidebar-width: auto"
-            className="min-h-0 h-full"
-          >
-            <WorkspaceSidebar
-              bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
-              bind:selectedFilePath
-              activeTab={leftPanelActiveTab}
-              actions={allActionsForWorkspace}
-              {workspaceTree}
-              {isWorkspaceLoading}
-              {hasEditWorkspacePermission}
-              {hasEditWorkspaceCollaboratorsPermission}
-              parcels={$parcels}
-              user={$user}
-              users={$users}
-              usersLoading={$initialUsersLoading}
-              workspace={$workspace}
-              workspaces={$workspaces}
-              on:addCollaborator={onAddCollaborator}
-              on:deleteCollaborator={onDeleteCollaborator}
-              on:download={onDownloadNodes}
-              on:deleteNodes={onDeleteNodes}
-              on:moveNodes={onMoveNodes}
-              on:renameNode={onRenameNode}
-              on:newFolder={onNewFolder}
-              on:newFile={onNewFile}
-              on:importFile={onImportFile}
-              on:copyFileLocation={onCopyFileLocation}
-              on:copyFullPath={onCopyFullPath}
-              on:moveNodesToWorkspace={onMoveNodesToWorkspace}
-              on:refreshWorkspace={refreshWorkspaceContents}
-              on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
-              on:runAction={onRunActionOnFileSelection}
-              on:runActionFromSidebar={onRunActionFromSidebar}
-              on:selectAction={onSelectAction}
-              on:selectAllRuns={onSelectAllRuns}
-              on:sidebarTabChange={onSidebarTabChange}
-              on:openInNewTab={onOpenInNewTab}
-            />
-          </Sidebar.Provider>
+          <WorkspaceSidebar
+            bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
+            bind:selectedFilePath
+            activeTab={leftPanelActiveTab}
+            actions={allActionsForWorkspace}
+            {workspaceTree}
+            {isWorkspaceLoading}
+            {hasEditWorkspacePermission}
+            {hasEditWorkspaceCollaboratorsPermission}
+            parcels={$parcels}
+            user={$user}
+            users={$users}
+            usersLoading={$initialUsersLoading}
+            workspace={$workspace}
+            workspaces={$workspaces}
+            on:addCollaborator={onAddCollaborator}
+            on:deleteCollaborator={onDeleteCollaborator}
+            on:download={onDownloadNodes}
+            on:deleteNodes={onDeleteNodes}
+            on:moveNodes={onMoveNodes}
+            on:renameNode={onRenameNode}
+            on:newFolder={onNewFolder}
+            on:newFile={onNewFile}
+            on:importFile={onImportFile}
+            on:copyFileLocation={onCopyFileLocation}
+            on:copyFullPath={onCopyFullPath}
+            on:moveNodesToWorkspace={onMoveNodesToWorkspace}
+            on:refreshWorkspace={refreshWorkspaceContents}
+            on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
+            on:runAction={onRunActionOnFileSelection}
+            on:runActionFromSidebar={onRunActionFromSidebar}
+            on:selectAction={onSelectAction}
+            on:selectAllRuns={onSelectAllRuns}
+            on:sidebarTabChange={onSidebarTabChange}
+            on:openInNewTab={onOpenInNewTab}
+          />
         </Resizable.Pane>
 
         <Resizable.Handle class={resizableHandleClass} />
@@ -1524,37 +1511,28 @@
           onExpand={() => (rightPanelOpen = true)}
           bind:pane={rightPaneApi}
         >
-          <Sidebar.Provider
-            disableShortcut
-            open={rightPanelOpen}
-            style="--sidebar-width: auto"
-            className="min-h-0 h-full"
-          >
-            <WorkspaceRightPanel
-              bind:activeTab={rightPanelActiveTab}
-              bind:commandNodeName={rightPanelCommandNodeName}
-              editorSequenceView={activeEditorView}
-              filePath={$activeDocumentPath}
-              fileMetadata={activeFileMetadata}
-              hasEditPermission={hasEditFilePermission}
-              isSequenceFile={activeFileIsSequence}
-              {phoenixContext}
-              {commandInfoMapper}
-              on:updateUserMetadata={onUpdateUserMetadata}
-            />
-          </Sidebar.Provider>
+          <WorkspaceRightPanel
+            bind:activeTab={rightPanelActiveTab}
+            bind:commandNodeName={rightPanelCommandNodeName}
+            editorSequenceView={activeEditorView}
+            filePath={$activeDocumentPath}
+            fileMetadata={activeFileMetadata}
+            hasEditPermission={hasEditFilePermission}
+            isSequenceFile={activeFileIsSequence}
+            {phoenixContext}
+            {commandInfoMapper}
+            on:updateUserMetadata={onUpdateUserMetadata}
+          />
         </Resizable.Pane>
       </Resizable.PaneGroup>
 
       <!-- Right icon rail (fixed 45px, always visible, outside Resizable) -->
-      <Sidebar.Provider disableShortcut open={rightPanelOpen} style="--sidebar-width: auto" className="min-h-0 h-full">
-        <WorkspaceRightIconRail
-          bind:activeTab={rightPanelActiveTab}
-          bind:panelOpen={rightPanelOpen}
-          commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsSequence}
-        />
-      </Sidebar.Provider>
+      <WorkspaceRightIconRail
+        bind:activeTab={rightPanelActiveTab}
+        bind:panelOpen={rightPanelOpen}
+        commandNodeName={rightPanelCommandNodeName}
+        isSequenceFile={activeFileIsSequence}
+      />
     </div>
   </Resizable.Pane>
 

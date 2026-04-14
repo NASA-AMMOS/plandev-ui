@@ -578,7 +578,7 @@
   }
 
   function onMoveNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodes', { treeNodes: nodes });
+    dispatch('moveNodes', { hasReadOnlyNodes, treeNodes: nodes });
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -622,7 +622,7 @@
   }
 
   function onMoveNodesToWorkspace(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodesToWorkspace', { treeNodes: nodes });
+    dispatch('moveNodesToWorkspace', { hasReadOnlyNodes, treeNodes: nodes });
   }
 
   function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
