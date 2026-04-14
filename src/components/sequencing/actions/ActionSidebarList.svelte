@@ -116,7 +116,7 @@
                   on:click={() => dispatch('selectAllRuns')}
                 >
                   <ListChecks size={14} class="shrink-0 text-muted-foreground" />
-                  <span class="truncate font-medium">All Actions</span>
+                  <span class="truncate font-medium">All Action Runs</span>
                 </Button>
               </div>
               <AsyncContentState

@@ -13,6 +13,7 @@
   export let log: BaseError;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
+  export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
   let expandable: boolean = false;
@@ -89,7 +90,7 @@
         expandable ? 'cursor-pointer hover:bg-neutral-200/50' : '',
       )}
     >
-      <div class="flex items-start gap-2">
+      <div class="flex items-start gap-2 w-full">
         <div class="flex flex-shrink-0 items-center gap-0.5" bind:this={leftContents}>
           {#if expandable}
             {#if open}
@@ -128,9 +129,12 @@
           </div>
         </div>
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          <slot name="message" {log}>
-            {log.message ?? ''}
-          </slot>
+          {#if !(log.message.trim()) && log.data && !(expandable && open)}
+            <pre class="m-0 break-words w-full overflow-hidden text-ellipsis"><slot name="message" {log}>{safeStringify(log.data)}</slot></pre>
+          {:else}
+            <pre class="m-0 whitespace-pre-wrap break-words"><slot name="message" {log}>{log.message ?? ''}</slot></pre>
+          {/if}
+
           {#if isLogMessage(log) && typeof log.duration === 'number'}
             <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
           {/if}
@@ -140,7 +144,7 @@
   </summary>
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
-      {#if log.timestamp}
+      {#if log.timestamp && showLongTimestamp}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>

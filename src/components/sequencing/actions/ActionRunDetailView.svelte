@@ -105,8 +105,8 @@
   function parseLogLines(logString: string): LogMessage[] {
     // Action server formats logs as: TIMESTAMP [LEVEL] message
     // Continuation lines (multi-line errors/stack traces) appear as: [LEVEL] text (indented, no timestamp)
-    const serverLogPattern = /^(\S+)\s+\[(INFO|WARN|ERROR|DEBUG)]\s+(.*)$/;
-    const continuationLevelPattern = /^\s*\[(INFO|WARN|ERROR|DEBUG)]\s+(.*)$/;
+    const serverLogPattern = /^(\S+)\s+\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
+    const continuationLevelPattern = /^\s*\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
     const results: LogMessage[] = [];
 
     for (const line of logString.split('\n')) {
@@ -128,7 +128,7 @@
 
       // Continuation line — strip [LEVEL] prefix and merge into previous entry's trace
       const contMatch = line.match(continuationLevelPattern);
-      const cleanLine = contMatch ? contMatch[2] : line.trim();
+      const cleanLine = contMatch ? contMatch[2] : line;
 
       if (results.length > 0) {
         const prev = results[results.length - 1];
@@ -296,7 +296,7 @@
               <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
                 <h3 class="text-sm font-medium text-destructive">Error</h3>
                 <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  <ConsoleLog log={errorLog} showType={false} />
+                  <ConsoleLog log={errorLog} showType={false} showLongTimestamp={false} />
                 </div>
               </div>
             {/if}
@@ -319,7 +319,7 @@
                 {@const logMessages = parseLogLines(actionRun.logs)}
                 <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
                   {#each logMessages as log}
-                    <ConsoleLog {log} showType={false} />
+                    <ConsoleLog {log} showType={false} showLongTimestamp={false} />
                   {/each}
                 </div>
               {:else}
