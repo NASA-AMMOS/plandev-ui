@@ -90,7 +90,7 @@
         expandable ? 'cursor-pointer hover:bg-neutral-200/50' : '',
       )}
     >
-      <div class="flex items-start gap-2 w-full">
+      <div class="flex w-full items-start gap-2">
         <div class="flex flex-shrink-0 items-center gap-0.5" bind:this={leftContents}>
           {#if expandable}
             {#if open}
@@ -129,8 +129,10 @@
           </div>
         </div>
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          {#if !(log.message.trim()) && log.data && !(expandable && open)}
-            <pre class="m-0 break-words w-full overflow-hidden text-ellipsis"><slot name="message" {log}>{safeStringify(log.data)}</slot></pre>
+          {#if !log.message.trim() && log.data && !(expandable && open)}
+            <pre class="m-0 w-full overflow-hidden text-ellipsis break-words"><slot name="message" {log}
+                >{safeStringify(log.data)}</slot
+              ></pre>
           {:else}
             <pre class="m-0 whitespace-pre-wrap break-words"><slot name="message" {log}>{log.message ?? ''}</slot></pre>
           {/if}
