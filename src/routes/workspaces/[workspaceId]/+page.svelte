@@ -1312,11 +1312,7 @@
         style="--sidebar-width: auto"
         className="min-h-0 h-full"
       >
-        <WorkspaceLeftIconRail
-          bind:activeTab={leftPanelActiveTab}
-          bind:panelOpen={sidebarPanelOpen}
-          on:actionsClick={onActionsClicked}
-        />
+        <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} />
       </Sidebar.Provider>
 
       <!-- All resizable panel content -->
@@ -1498,6 +1494,7 @@
                           : ''}.
                       {/if}
                     </p>
+                    <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
                   </div>
                 {:else if !isTextOrEmpty}
                   <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">

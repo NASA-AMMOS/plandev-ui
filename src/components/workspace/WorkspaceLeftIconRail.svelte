@@ -3,13 +3,8 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
-
-  const dispatch = createEventDispatcher<{
-    actionsClick: void;
-  }>();
 
   export let activeTab: string = 'files';
   export let panelOpen: boolean = true;
@@ -39,7 +34,7 @@
         class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
         variant="ghost"
         aria-label="Actions"
-        on:click={() => dispatch('actionsClick')}
+        on:click={() => handleTabClick('actions')}
       >
         <Clapperboard size={16} />
       </Button>
