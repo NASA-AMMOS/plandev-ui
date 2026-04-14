@@ -48,7 +48,7 @@ test.afterAll(async () => {
 test.describe.serial('Actions', () => {
   test('Navigate to workspace actions from sidebar', async () => {
     const newPagePromise = setup.context.waitForEvent('page');
-    await setup.page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
+    await setup.page.getByRole('tablist').getByRole('button', { name: 'Actions' }).click();
     const newTab = await newPagePromise;
     await newTab.waitForLoadState();
     await newTab.getByText('Loading...').first().waitFor({ state: 'hidden' });
