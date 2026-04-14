@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { setFileInputByFilepath } from '../utilities/helpers';
 
@@ -6,9 +6,9 @@ export class Action {
   actionDescription: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   actionName: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   actionPath: string = 'e2e-tests/data/aerie-action-demo.js';
-  actionsSidebarTab: Locator;
-  createActionButton: Locator;
-  createModal: Locator;
+  actionsSidebarTab!: Locator;
+  createActionButton!: Locator;
+  createModal!: Locator;
 
   constructor(
     public page: Page,
@@ -93,7 +93,7 @@ export class Action {
 
   async selectActionInSidebar(): Promise<void> {
     // Click the action in the sidebar list (scoped to complementary to avoid matching other elements)
-    await this.page.getByRole('complementary').getByRole('button', { name: this.actionName }).click();
+    await this.page.getByRole('tablist').getByRole('button', { name: this.actionName }).click();
     await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
   }
 
