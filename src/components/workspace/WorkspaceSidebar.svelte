@@ -44,6 +44,7 @@
 
   export let actions: ActionDefinition[] = [];
   export let activeTab: string = 'files';
+  export let currentBreadcrumbPath: string = '';
   export let isAllRunsSelected: boolean = false;
   export let isWorkspaceLoading: boolean = false;
   export let selectedActionId: number | null = null;
@@ -59,8 +60,6 @@
   export let hasEditWorkspaceCollaboratorsPermission: boolean = false;
 
   const permissionError = 'You do not have permission to edit this workspace';
-
-  export let currentBreadcrumbPath: string = '';
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();

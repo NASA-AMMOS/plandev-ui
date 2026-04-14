@@ -1376,144 +1376,140 @@
 
         <!-- Content area -->
         <Resizable.Pane defaultSize={60} minSize={30}>
-          <Sidebar.Inset className="min-h-0 min-w-0 overflow-hidden">
-            {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
-              <ActionDetailView
-                actionDefinitionId={$selectedActionDefinitionId}
-                user={$user}
-                workspace={$workspace}
-                workspaceFiles={workspaceFileList}
-                on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
-                on:dirty={onActionDetailDirty}
-                on:runAction={onRunActionFromDetailView}
-                on:viewRun={onViewActionRun}
-              />
-            {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
-              <ActionRunDetailView
-                actionRunId={$selectedActionRunId}
-                user={$user}
-                hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
-                on:back={onActionRunBack}
-                on:rerun={onRerunAction}
-                on:viewAction={e =>
-                  switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
-              />
-            {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
-              <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
-            {:else}
-              {@const isTextOrEmpty =
-                $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-              {@const isSequenceFile =
-                $activeDocumentPath === null ||
-                ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
-              <div class="relative grid h-full grid-cols-1 grid-rows-1">
-                {#if showLoadingSpinner && isTextOrEmpty}
-                  <div
-                    class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
-                  >
-                    <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+          {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
+            <ActionDetailView
+              actionDefinitionId={$selectedActionDefinitionId}
+              user={$user}
+              workspace={$workspace}
+              workspaceFiles={workspaceFileList}
+              on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
+              on:dirty={onActionDetailDirty}
+              on:runAction={onRunActionFromDetailView}
+              on:viewRun={onViewActionRun}
+            />
+          {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
+            <ActionRunDetailView
+              actionRunId={$selectedActionRunId}
+              user={$user}
+              hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
+              on:back={onActionRunBack}
+              on:rerun={onRerunAction}
+              on:viewAction={e =>
+                switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
+            />
+          {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+            <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
+          {:else}
+            {@const isTextOrEmpty =
+              $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+            {@const isSequenceFile =
+              $activeDocumentPath === null ||
+              ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
+            <div class="relative grid h-full grid-cols-1 grid-rows-1">
+              {#if showLoadingSpinner && isTextOrEmpty}
+                <div
+                  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
+                >
+                  <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+                </div>
+              {/if}
+              {#if isTextOrEmpty && isSequenceFile}
+                <div class="flex h-full">
+                  <SequenceEditor
+                    bind:this={sequenceEditorRef}
+                    {phoenixContext}
+                    availableActions={availableActionsForActiveFile}
+                    fileMetadata={activeFileMetadata}
+                    includeActions={hasRunActionPermission}
+                    isLoading={$activeDocumentIsLoading}
+                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                    {preserveAdaptationLog}
+                    previewOnly={!hasEditFilePermission}
+                    readOnly={isFileReadOnly}
+                    sequenceAdaptation={$sequenceAdaptation}
+                    sequenceDefinition={$activeDocument.originalContent}
+                    sequenceName={$activeDocument.fileName ?? ''}
+                    sequenceFilePath={$activeDocumentPath ?? ''}
+                    sequenceOutput={selectedSequenceOutput}
+                    shouldListenForKeyboardSave={false}
+                    showCommandFormBuilder={false}
+                    userSequenceEditorColumns="1fr"
+                    userSequenceEditorColumnsWithFormBuilder="1fr"
+                    on:adaptationError={onAdaptationError}
+                    on:editorViewChange={e => (activeEditorView = e.detail)}
+                    on:lintChange={onLintChange}
+                    on:runAction={onRunActionOnActiveFile}
+                    on:save={onSaveWorkspaceFile}
+                    on:downloadInput={onDownloadInput}
+                    on:downloadOutput={onDownloadOutput}
+                    on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                    on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+                  />
+                </div>
+              {:else if isTextOrEmpty}
+                <div class="flex h-full">
+                  <TextEditor
+                    availableActions={availableActionsForActiveFile}
+                    fileMetadata={activeFileMetadata}
+                    includeActions={true}
+                    isJSON={$activeDocument.type === WorkspaceContentType.Json}
+                    isLoading={$activeDocumentIsLoading}
+                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                    previewOnly={!hasEditFilePermission}
+                    readOnly={isFileReadOnly}
+                    shouldListenForKeyboardSave={false}
+                    textFileName={$activeDocument.fileName ?? ''}
+                    textFilePath={$activeDocumentPath ?? ''}
+                    textFileContent={$activeDocument.originalContent}
+                    on:lintChange={onLintChange}
+                    on:runAction={onRunActionOnActiveFile}
+                    on:save={onSaveWorkspaceFile}
+                    on:download={onDownloadInput}
+                    on:textContentUpdated={onWorkspaceInputFileUpdated}
+                  />
+                </div>
+              {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
+                {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
+                {@const folderFiles =
+                  (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+                {@const folderSubfolders =
+                  (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+                <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                  <Folder size={70} class="text-muted-foreground" />
+                  <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                    The selected folder
+                    <code class="font-bold">
+                      {$activeDocumentPath}
+                    </code>
+                    {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+                      is empty.
+                    {:else}
+                      contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
+                      {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+                      {folderSubfolders.length
+                        ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                        : ''}.
+                    {/if}
+                  </p>
+                  <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
+                </div>
+              {:else if !isTextOrEmpty}
+                <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                  <TriangleAlert size={70} class="text-muted-foreground" />
+                  <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                    The selected file
+                    <code class="font-bold">
+                      {$activeDocumentPath}
+                    </code>
+                    is not displayed in the editor because it is either binary or an unsupported extension.
+                  </p>
+                  <div>
+                    <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
                   </div>
-                {/if}
-                {#if isTextOrEmpty && isSequenceFile}
-                  <div class="flex h-full">
-                    <SequenceEditor
-                      bind:this={sequenceEditorRef}
-                      {phoenixContext}
-                      availableActions={availableActionsForActiveFile}
-                      fileMetadata={activeFileMetadata}
-                      includeActions={hasRunActionPermission}
-                      isLoading={$activeDocumentIsLoading}
-                      onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                      {preserveAdaptationLog}
-                      previewOnly={!hasEditFilePermission}
-                      readOnly={isFileReadOnly}
-                      sequenceAdaptation={$sequenceAdaptation}
-                      sequenceDefinition={$activeDocument.originalContent}
-                      sequenceName={$activeDocument.fileName ?? ''}
-                      sequenceFilePath={$activeDocumentPath ?? ''}
-                      sequenceOutput={selectedSequenceOutput}
-                      shouldListenForKeyboardSave={false}
-                      showCommandFormBuilder={false}
-                      userSequenceEditorColumns="1fr"
-                      userSequenceEditorColumnsWithFormBuilder="1fr"
-                      on:adaptationError={onAdaptationError}
-                      on:editorViewChange={e => (activeEditorView = e.detail)}
-                      on:lintChange={onLintChange}
-                      on:runAction={onRunActionOnActiveFile}
-                      on:save={onSaveWorkspaceFile}
-                      on:downloadInput={onDownloadInput}
-                      on:downloadOutput={onDownloadOutput}
-                      on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-                      on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-                    />
-                  </div>
-                {:else if isTextOrEmpty}
-                  <div class="flex h-full">
-                    <TextEditor
-                      availableActions={availableActionsForActiveFile}
-                      fileMetadata={activeFileMetadata}
-                      includeActions={true}
-                      isJSON={$activeDocument.type === WorkspaceContentType.Json}
-                      isLoading={$activeDocumentIsLoading}
-                      onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                      previewOnly={!hasEditFilePermission}
-                      readOnly={isFileReadOnly}
-                      shouldListenForKeyboardSave={false}
-                      textFileName={$activeDocument.fileName ?? ''}
-                      textFilePath={$activeDocumentPath ?? ''}
-                      textFileContent={$activeDocument.originalContent}
-                      on:lintChange={onLintChange}
-                      on:runAction={onRunActionOnActiveFile}
-                      on:save={onSaveWorkspaceFile}
-                      on:download={onDownloadInput}
-                      on:textContentUpdated={onWorkspaceInputFileUpdated}
-                    />
-                  </div>
-                {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
-                  {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
-                  {@const folderFiles =
-                    (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
-                  {@const folderSubfolders =
-                    (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
-                  <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-                    <Folder size={70} class="text-muted-foreground" />
-                    <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                      The selected folder
-                      <code class="font-bold">
-                        {$activeDocumentPath}
-                      </code>
-                      {#if folderFiles.length === 0 && folderSubfolders.length === 0}
-                        is empty.
-                      {:else}
-                        contains{folderFiles.length
-                          ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}`
-                          : ''}
-                        {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
-                        {folderSubfolders.length
-                          ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                          : ''}.
-                      {/if}
-                    </p>
-                    <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
-                  </div>
-                {:else if !isTextOrEmpty}
-                  <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-                    <TriangleAlert size={70} class="text-muted-foreground" />
-                    <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                      The selected file
-                      <code class="font-bold">
-                        {$activeDocumentPath}
-                      </code>
-                      is not displayed in the editor because it is either binary or an unsupported extension.
-                    </p>
-                    <div>
-                      <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            {/if}
-          </Sidebar.Inset>
+                </div>
+              {/if}
+            </div>
+          {/if}
         </Resizable.Pane>
 
         <Resizable.Handle class={resizableHandleClass} />
