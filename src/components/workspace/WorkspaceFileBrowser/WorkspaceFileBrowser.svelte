@@ -284,7 +284,7 @@
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressAutoSize: false,
-      suppressSizeToFit: false,
+      suppressSizeToFit: true,
     },
     ...metadataColumnDefs,
     {
