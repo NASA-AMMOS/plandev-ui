@@ -1314,7 +1314,7 @@
         <!-- Left sidebar content (collapses to 0, icon rail is outside) -->
         <Resizable.Pane
           defaultSize={20}
-          minSize={10}
+          minSize={20}
           collapsible
           collapsedSize={0}
           onCollapse={() => (sidebarPanelOpen = false)}
@@ -1504,7 +1504,7 @@
         <!-- Right panel content (collapses to 0, icon rail is outside) -->
         <Resizable.Pane
           defaultSize={20}
-          minSize={10}
+          minSize={20}
           collapsible
           collapsedSize={0}
           onCollapse={() => (rightPanelOpen = false)}
