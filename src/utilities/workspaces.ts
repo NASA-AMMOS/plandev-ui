@@ -637,7 +637,6 @@ export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): 
 
   let currentNodes = nodes;
   let currentNode: WorkspaceTreeNode | null = null;
-  console.log('currentNodes :>> ', currentNodes, pathParts);
   for (const part of pathParts) {
     currentNode = currentNodes.find(n => n.name === part) ?? null;
     if (!currentNode) {
