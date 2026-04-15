@@ -130,9 +130,11 @@
         </div>
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           {#if !log.message.trim() && log.data && !(expandable && open)}
-            <pre class="m-0 w-full overflow-hidden text-ellipsis break-words"><slot name="message" {log}
-                >{safeStringify(log.data)}</slot
-              ></pre>
+            <pre class="m-0 w-full overflow-hidden text-ellipsis break-words">
+              <slot name="message" {log}>
+                {safeStringify(log.data)}
+              </slot>
+            </pre>
           {:else}
             <pre class="m-0 whitespace-pre-wrap break-words"><slot name="message" {log}>{log.message ?? ''}</slot></pre>
           {/if}

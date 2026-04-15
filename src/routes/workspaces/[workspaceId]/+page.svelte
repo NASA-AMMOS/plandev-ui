@@ -1362,7 +1362,7 @@
         <Resizable.Handle class={resizableHandleClass} />
 
         <!-- Content area -->
-        <Resizable.Pane defaultSize={60} minSize={30}>
+        <Resizable.Pane defaultSize={60} minSize={30} class="z-10">
           {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
             <ActionDetailView
               actionDefinitionId={$selectedActionDefinitionId}
