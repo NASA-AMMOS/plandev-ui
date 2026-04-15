@@ -85,15 +85,22 @@ export class Action {
     // Verify we navigated to the run detail view
     await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
     // Wait for a terminal status (Complete or Failed) in the main content area
-    const mainContent = this.page.getByRole('main');
-    await expect(mainContent.getByLabel('Complete').or(mainContent.getByLabel('Failed'))).toBeVisible({
+    await expect(
+      this.page
+        .getByRole('tabpanel')
+        .getByRole('button', { name: `Complete ${this.actionName}` })
+        .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
+    ).toBeVisible({
       timeout: 30000,
     });
   }
 
   async selectActionInSidebar(): Promise<void> {
     // Click the action in the sidebar list (scoped to complementary to avoid matching other elements)
-    await this.page.getByRole('tablist').getByRole('button', { name: this.actionName }).click();
+    await this.page
+      .getByRole('tabpanel')
+      .getByRole('button', { name: `${this.actionName} Last run` })
+      .click();
     await expect(this.page.getByRole('heading', { name: this.actionName })).toBeVisible();
   }
 

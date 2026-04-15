@@ -26,13 +26,13 @@
   export let includeActions: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
-  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let shouldListenForKeyboardSave: boolean = true;
   export let textFileContent: string = '';
   export let textFilePath: string = '';
   export let textFileName: string = '';
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 
   const dispatch = createEventDispatcher<{
     download: { filePath: string };
@@ -65,9 +65,15 @@
       });
     }
   }
-  $: editorView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
-  });
+  $: {
+    const isEditable = !(readOnly || previewOnly || isLoading);
+    editorView?.dispatch({
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(!isEditable),
+        EditorView.editable.of(isEditable),
+      ]),
+    });
+  }
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
