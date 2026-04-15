@@ -508,8 +508,10 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to transfer`, {
-      cause: failedFileOperations,
+    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to move`, {
+      cause: JSON.stringify(
+        failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+      ),
     });
   }
 
