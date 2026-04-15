@@ -432,6 +432,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             } else {
@@ -489,6 +491,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             }
