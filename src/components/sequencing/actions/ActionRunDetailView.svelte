@@ -323,11 +323,11 @@
                       <svelte:fragment slot="message" let:message let:expandable let:open>
                         {#if expandable && !open}
                           <!-- "preview" text for expandable logs, ellipsize to one line -->
-                          <span class="block min-w-0 w-full overflow-hidden text-ellipsis whitespace-pre">
+                          <span class="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-pre">
                             {message}
                           </span>
                         {:else}
-                          <span class="block min-w-0 w-full whitespace-pre-wrap break-words">
+                          <span class="block w-full min-w-0 whitespace-pre-wrap break-words">
                             {message}
                           </span>
                         {/if}

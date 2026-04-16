@@ -26,9 +26,8 @@
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
   // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
-  $: renderedMessage = !log.message.trim() && log.data && !(expandable && open)
-      ? safeStringify(log.data)
-      : (log.message ?? '');
+  $: renderedMessage =
+    !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
   onMount(() => {
     // On mount, calculate the amount of padding needed for the expansion content
