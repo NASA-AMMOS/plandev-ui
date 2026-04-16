@@ -29,16 +29,14 @@
     >
       <Files size={16} />
     </Sidebar.MenuButton>
-    <Tooltip content="Actions" openDelay={0} closeDelay={0} side="right" sideOffset={8}>
-      <Button
-        class="h-[48px] w-full rounded-none ring-inset hover:bg-[var(--sidebar-accent)]"
-        variant="ghost"
-        aria-label="Actions"
-        on:click={() => handleTabClick('actions')}
-      >
-        <Clapperboard size={16} />
-      </Button>
-    </Tooltip>
+    <Sidebar.MenuButton
+      className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+      isActive={activeTab === 'actions' && panelOpen}
+      tooltipContent="Actions"
+      on:click={() => handleTabClick('actions')}
+    >
+      <Clapperboard size={16} />
+    </Sidebar.MenuButton>
     <Sidebar.MenuButton
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
       isActive={activeTab === 'settings' && panelOpen}
