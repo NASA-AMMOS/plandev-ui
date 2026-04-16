@@ -2,19 +2,23 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
+  import { createEventDispatcher } from 'svelte';
   import { Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
+
+  const dispatch = createEventDispatcher<{
+    tabChange: string;
+  }>();
 
   export let activeTab: string = 'files';
   export let panelOpen: boolean = true;
 
   function handleTabClick(tab: string) {
-    if (activeTab === tab && panelOpen) {
+    if (activeTab === tab) {
       panelOpen = !panelOpen;
     } else {
-      activeTab = tab;
-      panelOpen = true;
+      dispatch('tabChange', tab);
     }
   }
 </script>

@@ -1030,14 +1030,17 @@
     switchToContentMode(WorkspaceContentMode.ActionRunsList);
   }
 
-  function onSidebarTabChange(event: CustomEvent<string>) {
-    if (event.detail === 'actions') {
-      switchToContentMode(WorkspaceContentMode.ActionRunsList);
-    } else if (event.detail === 'settings') {
+  async function onTabChange(event: CustomEvent<string>) {
+    const tab = event.detail;
+    if (tab === 'actions') {
+      await switchToContentMode(WorkspaceContentMode.ActionRunsList);
+    } else if (tab === 'settings') {
       leftPanelActiveTab = 'settings'; // settings doesn't have a content mode, so just update the active tab
     } else {
-      switchToContentMode(WorkspaceContentMode.File);
+      await switchToContentMode(WorkspaceContentMode.File);
     }
+    // Ensure panel is open after switching tabs
+    sidebarPanelOpen = true;
   }
 
   function onActionDetailDirty(event: CustomEvent<boolean>) {
@@ -1307,7 +1310,7 @@
   <Resizable.Pane defaultSize={84}>
     <div class="flex h-full" class:invisible={!panelsReady}>
       <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
-      <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} />
+      <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} on:tabChange={onTabChange} />
 
       <!-- All resizable panel content -->
       <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
@@ -1354,7 +1357,6 @@
             on:runActionFromSidebar={onRunActionFromSidebar}
             on:selectAction={onSelectAction}
             on:selectAllRuns={onSelectAllRuns}
-            on:sidebarTabChange={onSidebarTabChange}
             on:openInNewTab={onOpenInNewTab}
           />
         </Resizable.Pane>
@@ -1499,40 +1501,44 @@
           {/if}
         </Resizable.Pane>
 
-        <Resizable.Handle class={resizableHandleClass} />
+        {#if $workspaceContentMode === WorkspaceContentMode.File}
+          <Resizable.Handle class={resizableHandleClass} />
 
-        <!-- Right panel content (collapses to 0, icon rail is outside) -->
-        <Resizable.Pane
-          defaultSize={20}
-          minSize={20}
-          collapsible
-          collapsedSize={0}
-          onCollapse={() => (rightPanelOpen = false)}
-          onExpand={() => (rightPanelOpen = true)}
-          bind:pane={rightPaneApi}
-        >
-          <WorkspaceRightPanel
-            bind:activeTab={rightPanelActiveTab}
-            bind:commandNodeName={rightPanelCommandNodeName}
-            editorSequenceView={activeEditorView}
-            filePath={$activeDocumentPath}
-            fileMetadata={activeFileMetadata}
-            hasEditPermission={hasEditFilePermission}
-            isSequenceFile={activeFileIsSequence}
-            {phoenixContext}
-            {commandInfoMapper}
-            on:updateUserMetadata={onUpdateUserMetadata}
-          />
-        </Resizable.Pane>
+          <!-- Right panel content (collapses to 0, icon rail is outside) -->
+          <Resizable.Pane
+            defaultSize={20}
+            minSize={20}
+            collapsible
+            collapsedSize={0}
+            onCollapse={() => (rightPanelOpen = false)}
+            onExpand={() => (rightPanelOpen = true)}
+            bind:pane={rightPaneApi}
+          >
+            <WorkspaceRightPanel
+              bind:activeTab={rightPanelActiveTab}
+              bind:commandNodeName={rightPanelCommandNodeName}
+              editorSequenceView={activeEditorView}
+              filePath={$activeDocumentPath}
+              fileMetadata={activeFileMetadata}
+              hasEditPermission={hasEditFilePermission}
+              isSequenceFile={activeFileIsSequence}
+              {phoenixContext}
+              {commandInfoMapper}
+              on:updateUserMetadata={onUpdateUserMetadata}
+            />
+          </Resizable.Pane>
+        {/if}
       </Resizable.PaneGroup>
 
-      <!-- Right icon rail (fixed 45px, always visible, outside Resizable) -->
-      <WorkspaceRightIconRail
-        bind:activeTab={rightPanelActiveTab}
-        bind:panelOpen={rightPanelOpen}
-        commandNodeName={rightPanelCommandNodeName}
-        isSequenceFile={activeFileIsSequence}
-      />
+      <!-- Right icon rail (only visible in file mode) -->
+      {#if $workspaceContentMode === WorkspaceContentMode.File}
+        <WorkspaceRightIconRail
+          bind:activeTab={rightPanelActiveTab}
+          bind:panelOpen={rightPanelOpen}
+          commandNodeName={rightPanelCommandNodeName}
+          isSequenceFile={activeFileIsSequence}
+        />
+      {/if}
     </div>
   </Resizable.Pane>
 

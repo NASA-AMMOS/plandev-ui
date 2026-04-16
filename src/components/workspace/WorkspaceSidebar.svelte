@@ -38,7 +38,6 @@
     saveFile: void;
     selectAction: { id: number };
     selectAllRuns: void;
-    sidebarTabChange: string;
     updateWorkspaceMetadata: Partial<WorkspaceMetadata>;
   }>();
 
