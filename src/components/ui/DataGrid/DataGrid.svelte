@@ -19,6 +19,7 @@
     columnVisible: CustomEvent<ColumnVisibleEvent<RowData>>;
     filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
     gridSizeChanged: CustomEvent<GridSizeChangedEvent<RowData>>;
+    resetColumns: void;
     rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
     rowDoubleClicked: CustomEvent<DataGridRowDoubleClick<RowData>>;
     rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
@@ -229,7 +230,9 @@ This has been seen to result in unintended and often glitchy behavior, which oft
       });
     }
   }
-  $: gridApi?.sizeColumnsToFit();
+  $: if (autoSizeColumnsToFit) {
+    gridApi?.sizeColumnsToFit();
+  }
   $: gridApi?.applyColumnState({ applyOrder: true, state: columnStates });
 
   $: if (!selectedRowIds.length) {
@@ -321,7 +324,36 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   }
 
   function onAutoSizeSpace() {
+    if (!gridApi) {
+      return;
+    }
+
+    // Temporarily override suppressSizeToFit on resizable columns so the explicit
+    // user action works even on columns that normally suppress auto-fitting
+    const columns = gridApi.getColumns();
+    const overrides: { colDef: ColDef; original: boolean | undefined }[] = [];
+    if (columns) {
+      for (const col of columns) {
+        const colDef = col.getColDef();
+        if (colDef.resizable !== false && colDef.suppressSizeToFit) {
+          overrides.push({ colDef, original: colDef.suppressSizeToFit });
+          colDef.suppressSizeToFit = false;
+        }
+      }
+    }
+
+    gridApi.sizeColumnsToFit();
+
+    // Restore original values so automatic resizing still respects the column settings
+    for (const { colDef, original } of overrides) {
+      colDef.suppressSizeToFit = original;
+    }
+  }
+
+  function onResetColumns() {
+    gridApi?.resetColumnState();
     gridApi?.sizeColumnsToFit();
+    dispatch('resetColumns');
   }
 
   function onColumnStateChange() {
@@ -555,7 +587,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
     gridApi = createGrid(gridDiv, gridOptions);
 
     if (autoSizeColumnsToFit) {
-      resizeObserver = new ResizeObserver(() => {
+      resizeObserver = new ResizeObserver(entries => {
+        // Skip when the grid is collapsed or too small to avoid saving bad column sizes
+        if ((entries[0]?.contentRect.width ?? 0) < 50) {
+          return;
+        }
         onWindowResizedDebounced();
       });
       resizeObserver.observe(gridDiv);
@@ -583,7 +619,11 @@ This has been seen to result in unintended and often glitchy behavior, which oft
 
 <ContextMenuInternal bind:this={contextMenu} on:hide={onCellContextMenuHide}>
   <slot name="context-menu" />
-  <ColumnResizeContextMenu on:autoSizeContent={onAutoSizeContent} on:autoSizeSpace={onAutoSizeSpace} />
+  <ColumnResizeContextMenu
+    on:autoSizeContent={onAutoSizeContent}
+    on:autoSizeSpace={onAutoSizeSpace}
+    on:resetColumns={onResetColumns}
+  />
 </ContextMenuInternal>
 
 <style>

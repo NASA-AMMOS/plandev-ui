@@ -29,7 +29,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { getJsonCookie, setJsonCookie } from '../../../utilities/cookies';
+  import { deleteCookie, getJsonCookie, setJsonCookie } from '../../../utilities/cookies';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
@@ -78,9 +78,23 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
+  // Strip width and flex from the Name column so applyColumnState never overrides
+  // its flex:1 column definition. flex:null in saved state explicitly clears flex.
+  function preserveNameColumnFlex(states: ColumnState[]): ColumnState[] {
+    return states.map(state => {
+      if (state.colId === 'name') {
+        const { flex: _f, width: _w, ...rest } = state;
+        return rest;
+      }
+      return state;
+    });
+  }
+
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
-  let columnStates: ColumnState[] = getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [];
+  let columnStates: ColumnState[] = preserveNameColumnFlex(
+    getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [],
+  );
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
   let hasEditPermission: boolean = false;
@@ -166,7 +180,7 @@
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedBy ?? '',
-      width: 96,
+      width: 80,
     },
     {
       cellRenderer: dateTimeCellRenderer,
@@ -181,7 +195,7 @@
       sortingOrder: ['asc', 'desc'],
       suppressSizeToFit: true,
       valueGetter: params => params.data?.metadata?.lastEditedAt ?? '',
-      width: 100,
+      width: 84,
     },
     {
       colId: 'createdBy',
@@ -219,7 +233,7 @@
       field: 'metadata.readOnly',
       headerName: 'Read-Only',
       hide: true,
-      minWidth: 60,
+      minWidth: 40,
       resizable: true,
       sortable: true,
       sortingOrder: ['asc', 'desc'],
@@ -284,7 +298,6 @@
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressAutoSize: false,
-      suppressSizeToFit: true,
     },
     ...metadataColumnDefs,
     {
@@ -646,7 +659,7 @@
   function updateColumnState(updatedColumnStates?: ColumnState[]) {
     const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
     if (columnStatesToUpdate) {
-      columnStates = columnStatesToUpdate;
+      columnStates = preserveNameColumnFlex(columnStatesToUpdate);
       saveColumnStateToCookie();
     }
   }
@@ -703,6 +716,17 @@
     dataGrid?.sizeColumnsToFit();
   }
 
+  function onResetColumns() {
+    deleteCookie(COLUMN_STATE_COOKIE_NAME);
+    columnStates = [
+      { colId: 'name', hide: false },
+      ...metadataColumnDefs.map(col => ({
+        colId: (col.colId ?? col.field) as string,
+        hide: col.hide ?? false,
+      })),
+    ];
+  }
+
   $: if (selectedTreeNodePath) {
     expandToPath(selectedTreeNodePath);
   }
@@ -740,6 +764,7 @@
     />
   </div>
   <BulkActionDataGrid
+    autoSizeColumnsToFit={false}
     bind:dataGrid
     bind:selectedItemId={selectedTreeNodePath}
     bind:selectedItemIds
@@ -769,6 +794,7 @@
     on:columnMoved={onColumnMoved}
     on:columnPinned={onColumnPinned}
     on:columnResized={onColumnResized}
+    on:resetColumns={onResetColumns}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}

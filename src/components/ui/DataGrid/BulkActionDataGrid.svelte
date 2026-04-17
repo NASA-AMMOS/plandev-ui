@@ -210,6 +210,7 @@
   on:filterChanged={onFilterChanged}
   on:focus={onFocus}
   on:gridSizeChanged
+  on:resetColumns
   on:rowClicked
   on:rowDoubleClicked
   on:rowSelected
