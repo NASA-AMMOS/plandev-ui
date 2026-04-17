@@ -45,7 +45,12 @@
     <button class="st-button secondary" on:click={() => dispatch('close')}>
       {cancelText}
     </button>
-    <button class="st-button" on:click={() => dispatch('confirm')}>
+    <button
+      class="st-button {!actionCanBeUndone
+        ? 'bg-destructive text-destructive-foreground hover:!bg-destructive/90'
+        : ''}"
+      on:click={() => dispatch('confirm')}
+    >
       {confirmText}
     </button>
   </ModalFooter>
