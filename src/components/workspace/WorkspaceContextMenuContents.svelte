@@ -89,8 +89,7 @@
     <div
       use:permissionHandler={{
         hasPermission:
-          hasDeletePermission &&
-          !(selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes),
+          hasEditPermission && !(selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes),
         permissionError: editError,
       }}
     >

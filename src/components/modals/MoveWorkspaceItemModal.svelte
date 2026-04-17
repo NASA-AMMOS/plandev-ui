@@ -49,7 +49,7 @@
   }
 
   function onMove() {
-    // Only move files that
+    // Only move files that have no read only nodes
     if (!selectionHasReadOnlyNodes) {
       // targetDirectory includes workspace name as first segment (e.g., "workspace/folder/subfolder")
       // Remove it since the API expects paths relative to the workspace root
