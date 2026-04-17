@@ -137,6 +137,8 @@
   const { initialWorkspace } = data;
   const user: UserStore = getContext('user');
   const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
+  const PANEL_DEFAULT_SIZE = 25;
+  const PANEL_MIN_SIZE = 10;
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
@@ -217,6 +219,16 @@
       rightPaneApi.expand();
     } else {
       rightPaneApi.collapse();
+    }
+  }
+
+  // Workaround for PaneForge bug: when a pane is expanded for the first time (no saved
+  // pre-collapse size), it opens at minSize instead of defaultSize. This callback detects
+  // that case and resizes the pane to defaultSize.
+  function ensurePaneDefaultSize(paneApi: PaneAPI) {
+    const size = paneApi.getSize();
+    if (size <= PANEL_MIN_SIZE) {
+      paneApi.resize(PANEL_DEFAULT_SIZE);
     }
   }
 
@@ -1310,18 +1322,25 @@
   <Resizable.Pane defaultSize={84}>
     <div class="flex h-full" class:invisible={!panelsReady}>
       <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
-      <WorkspaceLeftIconRail bind:activeTab={leftPanelActiveTab} bind:panelOpen={sidebarPanelOpen} on:tabChange={onTabChange} />
+      <WorkspaceLeftIconRail
+        bind:activeTab={leftPanelActiveTab}
+        bind:panelOpen={sidebarPanelOpen}
+        on:tabChange={onTabChange}
+      />
 
       <!-- All resizable panel content -->
       <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
         <!-- Left sidebar content (collapses to 0, icon rail is outside) -->
         <Resizable.Pane
-          defaultSize={20}
-          minSize={20}
+          defaultSize={PANEL_DEFAULT_SIZE}
+          minSize={PANEL_MIN_SIZE}
           collapsible
           collapsedSize={0}
           onCollapse={() => (sidebarPanelOpen = false)}
-          onExpand={() => (sidebarPanelOpen = true)}
+          onExpand={() => {
+            sidebarPanelOpen = true;
+            ensurePaneDefaultSize(leftPaneApi);
+          }}
           bind:pane={leftPaneApi}
         >
           <WorkspaceSidebar
@@ -1506,12 +1525,15 @@
 
           <!-- Right panel content (collapses to 0, icon rail is outside) -->
           <Resizable.Pane
-            defaultSize={20}
-            minSize={20}
+            defaultSize={PANEL_DEFAULT_SIZE}
+            minSize={PANEL_MIN_SIZE}
             collapsible
             collapsedSize={0}
             onCollapse={() => (rightPanelOpen = false)}
-            onExpand={() => (rightPanelOpen = true)}
+            onExpand={() => {
+              rightPanelOpen = true;
+              ensurePaneDefaultSize(rightPaneApi);
+            }}
             bind:pane={rightPaneApi}
           >
             <WorkspaceRightPanel
