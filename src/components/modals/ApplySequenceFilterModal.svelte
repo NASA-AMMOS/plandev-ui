@@ -2,17 +2,24 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { expansionSequences } from '../../stores/expansion';
   import { field } from '../../stores/form';
   import { plugins } from '../../stores/plugins';
-  import { required } from '../../utilities/validators';
+  import { simulationDatasetId } from '../../stores/simulation';
+  import type { ExpansionSequence } from '../../types/expansion';
+  import { tooltip } from '../../utilities/tooltip';
+  import { required, unique } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
+  import Field from '../form/Field.svelte';
+  import Input from '../form/Input.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let height: number = 225;
+  export let height: number = 275;
   export let width: number = 400;
+  export let defaultSequenceName: string;
   export let defaultStartTime: string;
   export let defaultEndTime: string;
 
@@ -21,11 +28,23 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { timeRangeEnd: string; timeRangeStart: string };
+    confirm: { sequenceName: string; timeRangeEnd: string; timeRangeStart: string };
   }>();
+
+  let relevantExpansionSequences: ExpansionSequence[] = [];
 
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(defaultEndTime, [required, $plugins.time.primary.validate]);
+  $: sequenceNameField = field<string>(defaultSequenceName, [
+    required,
+    unique(
+      relevantExpansionSequences.map(seq => seq.seq_id),
+      'Sequence name already in use',
+    ),
+  ]);
+  $: relevantExpansionSequences = $expansionSequences.filter(
+    sequence => $simulationDatasetId === sequence.simulation_dataset_id,
+  );
 
   function onInputKeydown(event: KeyboardEvent) {
     const { key } = event;
@@ -35,7 +54,11 @@
   }
 
   function onConfirm() {
-    dispatch('confirm', { timeRangeEnd: `${$endTimeField.value}Z`, timeRangeStart: `${$startTimeField.value}Z` });
+    dispatch('confirm', {
+      sequenceName: $sequenceNameField.value,
+      timeRangeEnd: `${$endTimeField.value}Z`,
+      timeRangeStart: `${$startTimeField.value}Z`,
+    });
   }
 </script>
 
@@ -62,6 +85,12 @@
         field={endTimeField}
       />
     </fieldset>
+    <Field field={sequenceNameField}>
+      <Input>
+        <label use:tooltip={{ content: 'Sequence Name', placement: 'top' }} for="sequenceName"> Sequence Name </label>
+        <input class="st-input w-full" id="sequenceName" name="sequenceName" />
+      </Input>
+    </Field>
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>

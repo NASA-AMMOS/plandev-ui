@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
+import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
@@ -34,7 +35,6 @@ import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotMo
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
-import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
@@ -1506,33 +1506,40 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows a TimeRangeModal with the supplied arguments.
+ * Shows an ApplySequenceFilterModal with the supplied arguments.
  */
-export async function showTimeRangeModal(
+export async function showApplySequenceFilterModal(
+  defaultSequenceName: string,
   defaultStartTime: string,
   defaultEndTime: string,
-): Promise<ModalElementValue<{ timeRangeEnd: string | null; timeRangeStart: string | null }>> {
+): Promise<ModalElementValue<{ sequenceName: string; timeRangeEnd: string | null; timeRangeStart: string | null }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const timeRangeModal = new TimeRangeModal({ props: { defaultEndTime, defaultStartTime }, target });
+        const applySequenceFilterModal = new ApplySequenceFilterModal({
+          props: { defaultEndTime, defaultSequenceName, defaultStartTime },
+          target,
+        });
         target.resolve = resolve;
 
-        timeRangeModal.$on('close', () => {
+        applySequenceFilterModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
-          timeRangeModal.$destroy();
+          applySequenceFilterModal.$destroy();
         });
 
-        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string; timeRangeStart: string }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          timeRangeModal.$destroy();
-        });
+        applySequenceFilterModal.$on(
+          'confirm',
+          (e: CustomEvent<{ sequenceName: string; timeRangeEnd: string; timeRangeStart: string }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            applySequenceFilterModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

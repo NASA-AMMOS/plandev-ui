@@ -76,13 +76,13 @@ export class Plan {
   schedulingGoalsModalFilter: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  sequenceExpansionApplySequenceFilterModal: Locator;
   sequenceExpansionNewButton: Locator;
   sequenceExpansionNewSequenceButton: Locator;
   sequenceExpansionNewSequenceConfirmButton: Locator;
   sequenceExpansionNewSequenceFilterButton: Locator;
   sequenceExpansionNewSequenceName: Locator;
   sequenceExpansionOutputModal: Locator;
-  sequenceExpansionTimeRangeModal: Locator;
   simulateButton: Locator;
   simulationHistoryList: Locator;
   simulationStatusSelector: (status: string) => string;
@@ -164,8 +164,8 @@ export class Plan {
     const sequenceFilterItem = this.page.locator('.sne-items').getByText(sequenceFilterName, { exact: true });
     await sequenceFilterItem.hover();
     await this.page.getByLabel(`Apply '${sequenceFilterName}'`).click();
-    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'attached' });
-    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'visible' });
+    await this.sequenceExpansionApplySequenceFilterModal.waitFor({ state: 'attached' });
+    await this.sequenceExpansionApplySequenceFilterModal.waitFor({ state: 'visible' });
     await this.page.getByRole('button', { exact: true, name: 'Confirm' }).click();
     await this.waitForToast('Expansion Sequence Created Successfully');
     await expect(this.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`)).toBeVisible();
@@ -620,7 +620,7 @@ export class Plan {
     });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
-    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
+    this.sequenceExpansionApplySequenceFilterModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
     this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
   }
 
