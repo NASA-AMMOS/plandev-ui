@@ -32,6 +32,7 @@
   }>();
 
   let relevantExpansionSequences: ExpansionSequence[] = [];
+  let confirmIsDisabled = false;
 
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(defaultEndTime, [required, $plugins.time.primary.validate]);
@@ -45,6 +46,7 @@
   $: relevantExpansionSequences = $expansionSequences.filter(
     sequence => $simulationDatasetId === sequence.simulation_dataset_id,
   );
+  $: confirmIsDisabled = $sequenceNameField.invalid;
 
   function onInputKeydown(event: KeyboardEvent) {
     const { key } = event;
@@ -94,9 +96,9 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:keydown={onInputKeydown} on:click={onConfirm}> Confirm </button>
+    <button class="st-button" disabled={confirmIsDisabled} on:keydown={onInputKeydown} on:click={onConfirm}> Confirm </button>
   </ModalFooter>
 </Modal>
 
 <style>
-</style>
+</style>``
