@@ -82,7 +82,6 @@
 
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
-  let columnStates: ColumnState[] = processNameColumnState(savedColumnStates);
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
   let hasEditPermission: boolean = false;
@@ -93,6 +92,9 @@
   let expandedPaths: Set<string> = new Set();
   let nameColumnUserWidth: number | null = savedColumnStates.find(s => s.colId === 'name')?.width ?? null;
   let selectedItemIds: RowId[] = [];
+
+  // Initialize column states from cookie, applying special processing for Name column to preserve user width if manually resized
+  let columnStates: ColumnState[] = processNameColumnState(savedColumnStates);
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
   type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
