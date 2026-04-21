@@ -21,9 +21,9 @@
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/errors';
+  import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { replaceFileExtension } from '../../utilities/workspaces';
@@ -32,10 +32,12 @@
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
+  import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
@@ -51,11 +53,13 @@
   export let showCommandFormBuilder: boolean = false;
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 
   const dispatch = createEventDispatcher<{
     adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    editorViewChange: EditorView | null;
     lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
@@ -130,9 +134,15 @@
     }
   }
 
-  $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
-  });
+  $: {
+    const isEditable = !(readOnly || previewOnly || isLoading);
+    editorSequenceView?.dispatch({
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(!isEditable),
+        EditorView.editable.of(isEditable),
+      ]),
+    });
+  }
 
   $: {
     previousShowOutputs = showOutputs;
@@ -369,6 +379,8 @@
 
     // Compute initial output for the starting content (e.g., untitled empty sequence on page load)
     debouncedOutputUpdate(editorSequenceView.state.doc.toString());
+
+    dispatch('editorViewChange', editorSequenceView);
   });
 
   onDestroy(() => {
@@ -376,18 +388,17 @@
     editorSequenceView?.destroy();
     editorOutputView?.destroy();
     debouncedOutputUpdate.cancel();
+    dispatch('editorViewChange', null);
   });
 </script>
 
 <CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'} columnMinSizes={{ 0: 400, 2: 292 }}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
-    <Panel>
+    <Panel padBody={false}>
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading
-            ? ' (Preview-only)'
-            : ''}
+          {sequenceName || 'Untitled'}{readOnly || (previewOnly && !isLoading) ? ' (Read only)' : ''}
         </SectionTitle>
 
         <EditorToolbar
@@ -419,13 +430,10 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <div
-          bind:this={editorSequenceDiv}
-          use:permissionHandler={{
-            hasPermission: !readOnly,
-            permissionError: 'This sequence has been marked as readonly.',
-          }}
-        />
+        {#if fileMetadata}
+          <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
+        {/if}
+        <div class="p-2" bind:this={editorSequenceDiv} />
       </svelte:fragment>
     </Panel>
 

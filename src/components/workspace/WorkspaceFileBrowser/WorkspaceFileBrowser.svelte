@@ -2,9 +2,16 @@
 
 <script lang="ts">
   import { Input } from '@nasa-jpl/stellar-svelte';
-  import type { CellContextMenuEvent, ICellRendererParams, IRowNode, SortChangedEvent } from 'ag-grid-community';
+  import type {
+    CellContextMenuEvent,
+    ColumnResizedEvent,
+    ColumnState,
+    ICellRendererParams,
+    IRowNode,
+  } from 'ag-grid-community';
   import { Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { COLUMN_STATE_COOKIE_NAME } from '../../../constants/cookies';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { ActionDefinition } from '../../../types/actions';
@@ -17,17 +24,24 @@
     WorkspaceNodeRunActionEvent,
     WorkspaceNodesEvent,
   } from '../../../types/workspace';
-  import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
+  import type {
+    WorkspaceFileMetadata,
+    WorkspaceTreeNode,
+    WorkspaceTreeNodeWithFullPath,
+  } from '../../../types/workspace-tree-view';
+  import { deleteCookie, getJsonCookie, setJsonCookie } from '../../../utilities/cookies';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
     findNodeByPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    hasReadonlyInTree,
     shouldNodeBeVisible,
     sortWorkspaceTree,
     type TreeSortComparator,
   } from '../../../utilities/workspaces';
+  import ActivityTableMenu from '../../activity/ActivityTableMenu.svelte';
   import BulkActionDataGrid from '../../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../../ui/DataGrid/DataGridActions.svelte';
@@ -44,7 +58,6 @@
   export let user: User | null;
 
   type CellRendererParams = {
-    deleteNode: (node: WorkspaceTreeNodeWithFullPath) => void;
     showMenu: (node: WorkspaceTreeNodeWithFullPath, event: MouseEvent) => void;
     viewNode: (node: WorkspaceTreeNodeWithFullPath) => void;
   };
@@ -65,6 +78,8 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
+  const savedColumnStates = getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [];
+
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
@@ -72,9 +87,14 @@
   let hasEditPermission: boolean = false;
   let hasDeletePermission: boolean = false;
   let hasCreateActionPermission: boolean = false;
+  let hasReadOnlyNodes: boolean = false;
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let expandedPaths: Set<string> = new Set();
+  let nameColumnUserWidth: number | null = savedColumnStates.find(s => s.colId === 'name')?.width ?? null;
   let selectedItemIds: RowId[] = [];
+
+  // Initialize column states from cookie, applying special processing for Name column to preserve user width if manually resized
+  let columnStates: ColumnState[] = processNameColumnState(savedColumnStates);
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
   type ColumnSort = { colId: string; direction: 'asc' | 'desc' };
@@ -92,6 +112,170 @@
     hasEditPermission = featurePermissions.workspace.canUpdate(user, workspace);
     hasDeletePermission = featurePermissions.workspace.canDelete(user, workspace);
     hasCreateActionPermission = featurePermissions.actionRun.canCreate(user, workspace);
+  }
+
+  function formatTimeAgo(isoString: string | undefined): string {
+    if (!isoString) {
+      return '';
+    }
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+      return isoString;
+    }
+    const now = Date.now();
+    const diffMs = now - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) {
+      return 'just now';
+    }
+    if (diffMin < 60) {
+      return `${diffMin}m ago`;
+    }
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) {
+      return `${diffHr}h ago`;
+    }
+    const diffDays = Math.floor(diffHr / 24);
+    if (diffDays < 30) {
+      return `${diffDays}d ago`;
+    }
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return `${diffMonths}mo ago`;
+    }
+    return `${Math.floor(diffMonths / 12)}y ago`;
+  }
+
+  // Process Name column state: if the user has manually resized it, persist the
+  // width (and clear flex); otherwise strip width & flex so the column def's flex:1 applies.
+  function processNameColumnState(states: ColumnState[]): ColumnState[] {
+    return states.map(state => {
+      if (state.colId === 'name') {
+        if (nameColumnUserWidth != null) {
+          const { flex: _f, width: _w, ...rest } = state;
+          return { ...rest, width: nameColumnUserWidth };
+        }
+        const { flex: _f, width: _w, ...rest } = state;
+        return rest;
+      }
+      return state;
+    });
+  }
+
+  function dateTimeCellRenderer(params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) {
+    const value = params.valueFormatted ?? params.value;
+    if (!value) {
+      return '';
+    }
+    const span = document.createElement('span');
+    span.textContent = formatTimeAgo(value);
+    span.title = value;
+    return span;
+  }
+
+  // Metadata column definitions (reusable for column picker)
+  const metadataColumnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [
+    {
+      colId: 'lastEditedBy',
+      comparator: () => 0,
+      field: 'metadata.lastEditedBy',
+      headerName: 'Last Editor',
+      hide: false,
+      minWidth: 60,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.lastEditedBy ?? '',
+      width: 80,
+    },
+    {
+      cellRenderer: dateTimeCellRenderer,
+      colId: 'lastEditedAt',
+      comparator: () => 0,
+      field: 'metadata.lastEditedAt',
+      headerName: 'Last Edited',
+      hide: false,
+      minWidth: 70,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.lastEditedAt ?? '',
+      width: 84,
+    },
+    {
+      colId: 'createdBy',
+      comparator: () => 0,
+      field: 'metadata.createdBy',
+      headerName: 'Created By',
+      hide: true,
+      minWidth: 70,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.createdBy ?? '',
+      width: 100,
+    },
+    {
+      cellRenderer: dateTimeCellRenderer,
+      colId: 'createdAt',
+      comparator: () => 0,
+      field: 'metadata.createdAt',
+      headerName: 'Created',
+      hide: true,
+      minWidth: 70,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.createdAt ?? '',
+      width: 80,
+    },
+    {
+      cellDataType: 'boolean',
+      colId: 'readOnly',
+      comparator: () => 0,
+      field: 'metadata.readOnly',
+      headerName: 'Read-Only',
+      hide: true,
+      minWidth: 40,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => params.data?.metadata?.readOnly ?? '',
+      width: 80,
+    },
+    {
+      colId: 'user',
+      comparator: () => 0,
+      field: 'metadata.user',
+      headerName: 'User Metadata',
+      hide: true,
+      minWidth: 70,
+      resizable: true,
+      sortable: true,
+      sortingOrder: ['asc', 'desc'],
+      suppressSizeToFit: true,
+      valueGetter: params => {
+        const userMeta = params.data?.metadata?.user;
+        return userMeta ? JSON.stringify(userMeta) : '';
+      },
+      width: 120,
+    },
+  ];
+
+  // Initialize column states — include Name first to preserve column order when applyOrder is true
+  $: if (columnStates.length === 0 && metadataColumnDefs.length > 0) {
+    columnStates = [
+      { colId: 'name', hide: false },
+      ...metadataColumnDefs.map(col => ({
+        colId: (col.colId ?? col.field) as string,
+        hide: col.hide ?? false,
+      })),
+    ];
   }
 
   $: columnDefs = [
@@ -113,15 +297,16 @@
       // We handle sorting ourselves via sortWorkspaceTree to preserve hierarchy.
       comparator: () => 0,
       field: 'name',
+      flex: 1,
       headerName: 'Name',
-      minWidth: 200,
+      minWidth: 150,
       resizable: true,
       sort: 'asc',
       sortable: true,
       sortingOrder: ['asc', 'desc'],
       suppressAutoSize: false,
-      suppressSizeToFit: false,
     },
+    ...metadataColumnDefs,
     {
       cellClass: 'action-cell-container action-cell-container-compact',
       cellRenderer: (params: WorkspaceTreeNodeCellRendererParams) => {
@@ -129,27 +314,12 @@
         actionsDiv.className = 'actions-cell';
         new DataGridActions({
           props: {
-            deleteCallback: params.deleteNode,
-            deleteTooltip: {
-              content: 'Delete',
-              placement: 'top',
-            },
-            hasDeletePermission,
             menuCallback: params.showMenu,
             menuTooltip: {
               content: 'More actions',
               placement: 'top',
             },
             rowData: params.data,
-            viewCallback:
-              params.data?.type === WorkspaceContentType.Directory ||
-              params.data?.type === WorkspaceContentType.Workspace
-                ? data => user && params.viewNode(data)
-                : undefined,
-            viewTooltip: {
-              content: 'Open',
-              placement: 'top',
-            },
           },
           target: actionsDiv,
         });
@@ -157,16 +327,16 @@
         return actionsDiv;
       },
       cellRendererParams: {
-        deleteNode: onDeleteNode,
         showMenu: onShowMenu,
         viewNode: onViewNode,
       } as CellRendererParams,
       headerName: '',
+      minWidth: 28,
       resizable: false,
       sortable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
-      width: 74,
+      width: 28,
     },
   ];
 
@@ -222,6 +392,26 @@
       ? [contextMenuNode]
       : [];
   $: actionsForSelection = getAvailableActionsForNodes(actions, effectiveSelectedNodes);
+
+  // Check if any of the effective selected nodes are read-only
+  $: hasReadOnlyNodes = effectiveSelectedNodes.some(node => {
+    // First check if the node itself is readonly
+    if (node.metadata?.readOnly) {
+      return true;
+    }
+
+    // If it's a folder, recursively check its contents
+    if (node.type === WorkspaceContentType.Directory && treeNode) {
+      const fullNode = findNodeByPath(treeNode?.contents ?? [], node.fullPath);
+
+      if (fullNode) {
+        return hasReadonlyInTree(fullNode);
+      }
+    }
+
+    return false;
+  });
+
   // Get all non-directory nodes that are either directly selected or descendants of selected directories
   $: nonDirectorySelectedNodes = flattenedTree.filter(node => {
     if (node.type === WorkspaceContentType.Directory) {
@@ -274,6 +464,16 @@
           comparison = aPath.localeCompare(bPath);
         } else if (colId === 'type') {
           comparison = (a.type ?? '').localeCompare(b.type ?? '');
+        } else if (colId === 'user') {
+          const aVal = a.metadata?.user ? JSON.stringify(a.metadata.user) : '';
+          const bVal = b.metadata?.user ? JSON.stringify(b.metadata.user) : '';
+          comparison = aVal.localeCompare(bVal);
+        } else {
+          // Generic metadata field sorting (lastEditedBy, lastEditedAt, createdBy, etc.)
+          const metadataKey = colId as keyof WorkspaceFileMetadata;
+          const aVal = String(a.metadata?.[metadataKey] ?? '');
+          const bVal = String(b.metadata?.[metadataKey] ?? '');
+          comparison = aVal.localeCompare(bVal);
         }
         if (comparison !== 0) {
           return multiplier * comparison;
@@ -328,19 +528,6 @@
       expandedPaths,
       currentBreadcrumbPath,
     );
-  }
-
-  function onSortChanged(event: CustomEvent<SortChangedEvent<WorkspaceTreeNodeWithFullPath>>) {
-    const columnState = event.detail.api.getColumnState();
-
-    const sortedColumns = columnState
-      .filter(col => col.sort != null)
-      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
-      .map(col => ({ colId: col.colId, direction: col.sort as 'asc' | 'desc' }));
-
-    if (sortedColumns.length > 0) {
-      sortState = sortedColumns;
-    }
   }
 
   function onSearchInput(event: Event) {
@@ -406,16 +593,12 @@
     dispatch('deleteNodes', { treeNodes: nodes });
   }
 
-  function onDeleteNode(node: WorkspaceTreeNodeWithFullPath) {
-    onDeleteNodes([node]);
-  }
-
   function onDownload(nodes: WorkspaceTreeNodeWithFullPath[]) {
     dispatch('download', { treeNodes: nodes });
   }
 
   function onMoveNodes(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodes', { treeNodes: nodes });
+    dispatch('moveNodes', { hasReadOnlyNodes, treeNodes: nodes });
   }
 
   function onRenameNode(node: WorkspaceTreeNodeWithFullPath) {
@@ -459,7 +642,7 @@
   }
 
   function onMoveNodesToWorkspace(nodes: WorkspaceTreeNodeWithFullPath[]) {
-    dispatch('moveNodesToWorkspace', { treeNodes: nodes });
+    dispatch('moveNodesToWorkspace', { hasReadOnlyNodes, treeNodes: nodes });
   }
 
   function onContextMenuRunAction(event: CustomEvent<ActionParameterPair>, filePaths: RowId[]) {
@@ -472,6 +655,95 @@
 
   function onActionsMenuFocused(event: CustomEvent<boolean>) {
     actionsMenuFocused = event.detail;
+  }
+
+  function saveColumnStateToCookie() {
+    if (columnStates && columnStates.length > 0) {
+      setJsonCookie(COLUMN_STATE_COOKIE_NAME, columnStates);
+    }
+  }
+
+  function updateColumnState(updatedColumnStates?: ColumnState[]) {
+    const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
+    if (columnStatesToUpdate) {
+      columnStates = processNameColumnState(columnStatesToUpdate);
+      saveColumnStateToCookie();
+    }
+  }
+
+  function onColumnMoved() {
+    updateColumnState();
+  }
+
+  function onColumnPinned() {
+    updateColumnState();
+  }
+
+  function onColumnResized(event: CustomEvent<ColumnResizedEvent>) {
+    const { columns, finished, source } = event.detail;
+    if ((source === 'uiColumnResized' || source === 'sizeColumnsToFit') && finished) {
+      if (source === 'uiColumnResized' && columns) {
+        const nameColumn = columns.find(col => col.getColId() === 'name');
+        if (nameColumn) {
+          nameColumnUserWidth = nameColumn.getActualWidth();
+        }
+      }
+      updateColumnState();
+    }
+  }
+
+  async function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    const currentColumnStates = dataGrid?.getColumnState() ?? [];
+    const updatedColumnStates = currentColumnStates.map(state => ({
+      ...state,
+      hide: columns.find(col => col.field === state.colId)?.isHidden ?? state.hide,
+    }));
+    updateColumnState(updatedColumnStates);
+
+    await tick();
+    dataGrid?.sizeColumnsToFit();
+  }
+
+  function onSortChanged() {
+    updateColumnState();
+
+    const sortedColumns = columnStates
+      .filter(col => col.sort != null)
+      .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+      .map(col => ({ colId: col.colId, direction: col.sort as 'asc' | 'desc' }));
+
+    if (sortedColumns.length > 0) {
+      sortState = sortedColumns;
+    }
+  }
+
+  async function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
+    const currentColumnStates = dataGrid?.getColumnState() ?? [];
+    const updatedColumnStates = currentColumnStates.map(state => (state.colId === 'name' ? state : { ...state, hide }));
+
+    updateColumnState(updatedColumnStates);
+
+    await tick();
+    dataGrid?.sizeColumnsToFit();
+  }
+
+  function onResetColumns() {
+    nameColumnUserWidth = null;
+    deleteCookie(COLUMN_STATE_COOKIE_NAME);
+    columnStates = [
+      { colId: 'name', hide: false },
+      ...metadataColumnDefs.map(col => ({
+        colId: (col.colId ?? col.field) as string,
+        hide: col.hide ?? false,
+      })),
+    ];
+    sortState = [{ colId: 'name', direction: 'asc' }];
+  }
+
+  function onResetColumnsFromMenu() {
+    dataGrid?.resetColumns();
   }
 
   $: if (selectedTreeNodePath) {
@@ -503,8 +775,16 @@
       sizeVariant="xs"
       class="flex-1"
     />
+    <ActivityTableMenu
+      columnDefs={metadataColumnDefs}
+      {columnStates}
+      on:columns-changed={onColumnsChanged}
+      on:columns-reset={onResetColumnsFromMenu}
+      on:show-hide-all-columns={onShowHideAllColumns}
+    />
   </div>
   <BulkActionDataGrid
+    autoSizeColumnsToFit={false}
     bind:dataGrid
     bind:selectedItemId={selectedTreeNodePath}
     bind:selectedItemIds
@@ -518,6 +798,8 @@
     rowHeight={26}
     class="workspace-file-browser"
     {columnDefs}
+    {columnStates}
+    columnShiftResize
     getRowId={node => node.fullPath}
     {hasDeletePermission}
     singleItemDisplayText="File"
@@ -529,6 +811,10 @@
     isExternalFilterPresent={() => true}
     showDeleteMenu={false}
     {doesExternalFilterPass}
+    on:columnMoved={onColumnMoved}
+    on:columnPinned={onColumnPinned}
+    on:columnResized={onColumnResized}
+    on:columnsReset={onResetColumns}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}
@@ -541,6 +827,7 @@
         {hasEditPermission}
         {hasDeletePermission}
         {hasCreateActionPermission}
+        {hasReadOnlyNodes}
         on:actionsMenuFocused={onActionsMenuFocused}
         on:rename={() => contextMenuNode && onRenameNode(contextMenuNode)}
         on:move={() => onMoveNodes(effectiveSelectedNodes)}
@@ -553,6 +840,7 @@
         on:newFile={() => contextMenuNode && onNewFile(contextMenuNode)}
         on:newFolder={() => contextMenuNode && onNewFolder(contextMenuNode)}
         on:importFile={() => contextMenuNode && onImportFile(contextMenuNode)}
+        on:openFolder={() => contextMenuNode && navigateToFolder(contextMenuNode.fullPath)}
         on:openInNewTab={() => contextMenuNode && onOpenInNewTab(contextMenuNode)}
       />
     </svelte:fragment>
@@ -563,5 +851,7 @@
   :global(.workspace-file-browser .ag-root-wrapper) {
     --ag-borders: none;
     --ag-wrapper-border-radius: 0;
+    --ag-cell-horizontal-padding: calc(var(--ag-grid-size) * 2);
+    --ag-icon-size: 14px;
   }
 </style>

@@ -1,5 +1,5 @@
 /* eslint-disable sort-keys */
-import { afterAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -9,7 +9,6 @@ import {
   computeMovedFilePath,
   computeTreeFilter,
   defaultTreeSortComparator,
-  doesFilenameMatchExtension,
   findNodeByPath,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
@@ -17,6 +16,7 @@ import {
   getCommonPathPrefix,
   getSelectedFilesDisplay,
   getWorkspaceFileFolderDisplay,
+  hasReadonlyInTree,
   incrementFilename,
   joinPath,
   mapWorkspaceTreePaths,
@@ -34,6 +34,7 @@ const mockNavigator = {
 };
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
+const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -209,6 +210,10 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('WorkspaceApi', () => {
+    afterEach(() => {
+      reqWorkspaceMock.mockReset();
+    });
+
     test('createFolder', async () => {
       await WorkspaceApi.createFolder(1, 'foo/bar', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
@@ -233,7 +238,7 @@ describe('Workspace utility function tests', () => {
 
     test('deleteFile', async () => {
       await WorkspaceApi.deleteFile(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, false);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, true);
     });
 
     test('deleteFiles', async () => {
@@ -244,7 +249,7 @@ describe('Workspace utility function tests', () => {
         JSON.stringify(['foo_bar', 'baz', 'buzz']),
         null,
         undefined,
-        false,
+        true,
         false,
         {
           'Content-Type': 'application/json',
@@ -262,12 +267,63 @@ describe('Workspace utility function tests', () => {
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
     });
 
+    test('deleteFileMetadata', async () => {
+      await WorkspaceApi.deleteFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'DELETE',
+        null,
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('getFileMetadata', async () => {
+      await WorkspaceApi.getFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith('1/foo/bar.seqn', 'GET', null, null);
+    });
+
     test('getWorkspaceContents', async () => {
       await WorkspaceApi.getWorkspaceContents(1, '', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
 
       await WorkspaceApi.getWorkspaceContents(1, 'foo', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo', 'GET', null, null);
+    });
+
+    test('getWorkspaceContents with metadata', async () => {
+      await WorkspaceApi.getWorkspaceContents(1, '', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1?withMetadata=true', 'GET', null, null);
+
+      await WorkspaceApi.getWorkspaceContents(1, 'foo', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo?withMetadata=true', 'GET', null, null);
+    });
+
+    test('setFileMetadata', async () => {
+      const metadata = { readOnly: true, user: { status: 'draft' } };
+      await WorkspaceApi.setFileMetadata(1, 'foo/bar.seqn', metadata, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(metadata),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('unsetFileMetadataKeys', async () => {
+      const keys = ['readOnly', 'user.status'];
+      await WorkspaceApi.unsetFileMetadataKeys(1, 'foo/bar.seqn', keys, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        'unset/1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(keys),
+        null,
+        undefined,
+        false,
+      );
     });
 
     test('moveFile - move', async () => {
@@ -948,6 +1004,45 @@ describe('Workspace utility function tests', () => {
       expect(result.matchingPaths.size).toBe(0);
       expect(result.ancestorPaths.size).toBe(0);
     });
+
+    test('Should search metadata text fields', () => {
+      const nodesWithMetadata: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+        {
+          depth: 1,
+          fullPath: 'folder/file.txt',
+          hasChildren: false,
+          metadata: { createdBy: 'alice', lastEditedBy: 'bob', version: '2.0' },
+          name: 'file.txt',
+          type: WorkspaceContentType.Text,
+        },
+        {
+          depth: 0,
+          fullPath: 'other.seq',
+          hasChildren: false,
+          metadata: { user: { mission: 'europa-clipper' } },
+          name: 'other.seq',
+          type: WorkspaceContentType.Sequence,
+        },
+      ];
+
+      // Search by lastEditedBy
+      const byEditor = computeTreeFilter(nodesWithMetadata, 'bob');
+      expect(byEditor.matchingPaths.has('folder/file.txt')).toBe(true);
+      expect(byEditor.ancestorPaths.has('folder')).toBe(true);
+
+      // Search by createdBy
+      const byCreator = computeTreeFilter(nodesWithMetadata, 'alice');
+      expect(byCreator.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by version
+      const byVersion = computeTreeFilter(nodesWithMetadata, '2.0');
+      expect(byVersion.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by user metadata
+      const byUserMeta = computeTreeFilter(nodesWithMetadata, 'europa');
+      expect(byUserMeta.matchingPaths.has('other.seq')).toBe(true);
+    });
   });
 
   describe('shouldNodeBeVisible', () => {
@@ -1385,93 +1480,6 @@ describe('Workspace utility function tests', () => {
     });
   });
 
-  describe('doesFileMatchExtension', () => {
-    test('Should match extension without leading dot', () => {
-      expect(doesFilenameMatchExtension('txt', 'file.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('seq', 'test.seq')).toBe(true);
-      expect(doesFilenameMatchExtension('json', 'data.json')).toBe(true);
-      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.thing.seqn.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn.txt.thing')).toBe(false);
-      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.seqn')).toBe(false);
-      expect(doesFilenameMatchExtension('seqn.txt', 'sequence.txt')).toBe(false);
-      expect(doesFilenameMatchExtension('seqn.txt', 'seqn.txt')).toBe(false);
-    });
-
-    test('Should match extension with leading dot', () => {
-      expect(doesFilenameMatchExtension('.txt', 'file.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('.seq', 'test.seq')).toBe(true);
-      expect(doesFilenameMatchExtension('.json', 'data.json')).toBe(true);
-    });
-
-    test('Should be case-insensitive', () => {
-      expect(doesFilenameMatchExtension('TXT', 'file.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('txt', 'file.TXT')).toBe(true);
-      expect(doesFilenameMatchExtension('TxT', 'file.TxT')).toBe(true);
-      expect(doesFilenameMatchExtension('SEQ', 'test.seq')).toBe(true);
-    });
-
-    test('Should not match wrong extension', () => {
-      expect(doesFilenameMatchExtension('txt', 'file.json')).toBe(false);
-      expect(doesFilenameMatchExtension('seq', 'test.txt')).toBe(false);
-      expect(doesFilenameMatchExtension('json', 'data.xml')).toBe(false);
-    });
-
-    test('Should only match extension at the end of filename', () => {
-      expect(doesFilenameMatchExtension('txt', 'file.txt.bak')).toBe(false);
-      expect(doesFilenameMatchExtension('txt', 'txt.json')).toBe(false);
-    });
-
-    test('Should handle files with multiple dots', () => {
-      expect(doesFilenameMatchExtension('js', 'script.min.js')).toBe(true);
-      expect(doesFilenameMatchExtension('json', 'config.test.json')).toBe(true);
-      expect(doesFilenameMatchExtension('txt', 'my.file.name.txt')).toBe(true);
-    });
-
-    test('Should not match files without extension', () => {
-      expect(doesFilenameMatchExtension('txt', 'README')).toBe(false);
-      expect(doesFilenameMatchExtension('js', 'Makefile')).toBe(false);
-    });
-
-    test('Should not match partial extension', () => {
-      expect(doesFilenameMatchExtension('tx', 'file.txt')).toBe(false);
-      expect(doesFilenameMatchExtension('t', 'file.txt')).toBe(false);
-      expect(doesFilenameMatchExtension('son', 'file.json')).toBe(false);
-    });
-
-    test('Should handle empty filename', () => {
-      expect(doesFilenameMatchExtension('txt', '')).toBe(false);
-    });
-
-    test('Should handle empty extension', () => {
-      expect(doesFilenameMatchExtension('', 'file.')).toBe(true); // matches files ending with a dot
-      expect(doesFilenameMatchExtension('', 'file.txt')).toBe(false);
-      expect(doesFilenameMatchExtension('', 'file')).toBe(false);
-    });
-
-    test('Should handle filename with path', () => {
-      expect(doesFilenameMatchExtension('txt', 'path/to/file.txt')).toBe(true);
-      expect(doesFilenameMatchExtension('seq', 'folder/subfolder/test.seq')).toBe(true);
-      expect(doesFilenameMatchExtension('json', 'a/b/c/data.json')).toBe(true);
-    });
-
-    test('Should handle hidden files (starting with dot)', () => {
-      expect(doesFilenameMatchExtension('json', '.config.json')).toBe(true);
-      expect(doesFilenameMatchExtension('txt', '.gitignore.txt')).toBe(true);
-    });
-
-    test('Should not match if extension appears in middle of filename', () => {
-      expect(doesFilenameMatchExtension('txt', 'file-txt.json')).toBe(false);
-      expect(doesFilenameMatchExtension('seq', 'sequential.js')).toBe(false);
-    });
-
-    test('Should match exact extension only', () => {
-      expect(doesFilenameMatchExtension('js', 'file.js')).toBe(true);
-      expect(doesFilenameMatchExtension('js', 'file.json')).toBe(false);
-      expect(doesFilenameMatchExtension('js', 'file.jsx')).toBe(false);
-    });
-  });
-
   describe('getCommonPathPrefix', () => {
     test('Should return empty string for empty array', () => {
       const result = getCommonPathPrefix([]);
@@ -1608,6 +1616,170 @@ describe('Workspace utility function tests', () => {
 
     test('Should replace when only extension matches without filename', () => {
       expect(replaceFileExtension('.txt', 'txt', 'json')).toBe('.json');
+    });
+  });
+
+  describe('hasReadonlyInTree', () => {
+    test('Should return false for a file without metadata', () => {
+      const node: WorkspaceTreeNode = {
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return false for a file with metadata but readOnly is false', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: false,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a file with readOnly set to true', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: true,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return false for a directory with all non-readonly files', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            name: 'file2.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a directory containing a readonly file', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            metadata: {
+              readOnly: true,
+            },
+            name: 'readonly.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for nested directory with readonly file in child', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            contents: [
+              {
+                metadata: {
+                  readOnly: true,
+                },
+                name: 'readonly.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'subfolder',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'parent',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for complex tree with readonly in one branch', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            contents: [
+              {
+                name: 'file1.txt',
+                type: WorkspaceContentType.Text,
+              },
+              {
+                name: 'file2.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch1',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                contents: [
+                  {
+                    metadata: {
+                      readOnly: true,
+                    },
+                    name: 'readonly.seq',
+                    type: WorkspaceContentType.Sequence,
+                  },
+                ],
+                name: 'subfolder',
+                type: WorkspaceContentType.Directory,
+              },
+            ],
+            name: 'branch2',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                name: 'file3.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch3',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'root',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
     });
   });
 });

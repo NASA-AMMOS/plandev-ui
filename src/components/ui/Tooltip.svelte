@@ -47,9 +47,9 @@
   /** Keyboard shortcut to show in the tooltip */
   export let shortcut: string = '';
   /** Delay in ms before showing tooltip */
-  export let openDelay: number = 700;
+  export let openDelay: number = 300;
   /** Delay in ms before hiding tooltip */
-  export let closeDelay: number = 300;
+  export let closeDelay: number = 200;
   /** Class to add to wrapping span element */
   export let wrapperClass: string = '';
 
@@ -60,9 +60,13 @@
   let openTimeout: ReturnType<typeof setTimeout>;
   let closeTimeout: ReturnType<typeof setTimeout>;
 
-  function handleFocusIn() {
-    clearTimeout(closeTimeout);
-    openTimeout = setTimeout(() => (open = true), openDelay);
+  function handleFocusIn(event: FocusEvent) {
+    // Only open tooltip for keyboard focus, not mouse click focus
+    const target = event.target as HTMLElement | null;
+    if (target?.matches(':focus-visible')) {
+      clearTimeout(closeTimeout);
+      openTimeout = setTimeout(() => (open = true), openDelay);
+    }
   }
 
   function handleFocusOut() {

@@ -5,10 +5,15 @@ import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
 import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
-import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import type {
+  WorkspaceFileMetadata,
+  WorkspaceTreeMap,
+  WorkspaceTreeNode,
+  WorkspaceTreeNodeWithFullPath,
+} from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace } from './requests';
+import { reqWorkspace, reqWorkspaceMetadata } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -401,7 +406,10 @@ export const WorkspaceApi = {
     return reqWorkspace<number>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
   },
   async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
-    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
+    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, true);
+  },
+  async deleteFileMetadata(workspaceId: number, filePath: string, user: User | null): Promise<void> {
+    return reqWorkspaceMetadata<void>(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
   },
   async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
     return reqWorkspace(
@@ -410,7 +418,7 @@ export const WorkspaceApi = {
       JSON.stringify(filePaths),
       user,
       undefined,
-      false,
+      true,
       false,
       {
         'Content-Type': 'application/json',
@@ -426,12 +434,21 @@ export const WorkspaceApi = {
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
   },
+  async getFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<WorkspaceFileMetadata | null> {
+    return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
+  },
   async getWorkspaceContents(
     workspaceId: number,
     path: string = '',
     user: User | null,
+    withMetadata: boolean = false,
   ): Promise<WorkspaceTreeNode[] | null> {
-    return reqWorkspace<WorkspaceTreeNode[]>(`${joinPath([workspaceId, path])}`, 'GET', null, user);
+    const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
+    return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
   },
   async moveFile(
     workspaceId: number,
@@ -544,6 +561,31 @@ export const WorkspaceApi = {
       false,
     );
   },
+  async setFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
+    user: User | null,
+  ): Promise<void> {
+    return reqWorkspaceMetadata<void>(
+      joinPath([workspaceId, filePath]),
+      'POST',
+      JSON.stringify(metadata),
+      user,
+      undefined,
+      false,
+    );
+  },
+  async unsetFileMetadataKeys(workspaceId: number, filePath: string, keys: string[], user: User | null): Promise<void> {
+    return reqWorkspaceMetadata<void>(
+      joinPath(['unset', workspaceId, filePath]),
+      'POST',
+      JSON.stringify(keys),
+      user,
+      undefined,
+      false,
+    );
+  },
   async uploadFile(
     workspaceId: number,
     targetDirectory: string,
@@ -616,7 +658,6 @@ export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): 
 
   let currentNodes = nodes;
   let currentNode: WorkspaceTreeNode | null = null;
-
   for (const part of pathParts) {
     currentNode = currentNodes.find(n => n.name === part) ?? null;
     if (!currentNode) {
@@ -652,7 +693,16 @@ export function computeTreeFilter(nodes: WorkspaceTreeNodeWithFullPath[], filter
 
   for (const node of nodes) {
     const name = node.name?.toLowerCase() ?? '';
-    if (name.includes(lowerFilter)) {
+    const metadata = node.metadata;
+    const matchesName = name.includes(lowerFilter);
+    const matchesMetadata =
+      metadata &&
+      ((metadata.lastEditedBy?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.createdBy?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.version?.toLowerCase().includes(lowerFilter) ?? false) ||
+        (metadata.user ? JSON.stringify(metadata.user).toLowerCase().includes(lowerFilter) : false));
+
+    if (matchesName || matchesMetadata) {
       matchingPaths.add(node.fullPath);
 
       // Add all ancestors to keep them visible
@@ -797,6 +847,25 @@ export function getCommonPathPrefix(paths: string[]): string {
   }
 
   return commonParts.join('/');
+}
+
+/**
+ * Recursively checks if a node or any of its descendants have readonly files
+ * @param node The WorkspaceTreeNode to check
+ * @returns true if the node or any descendant has readOnly metadata set to true
+ */
+export function hasReadonlyInTree(node: WorkspaceTreeNode): boolean {
+  // Check if the current node itself is readonly
+  if (node.metadata?.readOnly) {
+    return true;
+  }
+
+  // If it's a directory, recursively check all contents
+  if (node.type === WorkspaceContentType.Directory && node.contents) {
+    return node.contents.some(childNode => hasReadonlyInTree(childNode));
+  }
+
+  return false;
 }
 
 /**

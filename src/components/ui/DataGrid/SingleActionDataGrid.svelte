@@ -32,6 +32,7 @@
   export let autoSizeColumnsToFit: boolean = true;
   export { className as class };
   export let columnDefs: ColDef[];
+  export let columnShiftResize: boolean = false;
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
@@ -153,6 +154,7 @@
   class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
+  {columnShiftResize}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
   {filterExpression}

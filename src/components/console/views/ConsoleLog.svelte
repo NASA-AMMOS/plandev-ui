@@ -21,9 +21,13 @@
   let open: boolean = false;
   let expansionPadding: number = 0;
   let level: string = '';
+  let renderedMessage: string = '';
 
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
+  // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
+  $: renderedMessage =
+    !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
   onMount(() => {
     // On mount, calculate the amount of padding needed for the expansion content
@@ -129,14 +133,9 @@
           </div>
         </div>
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          {#if !log.message.trim() && log.data && !(expandable && open)}
-            <pre class="m-0 w-full overflow-hidden text-ellipsis break-words"><slot name="message" {log}
-                >{safeStringify(log.data)}</slot
-              ></pre>
-          {:else}
-            <pre class="m-0 whitespace-pre-wrap break-words"><slot name="message" {log}>{log.message ?? ''}</slot></pre>
-          {/if}
-
+          <slot name="message" {log} message={renderedMessage} {expandable} {open}>
+            {renderedMessage}
+          </slot>
           {#if isLogMessage(log) && typeof log.duration === 'number'}
             <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
           {/if}

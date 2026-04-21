@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { File, FileJson2, Folder, FolderOpen } from 'lucide-svelte';
+  import { File, FileJson2, FileLock, Folder, FolderOpen } from 'lucide-svelte';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { WorkspaceTreeNode } from '../../../types/workspace-tree-view';
 
@@ -17,6 +17,8 @@
     {:else}
       <Folder size={16} />
     {/if}
+  {:else if treeNode.metadata?.readOnly}
+    <FileLock {size} />
   {:else if treeNode.type === WorkspaceContentType.Sequence}
     <FileJson2 {size} />
   {:else if treeNode.type === WorkspaceContentType.Json}
