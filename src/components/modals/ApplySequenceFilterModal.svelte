@@ -96,9 +96,11 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={confirmIsDisabled} on:keydown={onInputKeydown} on:click={onConfirm}> Confirm </button>
+    <button class="st-button" disabled={confirmIsDisabled} on:keydown={onInputKeydown} on:click={onConfirm}>
+      Confirm
+    </button>
   </ModalFooter>
-</Modal>
+</Modal>``
 
 <style>
-</style>``
+</style>
