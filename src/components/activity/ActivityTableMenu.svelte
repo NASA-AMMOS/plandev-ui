@@ -25,6 +25,7 @@
 
   const dispatch = createEventDispatcher<{
     'columns-changed': { columns: ColumnMenuItem[] };
+    'reset-columns': void;
     'show-hide-all-columns': { hide: boolean };
   }>();
 
@@ -62,6 +63,10 @@
 
   function onHideAllColumns() {
     dispatch('show-hide-all-columns', { hide: true });
+  }
+
+  function onResetColumns() {
+    dispatch('reset-columns');
   }
 
   function onShowAllColumns() {
@@ -108,9 +113,12 @@
           >
         {/each}
       </div>
-      <div class="mb-0.5 mt-2 flex gap-1">
+      <div class="mb-2 mt-2 flex gap-1">
         <Button class="flex-1" variant="outline" on:click={onShowAllColumns}>Show All</Button>
         <Button class="flex-1" variant="outline" on:click={onHideAllColumns}>Hide All</Button>
+      </div>
+      <div class="border-t border-border pt-2">
+        <Button class="w-full" variant="outline" on:click={onResetColumns}>Reset Column Layout</Button>
       </div>
     </Select.Content>
   </Select.Root>

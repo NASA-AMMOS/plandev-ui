@@ -78,23 +78,11 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  // Strip width and flex from the Name column so applyColumnState never overrides
-  // its flex:1 column definition. flex:null in saved state explicitly clears flex.
-  function preserveNameColumnFlex(states: ColumnState[]): ColumnState[] {
-    return states.map(state => {
-      if (state.colId === 'name') {
-        const { flex: _f, width: _w, ...rest } = state;
-        return rest;
-      }
-      return state;
-    });
-  }
+  const savedColumnStates = getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [];
 
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
-  let columnStates: ColumnState[] = preserveNameColumnFlex(
-    getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [],
-  );
+  let columnStates: ColumnState[] = processNameColumnState(savedColumnStates);
   let contextMenuNode: WorkspaceTreeNodeWithFullPath | null = null;
   let dataGrid: DataGrid<WorkspaceTreeNodeWithFullPath> | undefined = undefined;
   let hasEditPermission: boolean = false;
@@ -103,6 +91,7 @@
   let hasReadOnlyNodes: boolean = false;
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let expandedPaths: Set<string> = new Set();
+  let nameColumnUserWidth: number | null = savedColumnStates.find(s => s.colId === 'name')?.width ?? null;
   let selectedItemIds: RowId[] = [];
 
   // Sort state - captured from AG Grid's sort UI, used to pre-sort data hierarchically
@@ -153,6 +142,22 @@
       return `${diffMonths}mo ago`;
     }
     return `${Math.floor(diffMonths / 12)}y ago`;
+  }
+
+  // Process Name column state: if the user has manually resized it, persist the
+  // width (and clear flex); otherwise strip width & flex so the column def's flex:1 applies.
+  function processNameColumnState(states: ColumnState[]): ColumnState[] {
+    return states.map(state => {
+      if (state.colId === 'name') {
+        if (nameColumnUserWidth != null) {
+          const { flex: _f, width: _w, ...rest } = state;
+          return { ...rest, width: nameColumnUserWidth };
+        }
+        const { flex: _f, width: _w, ...rest } = state;
+        return rest;
+      }
+      return state;
+    });
   }
 
   function dateTimeCellRenderer(params: ICellRendererParams<WorkspaceTreeNodeWithFullPath>) {
@@ -659,7 +664,7 @@
   function updateColumnState(updatedColumnStates?: ColumnState[]) {
     const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
     if (columnStatesToUpdate) {
-      columnStates = preserveNameColumnFlex(columnStatesToUpdate);
+      columnStates = processNameColumnState(columnStatesToUpdate);
       saveColumnStateToCookie();
     }
   }
@@ -673,8 +678,14 @@
   }
 
   function onColumnResized(event: CustomEvent<ColumnResizedEvent>) {
-    const { source, finished } = event.detail;
+    const { columns, finished, source } = event.detail;
     if ((source === 'uiColumnResized' || source === 'sizeColumnsToFit') && finished) {
+      if (source === 'uiColumnResized' && columns) {
+        const nameColumn = columns.find(col => col.getColId() === 'name');
+        if (nameColumn) {
+          nameColumnUserWidth = nameColumn.getActualWidth();
+        }
+      }
       updateColumnState();
     }
   }
@@ -717,6 +728,7 @@
   }
 
   function onResetColumns() {
+    nameColumnUserWidth = null;
     deleteCookie(COLUMN_STATE_COOKIE_NAME);
     columnStates = [
       { colId: 'name', hide: false },
@@ -725,6 +737,11 @@
         hide: col.hide ?? false,
       })),
     ];
+    sortState = [{ colId: 'name', direction: 'asc' }];
+  }
+
+  function onResetColumnsFromMenu() {
+    dataGrid?.resetColumns();
   }
 
   $: if (selectedTreeNodePath) {
@@ -760,6 +777,7 @@
       columnDefs={metadataColumnDefs}
       {columnStates}
       on:columns-changed={onColumnsChanged}
+      on:reset-columns={onResetColumnsFromMenu}
       on:show-hide-all-columns={onShowHideAllColumns}
     />
   </div>

@@ -89,6 +89,9 @@
   export function sizeColumnsToFit(params?: ISizeColumnsToFitParams) {
     gridApi?.sizeColumnsToFit(params);
   }
+  export function resetColumns() {
+    onResetColumns();
+  }
 
   export function onFilterChanged() {
     gridApi?.onFilterChanged();
