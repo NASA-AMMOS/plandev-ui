@@ -277,8 +277,6 @@ export async function showImportWorkspaceFileModal(
   inputLanguageName: string,
   outputLanguageExtensions: string[],
   startingPath: string,
-  workspace: Workspace | null | undefined,
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -292,8 +290,6 @@ export async function showImportWorkspaceFileModal(
             inputLanguageName,
             outputLanguageExtensions,
             startingPath,
-            user,
-            workspace,
           },
           target,
         });
@@ -502,6 +498,7 @@ export async function showMergeReviewEndedModal(
 export async function showMoveItemToWorkspaceModal(
   currentWorkspace: Workspace,
   originalNodes: WorkspaceTreeNodeWithFullPath[],
+  hasReadOnlyNodes: boolean,
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -510,7 +507,7 @@ export async function showMoveItemToWorkspaceModal(
 
       if (target) {
         const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
-          props: { currentWorkspace, originalNodes, user },
+          props: { currentWorkspace, originalNodes, selectionHasReadOnlyNodes: hasReadOnlyNodes, user },
           target,
         });
         target.resolve = resolve;
@@ -552,7 +549,7 @@ export async function showMoveWorkspaceItemModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   originalNodes: WorkspaceTreeNodeWithFullPath[],
-  user: User | null,
+  hasReadOnlyNodes: boolean,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -564,7 +561,7 @@ export async function showMoveWorkspaceItemModal(
             currentWorkspace,
             currentWorkspaceContents,
             originalNodes,
-            user,
+            selectionHasReadOnlyNodes: hasReadOnlyNodes,
           },
           target,
         });
@@ -600,7 +597,6 @@ export async function showNewWorkspaceSequenceModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -612,7 +608,6 @@ export async function showNewWorkspaceSequenceModal(
             currentWorkspace,
             currentWorkspaceContents,
             startingPath,
-            user,
           },
           target,
         });
@@ -645,7 +640,6 @@ export async function showNewWorkspaceFolderModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -657,7 +651,6 @@ export async function showNewWorkspaceFolderModal(
             currentWorkspace,
             currentWorkspaceContents,
             startingPath,
-            user,
           },
           target,
         });

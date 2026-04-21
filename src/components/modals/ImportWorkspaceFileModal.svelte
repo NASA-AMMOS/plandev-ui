@@ -4,7 +4,6 @@
   import { Checkbox } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
-  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
@@ -22,8 +21,6 @@
   export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
-  export let workspace: Workspace | null | undefined = null;
-  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -122,11 +119,8 @@
             <WorkspaceTreeView
               selectedTreeNodePath={targetDirectory}
               treeNode={currentWorkspaceContents}
-              enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
-              {workspace}
-              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

@@ -1,5 +1,5 @@
 /* eslint-disable sort-keys */
-import { afterAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -16,6 +16,7 @@ import {
   getCommonPathPrefix,
   getSelectedFilesDisplay,
   getWorkspaceFileFolderDisplay,
+  hasReadonlyInTree,
   incrementFilename,
   joinPath,
   mapWorkspaceTreePaths,
@@ -32,6 +33,7 @@ const mockNavigator = {
 };
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
+const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -207,6 +209,10 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('WorkspaceApi', () => {
+    afterEach(() => {
+      reqWorkspaceMock.mockReset();
+    });
+
     test('createFolder', async () => {
       await WorkspaceApi.createFolder(1, 'foo/bar', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
@@ -231,7 +237,7 @@ describe('Workspace utility function tests', () => {
 
     test('deleteFile', async () => {
       await WorkspaceApi.deleteFile(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, false);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'DELETE', null, null, undefined, true);
     });
 
     test('deleteFiles', async () => {
@@ -242,7 +248,7 @@ describe('Workspace utility function tests', () => {
         JSON.stringify(['foo_bar', 'baz', 'buzz']),
         null,
         undefined,
-        false,
+        true,
         false,
         {
           'Content-Type': 'application/json',
@@ -260,12 +266,63 @@ describe('Workspace utility function tests', () => {
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
     });
 
+    test('deleteFileMetadata', async () => {
+      await WorkspaceApi.deleteFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'DELETE',
+        null,
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('getFileMetadata', async () => {
+      await WorkspaceApi.getFileMetadata(1, 'foo/bar.seqn', null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith('1/foo/bar.seqn', 'GET', null, null);
+    });
+
     test('getWorkspaceContents', async () => {
       await WorkspaceApi.getWorkspaceContents(1, '', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1', 'GET', null, null);
 
       await WorkspaceApi.getWorkspaceContents(1, 'foo', null);
       expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo', 'GET', null, null);
+    });
+
+    test('getWorkspaceContents with metadata', async () => {
+      await WorkspaceApi.getWorkspaceContents(1, '', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1?withMetadata=true', 'GET', null, null);
+
+      await WorkspaceApi.getWorkspaceContents(1, 'foo', null, true);
+      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo?withMetadata=true', 'GET', null, null);
+    });
+
+    test('setFileMetadata', async () => {
+      const metadata = { readOnly: true, user: { status: 'draft' } };
+      await WorkspaceApi.setFileMetadata(1, 'foo/bar.seqn', metadata, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        '1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(metadata),
+        null,
+        undefined,
+        false,
+      );
+    });
+
+    test('unsetFileMetadataKeys', async () => {
+      const keys = ['readOnly', 'user.status'];
+      await WorkspaceApi.unsetFileMetadataKeys(1, 'foo/bar.seqn', keys, null);
+      expect(reqWorkspaceMetadataMock).toHaveBeenLastCalledWith(
+        'unset/1/foo/bar.seqn',
+        'POST',
+        JSON.stringify(keys),
+        null,
+        undefined,
+        false,
+      );
     });
 
     test('moveFile - move', async () => {
@@ -946,6 +1003,45 @@ describe('Workspace utility function tests', () => {
       expect(result.matchingPaths.size).toBe(0);
       expect(result.ancestorPaths.size).toBe(0);
     });
+
+    test('Should search metadata text fields', () => {
+      const nodesWithMetadata: WorkspaceTreeNodeWithFullPath[] = [
+        { depth: 0, fullPath: 'folder', hasChildren: true, name: 'folder', type: WorkspaceContentType.Directory },
+        {
+          depth: 1,
+          fullPath: 'folder/file.txt',
+          hasChildren: false,
+          metadata: { createdBy: 'alice', lastEditedBy: 'bob', version: '2.0' },
+          name: 'file.txt',
+          type: WorkspaceContentType.Text,
+        },
+        {
+          depth: 0,
+          fullPath: 'other.seq',
+          hasChildren: false,
+          metadata: { user: { mission: 'europa-clipper' } },
+          name: 'other.seq',
+          type: WorkspaceContentType.Sequence,
+        },
+      ];
+
+      // Search by lastEditedBy
+      const byEditor = computeTreeFilter(nodesWithMetadata, 'bob');
+      expect(byEditor.matchingPaths.has('folder/file.txt')).toBe(true);
+      expect(byEditor.ancestorPaths.has('folder')).toBe(true);
+
+      // Search by createdBy
+      const byCreator = computeTreeFilter(nodesWithMetadata, 'alice');
+      expect(byCreator.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by version
+      const byVersion = computeTreeFilter(nodesWithMetadata, '2.0');
+      expect(byVersion.matchingPaths.has('folder/file.txt')).toBe(true);
+
+      // Search by user metadata
+      const byUserMeta = computeTreeFilter(nodesWithMetadata, 'europa');
+      expect(byUserMeta.matchingPaths.has('other.seq')).toBe(true);
+    });
   });
 
   describe('shouldNodeBeVisible', () => {
@@ -1432,6 +1528,170 @@ describe('Workspace utility function tests', () => {
     test('Should handle multiple paths with varying common depths', () => {
       const result = getCommonPathPrefix(['a/b/c/file1.txt', 'a/b/file2.txt', 'a/b/d/file3.txt']);
       expect(result).toBe('a/b');
+    });
+  });
+
+  describe('hasReadonlyInTree', () => {
+    test('Should return false for a file without metadata', () => {
+      const node: WorkspaceTreeNode = {
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return false for a file with metadata but readOnly is false', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: false,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a file with readOnly set to true', () => {
+      const node: WorkspaceTreeNode = {
+        metadata: {
+          readOnly: true,
+        },
+        name: 'file.txt',
+        type: WorkspaceContentType.Text,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return false for a directory with all non-readonly files', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            name: 'file2.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(false);
+    });
+
+    test('Should return true for a directory containing a readonly file', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            metadata: {
+              readOnly: false,
+            },
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            metadata: {
+              readOnly: true,
+            },
+            name: 'readonly.txt',
+            type: WorkspaceContentType.Text,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for nested directory with readonly file in child', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            name: 'file1.txt',
+            type: WorkspaceContentType.Text,
+          },
+          {
+            contents: [
+              {
+                metadata: {
+                  readOnly: true,
+                },
+                name: 'readonly.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'subfolder',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'parent',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
+    });
+
+    test('Should return true for complex tree with readonly in one branch', () => {
+      const node: WorkspaceTreeNode = {
+        contents: [
+          {
+            contents: [
+              {
+                name: 'file1.txt',
+                type: WorkspaceContentType.Text,
+              },
+              {
+                name: 'file2.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch1',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                contents: [
+                  {
+                    metadata: {
+                      readOnly: true,
+                    },
+                    name: 'readonly.seq',
+                    type: WorkspaceContentType.Sequence,
+                  },
+                ],
+                name: 'subfolder',
+                type: WorkspaceContentType.Directory,
+              },
+            ],
+            name: 'branch2',
+            type: WorkspaceContentType.Directory,
+          },
+          {
+            contents: [
+              {
+                name: 'file3.txt',
+                type: WorkspaceContentType.Text,
+              },
+            ],
+            name: 'branch3',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'root',
+        type: WorkspaceContentType.Directory,
+      };
+
+      expect(hasReadonlyInTree(node)).toBe(true);
     });
   });
 });

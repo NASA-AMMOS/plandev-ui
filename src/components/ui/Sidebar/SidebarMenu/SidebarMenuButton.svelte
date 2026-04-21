@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Button, cn, Tooltip } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { tv, type VariantProps } from 'tailwind-variants';
+  import Tooltip from '../../Tooltip.svelte';
 
   const dispatch = createEventDispatcher<{
     click: { event: MouseEvent; wasActive: boolean };
@@ -9,7 +10,7 @@
 
   // Tailwind variants definition
   const sidebarMenuButtonVariants = tv({
-    base: 'peer/menu-button outline-hidden group-has-data-[sidebar=menu-action]/menu-item:pr-8 grid w-full min-w-0 grid-cols-[auto_auto_1fr] items-center gap-1 overflow-hidden rounded-md p-2 text-left text-sm ring-inset transition-[width,height,padding] focus-visible:ring-2 focus-visible:ring-ring active:bg-background  active:text-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[state=active]:border data-[active=true]:bg-background data-[active=true]:font-medium data-[active=true]:text-[var(--sidebar-accent-foreground)] data-[active=true]:shadow-[inset_0_-1px_0_0_var(--sidebar-border)] data-[active=false]:hover:bg-[var(--sidebar-accent)] data-[active=false]:hover:text-[var(--sidebar-accent-foreground)] data-[state=open]:hover:text-[var(--sidebar-accent-foreground)] group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+    base: 'peer/menu-button outline-hidden group-has-data-[sidebar=menu-action]/menu-item:pr-8 grid w-full min-w-0 grid-cols-[auto_auto_1fr] items-center gap-1 overflow-hidden rounded-md p-2 text-left text-sm ring-inset transition-[width,height,padding] focus-visible:ring-2 focus-visible:ring-ring  active:bg-background active:text-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[state=active]:border data-[active=true]:bg-background data-[active=true]:font-medium data-[active=true]:text-[var(--sidebar-accent-foreground)] data-[active=true]:shadow-[inset_0_-1px_0_0_var(--sidebar-border),inset_0_1px_0_0_var(--sidebar-border)] first:data-[active=true]:shadow-[inset_0_-1px_0_0_var(--sidebar-border)] data-[active=false]:hover:bg-[var(--sidebar-accent)] data-[active=false]:hover:text-[var(--sidebar-accent-foreground)] data-[state=open]:hover:text-[var(--sidebar-accent-foreground)] group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
     defaultVariants: {
       size: 'default',
       variant: 'default',
@@ -48,32 +49,18 @@
   }
 </script>
 
-{#if showTooltip}
-  <Tooltip.Root>
-    <Tooltip.Trigger asChild let:builder>
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        bind:this={ref}
-        aria-label={tooltipContent}
-        data-slot="sidebar-menu-button"
-        data-sidebar="menu-button"
-        data-size={size}
-        data-active={isActive}
-        class={cn(buttonClass, className)}
-        on:click={handleClick}
-      >
-        <slot />
-      </Button>
-    </Tooltip.Trigger>
-    <Tooltip.Content>
-      {tooltipContent}
-    </Tooltip.Content>
-  </Tooltip.Root>
-{:else}
+<Tooltip
+  content={tooltipContent}
+  disabled={!showTooltip}
+  openDelay={0}
+  closeDelay={0}
+  side="right"
+  wrapperClass="w-full"
+>
   <Button
     variant="ghost"
     bind:this={ref}
+    aria-label={tooltipContent || undefined}
     data-slot="sidebar-menu-button"
     data-sidebar="menu-button"
     data-size={size}
@@ -83,4 +70,4 @@
   >
     <slot />
   </Button>
-{/if}
+</Tooltip>

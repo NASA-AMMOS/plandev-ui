@@ -2,12 +2,13 @@
 
 <script lang="ts">
   import { ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import { AlignHorizontalSpaceAround, Expand } from 'lucide-svelte';
+  import { AlignHorizontalSpaceAround, Expand, RotateCcw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
   const dispatch = createEventDispatcher<{
     autoSizeContent: void;
     autoSizeSpace: void;
+    columnsReset: void;
   }>();
 
   function onAutoSizeContent() {
@@ -16,6 +17,10 @@
 
   function onAutoSizeSpace() {
     dispatch('autoSizeSpace');
+  }
+
+  function onResetColumns() {
+    dispatch('columnsReset');
   }
 </script>
 
@@ -29,5 +34,11 @@
   <div class="flex items-center gap-2">
     <Expand size={14} />
     Fit Columns to Available Space
+  </div>
+</ContextMenu.Item>
+<ContextMenu.Item on:click={onResetColumns} size="sm">
+  <div class="flex items-center gap-2">
+    <RotateCcw size={14} />
+    Reset Column Layout
   </div>
 </ContextMenu.Item>
