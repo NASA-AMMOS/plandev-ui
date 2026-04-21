@@ -779,7 +779,7 @@
       columnDefs={metadataColumnDefs}
       {columnStates}
       on:columns-changed={onColumnsChanged}
-      on:reset-columns={onResetColumnsFromMenu}
+      on:columns-reset={onResetColumnsFromMenu}
       on:show-hide-all-columns={onShowHideAllColumns}
     />
   </div>
@@ -814,7 +814,7 @@
     on:columnMoved={onColumnMoved}
     on:columnPinned={onColumnPinned}
     on:columnResized={onColumnResized}
-    on:resetColumns={onResetColumns}
+    on:columnsReset={onResetColumns}
     on:rowDoubleClicked={onRowDoubleClicked}
     on:cellContextMenu={onContextMenu}
     on:cellContextMenuHide={onContextMenuHide}

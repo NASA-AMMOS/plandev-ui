@@ -86,22 +86,8 @@
       Open in New Tab
     </ContextMenu.Item>
     <ContextMenu.Separator />
-    <div
-      use:permissionHandler={{
-        hasPermission:
-          hasEditPermission && !(selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes),
-        permissionError: editError,
-      }}
-    >
-      <ContextMenu.Item
-        disabled={!hasEditPermission ||
-          (selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory && hasReadOnlyNodes)}
-        size="sm"
-        on:click={() => dispatch('rename')}
-        aria-label="Rename"
-      >
-        Rename
-      </ContextMenu.Item>
+    <div>
+      <ContextMenu.Item size="sm" on:click={() => dispatch('rename')} aria-label="Rename">Rename</ContextMenu.Item>
     </div>
   {/if}
   <div

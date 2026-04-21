@@ -8,7 +8,7 @@
   const dispatch = createEventDispatcher<{
     autoSizeContent: void;
     autoSizeSpace: void;
-    resetColumns: void;
+    columnsReset: void;
   }>();
 
   function onAutoSizeContent() {
@@ -20,7 +20,7 @@
   }
 
   function onResetColumns() {
-    dispatch('resetColumns');
+    dispatch('columnsReset');
   }
 </script>
 

@@ -17,9 +17,9 @@
     columnResized: CustomEvent<ColumnResizedEvent<RowData>>;
     columnStateChange: CustomEvent<ColumnState[] | undefined>;
     columnVisible: CustomEvent<ColumnVisibleEvent<RowData>>;
+    columnsReset: void;
     filterChanged: CustomEvent<{ [key: string]: any } | undefined>;
     gridSizeChanged: CustomEvent<GridSizeChangedEvent<RowData>>;
-    resetColumns: void;
     rowClicked: CustomEvent<DataGridRowSelection<RowData>>;
     rowDoubleClicked: CustomEvent<DataGridRowDoubleClick<RowData>>;
     rowSelected: CustomEvent<DataGridRowSelection<RowData>>;
@@ -356,7 +356,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   function onResetColumns() {
     gridApi?.resetColumnState();
     gridApi?.sizeColumnsToFit();
-    dispatch('resetColumns');
+    dispatch('columnsReset');
   }
 
   function onColumnStateChange() {
@@ -625,7 +625,7 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   <ColumnResizeContextMenu
     on:autoSizeContent={onAutoSizeContent}
     on:autoSizeSpace={onAutoSizeSpace}
-    on:resetColumns={onResetColumns}
+    on:columnsReset={onResetColumns}
   />
 </ContextMenuInternal>
 

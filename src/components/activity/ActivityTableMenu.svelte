@@ -25,7 +25,7 @@
 
   const dispatch = createEventDispatcher<{
     'columns-changed': { columns: ColumnMenuItem[] };
-    'reset-columns': void;
+    'columns-reset': void;
     'show-hide-all-columns': { hide: boolean };
   }>();
 
@@ -66,7 +66,7 @@
   }
 
   function onResetColumns() {
-    dispatch('reset-columns');
+    dispatch('columns-reset');
   }
 
   function onShowAllColumns() {
