@@ -6,7 +6,7 @@
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
+  import { doesFilenameMatchExtension, joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
   import InputInternal from '../form/Input.svelte';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
@@ -49,9 +49,7 @@
     selectedFileGroupings = Array.from(files ?? []).reduce(
       (previousFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] }, file) => {
         if (
-          outputLanguageExtensions.findIndex(fileExtension =>
-            file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
-          ) > -1
+          outputLanguageExtensions.findIndex(fileExtension => doesFilenameMatchExtension(fileExtension, file.name)) > -1
         ) {
           return {
             ...previousFileGroupings,

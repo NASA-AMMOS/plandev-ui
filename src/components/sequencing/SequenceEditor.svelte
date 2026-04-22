@@ -26,6 +26,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
+  import { replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -251,13 +252,12 @@
 
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
     const content = editorOutputView.state.doc.toString();
-    // Remove any existing extension and add output extension
-    const outputExt = outputLanguage.fileExtension; // Keep the dot
-    const lastDotIndex = sequenceName.lastIndexOf('.');
 
-    // If there's a dot in the filename, remove everything after it; otherwise keep the whole name
-    const filenameWithoutExt = lastDotIndex > 0 ? sequenceName.slice(0, lastDotIndex) : sequenceName;
-    const filename = filenameWithoutExt + outputExt;
+    const filename = replaceFileExtension(
+      sequenceName,
+      sequenceAdaptation.input.fileExtension,
+      outputLanguage.fileExtension,
+    );
 
     dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
   }
