@@ -25,7 +25,6 @@
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
-  import { safeStringify } from '../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
@@ -87,7 +86,6 @@
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
-  let previousOutputEditorExtension: Extension | null = null;
   let previousSequenceFilePath: string = sequenceFilePath;
 
   // Debounce only the expensive output format computation, not the state sync
@@ -99,8 +97,14 @@
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
   }
 
+  $: if (sequenceAdaptation.outputs.length > 0) {
+    selectedOutputFormat = sequenceAdaptation.outputs[0];
+  }
+
   $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
+  } else {
+    outputEditorExtension = [];
   }
 
   // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
@@ -156,19 +160,7 @@
     editorHeights = '1fr 3px';
   }
 
-  $: if (sequenceAdaptation.outputs.length > 0) {
-    selectedOutputFormat = sequenceAdaptation.outputs[0];
-  }
-
-  $: if (
-    showOutputs &&
-    (previousShowOutputs !== showOutputs ||
-      safeStringify(previousOutputEditorExtension) !== safeStringify(outputEditorExtension)) &&
-    editorOutputDiv
-  ) {
-    if (safeStringify(previousOutputEditorExtension) !== safeStringify(outputEditorExtension)) {
-      previousOutputEditorExtension = outputEditorExtension;
-    }
+  $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
     if (editorOutputView) {
       editorOutputView.destroy();
     }
@@ -186,7 +178,6 @@
       ],
       parent: editorOutputDiv,
     });
-    debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
   }
 
   $: updatedSequenceDefinition = sequenceDefinition;
@@ -202,6 +193,15 @@
     // Clear stale output and recompute for the new file
     if (editorOutputView) {
       editorOutputView.dispatch({ changes: { from: 0, insert: '', to: editorOutputView.state.doc.length } });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
+  }
+  $: {
+    // Reconfigure output editor when adaptation extensions change
+    if (editorOutputView) {
+      editorOutputView.dispatch({
+        effects: [compartmentOutputAdaptation.reconfigure(outputEditorExtension)],
+      });
       debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
     }
   }
