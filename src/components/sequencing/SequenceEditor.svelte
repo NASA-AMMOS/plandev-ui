@@ -97,8 +97,14 @@
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
   }
 
+  $: if (sequenceAdaptation.outputs.length > 0) {
+    selectedOutputFormat = sequenceAdaptation.outputs[0];
+  }
+
   $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
+  } else {
+    outputEditorExtension = [];
   }
 
   // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
@@ -154,10 +160,6 @@
     editorHeights = '1fr 3px';
   }
 
-  $: if (sequenceAdaptation.outputs.length > 0) {
-    selectedOutputFormat = sequenceAdaptation.outputs[0];
-  }
-
   $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
     if (editorOutputView) {
       editorOutputView.destroy();
@@ -191,6 +193,15 @@
     // Clear stale output and recompute for the new file
     if (editorOutputView) {
       editorOutputView.dispatch({ changes: { from: 0, insert: '', to: editorOutputView.state.doc.length } });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
+  }
+  $: {
+    // Reconfigure output editor when adaptation extensions change
+    if (editorOutputView) {
+      editorOutputView.dispatch({
+        effects: [compartmentOutputAdaptation.reconfigure(outputEditorExtension)],
+      });
       debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
     }
   }
