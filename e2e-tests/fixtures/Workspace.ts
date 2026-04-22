@@ -32,6 +32,7 @@ export class Workspace {
   workspaceFileContextMenu!: Locator;
   workspaceFileGrid!: Locator;
   workspaceHeaderMenu!: Locator;
+  workspaceRefreshButton!: Locator;
   workspaceSettingsButton!: Locator;
   workspaceSidebar!: Locator;
 
@@ -296,6 +297,7 @@ export class Workspace {
     this.workspaceHeaderMenu = page.getByTestId('workspace-header-menu');
     this.workspaceSidebar = page.locator('[data-slot="sidebar-wrapper"]').first();
     this.workspaceContextMenuButton = page.getByRole('button', { name: 'New Workspace Item' });
+    this.workspaceRefreshButton = page.getByRole('button', { name: 'Refresh Workspace' });
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceFileBrowserButton = page.getByRole('button', { name: 'Files' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');

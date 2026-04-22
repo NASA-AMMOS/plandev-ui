@@ -16,6 +16,7 @@ const parameterDefinitions = {
       { key: 'write', label: 'Write a File' },
       { key: 'error', label: 'Throw an Error' },
       { key: 'slow', label: 'Slow (5s delay)' },
+      { key: 'api-test', label: 'API Integration Tests' },
     ],
   },
   outputFile: {
@@ -91,6 +92,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
       break;
     case 'slow':
       result = await runSlowMode(verbose);
+      break;
+    case 'api-test':
+      result = await runApiTestMode(actionsAPI, verbose);
       break;
     default:
       result = { status: 'FAILED', data: { error: `Unknown mode: ${mode}` } };
@@ -193,7 +197,7 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
   console.log('Listing workspace files...');
   try {
     // For now treat files as a JSON string that needs parsing. This should be fixed in the API to return an array directly.
-    const filesString = await actionsAPI.listFiles('.');
+    const filesString = await actionsAPI.listFiles('.', { withMetadata: true });
     const files = JSON.parse(filesString);
     console.log(`Found ${files.length} files`);
 
@@ -208,7 +212,7 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
         sequenceContent = await actionsAPI.readFile(sequence);
         console.log(`Sequence file read successfully (${sequenceContent.length} chars)`);
       } catch (err) {
-        console.warn(`Could not read sequence file: ${err.message}`);
+        throw new Error(`Could not read sequence file: ${err.message}`);
       }
     }
 
@@ -222,9 +226,379 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
       },
     };
   } catch (err) {
-    console.error(`File listing failed: ${err.message}`);
+    console.error(`Files mode failed: ${err.message}`);
     return { status: 'FAILED', data: { error: err.message } };
   }
+}
+
+// ---------------------------------------------------------------------------
+// API Integration Test Mode
+// ---------------------------------------------------------------------------
+// Runs a comprehensive test suite against the actionsAPI surface.
+// Each section throws on the first assertion failure so the action returns FAILED
+// with a clear error message. The e2e test only needs to invoke the action in
+// this mode and check for SUCCESS.
+
+async function runApiTestMode(actionsAPI, verbose) {
+  const results = {};
+  const log = (msg) => console.log(`[api-test] ${msg}`);
+
+  log('Starting API integration tests...\n');
+
+  // --- File Lifecycle ---
+  log('=== File Lifecycle ===');
+  results.fileLifecycle = await testFileLifecycle(actionsAPI, log);
+
+  // --- Directories ---
+  log('=== Directories ===');
+  results.directories = await testDirectories(actionsAPI, log);
+
+  // --- Metadata CRUD ---
+  log('=== Metadata CRUD ===');
+  results.metadata = await testMetadataCrud(actionsAPI, log);
+
+  // --- Environment Variables ---
+  log('=== Environment Variables ===');
+  results.environment = await testEnvironmentVariables(actionsAPI, log);
+
+  // --- Dictionaries / Parcel (best-effort) ---
+  log('=== Dictionaries / Parcel ===');
+  results.dictionaries = await testDictionariesAndParcel(actionsAPI, log);
+
+  log('\nAll API integration tests passed.');
+  return { status: 'SUCCESS', data: results };
+}
+
+// --- File Lifecycle Tests ---
+
+async function testFileLifecycle(actionsAPI, log) {
+  const testDir = '_api_test';
+  const testFile = `${testDir}/lifecycle_test.txt`;
+  const testContent = 'Hello from API integration test — ' + new Date().toISOString();
+  const copyDest = `${testDir}/lifecycle_copy.txt`;
+  const moveDest = `${testDir}/lifecycle_moved.txt`;
+
+  // Setup: create a directory for our test files
+  log('Creating test directory...');
+  await actionsAPI.createDirectory(testDir);
+
+  // 1. writeFile — create a new file
+  log('writeFile — creating test file...');
+  await actionsAPI.writeFile(testFile, testContent);
+
+  // 2. readFile — read it back and assert content matches
+  log('readFile — reading back...');
+  const readBack = await actionsAPI.readFile(testFile);
+  if (readBack !== testContent) {
+    throw new Error(`File lifecycle: readFile content mismatch.\n  Expected: "${testContent}"\n  Got:      "${readBack}"`);
+  }
+  log('readFile — content matches.');
+
+  // 3. writeFile (overwrite) — overwrite with new content
+  const updatedContent = testContent + '\n(updated)';
+  log('writeFile — overwriting...');
+  await actionsAPI.writeFile(testFile, updatedContent, true);
+  const readUpdated = await actionsAPI.readFile(testFile);
+  if (readUpdated !== updatedContent) {
+    throw new Error(`File lifecycle: overwrite content mismatch.\n  Expected: "${updatedContent}"\n  Got:      "${readUpdated}"`);
+  }
+  log('writeFile (overwrite) — content matches.');
+
+  // 4. listFiles — verify our file appears
+  log('listFiles — checking file appears in listing...');
+  const listString = await actionsAPI.listFiles(testDir);
+  const listing = JSON.parse(listString);
+  const names = listing.map(f => typeof f === 'string' ? f : (f.name || f.path || ''));
+  if (!names.some(n => n.includes('lifecycle_test'))) {
+    throw new Error(`File lifecycle: listFiles did not contain lifecycle_test. Got: ${JSON.stringify(names)}`);
+  }
+  log('listFiles — file found.');
+
+  // 5. copyFile — copy and verify both exist with same content
+  log('copyFile — copying...');
+  await actionsAPI.copyFile(testFile, copyDest);
+  const copiedContent = await actionsAPI.readFile(copyDest);
+  if (copiedContent !== updatedContent) {
+    throw new Error(`File lifecycle: copyFile content mismatch.\n  Expected: "${updatedContent}"\n  Got:      "${copiedContent}"`);
+  }
+  // Original should still exist
+  const originalStillThere = await actionsAPI.readFile(testFile);
+  if (originalStillThere !== updatedContent) {
+    throw new Error('File lifecycle: original file missing after copyFile');
+  }
+  log('copyFile — copy matches, original intact.');
+
+  // 6. moveFile — move copy to new name, verify old path gone
+  log('moveFile — moving...');
+  await actionsAPI.moveFile(copyDest, moveDest);
+  const movedContent = await actionsAPI.readFile(moveDest);
+  if (movedContent !== updatedContent) {
+    throw new Error(`File lifecycle: moveFile content mismatch.\n  Expected: "${updatedContent}"\n  Got:      "${movedContent}"`);
+  }
+  // Old path should be gone
+  try {
+    await actionsAPI.readFile(copyDest);
+    throw new Error('File lifecycle: moveFile source still readable after move');
+  } catch (err) {
+    if (err.message.includes('still readable')) throw err;
+    log('moveFile — source correctly gone after move.');
+  }
+
+  // 7. deleteFile — clean up test files
+  log('deleteFile — cleaning up...');
+  await actionsAPI.deleteFile(testFile);
+  await actionsAPI.deleteFile(moveDest);
+
+  // Verify deletions
+  for (const path of [testFile, moveDest]) {
+    try {
+      await actionsAPI.readFile(path);
+      throw new Error(`File lifecycle: "${path}" still readable after deleteFile`);
+    } catch (err) {
+      if (err.message.includes('still readable')) throw err;
+    }
+  }
+  log('deleteFile — files cleaned up.');
+
+  // Clean up test directory
+  await actionsAPI.deleteFile(testDir);
+  log('File lifecycle tests passed.\n');
+
+  return { passed: true };
+}
+
+// --- Directory Tests ---
+
+async function testDirectories(actionsAPI, log) {
+  const baseDir = '_api_test_dirs';
+  const nestedDir = `${baseDir}/level1/level2/level3`;
+
+  // 1. createDirectory — single level
+  log('createDirectory — single level...');
+  await actionsAPI.createDirectory(baseDir);
+
+  // Verify it exists via listFiles on parent
+  const parentList = JSON.parse(await actionsAPI.listFiles('.'));
+  const parentNames = parentList.map(f => typeof f === 'string' ? f : (f.name || f.path || ''));
+  if (!parentNames.some(n => n.includes('_api_test_dirs'))) {
+    throw new Error(`Directories: createDirectory did not create "${baseDir}". Listing: ${JSON.stringify(parentNames)}`);
+  }
+  log('createDirectory — directory visible in listing.');
+
+  // 2. createDirectories — nested (mkdir -p behavior)
+  log('createDirectories — nested path...');
+  await actionsAPI.createDirectories(nestedDir);
+
+  // Write a file into the deepest level to prove it exists
+  const deepFile = `${nestedDir}/probe.txt`;
+  await actionsAPI.writeFile(deepFile, 'probe');
+  const probeContent = await actionsAPI.readFile(deepFile);
+  if (probeContent !== 'probe') {
+    throw new Error(`Directories: could not write/read in nested dir. Got: "${probeContent}"`);
+  }
+  log('createDirectories — nested path created, write/read verified.');
+
+  // 3. Idempotency — creating an existing directory should not error
+  log('createDirectory — idempotency check...');
+  await actionsAPI.createDirectory(baseDir);
+  log('createDirectory — idempotent (no error on existing dir).');
+
+  // Clean up
+  log('Cleaning up directories...');
+  await actionsAPI.deleteFile(deepFile);
+  await actionsAPI.deleteFile(nestedDir);
+  await actionsAPI.deleteFile(`${baseDir}/level1/level2`);
+  await actionsAPI.deleteFile(`${baseDir}/level1`);
+  await actionsAPI.deleteFile(baseDir);
+  log('Directory tests passed.\n');
+
+  return { passed: true };
+}
+
+// --- Metadata CRUD Tests ---
+
+async function testMetadataCrud(actionsAPI, log) {
+  const testDir = '_api_test_meta';
+  const testFile = `${testDir}/meta_target.txt`;
+
+  // Setup: create a file to attach metadata to
+  await actionsAPI.createDirectory(testDir);
+  await actionsAPI.writeFile(testFile, 'metadata test file');
+
+  // 1. GET — baseline
+  log('getFileMetadata — reading baseline...');
+  const initial = await actionsAPI.getFileMetadata(testFile);
+  if (typeof initial !== 'object' || initial === null) {
+    throw new Error(`Metadata: getFileMetadata returned ${typeof initial}, expected object`);
+  }
+  log(`getFileMetadata — baseline: ${JSON.stringify(initial)}`);
+
+  // 2. SET (overwrite)
+  const setTimestamp = new Date().toISOString();
+  log('setFileMetadata (overwrite) — writing...');
+  await actionsAPI.setFileMetadata(testFile, {
+    user: { actionDemo: true, runTimestamp: setTimestamp, source: 'api-test' },
+  }, { mergeBehavior: 'overwrite' });
+
+  const afterSet = await actionsAPI.getFileMetadata(testFile);
+  if (!afterSet.user) {
+    throw new Error('Metadata SET: "user" key missing after SET');
+  }
+  if (afterSet.user.source !== 'api-test') {
+    throw new Error(`Metadata SET: expected user.source="api-test", got "${afterSet.user.source}"`);
+  }
+  if (afterSet.user.actionDemo !== true) {
+    throw new Error(`Metadata SET: expected user.actionDemo=true, got ${afterSet.user.actionDemo}`);
+  }
+  if (afterSet.user.runTimestamp !== setTimestamp) {
+    throw new Error(`Metadata SET: expected user.runTimestamp="${setTimestamp}", got "${afterSet.user.runTimestamp}"`);
+  }
+  log('setFileMetadata (overwrite) — verified.');
+
+  // 3. SET (deep merge) — add a key, confirm originals survive
+  log('setFileMetadata (deep merge) — merging...');
+  await actionsAPI.setFileMetadata(testFile, {
+    user: { extraField: 'deep-merge-test' },
+  }, { mergeBehavior: 'deep' });
+
+  const afterMerge = await actionsAPI.getFileMetadata(testFile);
+  if (afterMerge.user.extraField !== 'deep-merge-test') {
+    throw new Error(`Metadata merge: expected user.extraField="deep-merge-test", got "${afterMerge.user.extraField}"`);
+  }
+  if (afterMerge.user.source !== 'api-test') {
+    throw new Error(`Metadata merge: original key user.source lost (got "${afterMerge.user.source}")`);
+  }
+  if (afterMerge.user.actionDemo !== true) {
+    throw new Error(`Metadata merge: original key user.actionDemo lost (got ${afterMerge.user.actionDemo})`);
+  }
+  log('setFileMetadata (deep merge) — verified.');
+
+  // 4. UNSET — remove the "user" key
+  log('unsetFileMetadata — removing "user"...');
+  await actionsAPI.unsetFileMetadata(testFile, ['user']);
+
+  const afterUnset = await actionsAPI.getFileMetadata(testFile);
+  if (afterUnset.user !== undefined) {
+    throw new Error(`Metadata UNSET: "user" should be gone, got ${JSON.stringify(afterUnset.user)}`);
+  }
+  log('unsetFileMetadata — verified.');
+
+  // 5. DELETE — re-set then delete all metadata
+  log('deleteFileMetadata — full delete...');
+  await actionsAPI.setFileMetadata(testFile, { user: { cleanup: true } }, { mergeBehavior: 'overwrite' });
+  await actionsAPI.deleteFileMetadata(testFile);
+
+  const afterDelete = await actionsAPI.getFileMetadata(testFile);
+  if (afterDelete.user !== undefined) {
+    throw new Error(`Metadata DELETE: "user" should be gone, got ${JSON.stringify(afterDelete.user)}`);
+  }
+  log('deleteFileMetadata — verified.');
+
+  // Clean up
+  await actionsAPI.deleteFile(testFile);
+  await actionsAPI.deleteFile(testDir);
+  log('Metadata CRUD tests passed.\n');
+
+  return { passed: true };
+}
+
+// --- Environment Variable Tests ---
+
+async function testEnvironmentVariables(actionsAPI, log) {
+  // getEnvironmentVariable only returns vars prefixed with PUBLIC_ACTION_
+  // We can't guarantee any specific env var exists, but we can verify the method
+  // is callable and returns the right types.
+
+  log('getEnvironmentVariable — testing known-missing key...');
+  const missing = actionsAPI.getEnvironmentVariable('DEFINITELY_DOES_NOT_EXIST_12345');
+  if (missing !== undefined) {
+    throw new Error(`Environment: expected undefined for missing var, got "${missing}"`);
+  }
+  log('getEnvironmentVariable — correctly returned undefined for missing key.');
+
+  // Verify that sensitive internal env vars are not accessible
+  log('getEnvironmentVariable — verifying ACTION_DB_PASSWORD is blocked...');
+  const dbPassword = actionsAPI.getEnvironmentVariable('ACTION_DB_PASSWORD');
+  if (dbPassword !== undefined) {
+    throw new Error('Environment: ACTION_DB_PASSWORD should not be accessible from actions');
+  }
+  log('getEnvironmentVariable — ACTION_DB_PASSWORD correctly blocked.');
+
+  log('Environment variable tests passed.\n');
+  return { passed: true };
+}
+
+// --- Dictionary / Parcel Tests (best-effort) ---
+
+function assertDictionaryResult(dict, label) {
+  if (!dict || typeof dict !== 'object') {
+    throw new Error(`${label}: expected object, got ${typeof dict}`);
+  }
+  if (typeof dict.id !== 'number') {
+    throw new Error(`${label}: expected numeric id, got ${typeof dict.id}`);
+  }
+  if (typeof dict.mission !== 'string' || dict.mission.length === 0) {
+    throw new Error(`${label}: expected non-empty mission string, got "${dict.mission}"`);
+  }
+  if (typeof dict.version !== 'number' && typeof dict.version !== 'string') {
+    throw new Error(`${label}: expected version (number or string), got ${typeof dict.version}`);
+  }
+  if (typeof dict.dictionary_path !== 'string') {
+    throw new Error(`${label}: expected dictionary_path string, got ${typeof dict.dictionary_path}`);
+  }
+  if (!(dict.created_at instanceof Date) && typeof dict.created_at !== 'string') {
+    throw new Error(`${label}: expected created_at as Date or string, got ${typeof dict.created_at}`);
+  }
+  if (!(dict.updated_at instanceof Date) && typeof dict.updated_at !== 'string') {
+    throw new Error(`${label}: expected updated_at as Date or string, got ${typeof dict.updated_at}`);
+  }
+}
+
+async function testDictionariesAndParcel(actionsAPI, log) {
+  const results = { parcel: 'skipped', dictionaries: 'skipped' };
+
+  // readParcel — requires workspace to have a parcel configured
+  log('readParcel — attempting...');
+  try {
+    const parcel = await actionsAPI.readParcel();
+    if (typeof parcel !== 'object' || parcel === null) {
+      throw new Error(`Parcel: expected object, got ${typeof parcel}`);
+    }
+    log(`readParcel — succeeded: ${JSON.stringify(parcel).substring(0, 200)}`);
+    results.parcel = 'passed';
+
+    // If parcel has dictionary IDs, try reading them
+    // ReadDictionaryResult: { id, dictionary_path, dictionary_file_path, mission, version, parsed_json, created_at, updated_at }
+    if (parcel.command_dictionary_id) {
+      log(`readCommandDictionary — id ${parcel.command_dictionary_id}...`);
+      const cmdDict = await actionsAPI.readCommandDictionary(parcel.command_dictionary_id);
+      log(typeof cmdDict.created_at);
+      assertDictionaryResult(cmdDict, 'readCommandDictionary');
+      log(`readCommandDictionary — succeeded (mission: "${cmdDict.mission}", version: ${cmdDict.version}).`);
+      results.dictionaries = 'passed';
+    }
+
+    if (parcel.channel_dictionary_id) {
+      log(`readChannelDictionary — id ${parcel.channel_dictionary_id}...`);
+      const chanDict = await actionsAPI.readChannelDictionary(parcel.channel_dictionary_id);
+      assertDictionaryResult(chanDict, 'readChannelDictionary');
+      log(`readChannelDictionary — succeeded (mission: "${chanDict.mission}", version: ${chanDict.version}).`);
+    }
+
+    if (parcel.parameter_dictionary_ids && parcel.parameter_dictionary_ids.length > 0) {
+      const paramId = parcel.parameter_dictionary_ids[0];
+      log(`readParameterDictionary — id ${paramId}...`);
+      const paramDict = await actionsAPI.readParameterDictionary(paramId);
+      assertDictionaryResult(paramDict, 'readParameterDictionary');
+      log(`readParameterDictionary — succeeded (mission: "${paramDict.mission}", version: ${paramDict.version}).`);
+    }
+  } catch (err) {
+    // Parcel/dictionaries may not be configured — that's fine, just report it
+    log(`Skipped (no parcel configured or error): ${err.message}`);
+  }
+
+  log('Dictionary / Parcel tests done.\n');
+  return results;
 }
 
 async function runWriteMode(actionsAPI, filename, content, verbose) {
