@@ -4070,9 +4070,9 @@ const effects = {
       }
 
       const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
+        `Permanently Delete ${typeDisplayString}`,
+        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the "${workspace.name}" workspace.`,
+        `Permanently Delete`,
       );
 
       let responses: BulkOperationResponses = [];
