@@ -10,7 +10,7 @@
   type T = $$Generic<TRowData>;
 
   import type { ColDef, ColumnState } from 'ag-grid-community';
-  import { MoreHorizontal } from 'lucide-svelte';
+  import { Ellipsis } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { TRowData } from '../../types/data-grid';
 
@@ -25,6 +25,7 @@
 
   const dispatch = createEventDispatcher<{
     'columns-changed': { columns: ColumnMenuItem[] };
+    'columns-reset': void;
     'show-hide-all-columns': { hide: boolean };
   }>();
 
@@ -35,18 +36,19 @@
   let id = uniqueId();
 
   $: columnMenuItems = (columnDefs ?? []).map((derivedColumnDef: ColDef) => {
-    const columnState = columnStates?.find((columnState: ColumnState) => columnState.colId === derivedColumnDef.field);
+    const colId = (derivedColumnDef.colId ?? derivedColumnDef.field) as keyof T;
+    const columnState = columnStates?.find((columnState: ColumnState) => columnState.colId === colId);
 
     if (columnState) {
       return {
-        field: (derivedColumnDef.field as keyof T) ?? '',
+        field: colId ?? '',
         isHidden: columnState?.hide ?? derivedColumnDef.hide ?? false,
         name: derivedColumnDef.headerName ?? '',
       };
     }
 
     return {
-      field: (derivedColumnDef.field as keyof T) ?? '',
+      field: colId ?? '',
       isHidden: true,
       name: derivedColumnDef.headerName ?? '',
     };
@@ -61,6 +63,10 @@
 
   function onHideAllColumns() {
     dispatch('show-hide-all-columns', { hide: true });
+  }
+
+  function onResetColumns() {
+    dispatch('columns-reset');
   }
 
   function onShowAllColumns() {
@@ -88,7 +94,7 @@
         variant="outline"
         class="flex-shrink-0 [&+div]:hidden"
       >
-        <MoreHorizontal size={16} />
+        <Ellipsis size={16} />
       </Button>
     </Select.Trigger>
     <Select.Content
@@ -107,9 +113,12 @@
           >
         {/each}
       </div>
-      <div class="mb-0.5 mt-2 flex gap-1">
+      <div class="mb-2 mt-2 flex gap-1">
         <Button class="flex-1" variant="outline" on:click={onShowAllColumns}>Show All</Button>
         <Button class="flex-1" variant="outline" on:click={onHideAllColumns}>Hide All</Button>
+      </div>
+      <div class="border-t border-border pt-2">
+        <Button class="w-full" variant="outline" on:click={onResetColumns}>Reset Column Layout</Button>
       </div>
     </Select.Content>
   </Select.Root>

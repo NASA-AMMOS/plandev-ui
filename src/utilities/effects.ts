@@ -113,6 +113,7 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
+import type { LogMessage } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -320,6 +321,7 @@ import {
 } from './view';
 import {
   cleanPath,
+  doesFilenameMatchExtension,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
@@ -328,6 +330,7 @@ import {
   isFileConflictResponse,
   joinPath,
   mapWorkspaceTreePaths,
+  replaceFileExtension,
   separateFilenameFromPath,
   WorkspaceApi,
   type BulkOperationResponses,
@@ -431,6 +434,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             } else {
@@ -488,6 +493,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             }
@@ -503,8 +510,10 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to transfer`, {
-      cause: failedFileOperations,
+    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to move`, {
+      cause: JSON.stringify(
+        failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+      ),
     });
   }
 
@@ -4050,42 +4059,6 @@ const effects = {
     }
   },
 
-  async deleteWorkspaceItem(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<boolean> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
-    try {
-      if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
-        throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        await WorkspaceApi.deleteFile(workspace.id, originalPath, user);
-
-        logMessage(
-          `Deleted ${typeString.toLowerCase()} (${originalPath}) in "${workspace.name}" (ID=${workspace.id}).`,
-        );
-        showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
-      }
-
-      return confirm;
-    } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeString} Delete Failed`);
-    }
-
-    return false;
-  },
-
   async deleteWorkspaceItems(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
@@ -4098,17 +4071,36 @@ const effects = {
       }
 
       const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
+        `Permanently Delete ${typeDisplayString}`,
+        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the "${workspace.name}" workspace.`,
+        `Permanently Delete`,
       );
 
+      let responses: BulkOperationResponses = [];
+
       if (confirm) {
-        await WorkspaceApi.deleteFiles(
+        responses = await WorkspaceApi.deleteFiles(
           workspace.id,
           originalNodes.map(({ fullPath }) => fullPath),
           user,
         );
+
+        const failedFileOperations: BulkOperationResponses = [];
+
+        while (responses.length > 0) {
+          const response = responses.shift();
+
+          if (response && !isBulkOperationSuccess(response)) {
+            failedFileOperations.push(response);
+          }
+        }
+        if (failedFileOperations.length) {
+          throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to delete`, {
+            cause: JSON.stringify(
+              failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+            ),
+          });
+        }
 
         logMessage(
           `Deleted ${originalNodes.length} ${typeDisplayString.toLowerCase()} in "${workspace.name}" (ID=${workspace.id}).`,
@@ -5786,10 +5778,11 @@ const effects = {
     workspaceId: number,
     path: string = '',
     user: User | null,
+    withMetadata: boolean = false,
   ): Promise<WorkspaceTreeNode[] | null> {
     try {
       const startTime = performance.now();
-      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user);
+      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user, withMetadata);
 
       if (workspaceContents != null) {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
@@ -5845,8 +5838,12 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
-    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
+  async getWorkspaceFilesList(
+    workspaceId: number,
+    user: User | null,
+    withMetadata: boolean = false,
+  ): Promise<WorkspaceTreeNodeWithFullPath[]> {
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user, withMetadata);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
   },
 
@@ -6035,8 +6032,6 @@ const effects = {
         sequenceAdaptation.input.name,
         sequenceAdaptation.outputs.map(language => language.fileExtension),
         startingPath,
-        workspace,
-        user,
       );
       if (confirm) {
         const {
@@ -6058,20 +6053,28 @@ const effects = {
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
             const outputLanguage = sequenceAdaptation.outputs.find(language =>
-              file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
+              doesFilenameMatchExtension(language.fileExtension, file.name),
             );
 
             if (outputLanguage) {
-              const fileName = file.name.replace(
-                outputLanguage.fileExtension.replace(/^\./, ''),
-                sequenceAdaptation.input.fileExtension.replace(/^\./, ''),
-              );
-              const lastModified = Date.now();
-              const content = await file.text();
-              const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
+              try {
+                const fileName = replaceFileExtension(
+                  file.name,
+                  outputLanguage.fileExtension,
+                  sequenceAdaptation.input.fileExtension,
+                );
+                const lastModified = Date.now();
+                const content = await file.text();
+                const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
 
-              convertedFileMap[file.name] = fileName;
-              return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+                convertedFileMap[file.name] = fileName;
+                return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+              } catch (error) {
+                throw Error(
+                  `There was an error trying to convert the file ${file.name}. Please check that it is formatted correctly.`,
+                  { cause: error },
+                );
+              }
             }
 
             return file;
@@ -6444,6 +6447,7 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
@@ -6452,7 +6456,12 @@ const effects = {
         throwPermissionError(`update this workspace's ${displayString.toLowerCase()}`);
       }
 
-      const { confirm, value } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNodes, user);
+      const { confirm, value } = await showMoveWorkspaceItemModal(
+        workspace,
+        workspaceContents,
+        originalNodes,
+        hasReadOnlyNodes,
+      );
       if (confirm) {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
 
@@ -6491,10 +6500,11 @@ const effects = {
   async moveWorkspaceItemsToWorkspace(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<string | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, user);
+    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, hasReadOnlyNodes, user);
 
     if (confirm) {
       const { shouldCopy, shouldOverwrite, targetPath, targetWorkspace } = value;
@@ -6538,7 +6548,7 @@ const effects = {
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { folderPath } = value;
       try {
@@ -6563,7 +6573,7 @@ const effects = {
     sequenceDefinition: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { filePath } = value;
       try {
@@ -7262,7 +7272,6 @@ const effects = {
         workspaceId,
         workspaceTree,
         workspaceName,
-        user,
       );
 
       if (confirmNewFile && confirmNewFileValue) {

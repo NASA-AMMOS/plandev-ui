@@ -296,7 +296,7 @@ export function catchError(message: string, error: Error | CompoundError, should
   } else {
     errors = [
       {
-        cause: `${error.cause}` || '',
+        cause: `${typeof error.cause === 'object' ? JSON.stringify(error.cause) : error.cause}` || '',
         level: 'error',
         message: `${message}: ${cleanLogMessage(`${error}`)}`,
         timestamp: `${new Date()}`,

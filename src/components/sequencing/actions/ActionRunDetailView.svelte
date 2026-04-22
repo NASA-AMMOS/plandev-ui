@@ -295,7 +295,7 @@
               }}
               <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
                 <h3 class="text-sm font-medium text-destructive">Error</h3>
-                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs" data-testid="action-run-error-log">
                   <ConsoleLog log={errorLog} showType={false} showLongTimestamp={false} />
                 </div>
               </div>
@@ -304,6 +304,7 @@
               <h3 class="text-sm font-medium">Results</h3>
               {#if actionRun.results?.data}
                 <pre
+                  data-testid="action-run-results"
                   class="max-h-[600px] overflow-auto whitespace-pre-wrap rounded bg-muted p-3 font-mono text-xs">{JSON.stringify(
                     actionRun.results.data,
                     undefined,
@@ -319,7 +320,20 @@
                 {@const logMessages = parseLogLines(actionRun.logs)}
                 <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
                   {#each logMessages as log}
-                    <ConsoleLog {log} showType={false} showLongTimestamp={false} />
+                    <ConsoleLog {log} showType={false} showLongTimestamp={false}>
+                      <svelte:fragment slot="message" let:message let:expandable let:open>
+                        {#if expandable && !open}
+                          <!-- "preview" text for expandable logs, ellipsize to one line -->
+                          <span class="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-pre">
+                            {message}
+                          </span>
+                        {:else}
+                          <span class="block w-full min-w-0 whitespace-pre-wrap break-words">
+                            {message}
+                          </span>
+                        {/if}
+                      </svelte:fragment>
+                    </ConsoleLog>
                   {/each}
                 </div>
               {:else}
