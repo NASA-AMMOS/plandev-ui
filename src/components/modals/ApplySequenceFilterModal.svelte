@@ -34,6 +34,7 @@
   let relevantExpansionSequences: ExpansionSequence[] = [];
   let confirmIsDisabled = false;
 
+  $: sequenceNameField.validateAndSet(defaultSequenceName);
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(defaultEndTime, [required, $plugins.time.primary.validate]);
   $: sequenceNameField = field<string>(defaultSequenceName, [
