@@ -48,7 +48,7 @@
           <Check size={16} />
         </Button>
       {:else}
-        <Button variant="outline" size="icon" on:click={onRefreshWorkspace}>
+        <Button variant="outline" size="icon" on:click={onRefreshWorkspace} aria-label="Refresh Workspace">
           <RefreshCw size={16} />
         </Button>
       {/if}
