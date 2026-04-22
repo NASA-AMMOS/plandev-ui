@@ -74,25 +74,38 @@ export class Action {
     await expect(this.page.getByRole('tab', { name: 'Code' })).toBeVisible();
   }
 
-  async runAction(): Promise<void> {
+  async runAction(options?: { expectedStatus?: 'Complete' | 'Failed'; mode?: string }): Promise<void> {
+    const { expectedStatus, mode } = options ?? {};
+
     // Click "Run Action" button in the detail view header
     await this.page.getByRole('button', { name: 'Run Action' }).click();
     // Wait for the run modal to appear
     const runModal = this.page.locator('#modal-container');
     await expect(runModal).toBeVisible();
+
+    // If a mode is specified, select it in the variant dropdown
+    if (mode) {
+      await runModal.getByRole('combobox', { name: 'mode' }).selectOption(mode);
+    }
+
     // Click the Run button in the modal footer
     await runModal.getByRole('button', { exact: true, name: 'Run' }).click();
     // Verify we navigated to the run detail view
     await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
+
     // Wait for a terminal status (Complete or Failed) in the main content area
-    await expect(
-      this.page
-        .getByRole('tabpanel')
-        .getByRole('button', { name: `Complete ${this.actionName}` })
-        .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
-    ).toBeVisible({
-      timeout: 30000,
-    });
+    if (expectedStatus) {
+      await expect(
+        this.page.getByRole('tabpanel').getByRole('button', { name: `${expectedStatus} ${this.actionName}` }),
+      ).toBeVisible({ timeout: 30000 });
+    } else {
+      await expect(
+        this.page
+          .getByRole('tabpanel')
+          .getByRole('button', { name: `Complete ${this.actionName}` })
+          .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
+      ).toBeVisible({ timeout: 30000 });
+    }
   }
 
   async selectActionInSidebar(): Promise<void> {

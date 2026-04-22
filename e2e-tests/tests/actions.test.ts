@@ -66,6 +66,11 @@ test.describe.serial('Actions', () => {
     await action.runAction();
   });
 
+  test('Run API integration tests', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({ expectedStatus: 'Complete', mode: 'api-test' });
+  });
+
   test('Archive an action prevents running', async () => {
     // Go back to the action detail view by clicking action name in sidebar
     await action.selectActionInSidebar();

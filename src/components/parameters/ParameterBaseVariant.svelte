@@ -31,6 +31,7 @@
   <ParameterName {formParameter} />
   <div class="parameter-base-variant-content">
     <select
+      aria-label={formParameter.name}
       bind:value={formParameter.value}
       class="st-select w-full"
       class:error={formParameter.errors !== null}
