@@ -18,7 +18,6 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  export let height: number = 275;
   export let width: number = 400;
   export let defaultSequenceName: string;
   export let defaultStartTime: string;
@@ -72,7 +71,7 @@
   }
 </script>
 
-<Modal {height} {width} on:close>
+<Modal {width} on:close>
   <ModalHeader on:close>Create Sequence from Filter</ModalHeader>
   <ModalContent>
     <div class="st-typography-body">Select the time range to apply the sequence filter to.</div>
