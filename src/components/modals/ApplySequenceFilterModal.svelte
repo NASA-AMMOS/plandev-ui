@@ -7,6 +7,7 @@
   import { plugins } from '../../stores/plugins';
   import { simulationDatasetId } from '../../stores/simulation';
   import type { ExpansionSequence } from '../../types/expansion';
+  import type { FieldStore } from '../../types/form';
   import { tooltip } from '../../utilities/tooltip';
   import { required, unique } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
@@ -31,19 +32,25 @@
     confirm: { sequenceName: string; timeRangeEnd: string; timeRangeStart: string };
   }>();
 
+  let sequenceNameField: FieldStore<string>;
+  let startTimeField: FieldStore<string>;
+  let endTimeField: FieldStore<string>;
   let relevantExpansionSequences: ExpansionSequence[] = [];
   let confirmIsDisabled = false;
 
-  $: sequenceNameField.validateAndSet(defaultSequenceName);
   $: startTimeField = field<string>(defaultStartTime, [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>(defaultEndTime, [required, $plugins.time.primary.validate]);
-  $: sequenceNameField = field<string>(defaultSequenceName, [
-    required,
-    unique(
-      relevantExpansionSequences.map(seq => seq.seq_id),
-      'Sequence name already in use',
-    ),
-  ]);
+  $: {
+    sequenceNameField = field<string>(defaultSequenceName, [
+      required,
+      unique(
+        relevantExpansionSequences.map(seq => seq.seq_id),
+        'Sequence name already in use',
+      ),
+    ]);
+    sequenceNameField.validateAndSet(defaultSequenceName);
+  }
+
   $: relevantExpansionSequences = $expansionSequences.filter(
     sequence => $simulationDatasetId === sequence.simulation_dataset_id,
   );
