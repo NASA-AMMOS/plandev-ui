@@ -108,7 +108,7 @@
       Confirm
     </button>
   </ModalFooter>
-</Modal>``
+</Modal>
 
 <style>
 </style>
