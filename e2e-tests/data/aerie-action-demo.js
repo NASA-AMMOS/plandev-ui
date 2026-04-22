@@ -516,6 +516,14 @@ async function testEnvironmentVariables(actionsAPI, log) {
   }
   log('getEnvironmentVariable — correctly returned undefined for missing key.');
 
+  // Verify that sensitive internal env vars are not accessible
+  log('getEnvironmentVariable — verifying ACTION_DB_PASSWORD is blocked...');
+  const dbPassword = actionsAPI.getEnvironmentVariable('ACTION_DB_PASSWORD');
+  if (dbPassword !== undefined) {
+    throw new Error('Environment: ACTION_DB_PASSWORD should not be accessible from actions');
+  }
+  log('getEnvironmentVariable — ACTION_DB_PASSWORD correctly blocked.');
+
   log('Environment variable tests passed.\n');
   return { passed: true };
 }
