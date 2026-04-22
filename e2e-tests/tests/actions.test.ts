@@ -71,6 +71,19 @@ test.describe.serial('Actions', () => {
     await action.runAction({ expectedStatus: 'Complete', mode: 'api-test' });
   });
 
+  test('Action writes a file visible in workspace file browser', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({ expectedStatus: 'Complete', mode: 'write' });
+
+    // Switch to file browser and verify the written file appears
+    await workspace.workspaceFileBrowserButton.click();
+    await workspace.workspaceRefreshButton.click();
+    await workspace.searchForFileAndWait('action_output.txt');
+
+    // Go back to the actions tab
+    await action.switchToActionsTab();
+  });
+
   test('Archive an action prevents running', async () => {
     // Go back to the action detail view by clicking action name in sidebar
     await action.selectActionInSidebar();

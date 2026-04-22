@@ -94,17 +94,32 @@ export class Action {
     await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
 
     // Wait for a terminal status (Complete or Failed) in the main content area
+    await expect(
+      this.page
+        .getByRole('tabpanel')
+        .getByRole('button', { name: `Complete ${this.actionName}` })
+        .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
+    ).toBeVisible({ timeout: 30000 });
+
     if (expectedStatus) {
-      await expect(
-        this.page.getByRole('tabpanel').getByRole('button', { name: `${expectedStatus} ${this.actionName}` }),
-      ).toBeVisible({ timeout: 30000 });
-    } else {
-      await expect(
-        this.page
-          .getByRole('tabpanel')
-          .getByRole('button', { name: `Complete ${this.actionName}` })
-          .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
-      ).toBeVisible({ timeout: 30000 });
+      const statusMatched = await this.page
+        .getByRole('tabpanel')
+        .getByRole('button', { name: `${expectedStatus} ${this.actionName}` });
+
+      if (!(await statusMatched.isVisible())) {
+        if (expectedStatus === 'Complete') {
+          // If we expect success but see failure, collect and throw the error message from the UI
+          const errorMessage = await this.page.getByTestId('action-run-error-log').innerText();
+          throw new Error(
+            `Expected action run to have status "${expectedStatus}" but it did not. Error message: ${errorMessage}`,
+          );
+        } else {
+          const results = await this.page.getByTestId('action-run-results').innerText();
+          throw new Error(
+            `Expected action run to have status "${expectedStatus}" but it did not. Run details: ${results}`,
+          );
+        }
+      }
     }
   }
 
