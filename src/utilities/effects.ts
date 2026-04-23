@@ -263,6 +263,7 @@ import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showApplySequenceFilterModal,
   showBulkShiftActivitiesModal,
   showCancelActionRunModal,
   showConfirmModal,
@@ -290,7 +291,6 @@ import {
   showRenameWorkspaceItemModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
-  showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
   showWorkspaceBulkOperationConflictModal,
@@ -533,16 +533,17 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
+      const defaultSequenceName: string = `${filter.name} Sequence (Plan ${planId})`;
+      const { confirm: timeConfirmed, value } = await showApplySequenceFilterModal(
+        defaultSequenceName,
+        defaultStartTime,
+        defaultEndtime,
+      );
 
       if (timeConfirmed && value !== undefined) {
-        const { timeRangeEnd, timeRangeStart } = value;
+        const { sequenceName, timeRangeEnd, timeRangeStart } = value;
         if (timeRangeStart !== null && timeRangeEnd !== null) {
-          const sequenceId = await effects.createExpansionSequence(
-            `${filter.name} Sequence (Plan ${planId})`,
-            simulationDatasetId,
-            user,
-          );
+          const sequenceId = await effects.createExpansionSequence(sequenceName, simulationDatasetId, user);
 
           if (!sequenceId) {
             throw Error('Failed to create sequence');
