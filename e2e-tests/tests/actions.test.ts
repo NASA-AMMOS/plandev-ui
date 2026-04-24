@@ -83,7 +83,11 @@ test.describe.serial('Actions', () => {
 
   test('Action writes a file visible in workspace file browser', async () => {
     await action.selectActionInSidebar();
-    await action.runAction({ expectedStatus: 'Complete', mode: 'write', stringParameters: { required: 'test-required-value' } });
+    await action.runAction({
+      expectedStatus: 'Complete',
+      mode: 'write',
+      stringParameters: { required: 'test-required-value' },
+    });
 
     // Switch to file browser and verify the written file appears
     await workspace.workspaceFileBrowserButton.click();
