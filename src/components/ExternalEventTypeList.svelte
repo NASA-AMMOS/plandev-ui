@@ -18,4 +18,5 @@
   filterOptions={$externalEventTypes.map(t => ({ label: t.name, value: t.name }))}
   filterName="Event Type"
   {getFilterValueFromItem}
+  user={null}
 />

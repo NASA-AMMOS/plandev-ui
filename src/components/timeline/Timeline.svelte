@@ -387,9 +387,10 @@
     }
   }
 
-  function onBuildActivityDirective(activityType: string) {
+  function onBuildActivityDirective(startTime: string, activityType: string) {
     console.log(activityType);
     directiveBuilder.setCurrentActivityType(activityType);
+    directiveBuilder.setCurrentActivityStart(startTime);
     directiveBuilder.show();
   }
 
@@ -545,7 +546,7 @@
             yAxes={row.yAxes}
             {timelineZoomTransform}
             on:contextMenu={e => onContextMenu(e, row)}
-            on:buildDirective={e => onBuildActivityDirective(e.detail)}
+            on:buildDirective={e => onBuildActivityDirective(e.detail.startTime, e.detail.type)}
             on:dblClick
             on:deleteActivityDirective
             on:mouseDown={onMouseDown}

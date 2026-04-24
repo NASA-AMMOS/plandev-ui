@@ -71,6 +71,10 @@
     selectActivityType(currentActivityType);
   }
 
+  export function setCurrentActivityStart(newStartTime: string) {
+    startTime = newStartTime;
+  }
+
   export function setActiveDirective(newDirective: ActivityDirectiveInsertInput) {
     dirtyDirective = newDirective;
   }

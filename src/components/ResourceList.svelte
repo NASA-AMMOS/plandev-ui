@@ -77,6 +77,7 @@
   {getFilterValueFromItem}
   {loading}
   let:prop={item}
+  user={null}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
     <button class="close-upload" type="button" on:click={onHideUpload}>
