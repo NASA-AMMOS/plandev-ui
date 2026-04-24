@@ -63,6 +63,8 @@ export function getDefaultsFromSchema(schemaRecord: Record<string, ActionValueSc
   return Object.entries(schemaRecord).reduce((acc: ArgumentsMap, [key, schema]) => {
     if ('defaultValue' in schema && schema.defaultValue !== undefined) {
       acc[key] = schema.defaultValue;
+    } else if (schema.type === 'variant' && schema.variants.length > 0) {
+      acc[key] = schema.variants[0].key;
     }
     return acc;
   }, {});

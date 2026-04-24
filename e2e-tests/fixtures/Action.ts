@@ -74,8 +74,13 @@ export class Action {
     await expect(this.page.getByRole('tab', { name: 'Code' })).toBeVisible();
   }
 
-  async runAction(options?: { expectedStatus?: 'Complete' | 'Failed'; mode?: string }): Promise<void> {
-    const { expectedStatus, mode } = options ?? {};
+  async runAction(options?: {
+    actionTimeout?: number;
+    expectedStatus?: 'Complete' | 'Failed';
+    mode?: string;
+    stringParameters?: Record<string, string>;
+  }): Promise<void> {
+    const { actionTimeout = 30000, expectedStatus, mode, stringParameters } = options ?? {};
 
     // Click "Run Action" button in the detail view header
     await this.page.getByRole('button', { name: 'Run Action' }).click();
@@ -86,6 +91,15 @@ export class Action {
     // If a mode is specified, select it in the variant dropdown
     if (mode) {
       await runModal.getByRole('combobox', { name: 'mode' }).selectOption(mode);
+    }
+
+    // Fill in any provided string parameter values
+    if (stringParameters) {
+      for (const [name, value] of Object.entries(stringParameters)) {
+        const input = runModal.getByRole('textbox', { name });
+        await input.fill(value);
+        await input.dispatchEvent('change');
+      }
     }
 
     // Click the Run button in the modal footer
@@ -99,7 +113,7 @@ export class Action {
         .getByRole('tabpanel')
         .getByRole('button', { name: `Complete ${this.actionName}` })
         .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
-    ).toBeVisible({ timeout: 30000 });
+    ).toBeVisible({ timeout: actionTimeout });
 
     if (expectedStatus) {
       const statusMatched = await this.page
@@ -135,6 +149,29 @@ export class Action {
   async switchToActionsTab(): Promise<void> {
     await this.actionsSidebarTab.click();
     await expect(this.page.getByText('Workspace Actions')).toBeVisible();
+  }
+
+  async testRequiredParamValidation(): Promise<void> {
+    // Open the run modal
+    await this.page.getByRole('button', { name: 'Run Action' }).click();
+    const runModal = this.page.locator('#modal-container');
+    await expect(runModal).toBeVisible();
+
+    // Run button should be disabled because required field is empty
+    const runButton = runModal.getByRole('button', { exact: true, name: 'Run' });
+    await expect(runButton).toBeDisabled();
+
+    // Fill in the required parameter
+    const requiredInput = runModal.getByRole('textbox', { name: 'required' });
+    await requiredInput.fill('test-required-value');
+    await requiredInput.dispatchEvent('change');
+
+    // Run button should now be enabled
+    await expect(runButton).toBeEnabled();
+
+    // Cancel without running
+    await runModal.getByRole('button', { name: 'Cancel' }).click();
+    await expect(runModal).not.toBeVisible();
   }
 
   async unarchiveAction(): Promise<void> {

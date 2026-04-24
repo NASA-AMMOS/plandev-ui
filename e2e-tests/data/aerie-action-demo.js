@@ -38,6 +38,11 @@ const parameterDefinitions = {
     description: 'A sequence file parameter (for testing file pickers)',
     primary: true,
   },
+  required: {
+    type: 'string',
+    description: 'A required parameter',
+    required: true,
+  },
 };
 
 const settingDefinitions = {

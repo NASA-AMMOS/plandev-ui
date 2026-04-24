@@ -9,7 +9,7 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
+  import type { ArgumentsMap, FormParameter, ParameterName, RequiredParametersList } from '../../../types/parameter';
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
@@ -24,7 +24,7 @@
   import effects from '../../../utilities/effects';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
-  import { getArguments, getFormParameters } from '../../../utilities/parameters';
+  import { applyRequiredErrors, getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import { formatMS } from '../../../utilities/time';
@@ -51,6 +51,7 @@
   let actionRuns: ActionRunSlim[] = [];
   let filterExpression: string = '';
   let argumentsMap: ArgumentsMap = {};
+  let touchedSettingNames: Set<string> = new Set();
   let code: string = '';
   let codeAbortController: AbortController | null = null;
   let description: string = '';
@@ -83,6 +84,7 @@
       description = actionDefinition.description;
       name = actionDefinition.name;
       argumentsMap = actionDefinition.settings;
+      touchedSettingNames = new Set();
       isDirty = false;
       selectedVersionRevision = null;
     }
@@ -102,6 +104,10 @@
   }
 
   $: latestNonArchivedVersion = getLatestRunnableVersion(actionDefinition?.versions ?? []);
+
+  $: requiredSettings = Object.entries(actionDefinition?.versions[0]?.settings_schema ?? {})
+    .filter(([_, schema]) => schema.required === true)
+    .map(([key]) => key as ParameterName) as RequiredParametersList;
 
   $: actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
     run => run.action_definition_id === actionDefinitionId,
@@ -220,6 +226,7 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
+    touchedSettingNames = new Set([...touchedSettingNames, formParameter.name]);
     if (formParameter.schema.type === 'options-single') {
       const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
       formParameter.value = files?.fullPath ?? null;
@@ -695,16 +702,19 @@
                 <p class="text-xs italic text-muted-foreground">No settings defined</p>
               {:else}
                 <Parameters
-                  formParameters={getFormParameters(
-                    valueSchemaRecordToParametersMap(actionDefinition.versions[0]?.settings_schema ?? {}),
-                    argumentsMap,
-                    [],
-                    undefined,
-                    getDefaultsFromSchema(actionDefinition.versions[0]?.settings_schema ?? {}),
-                    getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
-                    'sequence',
-                    undefined,
-                    false,
+                  formParameters={applyRequiredErrors(
+                    getFormParameters(
+                      valueSchemaRecordToParametersMap(actionDefinition.versions[0]?.settings_schema ?? {}),
+                      argumentsMap,
+                      requiredSettings,
+                      undefined,
+                      getDefaultsFromSchema(actionDefinition.versions[0]?.settings_schema ?? {}),
+                      getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
+                      'sequence',
+                      undefined,
+                      false,
+                    ),
+                    touchedSettingNames,
                   )}
                   parameterType="action"
                   hideInfo={false}

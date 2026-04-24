@@ -296,6 +296,22 @@ export function getFormParameters(
 }
 
 /**
+ * Adds 'This field is required' errors to required form parameters
+ * that are empty and present in the touchedNames set.
+ */
+export function applyRequiredErrors(formParameters: FormParameter[], touchedNames: Set<string>): FormParameter[] {
+  if (touchedNames.size === 0) {
+    return formParameters;
+  }
+  return formParameters.map(fp => {
+    if (fp.required && touchedNames.has(fp.name) && (fp.value === null || fp.value === '') && fp.errors === null) {
+      return { ...fp, errors: ['This field is required'] };
+    }
+    return fp;
+  });
+}
+
+/**
  * Returns a boolean for whether or not the provided parameter is recursive
  */
 export function isRecParameter(parameter: FormParameter) {

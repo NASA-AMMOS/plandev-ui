@@ -62,21 +62,32 @@ test.describe.serial('Actions', () => {
     await action.configureAction();
   });
 
+  test('Required parameter disables Run button until filled', async () => {
+    await action.testRequiredParamValidation();
+  });
+
   test('Run an action', async () => {
-    await action.runAction();
+    await action.runAction({ stringParameters: { required: 'test-required-value' } });
   });
 
   test('Run API integration tests', async () => {
+    test.setTimeout(120000);
     await action.selectActionInSidebar();
-    await action.runAction({ expectedStatus: 'Complete', mode: 'api-test' });
+    await action.runAction({
+      actionTimeout: 90000,
+      expectedStatus: 'Complete',
+      mode: 'api-test',
+      stringParameters: { required: 'test-required-value' },
+    });
   });
 
   test('Action writes a file visible in workspace file browser', async () => {
     await action.selectActionInSidebar();
-    await action.runAction({ expectedStatus: 'Complete', mode: 'write' });
+    await action.runAction({ expectedStatus: 'Complete', mode: 'write', stringParameters: { required: 'test-required-value' } });
 
     // Switch to file browser and verify the written file appears
     await workspace.workspaceFileBrowserButton.click();
+    await workspace.workspaceFileGrid.waitFor({ state: 'visible' });
     await workspace.workspaceRefreshButton.click();
     await workspace.searchForFileAndWait('action_output.txt');
 
