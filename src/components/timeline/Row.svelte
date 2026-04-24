@@ -141,6 +141,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
+    buildDirective: string;
     discreteTreeExpansionChange: DiscreteTreeExpansionMap;
     mouseDown: MouseDown;
     mouseOver: MouseOver;
@@ -760,7 +761,7 @@
 
           const createActivities = () => {
             items.forEach(item => {
-              effects.createActivityDirective({}, start_time, item.name, item.name, {}, plan, user);
+              dispatch('buildDirective', item.name);
             });
           };
 

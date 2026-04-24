@@ -56,9 +56,7 @@
   }
 
   function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
-    console.log('onCreateActivityDirective');
     if ($plan !== null && $plan.model) {
-      console.log('onCreateActivityDirective - Passed Check');
       effects.createActivityDirectivePredefined(directive, $plan, user);
       directiveBuilder.toggle();
     }
@@ -73,9 +71,6 @@
   bind:this={directiveBuilder}
   directiveName={activeDirectiveName}
   directiveWidth={200}
-  on:directiveChange={directive => {
-    directiveBuilderActiveDirective = directive.detail.directive;
-  }}
   on:visibilityChange={visibility => {
     if (!visibility.detail.isShown) {
       activeDirectiveName = '';

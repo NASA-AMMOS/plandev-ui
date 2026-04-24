@@ -10,7 +10,7 @@
   import { planDerivationGroupLinks } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
   import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
-  import type { ActivityDirectiveId, ActivityDirectivesMap } from '../../types/activity';
+  import type { ActivityDirectiveId, ActivityDirectiveInsertInput, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { ExternalEvent, ExternalEventId } from '../../types/external-event';
@@ -33,9 +33,11 @@
     Timeline,
     XAxisTick,
   } from '../../types/timeline';
+  import effects from '../../utilities/effects';
   import { clamp } from '../../utilities/generic';
   import { formatDate } from '../../utilities/time';
   import { MAX_CANVAS_SIZE, TimelineInteractionMode, TimelineLockStatus, getXScale } from '../../utilities/timeline';
+  import ActivityDirectiveBuilder from '../activity/ActivityDirectiveBuilder.svelte';
   import TimelineRow from './Row.svelte';
   import RowHeaderDragHandleWidth from './RowHeaderDragHandleWidth.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';
@@ -115,6 +117,8 @@
   let xAxisDrawHeight: number = 64;
   let xTicksView: XAxisTick[] = [];
   let derivationGroups: string[] = [];
+  let directiveBuilder: ActivityDirectiveBuilder;
+  let activeDirectiveName = '';
 
   let throttledZoom = throttle(onZoom, 16, {
     leading: true,
@@ -382,9 +386,37 @@
       tooltip.hide();
     }
   }
+
+  function onBuildActivityDirective(activityType: string) {
+    console.log(activityType);
+    directiveBuilder.setCurrentActivityType(activityType);
+    directiveBuilder.show();
+  }
+
+  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    if (plan !== null && plan.model) {
+      effects.createActivityDirectivePredefined(directive, plan, user);
+      directiveBuilder.toggle();
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeyDown} />
+
+<ActivityDirectiveBuilder
+  bind:this={directiveBuilder}
+  directiveName={activeDirectiveName}
+  directiveWidth={200}
+  on:visibilityChange={visibility => {
+    if (!visibility.detail.isShown) {
+      activeDirectiveName = '';
+    }
+  }}
+  on:createActivityDirective={directive => {
+    onCreateActivityDirective(directive.detail.directive);
+  }}
+  {user}
+/>
 
 <div bind:this={timelineDiv} bind:clientWidth class="timeline" id={`timeline-${timeline?.id}`}>
   <div bind:this={timelineHistogramDiv} class="timeline-time-row">
@@ -513,6 +545,7 @@
             yAxes={row.yAxes}
             {timelineZoomTransform}
             on:contextMenu={e => onContextMenu(e, row)}
+            on:buildDirective={e => onBuildActivityDirective(e.detail)}
             on:dblClick
             on:deleteActivityDirective
             on:mouseDown={onMouseDown}

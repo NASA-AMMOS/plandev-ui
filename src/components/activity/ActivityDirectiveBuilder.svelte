@@ -328,34 +328,6 @@
             </div>
             <div class="directive-section-content directive-section-content-bordered">
               <div class="activity-preset">
-                <!-- <ActivityPresetInput
-                    modelId={$plan?.model_id ?? -1}
-                    {activityDirective}
-                    disabled={!editable}
-                    hasChanges={numOfUserChanges > 0}
-                    {user}
-                    plan={$plan}
-                    on:applyPreset={onApplyPresetToActivity}
-                    on:deletePreset={onDeletePreset}
-                    on:saveNewPreset={onSaveNewPreset}
-                    on:savePreset={onSavePreset}
-                  />
-                </div> -->
-                <!-- use={[
-                    [
-                      permissionHandler,
-                      {
-                        hasPermission: hasUpdatePermission,
-                        permissionError: updatePermissionError,
-                      },
-                    ],
-                  ]} -->
-
-                <!--
-                  on:change={onChangeFormParameters}
-                  on:reset={onResetFormParameters
-                   -->
-                <!-- event: CustomEvent<FormParameter> -->
                 <Parameters
                   disabled={false}
                   formParameters={currentActivityTypeFormParams}
@@ -380,8 +352,8 @@
             }}>Create Activity Directive</button
           >
         </div>
-      </div></Draggable
-    >
+      </div>
+    </Draggable>
   {/if}
 </div>
 
