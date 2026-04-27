@@ -3,7 +3,14 @@
  * All functions silently no-op (or return null) on SSR / when localStorage is unavailable.
  */
 
+function isAvailable(): boolean {
+  return typeof localStorage !== 'undefined';
+}
+
 export function getLocalStorageItem<T>(key: string): T | null {
+  if (!isAvailable()) {
+    return null;
+  }
   try {
     const value = localStorage.getItem(key);
     if (value === null) {
@@ -17,6 +24,9 @@ export function getLocalStorageItem<T>(key: string): T | null {
 }
 
 export function setLocalStorageItem<T>(key: string, value: T): void {
+  if (!isAvailable()) {
+    return;
+  }
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -25,6 +35,9 @@ export function setLocalStorageItem<T>(key: string, value: T): void {
 }
 
 export function removeLocalStorageItem(key: string): void {
+  if (!isAvailable()) {
+    return;
+  }
   try {
     localStorage.removeItem(key);
   } catch (error) {
