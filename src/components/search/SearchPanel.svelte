@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
@@ -74,6 +75,7 @@
   let typeOptions: DropdownOptions = [];
   let presetOptions: DropdownOptions = [];
   let userOptions: DropdownOptions = [];
+  let argNameOptions: DropdownOptions = [];
 
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
 
@@ -109,12 +111,31 @@
     presetOptions = [{ display: '', value: '' }, ...presetNames.map(name => ({ display: name, value: name }))];
   }
 
+  $: {
+    const sourceModels = selectedModel ? [selectedModel] : ($models ?? []);
+    const paramNames = new Set<string>();
+    for (const model of sourceModels) {
+      for (const type of model?.activity_types ?? []) {
+        if (filters.actType && type.name !== filters.actType) {
+          continue;
+        }
+        for (const paramName of Object.keys(type.parameters ?? {})) {
+          paramNames.add(paramName);
+        }
+      }
+    }
+    argNameOptions = [
+      { display: '', value: '' },
+      ...[...paramNames].sort((a, b) => a.localeCompare(b)).map(name => ({ display: name, value: name })),
+    ];
+  }
+
   $: hasAnyFilter =
     selectedModel !== undefined ||
     Object.entries(filters).some(([k, v]) => (k === 'schedulerCreatedOnly' ? v === true : v !== ''));
 
-  // Initialize from URL on first page load
-  $: if ($page.url) {
+  // Initialize from URL on first page load (browser only — SSR can't navigate)
+  $: if (browser && $page.url) {
     initFromUrl();
   }
 
@@ -126,6 +147,13 @@
       pendingSearch = false;
       onSearch();
     }
+  }
+
+  // Keep URL in sync with current filter form state after init
+  $: if (browser && initialized) {
+    void filters;
+    void selectedModel;
+    updateUrl();
   }
 
   function initFromUrl() {
@@ -262,7 +290,10 @@
       <div class="flex flex-col gap-1">
         <Label size="sm">Mission Model</Label>
         <Select.Root
-          selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+          selected={{
+            label: selectedModel ? getDisplayNameForModel(selectedModel) : 'All Models',
+            value: selectedModel?.id,
+          }}
           onSelectedChange={v => (selectedModel = $models.find(model => model.id === v?.value))}
           loop={false}
         >
@@ -308,7 +339,6 @@
         <InputStellar
           bind:value={filters.actName}
           id="activity-name-input"
-          placeholder="Activity Name"
           autocomplete="off"
           class="w-full"
           sizeVariant="xs"
@@ -316,14 +346,11 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <Label size="sm" for="argument-name-input">Argument Name</Label>
-        <InputStellar
-          bind:value={filters.argName}
-          id="argument-name-input"
-          placeholder="Argument Name"
-          autocomplete="off"
-          class="w-full"
-          sizeVariant="xs"
+        <Label size="sm">Argument Name</Label>
+        <SearchableDropdown
+          options={argNameOptions}
+          on:change={e => (filters = { ...filters, argName: e.detail[0]?.toString() ?? '' })}
+          selectedOptionValues={[filters.argName]}
         />
       </div>
       <div class="flex flex-col gap-1">
@@ -331,7 +358,6 @@
         <InputStellar
           bind:value={filters.argValue}
           id="argument-value-input"
-          placeholder="Argument Value"
           autocomplete="off"
           class="w-full"
           sizeVariant="xs"
@@ -391,7 +417,6 @@
         <InputStellar
           bind:value={filters.planName}
           id="plan-name-input"
-          placeholder="Plan Name"
           autocomplete="off"
           class="w-full"
           sizeVariant="xs"
@@ -419,7 +444,7 @@
         </label>
       </div>
 
-      <div class="mt-2 flex flex-col gap-2">
+      <div class="mt-4 flex flex-col gap-2">
         <Button type="button" class="w-full" variant="outline" on:click={clearFilters}>Clear Filters</Button>
         <Button type="submit" class="w-full" disabled={!hasAnyFilter}>Search</Button>
       </div>
