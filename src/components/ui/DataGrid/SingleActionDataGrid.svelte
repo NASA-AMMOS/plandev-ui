@@ -187,6 +187,8 @@
   on:columnPinned
   on:columnResized
   on:columnStateChange
+  on:columnVisible
+  on:columnsReset
   on:filterChanged
   on:focus={onFocus}
   on:rowClicked

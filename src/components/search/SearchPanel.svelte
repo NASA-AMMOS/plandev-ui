@@ -282,7 +282,7 @@
 
 <Panel overflowYBody="auto">
   <svelte:fragment slot="header">
-    <SectionTitle>Search for activities across plans</SectionTitle>
+    <SectionTitle>Search for Activities Across Plans</SectionTitle>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
@@ -446,7 +446,7 @@
 
       <div class="mt-4 flex flex-col gap-2">
         <Button type="button" class="w-full" variant="outline" on:click={clearFilters}>Clear Filters</Button>
-        <Button type="submit" class="w-full" disabled={!hasAnyFilter}>Search</Button>
+        <Button type="submit" class="w-full">Search</Button>
       </div>
     </form>
   </svelte:fragment>

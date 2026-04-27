@@ -2,11 +2,17 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
+  import type { ColumnState } from 'ag-grid-community';
   import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { SEARCH_RESULTS_COLUMN_STATE_KEY } from '../../constants/localStorage';
   import { hasSearched, PAGE_SIZE, searchCurrentPage, searchOrderBy, searchTotalCount } from '../../stores/search';
   import type { ActivityDirectiveSearchResult } from '../../types/activity';
   import type { User } from '../../types/app';
+  import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../../utilities/localStorage';
   import { getShortISOForDate } from '../../utilities/time';
+  import ActivityTableMenu from '../activity/ActivityTableMenu.svelte';
+  import DataGrid from '../ui/DataGrid/DataGrid.svelte';
+  import { tagsCellRenderer, tagsFilterValueGetter } from '../ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -16,81 +22,170 @@
   export let onPageChange: (page: number) => void = () => {};
   export let onSortChange: () => void = () => {};
 
+  let resultsGrid: SingleActionDataGrid<ActivityDirectiveSearchResult> | undefined;
+  $: dataGrid = resultsGrid?.dataGrid as DataGrid<ActivityDirectiveSearchResult> | undefined;
+
+  const formatTimestamp = (params: { value: string }) =>
+    params.value ? getShortISOForDate(new Date(params.value)) : '';
+
+  const argumentsValueGetter = (params: { data?: ActivityDirectiveSearchResult }) => {
+    const args = params.data?.arguments;
+    if (!args || Object.keys(args).length === 0) {
+      return '';
+    }
+    return JSON.stringify(args);
+  };
+
   const columnDefs = [
     {
+      colId: 'name',
       field: 'name',
       headerName: 'Activity Name',
+      hide: false,
       minWidth: 120,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'type',
       field: 'type',
       headerName: 'Activity Type',
+      hide: false,
       minWidth: 120,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'plan.name',
       field: 'plan.name',
       headerName: 'Plan Name',
+      hide: false,
       minWidth: 120,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'plan.owner',
       field: 'plan.owner',
       headerName: 'Plan Owner',
+      hide: false,
       minWidth: 100,
       resizable: true,
       sortable: true,
       width: 100,
     },
     {
+      colId: 'applied_preset.preset_applied.name',
       field: 'applied_preset.preset_applied.name',
       headerName: 'Applied Preset',
+      hide: false,
       minWidth: 120,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'start_offset',
       field: 'start_offset',
       headerName: 'Start Offset',
+      hide: false,
       minWidth: 100,
       resizable: true,
       sortable: true,
     },
     {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      colId: 'tags',
+      field: 'tags',
+      filterValueGetter: tagsFilterValueGetter,
+      headerName: 'Tags',
+      hide: false,
+      minWidth: 120,
+      resizable: true,
+      sortable: false,
+      width: 200,
+    },
+    {
+      colId: 'arguments',
+      field: 'arguments',
+      headerName: 'Arguments',
+      hide: true,
+      minWidth: 160,
+      resizable: true,
+      sortable: false,
+      valueGetter: argumentsValueGetter,
+      width: 240,
+    },
+    {
+      colId: 'created_by',
       field: 'created_by',
       headerName: 'Created By',
+      hide: false,
       minWidth: 100,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'created_at',
+      field: 'created_at',
+      headerName: 'Created At',
+      hide: true,
+      minWidth: 140,
+      resizable: true,
+      sortable: true,
+      valueFormatter: formatTimestamp,
+    },
+    {
+      colId: 'last_modified_at',
       field: 'last_modified_at',
       headerName: 'Last Modified',
+      hide: false,
       minWidth: 140,
       resizable: true,
       sort: 'desc' as const,
       sortable: true,
-      valueFormatter: (params: { value: string }) => (params.value ? getShortISOForDate(new Date(params.value)) : ''),
+      valueFormatter: formatTimestamp,
     },
     {
+      colId: 'last_modified_by',
       field: 'last_modified_by',
       headerName: 'Modified By',
+      hide: false,
       minWidth: 100,
       resizable: true,
       sortable: true,
     },
     {
+      colId: 'source_scheduling_goal_id',
       field: 'source_scheduling_goal_id',
       headerName: 'Sched. Goal ID',
+      hide: false,
       minWidth: 100,
+      resizable: true,
+      sortable: true,
+    },
+    {
+      colId: 'plan_id',
+      field: 'plan_id',
+      headerName: 'Plan ID',
+      hide: true,
+      minWidth: 80,
+      resizable: true,
+      sortable: true,
+    },
+    {
+      colId: 'directive_id',
+      field: 'directive_id',
+      headerName: 'Activity ID',
+      hide: true,
+      minWidth: 80,
       resizable: true,
       sortable: true,
     },
   ];
+
+  const savedColumnStates = getLocalStorageItem<ColumnState[]>(SEARCH_RESULTS_COLUMN_STATE_KEY) ?? [];
+  let columnStates: ColumnState[] = savedColumnStates;
 
   $: totalPages = Math.max(1, Math.ceil($searchTotalCount / PAGE_SIZE));
   $: currentPage = $searchCurrentPage;
@@ -127,7 +222,63 @@
       searchOrderBy.set([{ last_modified_at: 'desc' }]);
     }
 
+    updateColumnState();
     onSortChange();
+  }
+
+  function saveColumnState() {
+    if (columnStates && columnStates.length > 0) {
+      setLocalStorageItem(SEARCH_RESULTS_COLUMN_STATE_KEY, columnStates);
+    }
+  }
+
+  function updateColumnState(updatedColumnStates?: ColumnState[]) {
+    const next = updatedColumnStates ?? dataGrid?.getColumnState();
+    if (next) {
+      columnStates = next;
+      saveColumnState();
+    }
+  }
+
+  function onColumnMoved() {
+    updateColumnState();
+  }
+
+  function onColumnPinned() {
+    updateColumnState();
+  }
+
+  function onColumnResized() {
+    updateColumnState();
+  }
+
+  function onColumnVisible() {
+    updateColumnState();
+  }
+
+  function onColumnsChanged({
+    detail: { columns },
+  }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
+    const current = dataGrid?.getColumnState() ?? [];
+    const next = current.map(state => ({
+      ...state,
+      hide: columns.find(c => c.field === state.colId)?.isHidden ?? state.hide,
+    }));
+    updateColumnState(next);
+  }
+
+  function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
+    const current = dataGrid?.getColumnState() ?? [];
+    updateColumnState(current.map(state => ({ ...state, hide })));
+  }
+
+  function onResetColumnsFromMenu() {
+    dataGrid?.resetColumns();
+  }
+
+  function onColumnsReset() {
+    removeLocalStorageItem(SEARCH_RESULTS_COLUMN_STATE_KEY);
+    columnStates = [];
   }
 
   function goToPage(page: number) {
@@ -139,13 +290,22 @@
 
 <Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
-    <div class="flex items-center justify-between">
+    <div class="flex w-full items-center justify-between gap-2">
       <SectionTitle>Results</SectionTitle>
-      {#if $hasSearched && $searchTotalCount > 0}
-        <span class="text-xs text-muted-foreground">
-          {startResult}-{endResult} of {$searchTotalCount.toLocaleString()}
-        </span>
-      {/if}
+      <div class="flex items-center gap-2">
+        {#if $hasSearched && $searchTotalCount > 0}
+          <span class="text-xs text-muted-foreground">
+            {startResult}-{endResult} of {$searchTotalCount.toLocaleString()}
+          </span>
+        {/if}
+        <ActivityTableMenu
+          {columnDefs}
+          {columnStates}
+          on:columns-changed={onColumnsChanged}
+          on:columns-reset={onResetColumnsFromMenu}
+          on:show-hide-all-columns={onShowHideAllColumns}
+        />
+      </div>
     </div>
   </svelte:fragment>
 
@@ -153,13 +313,20 @@
     <div class="flex h-full flex-col">
       <div class="min-h-0 flex-1">
         <SingleActionDataGrid
+          bind:this={resultsGrid}
           idKey="directive_id"
           {columnDefs}
+          {columnStates}
           items={activities ?? []}
           {user}
           itemDisplayText="Search Results"
           on:rowClicked={onRowClicked}
           on:sortChanged={onGridSortChanged}
+          on:columnMoved={onColumnMoved}
+          on:columnPinned={onColumnPinned}
+          on:columnResized={onColumnResized}
+          on:columnVisible={onColumnVisible}
+          on:columnsReset={onColumnsReset}
           hasDeletePermission={false}
           loading={$hasSearched && activities === null}
           noRowsOverlayText="No Results Found"
@@ -167,39 +334,32 @@
       </div>
 
       {#if $hasSearched && $searchTotalCount > PAGE_SIZE}
-        <div class="flex items-center justify-center gap-2 border-t border-border px-3 py-2">
-          <Button
-            size="xs"
-            variant="ghost"
-            disabled={currentPage === 0}
-            on:click={() => goToPage(0)}
-            aria-label="First page"
-          >
+        <div class="flex items-center justify-center gap-2 border-t border-border px-3 pb-1 pt-2">
+          <Button variant="ghost" disabled={currentPage === 0} on:click={() => goToPage(0)} aria-label="First page">
             First
           </Button>
           <Button
-            size="xs"
+            size="icon"
             variant="ghost"
             disabled={currentPage === 0}
             on:click={() => goToPage(currentPage - 1)}
             aria-label="Previous page"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={16} />
           </Button>
           <span class="text-xs">
             Page {currentPage + 1} of {totalPages.toLocaleString()}
           </span>
           <Button
-            size="xs"
+            size="icon"
             variant="ghost"
             disabled={currentPage >= totalPages - 1}
             on:click={() => goToPage(currentPage + 1)}
             aria-label="Next page"
           >
-            <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </Button>
           <Button
-            size="xs"
             variant="ghost"
             disabled={currentPage >= totalPages - 1}
             on:click={() => goToPage(totalPages - 1)}
