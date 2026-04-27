@@ -2053,29 +2053,52 @@ const gql = {
   `,
 
   SEARCH_ACTIVITIES: `#graphql
-    query SearchActivities($searchFilter: activity_directive_bool_exp!, $limit: Int!) {
-      ${Queries.ACTIVITY_DIRECTIVES}(where: $searchFilter, order_by: { start_offset: desc }, limit: $limit) {
+    query SearchActivities(
+      $searchFilter: activity_directive_bool_exp!,
+      $limit: Int!,
+      $offset: Int!,
+      $orderBy: [activity_directive_order_by!]
+    ) {
+      ${Queries.ACTIVITY_DIRECTIVES}(where: $searchFilter, order_by: $orderBy, limit: $limit, offset: $offset) {
         applied_preset {
           preset_applied {
             name
           }
         }
         arguments
+        created_at
+        created_by
         directive_id: id
-        name
         last_modified_at
+        last_modified_by
+        name
         plan_id
         plan {
           name
           model_id
+          owner
+          start_time
+          tags {
+            tag {
+              color
+              name
+            }
+          }
         }
+        source_scheduling_goal_id
+        start_offset
         tags {
           tag {
-            name
             color
+            name
           }
         }
         type
+      }
+      activity_directive_aggregate(where: $searchFilter) {
+        aggregate {
+          count
+        }
       }
     }
   `,

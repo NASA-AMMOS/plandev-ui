@@ -87,6 +87,7 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSearchResult,
+  ActivitySearchResponse,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
@@ -7201,118 +7202,100 @@ const effects = {
   },
 
   async searchActivities(
-    modelId: number | undefined,
-    filterArgType: string,
-    filterActName: string,
-    filterArgs: [name: string, value: string | number | boolean][],
-    filterTagValue: string,
-    filterPreset: string,
+    filters: {
+      actName: string;
+      actType: string;
+      args: [name: string, value: string | number | boolean][];
+      createdBy: string;
+      lastModifiedAfter: string;
+      lastModifiedBefore: string;
+      modelId: number | undefined;
+      planName: string;
+      planOwner: string;
+      preset: string;
+      schedulerCreatedOnly: boolean;
+      tagValue: string;
+    },
+    pagination: {
+      limit: number;
+      offset: number;
+      orderBy: Record<string, string>[];
+    },
     user: User | null,
-  ): Promise<ActivityDirectiveSearchResult[] | null> {
+  ): Promise<{ results: ActivityDirectiveSearchResult[]; totalCount: number } | null> {
     try {
       const clauses = [];
-      if (modelId !== undefined && modelId !== null) {
-        clauses.push({
-          plan: {
-            model_id: {
-              _eq: modelId,
-            },
-          },
-        });
+
+      if (filters.modelId !== undefined && filters.modelId !== null) {
+        clauses.push({ plan: { model_id: { _eq: filters.modelId } } });
       }
-      if (filterArgType) {
-        clauses.push({
-          type: {
-            _eq: filterArgType,
-          },
-        });
+      if (filters.actType) {
+        clauses.push({ type: { _eq: filters.actType } });
       }
-      if (filterActName) {
-        clauses.push({
-          name: {
-            _ilike: `%${filterActName}%`,
-          },
-        });
+      if (filters.actName) {
+        clauses.push({ name: { _ilike: `%${filters.actName}%` } });
       }
-      if (filterTagValue) {
-        clauses.push({
-          tags: {
-            tag: {
-              name: {
-                _eq: filterTagValue,
-              },
-            },
-          },
-        });
+      if (filters.tagValue) {
+        clauses.push({ tags: { tag: { name: { _eq: filters.tagValue } } } });
       }
-      if (filterPreset) {
-        clauses.push({
-          applied_preset: {
-            preset_applied: {
-              name: {
-                _eq: filterPreset,
-              },
-            },
-          },
-        });
+      if (filters.preset) {
+        clauses.push({ applied_preset: { preset_applied: { name: { _eq: filters.preset } } } });
+      }
+      if (filters.createdBy) {
+        clauses.push({ created_by: { _eq: filters.createdBy } });
+      }
+      if (filters.lastModifiedAfter) {
+        // datetime-local values (YYYY-MM-DDTHH:MM) are parsed as local time by JS Date
+        clauses.push({ last_modified_at: { _gte: new Date(filters.lastModifiedAfter).toISOString() } });
+      }
+      if (filters.lastModifiedBefore) {
+        clauses.push({ last_modified_at: { _lte: new Date(filters.lastModifiedBefore).toISOString() } });
+      }
+      if (filters.planName) {
+        clauses.push({ plan: { name: { _ilike: `%${filters.planName}%` } } });
+      }
+      if (filters.planOwner) {
+        clauses.push({ plan: { owner: { _eq: filters.planOwner } } });
+      }
+      if (filters.schedulerCreatedOnly) {
+        clauses.push({ source_scheduling_goal_id: { _is_null: false } });
       }
 
-      for (const [argName, argValue] of filterArgs) {
+      for (const [argName, argValue] of filters.args) {
         if (argName === '' && argValue === '') {
           continue;
         } else if (argName === '') {
-          clauses.push({
-            arguments: {
-              _cast: {
-                String: {
-                  _ilike: `%${argValue}%`,
-                },
-              },
-            },
-          });
+          clauses.push({ arguments: { _cast: { String: { _ilike: `%${argValue}%` } } } });
         } else if (argValue === '') {
-          clauses.push({
-            arguments: {
-              _has_key: argName,
-            },
-          });
+          clauses.push({ arguments: { _has_key: argName } });
         } else if (typeof argValue === 'string') {
-          clauses.push({
-            arguments: {
-              _contains: {
-                [argName]: argValue,
-              },
-            },
-          });
+          clauses.push({ arguments: { _contains: { [argName]: argValue } } });
         } else if (typeof argValue === 'number' || typeof argValue === 'boolean') {
           clauses.push({
             _or: [
-              {
-                arguments: {
-                  _contains: {
-                    [argName]: argValue,
-                  },
-                },
-              },
-              {
-                arguments: {
-                  _contains: {
-                    [argName]: argValue.toString(),
-                  },
-                },
-              },
+              { arguments: { _contains: { [argName]: argValue } } },
+              { arguments: { _contains: { [argName]: argValue.toString() } } },
             ],
           });
         }
       }
 
-      const data = await reqHasura<ActivityDirectiveSearchResult[]>(
+      const data: ActivitySearchResponse = (await reqHasura(
         gql.SEARCH_ACTIVITIES,
-        { limit: 500, searchFilter: { _and: clauses } },
+        {
+          limit: pagination.limit,
+          offset: pagination.offset,
+          orderBy: pagination.orderBy,
+          searchFilter: { _and: clauses },
+        },
         user,
-      );
+      )) as unknown as ActivitySearchResponse;
+
       if (data.activity_directive) {
-        return data.activity_directive;
+        return {
+          results: data.activity_directive,
+          totalCount: data.activity_directive_aggregate?.aggregate?.count ?? 0,
+        };
       }
     } catch (e) {
       catchError('Search Failed', e as Error);

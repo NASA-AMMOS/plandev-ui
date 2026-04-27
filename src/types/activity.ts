@@ -136,13 +136,27 @@ export type PlanSnapshotActivityDB = Omit<ActivityDirectiveDB, 'anchor_validatio
 export interface ActivityDirectiveSearchResult {
   applied_preset: AppliedPreset['preset_applied']['name'] | null;
   arguments: ArgumentsMap;
+  created_at: string;
+  created_by: UserId;
   directive_id: number;
   last_modified_at: string;
+  last_modified_by: UserId;
   name: string;
-  plan: Pick<PlanSchema, 'model_id' | 'name'>;
+  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'>;
   plan_id: number;
+  source_scheduling_goal_id: number | null;
+  start_offset: string;
   tags: {
     tag: TagsInsertInput;
   }[];
   type: string;
+}
+
+export interface ActivitySearchResponse {
+  activity_directive: ActivityDirectiveSearchResult[];
+  activity_directive_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
 }

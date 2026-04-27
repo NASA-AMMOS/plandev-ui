@@ -9,12 +9,22 @@
   import SearchResults from './SearchResults.svelte';
 
   export let user: User | null;
+
+  let searchPanel: SearchPanel;
+
+  function onPageChange(page: number) {
+    searchPanel?.onSearch(page);
+  }
+
+  function onSortChange() {
+    searchPanel?.onSearch(0);
+  }
 </script>
 
 <CssGrid columns={$searchColumns}>
-  <SearchPanel {user} />
+  <SearchPanel bind:this={searchPanel} {user} />
 
   <CssGridGutter track={1} type="column" />
 
-  <SearchResults {user} activities={$searchResults} />
+  <SearchResults {user} activities={$searchResults} {onPageChange} {onSortChange} />
 </CssGrid>
