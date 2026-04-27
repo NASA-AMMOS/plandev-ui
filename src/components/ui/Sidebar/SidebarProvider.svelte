@@ -1,8 +1,6 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
-  import { SIDEBAR_COOKIE_MAX_AGE_DAYS, SIDEBAR_COOKIE_NAME } from '../../../constants/cookies.js';
-  import { setCookie } from '../../../utilities/cookies.js';
   import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from './constants.js';
   import { setSidebar } from './context.js';
 
@@ -24,12 +22,7 @@
 
   const sidebar = setSidebar({
     open: () => open,
-    setOpen: (value: boolean) => {
-      onOpenChange(value);
-
-      // This sets the cookie to keep the sidebar state.
-      setCookie(SIDEBAR_COOKIE_NAME, `${open}`, SIDEBAR_COOKIE_MAX_AGE_DAYS);
-    },
+    setOpen: onOpenChange,
   });
 </script>
 

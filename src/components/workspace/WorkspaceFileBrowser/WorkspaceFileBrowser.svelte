@@ -11,7 +11,7 @@
   } from 'ag-grid-community';
   import { Search } from 'lucide-svelte';
   import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { COLUMN_STATE_COOKIE_NAME } from '../../../constants/cookies';
+  import { WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY } from '../../../constants/localStorage';
   import { PATH_DELIMITER } from '../../../constants/workspaces';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { ActionDefinition } from '../../../types/actions';
@@ -29,7 +29,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { deleteCookie, getJsonCookie, setJsonCookie } from '../../../utilities/cookies';
+  import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../../../utilities/localStorage';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
@@ -78,7 +78,7 @@
     runAction: WorkspaceNodeRunActionEvent;
   }>();
 
-  const savedColumnStates = getJsonCookie<ColumnState[]>(COLUMN_STATE_COOKIE_NAME) ?? [];
+  const savedColumnStates = getLocalStorageItem<ColumnState[]>(WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY) ?? [];
 
   let actionsMenuFocused: boolean = false;
   let columnDefs: DataGridColumnDef<WorkspaceTreeNodeWithFullPath>[] = [];
@@ -657,9 +657,9 @@
     actionsMenuFocused = event.detail;
   }
 
-  function saveColumnStateToCookie() {
+  function saveColumnState() {
     if (columnStates && columnStates.length > 0) {
-      setJsonCookie(COLUMN_STATE_COOKIE_NAME, columnStates);
+      setLocalStorageItem(WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY, columnStates);
     }
   }
 
@@ -667,7 +667,7 @@
     const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
     if (columnStatesToUpdate) {
       columnStates = processNameColumnState(columnStatesToUpdate);
-      saveColumnStateToCookie();
+      saveColumnState();
     }
   }
 
@@ -731,7 +731,7 @@
 
   function onResetColumns() {
     nameColumnUserWidth = null;
-    deleteCookie(COLUMN_STATE_COOKIE_NAME);
+    removeLocalStorageItem(WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY);
     columnStates = [
       { colId: 'name', hide: false },
       ...metadataColumnDefs.map(col => ({
