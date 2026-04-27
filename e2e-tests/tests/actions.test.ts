@@ -71,10 +71,8 @@ test.describe.serial('Actions', () => {
   });
 
   test('Run API integration tests', async () => {
-    test.setTimeout(120000);
     await action.selectActionInSidebar();
     await action.runAction({
-      actionTimeout: 90000,
       expectedStatus: 'Complete',
       mode: 'api-test',
       stringParameters: { required: 'test-required-value' },
