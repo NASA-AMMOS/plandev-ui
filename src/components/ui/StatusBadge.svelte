@@ -13,6 +13,7 @@
   import ProgressRadial from './ProgressRadial.svelte';
 
   export let badgeText: string | undefined = undefined;
+  export let dataTestId: string | undefined = undefined;
   export let indeterminate: boolean = false;
   export let status: Status | null = null;
   export let showTooltip: boolean = true;
@@ -29,6 +30,7 @@
   <span
     aria-label={status}
     class="status-badge {status.toLowerCase()}"
+    data-testid={dataTestId}
     style="background: {status === Status.Failed || status === Status.Unchecked ? 'transparent' : color}"
     use:tooltip={{ content: showTooltip ? `${prefix}${status}` : '', placement: 'top' }}
   >

@@ -107,30 +107,25 @@ export class Action {
     // Verify we navigated to the run detail view
     await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
 
-    // Wait for a terminal status (Complete or Failed) in the main content area
-    await expect(
-      this.page
-        .getByRole('tabpanel')
-        .getByRole('button', { name: `Complete ${this.actionName}` })
-        .or(this.page.getByRole('tabpanel').getByRole('button', { name: `Failed ${this.actionName}` })),
-    ).toBeVisible({ timeout: actionTimeout });
+    // Wait for a terminal status (Complete or Failed) on the run detail view's status badge.
+    // The badge is bound to the specific run we just navigated to, so its aria-label can't
+    // match the sidebar's "Last run" badge for a previous run.
+    const statusBadge = this.page.getByTestId('action-run-status');
+    await expect(statusBadge).toHaveAttribute('aria-label', /^(Complete|Failed)$/, { timeout: actionTimeout });
 
     if (expectedStatus) {
-      const statusMatched = await this.page
-        .getByRole('tabpanel')
-        .getByRole('button', { name: `${expectedStatus} ${this.actionName}` });
-
-      if (!(await statusMatched.isVisible())) {
+      const actualStatus = await statusBadge.getAttribute('aria-label');
+      if (actualStatus !== expectedStatus) {
         if (expectedStatus === 'Complete') {
           // If we expect success but see failure, collect and throw the error message from the UI
-          const errorMessage = await this.page.getByTestId('action-run-error-log').innerText();
+          const errorMessage = await this.page.getByTestId('action-run-error-log').innerText({ timeout: 5000 });
           throw new Error(
-            `Expected action run to have status "${expectedStatus}" but it did not. Error message: ${errorMessage}`,
+            `Expected action run to have status "${expectedStatus}" but got "${actualStatus}". Error message: ${errorMessage}`,
           );
         } else {
-          const results = await this.page.getByTestId('action-run-results').innerText();
+          const results = await this.page.getByTestId('action-run-results').innerText({ timeout: 5000 });
           throw new Error(
-            `Expected action run to have status "${expectedStatus}" but it did not. Run details: ${results}`,
+            `Expected action run to have status "${expectedStatus}" but got "${actualStatus}". Run details: ${results}`,
           );
         }
       }
