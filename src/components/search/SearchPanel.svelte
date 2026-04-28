@@ -347,8 +347,8 @@
           </SearchableDropdown>
         </div>
         <div class="flex flex-col gap-1">
-          <Label size="sm" for="argument-value-input"
-            >Argument Value
+          <Label size="sm" for="argument-value-input" class="flex items-center gap-1">
+            Argument Value
             <Tooltip
               content="Defaults defined by the mission model are not applied to search filters, so you may need to specify argument values explicitly even if they were not provided when the activity was created. "
               class="max-h-none max-w-28 whitespace-normal"
