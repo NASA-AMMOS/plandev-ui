@@ -45,6 +45,7 @@
     actionDefinition.versions.find(v => v.revision === initialRevision)?.archived === true;
 
   let argumentsMap: ArgumentsMap = {};
+  let hasEmptyRequired: boolean = false;
   let isLoadingWorkspace: boolean = false;
   let touchedParamNames: Set<string> = new Set();
   let touchedSettingNames: Set<string> = new Set();
