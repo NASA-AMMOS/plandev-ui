@@ -41,6 +41,7 @@ const parameterDefinitions = {
   required: {
     type: 'string',
     description: 'A required parameter',
+    defaultValue: 'This is required',
     required: true,
   },
 };
@@ -63,6 +64,11 @@ const settingDefinitions = {
     type: 'string',
     description: 'Enable extra-verbose logging',
     defaultValue: "false",
+  },
+  requiredSetting: {
+    type: 'string',
+    description: 'A required setting',
+    required: true,
   },
 };
 

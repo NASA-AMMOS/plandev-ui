@@ -498,4 +498,52 @@ describe('applyRequiredErrors', () => {
     // param4 should not get an error (has value)
     expect(result[3].errors).toBeNull();
   });
+
+  test('Should not flag required fields whose value is 0 or false', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'numericZero',
+        order: 0,
+        required: true,
+        schema: { type: 'int' },
+        value: 0,
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'booleanFalse',
+        order: 1,
+        required: true,
+        schema: { type: 'boolean' },
+        value: false,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['numericZero', 'booleanFalse']);
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    expect(result[0].errors).toBeNull();
+    expect(result[1].errors).toBeNull();
+  });
+
+  test('Should flag required fields whose value is undefined', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: undefined,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1']);
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    expect(result[0].errors).toEqual(['This field is required']);
+  });
 });

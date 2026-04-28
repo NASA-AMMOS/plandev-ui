@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { ArgumentsMap, FormParameter, ParameterName, RequiredParametersList } from '../../types/parameter';
+  import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../types/parameter';
   import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import {
@@ -17,6 +17,7 @@
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
+  import { isEmpty } from '../../utilities/generic';
   import { applyRequiredErrors, getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
   import Parameters from '../parameters/Parameters.svelte';
@@ -47,18 +48,18 @@
   let argumentsMap: ArgumentsMap = {};
   let hasEmptyRequired: boolean = false;
   let isLoadingWorkspace: boolean = false;
-  let touchedParamNames: Set<string> = new Set();
-  let touchedSettingNames: Set<string> = new Set();
-  let running: boolean = false;
   let parametersMap: ActionParametersMap = {};
   let requiredParameters: RequiredParametersList = [];
   let requiredSettings: RequiredParametersList = [];
+  let running: boolean = false;
   let selectedRevision: string =
     initialRevision !== undefined && !initialVersionArchived && initialRevision !== latestRunnable?.revision
       ? String(initialRevision)
       : 'latest';
   let settingsArgumentsMap: ArgumentsMap = {};
   let settingsParametersMap: ActionParametersMap = {};
+  let touchedParamNames: Set<string> = new Set();
+  let touchedSettingNames: Set<string> = new Set();
 
   $: latestVersion = getLatestRunnableVersion(actionDefinition.versions);
   $: runnableVersions = getRunnableVersions(actionDefinition.versions);
@@ -69,15 +70,20 @@
   $: isLatestSelected = selectedRevision === 'latest';
   $: effectiveSelectedRevision = selectedRevision === 'latest' ? latestVersion?.revision : Number(selectedRevision);
   $: versionMismatch = isRerun && initialRevision !== undefined && effectiveSelectedRevision !== initialRevision;
-  $: requiredParameters = Object.entries(parametersMap)
-    .filter(([_, param]) => param.schema.required === true)
-    .map(([key, _]) => key as ParameterName);
-  $: requiredSettings = Object.entries(settingsParametersMap)
-    .filter(([_, param]) => param.schema.required === true)
-    .map(([key, _]) => key as ParameterName);
+  $: requiredParameters = Object.keys(parametersMap).filter(
+    name => parametersMap[name].schema.required === true,
+  ) as RequiredParametersList;
+  $: requiredSettings = Object.keys(settingsParametersMap).filter(
+    name => settingsParametersMap[name].schema.required === true,
+  ) as RequiredParametersList;
+  // Merge schema defaults so a required field with a defaultValue counts as filled
+  // even when the user hasn't touched it (defaults are also merged at submit time).
+  $: parameterDefaults = getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {});
+  $: settingsDefaults = getDefaultsFromSchema(selectedVersion?.settings_schema ?? {});
   $: hasEmptyRequired =
-    requiredParameters.some(name => !argumentsMap[name]) ||
-    (showSettings && requiredSettings.some(name => !settingsArgumentsMap[name]));
+    requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
+    (showSettings &&
+      requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;
@@ -134,8 +140,8 @@
     let secretParametersMap: ActionParametersMap = {};
     let nonSecretParametersMap: ActionParametersMap = {};
 
-    // Merge schema defaults into user-set arguments so params the user didn't touch
-    // (e.g. variant/enum with a default first option) are still sent to the server.
+    // Merge explicit schema defaults into user-set arguments so params the user
+    // didn't touch are still sent to the server when the schema declares a default.
     const defaults = getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {});
     const effectiveArguments = { ...defaults, ...argumentsMap };
 

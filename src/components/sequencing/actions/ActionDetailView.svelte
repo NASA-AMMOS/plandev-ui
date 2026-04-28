@@ -9,7 +9,7 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { ArgumentsMap, FormParameter, ParameterName, RequiredParametersList } from '../../../types/parameter';
+  import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../../types/parameter';
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
@@ -22,12 +22,14 @@
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { isEmpty } from '../../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
   import { applyRequiredErrors, getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import { formatMS } from '../../../utilities/time';
+  import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -47,15 +49,14 @@
   }>();
 
   let actionDefinition: ActionDefinition | null = null;
-  let activeTab: string = 'runs';
   let actionRuns: ActionRunSlim[] = [];
-  let filterExpression: string = '';
+  let activeTab: string = 'runs';
   let argumentsMap: ArgumentsMap = {};
-  let touchedSettingNames: Set<string> = new Set();
   let code: string = '';
   let codeAbortController: AbortController | null = null;
   let description: string = '';
   let displayedVersions: ActionDefinitionVersion[] = [];
+  let filterExpression: string = '';
   let hasUpdatePermission: boolean = false;
   let isDirty: boolean = false;
   let isLoadingCode: boolean = false;
@@ -66,11 +67,12 @@
   let saveButtonDisabled: boolean = true;
   let saving: boolean = false;
   let selectedRunId: number | null = null;
-  let selectedVersionRevision: number | null = null;
   let selectedVersion: ActionDefinitionVersion | null = null;
+  let selectedVersionRevision: number | null = null;
   let showArchivedVersions: boolean = false;
-  let versionPopoverOpen: boolean = false;
+  let touchedSettingNames: Set<string> = new Set();
   let uploadFileInput: HTMLInputElement;
+  let versionPopoverOpen: boolean = false;
 
   $: {
     const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
@@ -105,15 +107,17 @@
 
   $: latestNonArchivedVersion = getLatestRunnableVersion(actionDefinition?.versions ?? []);
 
-  $: requiredSettings = Object.entries(actionDefinition?.versions[0]?.settings_schema ?? {})
-    .filter(([_, schema]) => schema.required === true)
-    .map(([key]) => key as ParameterName) as RequiredParametersList;
+  $: settingsSchema = actionDefinition?.versions[0]?.settings_schema ?? {};
+  $: requiredSettings = Object.keys(settingsSchema).filter(
+    name => settingsSchema[name].required === true,
+  ) as RequiredParametersList;
 
   $: actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
     run => run.action_definition_id === actionDefinitionId,
   );
 
-  $: saveButtonDisabled = !name || saving;
+  $: hasEmptyRequiredSetting = requiredSettings.some(name => isEmpty(argumentsMap[name]));
+  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting;
 
   $: hasUpdatePermission = actionDefinition
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
@@ -499,6 +503,9 @@
                 use:permissionHandler={{
                   hasPermission: hasUpdatePermission,
                   permissionError: 'You do not have permission to update an action',
+                }}
+                use:tooltip={{
+                  content: hasEmptyRequiredSetting ? 'Please fill in all required settings' : undefined,
                 }}
               >
                 <Button class="h-6 text-xs" disabled={saveButtonDisabled || !isDirty} on:click={save}>

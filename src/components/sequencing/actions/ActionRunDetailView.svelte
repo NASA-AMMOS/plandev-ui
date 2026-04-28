@@ -207,7 +207,7 @@
             <span class="shrink-0 text-sm text-muted-foreground">/</span>
           {/if}
           <span class="flex shrink-0 items-center justify-center">
-            <StatusBadge {status} dataTestId="action-run-status" />
+            <StatusBadge {status} />
           </span>
           <h2 class="shrink-0 text-lg font-bold">Run #{actionRun.id}</h2>
         </div>

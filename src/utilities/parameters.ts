@@ -304,7 +304,7 @@ export function applyRequiredErrors(formParameters: FormParameter[], touchedName
     return formParameters;
   }
   return formParameters.map(fp => {
-    if (fp.required && touchedNames.has(fp.name) && (fp.value === null || fp.value === '') && fp.errors === null) {
+    if (fp.required && touchedNames.has(fp.name) && isEmpty(fp.value) && fp.errors === null) {
       return { ...fp, errors: ['This field is required'] };
     }
     return fp;

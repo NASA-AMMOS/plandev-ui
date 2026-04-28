@@ -105,13 +105,15 @@ export class Action {
     // Click the Run button in the modal footer
     await runModal.getByRole('button', { exact: true, name: 'Run' }).click();
     // Verify we navigated to the run detail view
-    await expect(this.page.getByRole('heading', { name: /Run #\d+/ })).toBeVisible({ timeout: 15000 });
+    const runHeading = this.page.getByRole('heading', { name: /Run #\d+/ });
+    await expect(runHeading).toBeVisible({ timeout: 15000 });
 
-    // Wait for a terminal status (Complete or Failed) on the run detail view's status badge.
-    // The badge is bound to the specific run we just navigated to, so its aria-label can't
-    // match the sidebar's "Last run" badge for a previous run.
-    const statusBadge = this.page.getByTestId('action-run-status');
-    await expect(statusBadge).toHaveAttribute('aria-label', /^(Complete|Failed)$/, { timeout: actionTimeout });
+    // Scope the status badge to the run-detail header (parent of the heading) so we
+    // don't accidentally match a previous run's badge in the sidebar. The locator is
+    // dynamic — it resolves once aria-label transitions to a terminal status.
+    const runHeader = runHeading.locator('..');
+    const statusBadge = runHeader.getByLabel(/^(Complete|Failed)$/);
+    await expect(statusBadge).toBeVisible({ timeout: actionTimeout });
 
     if (expectedStatus) {
       const actualStatus = await statusBadge.getAttribute('aria-label');
