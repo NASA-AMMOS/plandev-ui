@@ -7214,6 +7214,8 @@ const effects = {
       planOwner: string;
       preset: string;
       schedulerCreatedOnly: boolean;
+      startOffsetMax: string;
+      startOffsetMin: string;
       tagValue: string;
     },
     pagination: {
@@ -7259,6 +7261,12 @@ const effects = {
       }
       if (filters.schedulerCreatedOnly) {
         clauses.push({ source_scheduling_goal_id: { _is_null: false } });
+      }
+      if (filters.startOffsetMin) {
+        clauses.push({ start_offset: { _gte: filters.startOffsetMin } });
+      }
+      if (filters.startOffsetMax) {
+        clauses.push({ start_offset: { _lte: filters.startOffsetMax } });
       }
 
       for (const [argName, argValue] of filters.args) {

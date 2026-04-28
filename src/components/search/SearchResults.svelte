@@ -3,12 +3,19 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import type { ColumnState } from 'ag-grid-community';
-  import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-svelte';
   import { SEARCH_RESULTS_COLUMN_STATE_KEY } from '../../constants/localStorage';
-  import { hasSearched, PAGE_SIZE, searchCurrentPage, searchOrderBy, searchTotalCount } from '../../stores/search';
+  import {
+    hasSearched,
+    isSearching,
+    PAGE_SIZE,
+    searchCurrentPage,
+    searchOrderBy,
+    searchTotalCount,
+  } from '../../stores/search';
   import type { ActivityDirectiveSearchResult } from '../../types/activity';
   import type { User } from '../../types/app';
-  import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../../utilities/localStorage';
+  import { getLocalStorageItem } from '../../utilities/localStorage';
   import { getShortISOForDate } from '../../utilities/time';
   import ActivityTableMenu from '../activity/ActivityTableMenu.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
@@ -182,7 +189,10 @@
       resizable: true,
       sortable: true,
     },
-  ];
+    // Disable AG Grid's client-side sort on every sortable column — sorting is server-side,
+    // and a no-op local comparator avoids the flash where the visible page would briefly
+    // re-order with the local rows before the server response replaces them.
+  ].map(col => ('sortable' in col && col.sortable ? { ...col, comparator: () => 0 } : col));
 
   const savedColumnStates = getLocalStorageItem<ColumnState[]>(SEARCH_RESULTS_COLUMN_STATE_KEY) ?? [];
   let columnStates: ColumnState[] = savedColumnStates;
@@ -191,6 +201,20 @@
   $: currentPage = $searchCurrentPage;
   $: startResult = $searchTotalCount > 0 ? currentPage * PAGE_SIZE + 1 : 0;
   $: endResult = Math.min((currentPage + 1) * PAGE_SIZE, $searchTotalCount);
+
+  // Show "Searching..." only when the request takes longer than 500ms (avoids flash on fast responses)
+  let showSearchingIndicator = false;
+  let searchingTimeout: ReturnType<typeof setTimeout> | undefined;
+  $: {
+    clearTimeout(searchingTimeout);
+    if ($isSearching) {
+      searchingTimeout = setTimeout(() => {
+        showSearchingIndicator = true;
+      }, 500);
+    } else {
+      showSearchingIndicator = false;
+    }
+  }
 
   function getUrlForActivity(activity: ActivityDirectiveSearchResult): string {
     return `/plans/${activity.plan_id}?activityId=${activity.directive_id}`;
@@ -222,63 +246,33 @@
       searchOrderBy.set([{ last_modified_at: 'desc' }]);
     }
 
-    updateColumnState();
     onSortChange();
   }
 
-  function saveColumnState() {
-    if (columnStates && columnStates.length > 0) {
-      setLocalStorageItem(SEARCH_RESULTS_COLUMN_STATE_KEY, columnStates);
+  // Track grid's live column state (for menu rendering); DataGrid handles localStorage save/clear itself.
+  function onGridColumnStateChange(event: CustomEvent<ColumnState[] | undefined>) {
+    if (event.detail) {
+      columnStates = event.detail;
     }
-  }
-
-  function updateColumnState(updatedColumnStates?: ColumnState[]) {
-    const next = updatedColumnStates ?? dataGrid?.getColumnState();
-    if (next) {
-      columnStates = next;
-      saveColumnState();
-    }
-  }
-
-  function onColumnMoved() {
-    updateColumnState();
-  }
-
-  function onColumnPinned() {
-    updateColumnState();
-  }
-
-  function onColumnResized() {
-    updateColumnState();
-  }
-
-  function onColumnVisible() {
-    updateColumnState();
   }
 
   function onColumnsChanged({
     detail: { columns },
   }: CustomEvent<{ columns: { field: any; isHidden: boolean; name: string }[] }>) {
     const current = dataGrid?.getColumnState() ?? [];
-    const next = current.map(state => ({
+    columnStates = current.map(state => ({
       ...state,
       hide: columns.find(c => c.field === state.colId)?.isHidden ?? state.hide,
     }));
-    updateColumnState(next);
   }
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     const current = dataGrid?.getColumnState() ?? [];
-    updateColumnState(current.map(state => ({ ...state, hide })));
+    columnStates = current.map(state => ({ ...state, hide }));
   }
 
   function onResetColumnsFromMenu() {
     dataGrid?.resetColumns();
-  }
-
-  function onColumnsReset() {
-    removeLocalStorageItem(SEARCH_RESULTS_COLUMN_STATE_KEY);
-    columnStates = [];
   }
 
   function goToPage(page: number) {
@@ -291,9 +285,11 @@
 <Panel overflowYBody="hidden">
   <svelte:fragment slot="header">
     <div class="flex w-full items-center justify-between gap-2">
-      <SectionTitle>Results</SectionTitle>
+      <SectionTitle>Search Results</SectionTitle>
       <div class="flex items-center gap-2">
-        {#if $hasSearched && $searchTotalCount > 0}
+        {#if showSearchingIndicator}
+          <span class="text-xs text-muted-foreground">Searching…</span>
+        {:else if $hasSearched && $searchTotalCount > 0}
           <span class="text-xs text-muted-foreground">
             {startResult}-{endResult} of {$searchTotalCount.toLocaleString()}
           </span>
@@ -311,22 +307,24 @@
 
   <svelte:fragment slot="body">
     <div class="flex h-full flex-col">
-      <div class="min-h-0 flex-1">
+      <div class="relative min-h-0 flex-1">
+        {#if showSearchingIndicator}
+          <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+            <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+          </div>
+        {/if}
         <SingleActionDataGrid
           bind:this={resultsGrid}
           idKey="directive_id"
           {columnDefs}
           {columnStates}
+          persistColumnStateKey={SEARCH_RESULTS_COLUMN_STATE_KEY}
           items={activities ?? []}
           {user}
           itemDisplayText="Search Results"
           on:rowClicked={onRowClicked}
           on:sortChanged={onGridSortChanged}
-          on:columnMoved={onColumnMoved}
-          on:columnPinned={onColumnPinned}
-          on:columnResized={onColumnResized}
-          on:columnVisible={onColumnVisible}
-          on:columnsReset={onColumnsReset}
+          on:columnStateChange={onGridColumnStateChange}
           hasDeletePermission={false}
           loading={$hasSearched && activities === null}
           noRowsOverlayText="No Results Found"

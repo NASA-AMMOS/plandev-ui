@@ -4,10 +4,12 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
+  import { Button, Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
+  import { ChevronDown, CircleQuestionMark } from 'lucide-svelte';
   import { models } from '../../stores/model';
   import {
     hasSearched,
+    isSearching,
     PAGE_SIZE,
     searchCurrentPage,
     searchOrderBy,
@@ -15,7 +17,7 @@
     searchTotalCount,
   } from '../../stores/search';
   import { gqlSubscribable } from '../../stores/subscribable';
-  import { tags } from '../../stores/tags';
+  import { tagsStore } from '../../stores/tags';
   import { users } from '../../stores/user';
   import type { ActivityPreset } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -27,14 +29,9 @@
   import Panel from '../ui/Panel.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import Tooltip from '../ui/Tooltip.svelte';
 
   export let user: User | null;
-
-  let activityPresets: GqlSubscribable<ActivityPreset[]> = gqlSubscribable<ActivityPreset[]>(
-    gql.SUB_ACTIVITY_PRESETS_ALL,
-    {},
-    [],
-  );
 
   // Consolidated filter state
   const DEFAULT_FILTERS = {
@@ -49,8 +46,12 @@
     planOwner: '',
     preset: '',
     schedulerCreatedOnly: false,
+    startOffsetMax: '',
+    startOffsetMin: '',
     tagValue: '',
   };
+
+  type FilterKey = keyof typeof DEFAULT_FILTERS;
 
   // Map filter keys to URL param names where they differ
   const URL_PARAM_OVERRIDES: Partial<Record<keyof typeof DEFAULT_FILTERS, string>> = {
@@ -58,28 +59,41 @@
     tagValue: 'tag',
   };
 
-  type FilterKey = keyof typeof DEFAULT_FILTERS;
+  const activityPresets: GqlSubscribable<ActivityPreset[]> = gqlSubscribable<ActivityPreset[]>(
+    gql.SUB_ACTIVITY_PRESETS_ALL,
+    {},
+    [],
+  );
+  const modelsLoading = models.loading;
+  const modelsError = models.error;
+  const tagsLoading = tagsStore.loading;
+  const tagsError = tagsStore.error;
+  const usersLoading = users.loading;
+  const usersError = users.error;
+  const presetsLoading = activityPresets.loading;
+  const presetsError = activityPresets.error;
 
-  function getParamName(key: FilterKey): string {
-    return URL_PARAM_OVERRIDES[key] ?? key;
-  }
-
-  let selectedModel: ModelSlim | undefined;
+  let argNameOptions: DropdownOptions = [];
+  let selectedModelId: number | undefined;
   let filters = { ...DEFAULT_FILTERS };
   let initialized = false;
-  let pendingModelId: number | null = null;
-  let pendingSearch = false;
-
   let orderedModels: ModelSlim[] = [];
+  let modelOptions: DropdownOptions = [];
   let tagOptions: DropdownOptions = [];
   let typeOptions: DropdownOptions = [];
   let presetOptions: DropdownOptions = [];
   let userOptions: DropdownOptions = [];
-  let argNameOptions: DropdownOptions = [];
+
+  $: selectedModel = selectedModelId !== undefined ? $models.find(m => m.id === selectedModelId) : undefined;
 
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
 
-  $: tagOptions = [{ display: '', value: '' }, ...$tags.map(tag => ({ display: tag.name, value: tag.name }))];
+  $: modelOptions = [
+    { display: '', value: '' },
+    ...orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id })),
+  ];
+
+  $: tagOptions = [{ display: '', value: '' }, ...$tagsStore.map(tag => ({ display: tag.name, value: tag.name }))];
 
   $: userOptions = [
     { display: '', value: '' },
@@ -130,30 +144,22 @@
     ];
   }
 
-  $: hasAnyFilter =
-    selectedModel !== undefined ||
-    Object.entries(filters).some(([k, v]) => (k === 'schedulerCreatedOnly' ? v === true : v !== ''));
-
   // Initialize from URL on first page load (browser only — SSR can't navigate)
   $: if (browser && $page.url) {
     initFromUrl();
   }
 
-  // Resolve pending model ID once models subscription delivers data
-  $: if (pendingModelId !== null && $models.length > 0) {
-    selectedModel = $models.find(m => m.id === pendingModelId);
-    pendingModelId = null;
-    if (pendingSearch) {
-      pendingSearch = false;
-      onSearch();
-    }
-  }
+  $: subscriptionError = $modelsError || $tagsError || $usersError || $presetsError || '';
 
   // Keep URL in sync with current filter form state after init
   $: if (browser && initialized) {
     void filters;
-    void selectedModel;
+    void selectedModelId;
     updateUrl();
+  }
+
+  function getParamName(key: FilterKey): string {
+    return URL_PARAM_OVERRIDES[key] ?? key;
   }
 
   function initFromUrl() {
@@ -166,13 +172,7 @@
 
     const modelIdParam = params.get('modelId');
     if (modelIdParam) {
-      const id = parseInt(modelIdParam);
-      const found = $models.find(m => m.id === id);
-      if (found) {
-        selectedModel = found;
-      } else {
-        pendingModelId = id;
-      }
+      selectedModelId = parseInt(modelIdParam);
     }
 
     const updates: Partial<typeof DEFAULT_FILTERS> = {};
@@ -186,18 +186,15 @@
       filters = { ...filters, ...updates };
     }
 
-    if (hasAnyFilter) {
+    if (selectedModelId !== undefined || Object.keys(updates).length > 0) {
       onSearch();
-    } else if (pendingModelId !== null) {
-      // Model is the only filter; defer search until it resolves
-      pendingSearch = true;
     }
   }
 
   function updateUrl() {
     const params = new URLSearchParams();
-    if (selectedModel) {
-      params.set('modelId', selectedModel.id.toString());
+    if (selectedModelId !== undefined) {
+      params.set('modelId', selectedModelId.toString());
     }
     for (const key of Object.keys(filters) as FilterKey[]) {
       const val = filters[key];
@@ -216,6 +213,7 @@
   export async function onSearch(pageNumber: number = 0) {
     hasSearched.set(true);
     searchCurrentPage.set(pageNumber);
+    isSearching.set(true);
 
     const filterArgs: [name: string, value: string | number | boolean][] = [];
     if (filters.argName || filters.argValue) {
@@ -231,39 +229,45 @@
       }
     }
 
-    const result = await effects.searchActivities(
-      {
-        actName: filters.actName,
-        actType: filters.actType,
-        args: filterArgs,
-        createdBy: filters.createdBy,
-        lastModifiedAfter: filters.lastModifiedAfter,
-        lastModifiedBefore: filters.lastModifiedBefore,
-        modelId: selectedModel?.id,
-        planName: filters.planName,
-        planOwner: filters.planOwner,
-        preset: filters.preset,
-        schedulerCreatedOnly: filters.schedulerCreatedOnly,
-        tagValue: filters.tagValue,
-      },
-      {
-        limit: PAGE_SIZE,
-        offset: pageNumber * PAGE_SIZE,
-        orderBy: $searchOrderBy,
-      },
-      user,
-    );
+    try {
+      const result = await effects.searchActivities(
+        {
+          actName: filters.actName,
+          actType: filters.actType,
+          args: filterArgs,
+          createdBy: filters.createdBy,
+          lastModifiedAfter: filters.lastModifiedAfter,
+          lastModifiedBefore: filters.lastModifiedBefore,
+          modelId: selectedModelId,
+          planName: filters.planName,
+          planOwner: filters.planOwner,
+          preset: filters.preset,
+          schedulerCreatedOnly: filters.schedulerCreatedOnly,
+          startOffsetMax: filters.startOffsetMax,
+          startOffsetMin: filters.startOffsetMin,
+          tagValue: filters.tagValue,
+        },
+        {
+          limit: PAGE_SIZE,
+          offset: pageNumber * PAGE_SIZE,
+          orderBy: $searchOrderBy,
+        },
+        user,
+      );
 
-    if (result) {
-      searchResults.set(result.results);
-      searchTotalCount.set(result.totalCount);
+      if (result) {
+        searchResults.set(result.results);
+        searchTotalCount.set(result.totalCount);
+      }
+
+      updateUrl();
+    } finally {
+      isSearching.set(false);
     }
-
-    updateUrl();
   }
 
   function clearFilters() {
-    selectedModel = undefined;
+    selectedModelId = undefined;
     filters = { ...DEFAULT_FILTERS };
     hasSearched.set(false);
     searchResults.set([]);
@@ -280,173 +284,205 @@
   }
 </script>
 
-<Panel overflowYBody="auto">
+<Panel overflowYBody="hidden" padBody={false}>
   <svelte:fragment slot="header">
     <SectionTitle>Search for Activities Across Plans</SectionTitle>
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <form on:submit|preventDefault={() => onSearch()} class="flex flex-col gap-3 p-2">
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Mission Model</Label>
-        <Select.Root
-          selected={{
-            label: selectedModel ? getDisplayNameForModel(selectedModel) : 'All Models',
-            value: selectedModel?.id,
-          }}
-          onSelectedChange={v => (selectedModel = $models.find(model => model.id === v?.value))}
-          loop={false}
-        >
-          <Select.Trigger
-            value={selectedModel?.id}
-            size="xs"
-            aria-label="Select Model"
-            aria-labelledby={null}
-            id="model"
+    <form on:submit|preventDefault={() => onSearch()} class="flex h-full flex-col">
+      {#if subscriptionError}
+        <div class="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-xs text-destructive">
+          Failed to load filter data: {subscriptionError}
+        </div>
+      {/if}
+      <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-2">
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Mission Model</Label>
+          <SearchableDropdown
+            options={modelOptions}
+            loading={$modelsLoading}
+            on:change={e => {
+              const v = e.detail[0];
+              selectedModelId = v === '' || v === undefined ? undefined : Number(v);
+            }}
+            selectedOptionValues={[selectedModelId ?? '']}
           >
-            <Select.Value placeholder="Select a model" />
-          </Select.Trigger>
-          <Select.Content
-            class="min-w-[240px] overflow-auto p-0"
-            sameWidth={false}
-            align="start"
-            datatype="number"
-            fitViewport
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Activity Type</Label>
+          <SearchableDropdown
+            options={typeOptions}
+            loading={$modelsLoading}
+            on:change={e => (filters = { ...filters, actType: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.actType]}
           >
-            <Select.Item size="xs" value={undefined} label="All Models" class="flex gap-1">All Models</Select.Item>
-            {#each orderedModels as model (model.id)}
-              <Select.Item size="xs" value={model.id} label={getDisplayNameForModel(model)} class="flex gap-1">
-                {model.name}
-                <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-              </Select.Item>
-            {/each}
-          </Select.Content>
-          <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
-        </Select.Root>
-      </div>
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
 
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Activity Type</Label>
-        <SearchableDropdown
-          options={typeOptions}
-          on:change={e => (filters = { ...filters, actType: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.actType]}
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm" for="activity-name-input">Activity Name</Label>
-        <InputStellar
-          bind:value={filters.actName}
-          id="activity-name-input"
-          autocomplete="off"
-          class="w-full"
-          sizeVariant="xs"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Argument Name</Label>
-        <SearchableDropdown
-          options={argNameOptions}
-          on:change={e => (filters = { ...filters, argName: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.argName]}
-        />
-      </div>
-      <div class="flex flex-col gap-1">
-        <Label size="sm" for="argument-value-input">Argument Value</Label>
-        <InputStellar
-          bind:value={filters.argValue}
-          id="argument-value-input"
-          autocomplete="off"
-          class="w-full"
-          sizeVariant="xs"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Tag</Label>
-        <SearchableDropdown
-          options={tagOptions}
-          on:change={e => (filters = { ...filters, tagValue: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.tagValue]}
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Preset</Label>
-        <SearchableDropdown
-          options={presetOptions}
-          on:change={e => (filters = { ...filters, preset: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.preset]}
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Created By</Label>
-        <SearchableDropdown
-          options={userOptions}
-          on:change={e => (filters = { ...filters, createdBy: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.createdBy]}
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm" for="modified-after-input">Last Modified After</Label>
-        <InputStellar
-          bind:value={filters.lastModifiedAfter}
-          id="modified-after-input"
-          class="w-full"
-          sizeVariant="xs"
-          type="datetime-local"
-        />
-      </div>
-      <div class="flex flex-col gap-1">
-        <Label size="sm" for="modified-before-input">Last Modified Before</Label>
-        <InputStellar
-          bind:value={filters.lastModifiedBefore}
-          id="modified-before-input"
-          class="w-full"
-          sizeVariant="xs"
-          type="datetime-local"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm" for="plan-name-input">Plan Name</Label>
-        <InputStellar
-          bind:value={filters.planName}
-          id="plan-name-input"
-          autocomplete="off"
-          class="w-full"
-          sizeVariant="xs"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label size="sm">Plan Owner</Label>
-        <SearchableDropdown
-          options={userOptions}
-          on:change={e => (filters = { ...filters, planOwner: e.detail[0]?.toString() ?? '' })}
-          selectedOptionValues={[filters.planOwner]}
-        />
-      </div>
-
-      <div class="flex items-center gap-2">
-        <label class="flex cursor-pointer items-center gap-2" for="scheduler-only">
-          <input
-            type="checkbox"
-            bind:checked={filters.schedulerCreatedOnly}
-            name="scheduler-only"
-            id="scheduler-only"
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="activity-name-input">Activity Name</Label>
+          <InputStellar
+            bind:value={filters.actName}
+            id="activity-name-input"
+            autocomplete="off"
+            class="w-full"
+            sizeVariant="xs"
           />
-          <span class="text-xs">Scheduler-created only</span>
-        </label>
-      </div>
+        </div>
 
-      <div class="mt-4 flex flex-col gap-2">
-        <Button type="button" class="w-full" variant="outline" on:click={clearFilters}>Clear Filters</Button>
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Argument Name</Label>
+          <SearchableDropdown
+            options={argNameOptions}
+            loading={$modelsLoading}
+            on:change={e => (filters = { ...filters, argName: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.argName]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="argument-value-input"
+            >Argument Value
+            <Tooltip
+              content="Defaults defined by the mission model are not applied to search filters, so you may need to specify argument values explicitly even if they were not provided when the activity was created. "
+              class="max-h-none max-w-28 whitespace-normal"
+            >
+              <span class="ml-1 cursor-help text-muted-foreground"> <CircleQuestionMark size={14} /></span>
+            </Tooltip>
+          </Label>
+          <InputStellar
+            bind:value={filters.argValue}
+            id="argument-value-input"
+            autocomplete="off"
+            class="w-full"
+            sizeVariant="xs"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Tag</Label>
+          <SearchableDropdown
+            options={tagOptions}
+            loading={$tagsLoading}
+            on:change={e => (filters = { ...filters, tagValue: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.tagValue]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Preset</Label>
+          <SearchableDropdown
+            options={presetOptions}
+            loading={$presetsLoading}
+            on:change={e => (filters = { ...filters, preset: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.preset]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Created By</Label>
+          <SearchableDropdown
+            options={userOptions}
+            loading={$usersLoading}
+            on:change={e => (filters = { ...filters, createdBy: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.createdBy]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="modified-after-input">Last Modified After</Label>
+          <InputStellar
+            bind:value={filters.lastModifiedAfter}
+            id="modified-after-input"
+            class="w-full"
+            sizeVariant="xs"
+            type="datetime-local"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="modified-before-input">Last Modified Before</Label>
+          <InputStellar
+            bind:value={filters.lastModifiedBefore}
+            id="modified-before-input"
+            class="w-full"
+            sizeVariant="xs"
+            type="datetime-local"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="start-offset-min-input">Start Offset (min)</Label>
+          <InputStellar
+            bind:value={filters.startOffsetMin}
+            id="start-offset-min-input"
+            placeholder="e.g., 1 day, 02:30:00"
+            autocomplete="off"
+            class="w-full"
+            sizeVariant="xs"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="start-offset-max-input">Start Offset (max)</Label>
+          <InputStellar
+            bind:value={filters.startOffsetMax}
+            id="start-offset-max-input"
+            placeholder="e.g., 7 days, 24:00:00"
+            autocomplete="off"
+            class="w-full"
+            sizeVariant="xs"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="plan-name-input">Plan Name</Label>
+          <InputStellar
+            bind:value={filters.planName}
+            id="plan-name-input"
+            autocomplete="off"
+            class="w-full"
+            sizeVariant="xs"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Plan Owner</Label>
+          <SearchableDropdown
+            options={userOptions}
+            loading={$usersLoading}
+            on:change={e => (filters = { ...filters, planOwner: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.planOwner]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="flex cursor-pointer items-center gap-2" for="scheduler-only">
+            <input
+              type="checkbox"
+              bind:checked={filters.schedulerCreatedOnly}
+              name="scheduler-only"
+              id="scheduler-only"
+            />
+            <span class="text-xs">Scheduler-created only</span>
+          </label>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2 border-t border-border p-3">
         <Button type="submit" class="w-full">Search</Button>
+        <Button type="button" class="w-full" variant="outline" on:click={clearFilters}>Clear Filters</Button>
       </div>
     </form>
   </svelte:fragment>

@@ -15,3 +15,5 @@ export const searchTotalCount: Writable<number> = writable(0);
 export const searchCurrentPage: Writable<number> = writable(0);
 
 export const searchOrderBy: Writable<Record<string, string>[]> = writable([{ last_modified_at: 'desc' }]);
+
+export const isSearching: Writable<boolean> = writable(false);

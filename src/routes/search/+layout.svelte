@@ -7,7 +7,7 @@
 
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>
-    <span class="scheduling-title" slot="title">Search</span>
+    <span class="scheduling-title" slot="title">Activity Search</span>
   </Nav>
 
   <slot />
