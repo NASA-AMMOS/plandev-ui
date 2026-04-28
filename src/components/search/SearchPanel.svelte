@@ -192,7 +192,7 @@
     }
   }
 
-  function updateUrl() {
+  function updateUrl(): Promise<void> {
     const params = new URLSearchParams();
     if (selectedModelId !== undefined) {
       params.set('modelId', selectedModelId.toString());
@@ -204,7 +204,7 @@
       }
     }
     const qs = params.toString();
-    goto(qs ? `${$page.url.pathname}?${qs}` : $page.url.pathname, {
+    return goto(qs ? `${$page.url.pathname}?${qs}` : $page.url.pathname, {
       keepFocus: true,
       noScroll: true,
       replaceState: true,
@@ -261,7 +261,7 @@
         searchTotalCount.set(result.totalCount);
       }
 
-      updateUrl();
+      await updateUrl();
     } finally {
       isSearching.set(false);
       searchRunId.update(n => n + 1);
