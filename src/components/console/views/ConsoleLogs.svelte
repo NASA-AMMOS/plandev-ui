@@ -9,6 +9,7 @@
   import ConsoleLog from './ConsoleLog.svelte';
 
   export let autoScroll: boolean = false;
+  export let defaultExpanded: boolean = false;
   export let emptyStateMessage: string = 'No reported problems';
   export let noMatchingResultsMessage: string = 'No matches';
   export let logs: BaseError[] = [];
@@ -113,13 +114,13 @@
         {/if}
         {#each filteredLogs as log}
           {#if $$slots.message}
-            <ConsoleLog {showLevel} {showTimestamp} {showType} {log}>
+            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log}>
               <svelte:fragment slot="message" let:log={slotLog}>
                 <slot name="message" log={slotLog} />
               </svelte:fragment>
             </ConsoleLog>
           {:else}
-            <ConsoleLog {showLevel} {showTimestamp} {showType} {log} />
+            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log} />
           {/if}
         {/each}
       </div>

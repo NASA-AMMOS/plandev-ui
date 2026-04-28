@@ -320,7 +320,7 @@
                 {@const logMessages = parseLogLines(actionRun.logs)}
                 <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
                   {#each logMessages as log}
-                    <ConsoleLog {log} showType={false} showLongTimestamp={false}>
+                    <ConsoleLog {log} defaultExpanded={true} showType={false} showLongTimestamp={false}>
                       <svelte:fragment slot="message" let:message let:expandable let:open>
                         {#if expandable && !open}
                           <!-- "preview" text for expandable logs, ellipsize to one line -->

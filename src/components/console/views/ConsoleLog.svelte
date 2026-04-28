@@ -11,6 +11,7 @@
   import { formatMS } from '../../../utilities/time';
 
   export let log: BaseError;
+  export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
   export let showLongTimestamp: boolean = true;
@@ -18,7 +19,7 @@
 
   let expandable: boolean = false;
   let leftContents: HTMLDivElement;
-  let open: boolean = false;
+  let open: boolean = defaultExpanded;
   let expansionPadding: number = 0;
   let level: string = '';
   let renderedMessage: string = '';
