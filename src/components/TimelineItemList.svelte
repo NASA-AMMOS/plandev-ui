@@ -270,7 +270,6 @@
     {/if}
     {#if filteredItems.length && !loading}
       <RowVirtualizerFixed items={filteredItems} overscan={100} let:item let:index disabled={activeItemIndex > -1}>
-
         <ListItem
           class={activeItemIndex === index ? 'active' : ''}
           draggable
