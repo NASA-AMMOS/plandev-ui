@@ -60,6 +60,7 @@
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { Dispatcher } from '../../../types/component';
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
+  import { removeLocalStorageItem, setLocalStorageItem } from '../../../utilities/localStorage';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
   import DataGridSkeleton from './DataGridSkeleton.svelte';
@@ -113,6 +114,10 @@
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let columnShiftResize: boolean = false;
   export let columnStates: ColumnState[] = [];
+  /** When set, column state (visibility, order, width, sort, pinning) is persisted to localStorage under this key. */
+  export let persistColumnStateKey: string | null = null;
+  /** Optional transform applied both to loaded saved state (before applying to grid) and live state (before saving). */
+  export let transformColumnState: ((state: ColumnState[]) => ColumnState[]) | null = null;
   export let currentSelectedRowId: RowId | null = null;
   export let filterExpression: string = '';
   export let headerHeight: number = 32;
@@ -356,11 +361,19 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   function onResetColumns() {
     gridApi?.resetColumnState();
     gridApi?.sizeColumnsToFit();
+    if (persistColumnStateKey) {
+      removeLocalStorageItem(persistColumnStateKey);
+    }
     dispatch('columnsReset');
   }
 
   function onColumnStateChange() {
-    dispatch('columnStateChange', gridApi?.getColumnState());
+    const state = gridApi?.getColumnState();
+    dispatch('columnStateChange', state);
+    if (persistColumnStateKey && state) {
+      const toSave = transformColumnState ? transformColumnState(state) : state;
+      setLocalStorageItem(persistColumnStateKey, toSave);
+    }
   }
 
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
