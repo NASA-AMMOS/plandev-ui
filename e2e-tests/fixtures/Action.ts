@@ -37,6 +37,10 @@ export class Action {
     const externalUrlInput = this.page.locator(".parameter-base-string:has-text('externalUrl') input");
     await externalUrlInput.fill('https://api.github.com/');
     await externalUrlInput.dispatchEvent('change');
+    // The demo schema has a required setting with no default; fill it so Save can enable
+    const requiredSettingInput = this.page.locator(".parameter-base-string:has-text('requiredSetting') input");
+    await requiredSettingInput.fill('test-setting-value');
+    await requiredSettingInput.dispatchEvent('change');
     // Wait for Save button to become enabled (isDirty must be true)
     const saveButton = this.page.getByRole('button', { name: 'Save' });
     await expect(saveButton).toBeEnabled({ timeout: 5000 });
@@ -96,7 +100,7 @@ export class Action {
     // Fill in any provided string parameter values
     if (stringParameters) {
       for (const [name, value] of Object.entries(stringParameters)) {
-        const input = runModal.getByRole('textbox', { name });
+        const input = runModal.getByRole('textbox', { exact: true, name });
         await input.fill(value);
         await input.dispatchEvent('change');
       }
@@ -154,21 +158,43 @@ export class Action {
     const runModal = this.page.locator('#modal-container');
     await expect(runModal).toBeVisible();
 
-    // Run button should be disabled because required field is empty
+    // The demo has a required parameter with a defaultValue; the default-fallback
+    // logic should pre-fill its input so it doesn't gate Run on its own.
+    const requiredWithDefaultInput = runModal.getByRole('textbox', { exact: true, name: 'required' });
+    await expect(requiredWithDefaultInput).toHaveValue('This is required');
+
+    // Run is still disabled because requiredNoDefault is empty
     const runButton = runModal.getByRole('button', { exact: true, name: 'Run' });
     await expect(runButton).toBeDisabled();
 
-    // Fill in the required parameter
-    const requiredInput = runModal.getByRole('textbox', { name: 'required' });
-    await requiredInput.fill('test-required-value');
-    await requiredInput.dispatchEvent('change');
+    // Filling requiredNoDefault clears the empty-required gate
+    const requiredNoDefaultInput = runModal.getByRole('textbox', { name: 'requiredNoDefault' });
+    await requiredNoDefaultInput.fill('test-no-default-value');
+    await requiredNoDefaultInput.dispatchEvent('change');
 
-    // Run button should now be enabled
     await expect(runButton).toBeEnabled();
 
     // Cancel without running
     await runModal.getByRole('button', { name: 'Cancel' }).click();
     await expect(runModal).not.toBeVisible();
+  }
+
+  async testRequiredSettingValidation(): Promise<void> {
+    // Navigate to Configure tab
+    await this.page.getByRole('tab', { name: 'Configure' }).click();
+
+    // The demo's requiredSetting has no default; on a freshly-created action
+    // both the empty-required gate AND !isDirty disable Save.
+    const saveButton = this.page.getByRole('button', { name: 'Save' });
+    await expect(saveButton).toBeDisabled();
+
+    // Filling the required setting clears both the empty-required gate
+    // and makes the form dirty, so Save should become enabled.
+    const requiredSettingInput = this.page.locator(".parameter-base-string:has-text('requiredSetting') input");
+    await requiredSettingInput.fill('test-setting-value');
+    await requiredSettingInput.dispatchEvent('change');
+
+    await expect(saveButton).toBeEnabled();
   }
 
   async unarchiveAction(): Promise<void> {

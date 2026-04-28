@@ -58,6 +58,10 @@ test.describe.serial('Actions', () => {
     await action.inspectAction();
   });
 
+  test('Required setting disables Save button until filled', async () => {
+    await action.testRequiredSettingValidation();
+  });
+
   test('Configure an action', async () => {
     await action.configureAction();
   });
@@ -67,7 +71,7 @@ test.describe.serial('Actions', () => {
   });
 
   test('Run an action', async () => {
-    await action.runAction({ stringParameters: { required: 'test-required-value' } });
+    await action.runAction({ stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' } });
   });
 
   test('Run API integration tests', async () => {
@@ -75,7 +79,7 @@ test.describe.serial('Actions', () => {
     await action.runAction({
       expectedStatus: 'Complete',
       mode: 'api-test',
-      stringParameters: { required: 'test-required-value' },
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
     });
   });
 
@@ -84,7 +88,7 @@ test.describe.serial('Actions', () => {
     await action.runAction({
       expectedStatus: 'Complete',
       mode: 'write',
-      stringParameters: { required: 'test-required-value' },
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
     });
 
     // Switch to file browser and verify the written file appears

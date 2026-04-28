@@ -44,6 +44,11 @@ const parameterDefinitions = {
     defaultValue: 'This is required',
     required: true,
   },
+  requiredNoDefault: {
+    type: 'string',
+    description: 'A required parameter without a default value',
+    required: true,
+  },
 };
 
 const settingDefinitions = {
