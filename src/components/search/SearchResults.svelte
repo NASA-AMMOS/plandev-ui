@@ -11,6 +11,7 @@
     PAGE_SIZE,
     searchCurrentPage,
     searchOrderBy,
+    searchRunId,
     searchTotalCount,
   } from '../../stores/search';
   import type { ActivityDirectiveSearchResult } from '../../types/activity';
@@ -306,7 +307,7 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <div class="flex h-full flex-col">
+    <div class="flex h-full flex-col" data-search-run-id={$searchRunId}>
       <div class="relative min-h-0 flex-1">
         {#if showSearchingIndicator}
           <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50">

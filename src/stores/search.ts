@@ -17,3 +17,11 @@ export const searchCurrentPage: Writable<number> = writable(0);
 export const searchOrderBy: Writable<Record<string, string>[]> = writable([{ last_modified_at: 'desc' }]);
 
 export const isSearching: Writable<boolean> = writable(false);
+
+/**
+ * Monotonically increments every time a search completes (success or empty).
+ * Surfaced as a `data-search-sequence` attribute in the results panel so e2e
+ * tests have a deterministic, UI-observable signal to wait on without relying
+ * on the spinner — which is intentionally delayed to avoid flashing.
+ */
+export const searchRunId: Writable<number> = writable(0);

@@ -14,6 +14,7 @@
     searchCurrentPage,
     searchOrderBy,
     searchResults,
+    searchRunId,
     searchTotalCount,
   } from '../../stores/search';
   import { gqlSubscribable } from '../../stores/subscribable';
@@ -263,6 +264,7 @@
       updateUrl();
     } finally {
       isSearching.set(false);
+      searchRunId.update(n => n + 1);
     }
   }
 
@@ -290,7 +292,7 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <form on:submit|preventDefault={() => onSearch()} class="flex h-full flex-col">
+    <form on:submit|preventDefault={() => onSearch()} class="flex h-full flex-col" data-search-form-ready={initialized}>
       {#if subscriptionError}
         <div class="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-xs text-destructive">
           Failed to load filter data: {subscriptionError}

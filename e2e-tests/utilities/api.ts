@@ -62,10 +62,11 @@ export class AerieApi {
   }
 
   async createActivityDirective(activityDirective: ActivityDirectiveInsertInput): Promise<{ id: number }> {
-    const data = await this.gqlQuery<{ createActivityDirective: { id: number } }>(gql.CREATE_ACTIVITY_DIRECTIVE, {
-      activityDirectiveInsertInput: activityDirective,
-    });
-    return { id: data.createActivityDirective.id };
+    const data = await this.gqlQuery<{ insert_activity_directive_one: { id: number } }>(
+      gql.CREATE_ACTIVITY_DIRECTIVE,
+      { activityDirectiveInsertInput: activityDirective },
+    );
+    return { id: data.insert_activity_directive_one.id };
   }
 
   async createConstraint(constraint: ConstraintDefinitionInsertInput): Promise<{ id: number }> {

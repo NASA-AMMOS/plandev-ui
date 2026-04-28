@@ -299,6 +299,7 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
+import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { compareEvents } from './simulation';
@@ -7202,22 +7203,7 @@ const effects = {
   },
 
   async searchActivities(
-    filters: {
-      actName: string;
-      actType: string;
-      args: [name: string, value: string | number | boolean][];
-      createdBy: string;
-      lastModifiedAfter: string;
-      lastModifiedBefore: string;
-      modelId: number | undefined;
-      planName: string;
-      planOwner: string;
-      preset: string;
-      schedulerCreatedOnly: boolean;
-      startOffsetMax: string;
-      startOffsetMin: string;
-      tagValue: string;
-    },
+    filters: ActivitySearchFilters,
     pagination: {
       limit: number;
       offset: number;
@@ -7226,67 +7212,7 @@ const effects = {
     user: User | null,
   ): Promise<{ results: ActivityDirectiveSearchResult[]; totalCount: number } | null> {
     try {
-      const clauses = [];
-
-      if (filters.modelId !== undefined && filters.modelId !== null) {
-        clauses.push({ plan: { model_id: { _eq: filters.modelId } } });
-      }
-      if (filters.actType) {
-        clauses.push({ type: { _eq: filters.actType } });
-      }
-      if (filters.actName) {
-        clauses.push({ name: { _ilike: `%${filters.actName}%` } });
-      }
-      if (filters.tagValue) {
-        clauses.push({ tags: { tag: { name: { _eq: filters.tagValue } } } });
-      }
-      if (filters.preset) {
-        clauses.push({ applied_preset: { preset_applied: { name: { _eq: filters.preset } } } });
-      }
-      if (filters.createdBy) {
-        clauses.push({ created_by: { _eq: filters.createdBy } });
-      }
-      if (filters.lastModifiedAfter) {
-        // datetime-local values (YYYY-MM-DDTHH:MM) are parsed as local time by JS Date
-        clauses.push({ last_modified_at: { _gte: new Date(filters.lastModifiedAfter).toISOString() } });
-      }
-      if (filters.lastModifiedBefore) {
-        clauses.push({ last_modified_at: { _lte: new Date(filters.lastModifiedBefore).toISOString() } });
-      }
-      if (filters.planName) {
-        clauses.push({ plan: { name: { _ilike: `%${filters.planName}%` } } });
-      }
-      if (filters.planOwner) {
-        clauses.push({ plan: { owner: { _eq: filters.planOwner } } });
-      }
-      if (filters.schedulerCreatedOnly) {
-        clauses.push({ source_scheduling_goal_id: { _is_null: false } });
-      }
-      if (filters.startOffsetMin) {
-        clauses.push({ start_offset: { _gte: filters.startOffsetMin } });
-      }
-      if (filters.startOffsetMax) {
-        clauses.push({ start_offset: { _lte: filters.startOffsetMax } });
-      }
-
-      for (const [argName, argValue] of filters.args) {
-        if (argName === '' && argValue === '') {
-          continue;
-        } else if (argName === '') {
-          clauses.push({ arguments: { _cast: { String: { _ilike: `%${argValue}%` } } } });
-        } else if (argValue === '') {
-          clauses.push({ arguments: { _has_key: argName } });
-        } else if (typeof argValue === 'string') {
-          clauses.push({ arguments: { _contains: { [argName]: argValue } } });
-        } else if (typeof argValue === 'number' || typeof argValue === 'boolean') {
-          clauses.push({
-            _or: [
-              { arguments: { _contains: { [argName]: argValue } } },
-              { arguments: { _contains: { [argName]: argValue.toString() } } },
-            ],
-          });
-        }
-      }
+      const clauses = buildSearchActivitiesWhereClauses(filters);
 
       const data: ActivitySearchResponse = (await reqHasura(
         gql.SEARCH_ACTIVITIES,
