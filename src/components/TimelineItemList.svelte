@@ -269,8 +269,8 @@
       </div>
     {/if}
     {#if filteredItems.length && !loading}
-      <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index disabled={activeItemIndex > -1}>
-        {@const item = filteredItems[index]}
+      <RowVirtualizerFixed items={filteredItems} overscan={100} let:item let:index disabled={activeItemIndex > -1}>
+
         <ListItem
           class={activeItemIndex === index ? 'active' : ''}
           draggable
