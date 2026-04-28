@@ -7,7 +7,7 @@ Thanks for taking the time to consider contributing! We very much appreciate you
 - [Our Development Process](#our-development-process)
 - [Submitting a Pull Request](#submitting-a-pull-request)
 - [Coding Rules](#coding-rules)
-- [Commit Message Guidelines](#commit-message-guidelines)
+- [Pull Request Title and Labels](#pull-request-title-and-labels)
 - [Ways to Contribute](#ways-to-contribute)
 
 ## Prerequisites
@@ -80,13 +80,13 @@ Make sure people know what you're working on. Check [the issue tracker][github-i
 
 5. Make your changes.
 6. Follow our [Coding Rules](#coding-rules).
-7. Commit using our [Commit Message Guidelines](#commit-message-guidelines). Adherence is necessary because release notes are auto-generated from these messages.
+7. Commit your changes:
 
    ```shell
    git commit -a
    ```
 
-   The optional `-a` flag will automatically `add` and `rm` edited files.
+   The optional `-a` flag will automatically `add` and `rm` edited files. Intra-PR commits get squashed at merge time, so their shape is up to you — what matters is the [PR title and label](#pull-request-title-and-labels).
 
 8. Push your branch:
 
@@ -136,64 +136,30 @@ Before opening a PR, run:
 4. `npm run check`
 5. Follow the testing procedures in [docs/TESTING.md](docs/TESTING.md)
 
-## Commit Message Guidelines
+## Pull Request Title and Labels
 
-We have precise rules for commit messages. They produce more readable history and drive auto-generated release notes.
+PRs are squash-merged, so the **PR title becomes the commit on `develop`**. Use a descriptive sentence — recent examples:
 
-### Format
+- "Allow sequence name to be chosen during filter application"
+- "Swap table cookie persistence for localStorage"
+- "Fix inconsistent file extension handling in workspaces"
 
-```
-<type>: <subject>
-<BLANK LINE>
-<body>
-```
+For release-note categorization, apply one of the labels configured in [.github/release.yml](./.github/release.yml):
 
-The **header** is mandatory. No line of the commit message may be longer than 100 characters — this keeps messages readable on GitHub and in git tools.
+| Label             | Category                      |
+| ----------------- | ----------------------------- |
+| `breaking change` | Breaking Changes              |
+| `feature`         | New Features                  |
+| `fix`             | Bug Fixes                     |
+| `performance`     | Performance Improvements      |
+| `refactor`        | Refactoring                   |
+| `test`            | Testing                       |
+| `ci`              | Continuous Integration        |
+| `documentation`   | Documentation                 |
+| `build`           | Build System and Dependencies |
+| `style`           | Style                         |
 
-Samples:
-
-```
-docs: update readme
-```
-
-```
-fix: need to depend on latest rxjs and zone.js
-
-The version in our package.json gets copied to the one we publish, and users need the latest of these.
-```
-
-([more samples](https://github.com/NASA-AMMOS/plandev-ui/commits/develop))
-
-### Revert
-
-If the commit reverts a previous commit, prefix the header with `revert:` followed by the reverted commit's header. The body should say `This reverts commit <hash>.`
-
-### Type
-
-Must be one of:
-
-- **build**: Changes that affect the build system or external dependencies
-- **ci**: Changes to our CI configuration files and scripts
-- **docs**: Documentation only changes
-- **feat**: A new feature
-- **fix**: A bug fix
-- **perf**: A code change that improves performance
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **release**: A release commit
-- **style**: Changes that do not affect code meaning (whitespace, formatting, missing semicolons, etc.)
-- **test**: Adding missing tests or correcting existing tests
-
-### Subject
-
-- Use the imperative, present tense: "change" not "changed" nor "changes"
-- Don't capitalize the first letter
-- No period at the end
-
-### Body
-
-Use the imperative, present tense, like the subject. The body should explain motivation and contrast with previous behavior.
-
-**Breaking Changes** should start with the word `BREAKING CHANGE:` followed by a space or two newlines. The remainder describes the breaking change.
+PRs without a matching label fall under "Other Changes".
 
 ## Ways to Contribute
 
