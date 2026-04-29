@@ -82,8 +82,7 @@
   $: settingsDefaults = getDefaultsFromSchema(selectedVersion?.settings_schema ?? {});
   $: hasEmptyRequired =
     requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
-    (showSettings &&
-      requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
+    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;

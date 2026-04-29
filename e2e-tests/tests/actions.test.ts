@@ -71,7 +71,9 @@ test.describe.serial('Actions', () => {
   });
 
   test('Run an action', async () => {
-    await action.runAction({ stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' } });
+    await action.runAction({
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
   });
 
   test('Run API integration tests', async () => {
