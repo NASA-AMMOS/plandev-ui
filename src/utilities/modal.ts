@@ -12,6 +12,7 @@ import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.sv
 import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGroupModal.svelte';
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
+import DeleteWorkspaceItemsModal from '../components/modals/DeleteWorkspaceItemsModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionPanelModal from '../components/modals/ExpansionPanelModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
@@ -260,6 +261,44 @@ export async function showDeleteExternalEventSourceTypeModal(
           target.resolve = null;
           resolve({ confirm: true });
           deleteExternalEventSourceTypeModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a DeleteWorkspaceItemsModal component with the supplied arguments.
+ */
+export async function showDeleteWorkspaceItemsModal(
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
+  workspaceName: string,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const deleteWorkspaceItemsModal = new DeleteWorkspaceItemsModal({
+          props: { originalNodes, workspaceName },
+          target,
+        });
+        target.resolve = resolve;
+
+        deleteWorkspaceItemsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          deleteWorkspaceItemsModal.$destroy();
+        });
+
+        deleteWorkspaceItemsModal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          deleteWorkspaceItemsModal.$destroy();
         });
       }
     } else {
