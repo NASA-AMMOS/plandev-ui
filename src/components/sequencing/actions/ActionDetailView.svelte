@@ -9,7 +9,7 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
+  import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../../types/parameter';
   import type { Workspace } from '../../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../../types/workspace-tree-view';
   import {
@@ -22,12 +22,14 @@
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { isEmpty } from '../../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
-  import { getArguments, getFormParameters } from '../../../utilities/parameters';
+  import { applyRequiredErrors, getArguments, getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { featurePermissions } from '../../../utilities/permissions';
   import { formatMS } from '../../../utilities/time';
+  import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
@@ -47,14 +49,14 @@
   }>();
 
   let actionDefinition: ActionDefinition | null = null;
-  let activeTab: string = 'runs';
   let actionRuns: ActionRunSlim[] = [];
-  let filterExpression: string = '';
+  let activeTab: string = 'runs';
   let argumentsMap: ArgumentsMap = {};
   let code: string = '';
   let codeAbortController: AbortController | null = null;
   let description: string = '';
   let displayedVersions: ActionDefinitionVersion[] = [];
+  let filterExpression: string = '';
   let hasUpdatePermission: boolean = false;
   let isDirty: boolean = false;
   let isLoadingCode: boolean = false;
@@ -65,11 +67,12 @@
   let saveButtonDisabled: boolean = true;
   let saving: boolean = false;
   let selectedRunId: number | null = null;
-  let selectedVersionRevision: number | null = null;
   let selectedVersion: ActionDefinitionVersion | null = null;
+  let selectedVersionRevision: number | null = null;
   let showArchivedVersions: boolean = false;
-  let versionPopoverOpen: boolean = false;
+  let touchedSettingNames: Set<string> = new Set();
   let uploadFileInput: HTMLInputElement;
+  let versionPopoverOpen: boolean = false;
 
   $: {
     const defs = $actionDefinitionsByWorkspace[$workspaceId] || {};
@@ -83,6 +86,7 @@
       description = actionDefinition.description;
       name = actionDefinition.name;
       argumentsMap = actionDefinition.settings;
+      touchedSettingNames = new Set();
       isDirty = false;
       selectedVersionRevision = null;
     }
@@ -103,11 +107,17 @@
 
   $: latestNonArchivedVersion = getLatestRunnableVersion(actionDefinition?.versions ?? []);
 
+  $: settingsSchema = actionDefinition?.versions[0]?.settings_schema ?? {};
+  $: requiredSettings = Object.keys(settingsSchema).filter(
+    name => settingsSchema[name].required === true,
+  ) as RequiredParametersList;
+
   $: actionRuns = ($actionRunsByWorkspace[$workspaceId] || []).filter(
     run => run.action_definition_id === actionDefinitionId,
   );
 
-  $: saveButtonDisabled = !name || saving;
+  $: hasEmptyRequiredSetting = requiredSettings.some(name => isEmpty(argumentsMap[name]));
+  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting;
 
   $: hasUpdatePermission = actionDefinition
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
@@ -220,6 +230,7 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
+    touchedSettingNames = new Set([...touchedSettingNames, formParameter.name]);
     if (formParameter.schema.type === 'options-single') {
       const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
       formParameter.value = files?.fullPath ?? null;
@@ -493,6 +504,9 @@
                   hasPermission: hasUpdatePermission,
                   permissionError: 'You do not have permission to update an action',
                 }}
+                use:tooltip={{
+                  content: hasEmptyRequiredSetting ? 'Please fill in all required settings' : undefined,
+                }}
               >
                 <Button class="h-6 text-xs" disabled={saveButtonDisabled || !isDirty} on:click={save}>
                   {saving ? 'Saving...' : 'Save'}
@@ -695,16 +709,19 @@
                 <p class="text-xs italic text-muted-foreground">No settings defined</p>
               {:else}
                 <Parameters
-                  formParameters={getFormParameters(
-                    valueSchemaRecordToParametersMap(actionDefinition.versions[0]?.settings_schema ?? {}),
-                    argumentsMap,
-                    [],
-                    undefined,
-                    getDefaultsFromSchema(actionDefinition.versions[0]?.settings_schema ?? {}),
-                    getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
-                    'sequence',
-                    undefined,
-                    false,
+                  formParameters={applyRequiredErrors(
+                    getFormParameters(
+                      valueSchemaRecordToParametersMap(actionDefinition.versions[0]?.settings_schema ?? {}),
+                      argumentsMap,
+                      requiredSettings,
+                      undefined,
+                      getDefaultsFromSchema(actionDefinition.versions[0]?.settings_schema ?? {}),
+                      getUserSequenceValueSchemaOptions(workspaceFiles, $workspaceId),
+                      'sequence',
+                      undefined,
+                      false,
+                    ),
+                    touchedSettingNames,
                   )}
                   parameterType="action"
                   hideInfo={false}

@@ -10,6 +10,7 @@ const parameterDefinitions = {
     type: 'variant',
     description: 'What the action should do',
     variants: [
+      { key: 'noop', label: 'No-op' },
       { key: 'fetch', label: 'Fetch URL' },
       { key: 'adaptation', label: 'Translate File using Adaptation' },
       { key: 'files', label: 'List & Read Files' },
@@ -38,6 +39,17 @@ const parameterDefinitions = {
     description: 'A sequence file parameter (for testing file pickers)',
     primary: true,
   },
+  required: {
+    type: 'string',
+    description: 'A required parameter',
+    defaultValue: 'This is required',
+    required: true,
+  },
+  requiredNoDefault: {
+    type: 'string',
+    description: 'A required parameter without a default value',
+    required: true,
+  },
 };
 
 const settingDefinitions = {
@@ -59,10 +71,15 @@ const settingDefinitions = {
     description: 'Enable extra-verbose logging',
     defaultValue: "false",
   },
+  requiredSetting: {
+    type: 'string',
+    description: 'A required setting',
+    required: true,
+  },
 };
 
 async function main(actionParameters, actionSettings, actionsAPI) {
-  const { logCount = 10, mode = 'fetch', outputFile, outputContent, secret, sequence } = actionParameters;
+  const { logCount = 10, mode = 'noop', outputFile, outputContent, secret, sequence } = actionParameters;
   const { externalUrl = 'https://api.github.com', verbose = false } = actionSettings;
   const startTime = performance.now();
 
@@ -75,6 +92,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
 
   let result;
   switch (mode) {
+    case 'noop':
+      result = { status: 'SUCCESS', data: { mode } };
+      break;
     case 'fetch':
       result = await runFetchMode(externalUrl, verbose);
       break;

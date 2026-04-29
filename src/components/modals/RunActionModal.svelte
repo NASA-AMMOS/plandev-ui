@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
-  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../types/parameter';
   import type { Workspace } from '../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import {
@@ -17,7 +17,9 @@
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
-  import { getArguments, getFormParameters } from '../../utilities/parameters';
+  import { isEmpty } from '../../utilities/generic';
+  import { applyRequiredErrors, getArguments, getFormParameters } from '../../utilities/parameters';
+  import { tooltip } from '../../utilities/tooltip';
   import Parameters from '../parameters/Parameters.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -44,15 +46,20 @@
     actionDefinition.versions.find(v => v.revision === initialRevision)?.archived === true;
 
   let argumentsMap: ArgumentsMap = {};
+  let hasEmptyRequired: boolean = false;
   let isLoadingWorkspace: boolean = false;
-  let running: boolean = false;
   let parametersMap: ActionParametersMap = {};
+  let requiredParameters: RequiredParametersList = [];
+  let requiredSettings: RequiredParametersList = [];
+  let running: boolean = false;
   let selectedRevision: string =
     initialRevision !== undefined && !initialVersionArchived && initialRevision !== latestRunnable?.revision
       ? String(initialRevision)
       : 'latest';
   let settingsArgumentsMap: ArgumentsMap = {};
   let settingsParametersMap: ActionParametersMap = {};
+  let touchedParamNames: Set<string> = new Set();
+  let touchedSettingNames: Set<string> = new Set();
 
   $: latestVersion = getLatestRunnableVersion(actionDefinition.versions);
   $: runnableVersions = getRunnableVersions(actionDefinition.versions);
@@ -63,6 +70,19 @@
   $: isLatestSelected = selectedRevision === 'latest';
   $: effectiveSelectedRevision = selectedRevision === 'latest' ? latestVersion?.revision : Number(selectedRevision);
   $: versionMismatch = isRerun && initialRevision !== undefined && effectiveSelectedRevision !== initialRevision;
+  $: requiredParameters = Object.keys(parametersMap).filter(
+    name => parametersMap[name].schema.required === true,
+  ) as RequiredParametersList;
+  $: requiredSettings = Object.keys(settingsParametersMap).filter(
+    name => settingsParametersMap[name].schema.required === true,
+  ) as RequiredParametersList;
+  // Merge schema defaults so a required field with a defaultValue counts as filled
+  // even when the user hasn't touched it (defaults are also merged at submit time).
+  $: parameterDefaults = getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {});
+  $: settingsDefaults = getDefaultsFromSchema(selectedVersion?.settings_schema ?? {});
+  $: hasEmptyRequired =
+    requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
+    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;
@@ -119,12 +139,17 @@
     let secretParametersMap: ActionParametersMap = {};
     let nonSecretParametersMap: ActionParametersMap = {};
 
+    // Merge explicit schema defaults into user-set arguments so params the user
+    // didn't touch are still sent to the server when the schema declares a default.
+    const defaults = getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {});
+    const effectiveArguments = { ...defaults, ...argumentsMap };
+
     // Filter out the secret params to send directly to the action server.
     for (const param of Object.keys(parametersMap)) {
       if (parametersMap[param].schema.type === 'secret') {
-        secretParametersMap[param] = argumentsMap[param];
+        secretParametersMap[param] = effectiveArguments[param];
       } else {
-        nonSecretParametersMap[param] = argumentsMap[param];
+        nonSecretParametersMap[param] = effectiveArguments[param];
       }
     }
 
@@ -136,7 +161,7 @@
       workspace,
       actionDefinition.id,
       parametersMap,
-      argumentsMap,
+      effectiveArguments,
       settings,
       user,
       revision,
@@ -148,6 +173,7 @@
 
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
+    touchedParamNames = new Set([...touchedParamNames, formParameter.name]);
     if (formParameter.schema.type === 'options-single') {
       const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
       formParameter.value = files?.fullPath ?? null;
@@ -176,6 +202,7 @@
 
   function onChangeSettingsParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
+    touchedSettingNames = new Set([...touchedSettingNames, formParameter.name]);
     settingsArgumentsMap = getArguments(settingsArgumentsMap, formParameter);
   }
 </script>
@@ -202,16 +229,19 @@
           Input settings for this action run using {actionDefinition.name} version {selectedVersion?.revision}
         </div>
         <Parameters
-          formParameters={getFormParameters(
-            settingsParametersMap,
-            settingsArgumentsMap,
-            [],
-            undefined,
-            getDefaultsFromSchema(selectedVersion?.settings_schema ?? {}),
-            getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
-            'sequence',
-            false,
-            false,
+          formParameters={applyRequiredErrors(
+            getFormParameters(
+              settingsParametersMap,
+              settingsArgumentsMap,
+              requiredSettings,
+              undefined,
+              getDefaultsFromSchema(selectedVersion?.settings_schema ?? {}),
+              getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
+              'sequence',
+              false,
+              false,
+            ),
+            touchedSettingNames,
           )}
           parameterType="action"
           hideRightAdornments
@@ -236,16 +266,19 @@
         <div class="pb-2 font-medium text-muted-foreground">Input parameters for this action run</div>
       {/if}
       <Parameters
-        formParameters={getFormParameters(
-          parametersMap,
-          argumentsMap,
-          [],
-          undefined,
-          getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
-          getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
-          'sequence',
-          false,
-          false,
+        formParameters={applyRequiredErrors(
+          getFormParameters(
+            parametersMap,
+            argumentsMap,
+            requiredParameters,
+            undefined,
+            getDefaultsFromSchema(selectedVersion?.parameter_schema ?? {}),
+            getUserSequenceValueSchemaOptions(workspaceFiles, actionDefinition.workspace_id),
+            'sequence',
+            false,
+            false,
+          ),
+          touchedParamNames,
         )}
         parameterType="action"
         disabled={isLoadingWorkspace}
@@ -265,8 +298,10 @@
       {/each}
     </select>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" disabled={running || !selectedVersion} on:click={run}>
-      {running ? 'Running...' : 'Run'}
-    </button>
+    <div class="ml-2" use:tooltip={{ content: hasEmptyRequired ? 'Please fill in all required fields' : undefined }}>
+      <button class="st-button" disabled={running || !selectedVersion || hasEmptyRequired} on:click={run}>
+        {running ? 'Running...' : 'Run'}
+      </button>
+    </div>
   </ModalFooter>
 </Modal>

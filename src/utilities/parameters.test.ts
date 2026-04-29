@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import type { FormParameter } from '../types/parameter';
 import {
+  applyRequiredErrors,
   formatParameterValue,
   getArgument,
   getCleansedStructArguments,
@@ -312,5 +314,236 @@ describe('getCleansedStructArguments', () => {
         },
       ),
     ).toEqual({ buzz: false, foo: 1 });
+  });
+});
+
+describe('applyRequiredErrors', () => {
+  test('Should return original parameters when touchedNames is empty', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param2',
+        order: 1,
+        required: true,
+        schema: { type: 'int' },
+        value: null,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>();
+
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    expect(result).toEqual(formParameters);
+    // Ensure no errors were added
+    expect(result[0].errors).toBeNull();
+    expect(result[1].errors).toBeNull();
+  });
+
+  test('Should add errors to required fields with empty values that have been touched', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param2',
+        order: 1,
+        required: true,
+        schema: { type: 'int' },
+        value: null,
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param3',
+        order: 2,
+        required: false,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1', 'param3']);
+
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    // Only param1 should have an error (required + touched + empty)
+    expect(result[0].errors).toEqual(['This field is required']);
+    // param2 is required but not touched, so no error
+    expect(result[1].errors).toBeNull();
+    // param3 is touched but not required, so no error
+    expect(result[2].errors).toBeNull();
+  });
+
+  test('Should not add errors to required fields with non-empty values', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: 'some value',
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param2',
+        order: 1,
+        required: true,
+        schema: { type: 'int' },
+        value: 0,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1', 'param2']);
+
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    // No errors should be added as both fields have values
+    expect(result[0].errors).toBeNull();
+    expect(result[1].errors).toBeNull();
+  });
+
+  test('Should not overwrite existing errors', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: ['Custom error message'],
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1']);
+
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    // Existing error should be preserved
+    expect(result[0].errors).toEqual(['Custom error message']);
+  });
+
+  test('Should handle mixed scenarios correctly', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+      {
+        errors: ['Custom error'],
+        name: 'param2',
+        order: 1,
+        required: true,
+        schema: { type: 'int' },
+        value: null,
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param3',
+        order: 2,
+        required: false,
+        schema: { type: 'string' },
+        value: '',
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'param4',
+        order: 3,
+        required: true,
+        schema: { type: 'string' },
+        value: 'has value',
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1', 'param2', 'param3', 'param4']);
+
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    // param1 should get an error (required + touched + empty)
+    expect(result[0].errors).toEqual(['This field is required']);
+    // param2 should keep its custom error
+    expect(result[1].errors).toEqual(['Custom error']);
+    // param3 should not get an error (not required)
+    expect(result[2].errors).toBeNull();
+    // param4 should not get an error (has value)
+    expect(result[3].errors).toBeNull();
+  });
+
+  test('Should not flag required fields whose value is 0 or false', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'numericZero',
+        order: 0,
+        required: true,
+        schema: { type: 'int' },
+        value: 0,
+        valueSource: 'none',
+      },
+      {
+        errors: null,
+        name: 'booleanFalse',
+        order: 1,
+        required: true,
+        schema: { type: 'boolean' },
+        value: false,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['numericZero', 'booleanFalse']);
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    expect(result[0].errors).toBeNull();
+    expect(result[1].errors).toBeNull();
+  });
+
+  test('Should flag required fields whose value is undefined', () => {
+    const formParameters: FormParameter[] = [
+      {
+        errors: null,
+        name: 'param1',
+        order: 0,
+        required: true,
+        schema: { type: 'string' },
+        value: undefined,
+        valueSource: 'none',
+      },
+    ];
+
+    const touchedNames = new Set<string>(['param1']);
+    const result = applyRequiredErrors(formParameters, touchedNames);
+
+    expect(result[0].errors).toEqual(['This field is required']);
   });
 });
