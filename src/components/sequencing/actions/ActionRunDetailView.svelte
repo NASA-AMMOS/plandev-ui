@@ -29,6 +29,7 @@
   import { formatMS } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
   import ConsoleLog from '../../console/views/ConsoleLog.svelte';
+  import { consoleLogCopy } from '../../console/views/consoleLogCopy';
   import Parameters from '../../parameters/Parameters.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
@@ -295,7 +296,11 @@
               }}
               <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
                 <h3 class="text-sm font-medium text-destructive">Error</h3>
-                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs" data-testid="action-run-error-log">
+                <div
+                  class="overflow-auto rounded bg-muted py-2 font-mono text-xs"
+                  data-testid="action-run-error-log"
+                  use:consoleLogCopy
+                >
                   <ConsoleLog log={errorLog} showType={false} showLongTimestamp={false} />
                 </div>
               </div>
@@ -318,7 +323,7 @@
               <h3 class="text-sm font-medium">Logs</h3>
               {#if actionRun.logs}
                 {@const logMessages = parseLogLines(actionRun.logs)}
-                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
+                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs" use:consoleLogCopy>
                   {#each logMessages as log}
                     <ConsoleLog {log} defaultExpanded={true} showType={false} showLongTimestamp={false}>
                       <svelte:fragment slot="message" let:message let:expandable let:open>

@@ -23,6 +23,7 @@
   let expansionPadding: number = 0;
   let level: string = '';
   let renderedMessage: string = '';
+  let summaryEl: HTMLElement | undefined;
 
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
@@ -68,6 +69,24 @@
       return timestamp; // Return original if any error occurs
     }
   }
+
+  function handleSummaryCopy(e: ClipboardEvent) {
+    // Flex layout splits each chunk (timestamp, [, level, ], message) onto its own line on copy.
+    // Collapse whitespace so a selection within a single summary copies as one readable string.
+    // Multi-row selections are handled by the list-level handler in ./consoleLogCopy.ts, which
+    // walks <details>/<summary>/<pre> — keep that file in sync if you change this template's structure.
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !summaryEl) {
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (!summaryEl.contains(range.startContainer) || !summaryEl.contains(range.endContainer)) {
+      return;
+    }
+    const cleaned = selection.toString().replace(/\s+/g, ' ').trim();
+    e.clipboardData?.setData('text/plain', cleaned);
+    e.preventDefault();
+  }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -87,7 +106,7 @@
     }
   }}
 >
-  <summary class="list-none">
+  <summary class="list-none" bind:this={summaryEl} on:copy={handleSummaryCopy}>
     <div
       class={cn(
         'flex gap-0.5 px-4 py-0.5 pl-1',
@@ -108,27 +127,22 @@
           {/if}
           <div class="flex gap-2">
             {#if showTimestamp}
-              <span class="flex flex-shrink-0 text-muted-foreground">
+              <span class="flex-shrink-0 text-muted-foreground">
                 {formatLogShortTimestamp(log.timestamp)}
               </span>
             {/if}
             {#if showLevel && level}
-              <span class="flex">
+              <span class="flex-shrink-0">
                 [<span
                   class={cn(
-                    'flex flex-shrink-0 uppercase',
+                    'uppercase',
                     level === 'error' ? 'text-destructive' : level === 'warn' ? 'text-yellow-600' : 'text-blue-500',
-                  )}
-                >
-                  {level}
-                </span>]
+                  )}>{level}</span>]
               </span>
             {/if}
             {#if showType}
-              <span class="flex">
-                [<span class={cn('flex flex-shrink-0 uppercase text-destructive')}>
-                  {log.type}
-                </span>]
+              <span class="flex-shrink-0">
+                [<span class={cn('uppercase text-destructive')}>{log.type}</span>]
               </span>
             {/if}
           </div>

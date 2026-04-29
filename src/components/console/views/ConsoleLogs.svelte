@@ -7,6 +7,7 @@
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
   import ConsoleLog from './ConsoleLog.svelte';
+  import { consoleLogCopy } from './consoleLogCopy';
 
   export let autoScroll: boolean = false;
   export let defaultExpanded: boolean = false;
@@ -108,7 +109,12 @@
   <!-- TODO also show counts in dropdown -->
   {#if hasLogs && filteredLogs.length}
     <div class="flex h-full w-full">
-      <div class="flex w-full flex-col overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
+      <div
+        class="flex w-full flex-col overflow-auto py-2"
+        bind:this={scrollContainer}
+        on:scroll={onScroll}
+        use:consoleLogCopy
+      >
         {#if filteredLogs.length !== logs.length}
           <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
         {/if}
