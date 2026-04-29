@@ -2,7 +2,9 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { WorkspaceContentType } from '../../enums/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
+  import { pluralize } from '../../utilities/text';
   import { flattenWorkspaceTreeWithPaths, getWorkspaceFileFolderDisplay } from '../../utilities/workspaces';
   import WorkspaceTreeViewIcon from '../workspace/WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
   import Modal from './Modal.svelte';
@@ -11,7 +13,6 @@
   import ModalHeader from './ModalHeader.svelte';
 
   export let originalNodes: WorkspaceTreeNodeWithFullPath[];
-  export let previewLimit: number = 8;
   export let width: number = 440;
   export let workspaceName: string;
 
@@ -24,13 +25,10 @@
   $: flatNodes = originalNodes.flatMap(node => {
     const top: WorkspaceTreeNodeWithFullPath = { ...node, depth: 0, fullPath: node.fullPath };
     const children =
-      node.contents && node.contents.length > 0
-        ? flattenWorkspaceTreeWithPaths(node.contents, [node.fullPath], 1)
-        : [];
+      node.contents && node.contents.length > 0 ? flattenWorkspaceTreeWithPaths(node.contents, [node.fullPath], 1) : [];
     return [top, ...children];
   });
-  $: visible = flatNodes.slice(0, previewLimit);
-  $: remainingCount = Math.max(flatNodes.length - visible.length, 0);
+  $: fileCount = flatNodes.filter(node => node.type !== WorkspaceContentType.Directory).length;
 
   function onKeydown(event: KeyboardEvent) {
     const { key } = event;
@@ -47,11 +45,14 @@
   <ModalHeader on:close>Permanently Delete {typeDisplayString}</ModalHeader>
   <ModalContent>
     <div class="flex flex-col gap-2">
-      <span>This will permanently delete the following from the "{workspaceName}" workspace:</span>
-      <ul class="m-0 list-none rounded-md border border-(--st-gray-20) p-2">
-        {#each visible as node (node.fullPath)}
+      <span>
+        This will permanently delete the following {fileCount} file{pluralize(fileCount)} from the "{workspaceName}"
+        workspace:
+      </span>
+      <ul class="border-(--st-gray-20) m-0 max-h-64 list-none overflow-y-auto rounded-md border p-2">
+        {#each flatNodes as node (node.fullPath)}
           <li
-            class="flex items-center gap-2 py-0.5"
+            class="flex items-center gap-1 py-0.5"
             style="padding-left: {(node.depth ?? 0) * 16}px"
             title={node.fullPath}
           >
@@ -59,9 +60,6 @@
             <span class="truncate">{node.name}</span>
           </li>
         {/each}
-        {#if remainingCount > 0}
-          <li class="pt-1 italic opacity-75">…and {remainingCount} more</li>
-        {/if}
       </ul>
       <strong>This action cannot be undone.</strong>
     </div>
