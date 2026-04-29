@@ -14,6 +14,7 @@ import {
   flattenWorkspaceTreeWithPaths,
   getAvailableActionsForNodes,
   getCommonPathPrefix,
+  getFolderPathForNode,
   getSelectedFilesDisplay,
   getWorkspaceFileFolderDisplay,
   hasReadonlyInTree,
@@ -940,6 +941,49 @@ describe('Workspace utility function tests', () => {
     test('Should return null for empty tree', () => {
       const result = findNodeByPath([], 'file.txt');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getFolderPathForNode', () => {
+    const testTree: WorkspaceTreeNode[] = [
+      { name: 'file.txt', type: WorkspaceContentType.Text },
+      {
+        contents: [
+          { name: 'nested.txt', type: WorkspaceContentType.Text },
+          {
+            contents: [{ name: 'deep.seq', type: WorkspaceContentType.Sequence }],
+            name: 'subfolder',
+            type: WorkspaceContentType.Directory,
+          },
+        ],
+        name: 'folder',
+        type: WorkspaceContentType.Directory,
+      },
+    ];
+
+    test('Should return the folder path itself when the node is a folder', () => {
+      expect(getFolderPathForNode(testTree, 'folder')).toBe('folder');
+      expect(getFolderPathForNode(testTree, 'folder/subfolder')).toBe('folder/subfolder');
+    });
+
+    test('Should return the parent folder path when the node is a file', () => {
+      expect(getFolderPathForNode(testTree, 'folder/nested.txt')).toBe('folder');
+      expect(getFolderPathForNode(testTree, 'folder/subfolder/deep.seq')).toBe('folder/subfolder');
+    });
+
+    test('Should return empty string when a root-level file is selected', () => {
+      expect(getFolderPathForNode(testTree, 'file.txt')).toBe('');
+    });
+
+    test('Should return null when targetPath is null or empty', () => {
+      expect(getFolderPathForNode(testTree, null)).toBeNull();
+      expect(getFolderPathForNode(testTree, '')).toBeNull();
+    });
+
+    test('Should return null when the node cannot be resolved', () => {
+      expect(getFolderPathForNode(testTree, 'nonexistent')).toBeNull();
+      expect(getFolderPathForNode(testTree, 'folder/missing')).toBeNull();
+      expect(getFolderPathForNode([], 'folder')).toBeNull();
     });
   });
 

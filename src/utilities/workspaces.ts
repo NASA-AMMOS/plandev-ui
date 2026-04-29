@@ -669,6 +669,25 @@ export function findNodeByPath(nodes: WorkspaceTreeNode[], targetPath: string): 
   return currentNode;
 }
 
+/**
+ * Returns the folder path associated with a node at `targetPath`:
+ * the path itself if the node is a folder, or its parent folder path if the node is a file.
+ * Returns `null` if the path is empty or the node cannot be resolved.
+ */
+export function getFolderPathForNode(nodes: WorkspaceTreeNode[], targetPath: string | null): string | null {
+  if (!targetPath) {
+    return null;
+  }
+  const node = findNodeByPath(nodes, targetPath);
+  if (node == null) {
+    return null;
+  }
+  if (node.type === WorkspaceContentType.Directory) {
+    return targetPath;
+  }
+  return targetPath.split(PATH_DELIMITER).slice(0, -1).join(PATH_DELIMITER);
+}
+
 export interface TreeFilterResult {
   /** Paths of ancestors that should remain visible to show matching descendants */
   ancestorPaths: Set<string>;

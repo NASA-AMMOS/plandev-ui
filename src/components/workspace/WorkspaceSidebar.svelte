@@ -14,6 +14,7 @@
   import { getTarget } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { tooltip } from '../../utilities/tooltip';
+  import { getFolderPathForNode } from '../../utilities/workspaces';
   import Input from '../form/Input.svelte';
   import Loading from '../Loading.svelte';
   import ActionSidebarList from '../sequencing/actions/ActionSidebarList.svelte';
@@ -62,7 +63,12 @@
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
+  let selectedFolderPath: string | null = null;
   let wasLoading: boolean = false;
+
+  // Folder context of the primary selection: the selected folder itself, or a file's parent folder.
+  // `null` when nothing is selected, in which case callers fall back to `currentBreadcrumbPath`.
+  $: selectedFolderPath = getFolderPathForNode(workspaceTree?.contents ?? [], selectedFilePath);
 
   $: if (isWorkspaceLoading) {
     wasLoading = true;
@@ -79,15 +85,15 @@
   }
 
   function onNewFolder() {
-    dispatch('newFolder', currentBreadcrumbPath);
+    dispatch('newFolder', selectedFolderPath ?? currentBreadcrumbPath);
   }
 
   function onNewFile() {
-    dispatch('newFile', currentBreadcrumbPath);
+    dispatch('newFile', selectedFolderPath ?? currentBreadcrumbPath);
   }
 
   function onImportFile() {
-    dispatch('importFile', currentBreadcrumbPath);
+    dispatch('importFile', selectedFolderPath ?? currentBreadcrumbPath);
   }
 
   function onWorkspaceCollaboratorsCreate(event: CustomEvent<WorkspaceCollaborator[]>) {
