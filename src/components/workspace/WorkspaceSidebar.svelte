@@ -63,6 +63,7 @@
 
   let didWorkspaceUpdate: boolean = false;
   let lastRefreshTime: Date = new Date();
+  let selectedFolderPath: string | null = null;
   let wasLoading: boolean = false;
 
   // Folder context of the primary selection: the selected folder itself, or a file's parent folder.
