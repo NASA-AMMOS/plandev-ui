@@ -76,6 +76,17 @@ test.describe.serial('Actions', () => {
     });
   });
 
+  test('Run an action with an unset optional variant parameter', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      stringParameters: {
+        required: 'test-required-value',
+        requiredNoDefault: 'test-no-default-value',
+      },
+    });
+  });
+
   test('Run API integration tests', async () => {
     await action.selectActionInSidebar();
     await action.runAction({

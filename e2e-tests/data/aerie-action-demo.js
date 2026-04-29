@@ -10,6 +10,7 @@ const parameterDefinitions = {
     type: 'variant',
     description: 'What the action should do',
     variants: [
+      { key: 'noop', label: 'No-op' },
       { key: 'fetch', label: 'Fetch URL' },
       { key: 'adaptation', label: 'Translate File using Adaptation' },
       { key: 'files', label: 'List & Read Files' },
@@ -78,7 +79,7 @@ const settingDefinitions = {
 };
 
 async function main(actionParameters, actionSettings, actionsAPI) {
-  const { logCount = 10, mode = 'fetch', outputFile, outputContent, secret, sequence } = actionParameters;
+  const { logCount = 10, mode = 'noop', outputFile, outputContent, secret, sequence } = actionParameters;
   const { externalUrl = 'https://api.github.com', verbose = false } = actionSettings;
   const startTime = performance.now();
 
@@ -91,6 +92,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
 
   let result;
   switch (mode) {
+    case 'noop':
+      result = { status: 'SUCCESS', data: { mode } };
+      break;
     case 'fetch':
       result = await runFetchMode(externalUrl, verbose);
       break;
