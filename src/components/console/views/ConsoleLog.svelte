@@ -137,7 +137,8 @@
                   class={cn(
                     'uppercase',
                     level === 'error' ? 'text-destructive' : level === 'warn' ? 'text-yellow-600' : 'text-blue-500',
-                  )}>{level}</span>]
+                  )}>{level}</span
+                >]
               </span>
             {/if}
             {#if showType}

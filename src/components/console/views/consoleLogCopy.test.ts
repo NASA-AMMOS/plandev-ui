@@ -87,10 +87,7 @@ describe('handleConsoleLogCopy', () => {
   });
 
   test('skips expanded content when the row is closed', () => {
-    const container = makeContainer([
-      { pre: 'should-not-appear', summary: 'first' },
-      { summary: 'second' },
-    ]);
+    const container = makeContainer([{ pre: 'should-not-appear', summary: 'first' }, { summary: 'second' }]);
     mockSelectionOver(Array.from(container.querySelectorAll('details')));
 
     const event = makeClipboardEvent();
