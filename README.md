@@ -24,6 +24,17 @@ For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.
 
 - Join us on the [NASA-AMMOS Slack](https://join.slack.com/t/nasa-ammos/shared_invite/zt-1mlgmk5c2-MgqVSyKzVRUWrXy87FNqPw) (#plandev-users)
 - Contact plandev-support@googlegroups.com
+- Report security vulnerabilities per [SECURITY.md](./SECURITY.md)
+
+## Getting Started
+
+PlanDev UI requires Node.js (see [`.nvmrc`](./.nvmrc)), Java, Docker, and a local checkout of the [PlanDev backend](https://github.com/NASA-AMMOS/plandev). For full setup instructions see [docs/DEVELOPER.md](./docs/DEVELOPER.md).
+
+```sh
+nvm use
+npm install
+npm run dev
+```
 
 ## Directory Structure
 
@@ -48,9 +59,10 @@ For the latest documentation, visit: [PlanDev Documentation](https://nasa-ammos.
 ## Want to help?
 
 Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
-guidelines for [contributing][contributing]. If you are a developer you can get started quickly by reading the [developer documentation][dev].
+guidelines for [contributing][contributing] and our [code of conduct][coc]. If you are a developer you can get started quickly by reading the [developer documentation][dev].
 
-[contributing]: ./docs/CONTRIBUTING.md
+[coc]: ./CODE_OF_CONDUCT.md
+[contributing]: ./CONTRIBUTING.md
 [dev]: ./docs/DEVELOPER.md
 
 ## License
