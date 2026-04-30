@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { beforeNavigate, goto, replaceState } from '$app/navigation';
+  import { beforeNavigate, goto, pushState, replaceState } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
@@ -133,10 +133,39 @@
 
   type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
 
-  // Initialize sidebar tab and content mode from URL params before first render to avoid flash
-  const initialActionRunIdParam = $page.url.searchParams.get(SearchParameters.ACTION_RUN_ID);
-  const initialActionIdParam = $page.url.searchParams.get(SearchParameters.ACTION_ID);
-  const initialSidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+  function parseUrlState(url: URL) {
+    const filePath = url.searchParams.get(SearchParameters.SEQUENCE_ID);
+    const actionRunIdParam = url.searchParams.get(SearchParameters.ACTION_RUN_ID);
+    const actionIdParam = url.searchParams.get(SearchParameters.ACTION_ID);
+    const sidebarTabParam = url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+
+    const actionRunId = actionRunIdParam ? parseInt(actionRunIdParam, 10) || null : null;
+    const actionId = actionIdParam ? parseInt(actionIdParam, 10) || null : null;
+
+    let mode: WorkspaceContentMode;
+    let sidebarTab: string;
+    if (actionRunId !== null) {
+      mode = WorkspaceContentMode.ActionRunDetail;
+      sidebarTab = 'actions';
+    } else if (actionId !== null) {
+      mode = WorkspaceContentMode.ActionDetail;
+      sidebarTab = 'actions';
+    } else if (sidebarTabParam === 'actions') {
+      mode = WorkspaceContentMode.ActionRunsList;
+      sidebarTab = 'actions';
+    } else {
+      mode = WorkspaceContentMode.File;
+      sidebarTab = 'files';
+    }
+
+    return { actionId, actionRunId, filePath, mode, sidebarTab };
+  }
+
+  // Initialize state from URL before first render to avoid flash
+  const initialUrlState = parseUrlState($page.url);
+  $workspaceContentMode = initialUrlState.mode;
+  $selectedActionRunId = initialUrlState.actionRunId;
+  $selectedActionDefinitionId = initialUrlState.actionId;
 
   const { initialWorkspace } = data;
   const actionRunsLoading = actionRuns.loading;
@@ -159,8 +188,7 @@
   let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let leftPaneApi: PaneAPI;
-  let leftPanelActiveTab: string =
-    initialActionRunIdParam || initialActionIdParam || initialSidebarTab === 'actions' ? 'actions' : 'files';
+  let leftPanelActiveTab: string = initialUrlState.sidebarTab;
   let rightPaneApi: PaneAPI;
   let rightPanelActiveTab: string = 'metadata';
   let rightPanelCommandNodeName: string | null = null;
@@ -193,28 +221,8 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
-
-  if (initialActionRunIdParam) {
-    const runId = parseInt(initialActionRunIdParam, 10);
-    if (!isNaN(runId)) {
-      $selectedActionRunId = runId;
-      $workspaceContentMode = WorkspaceContentMode.ActionRunDetail;
-      if (initialActionIdParam) {
-        const actionId = parseInt(initialActionIdParam, 10);
-        if (!isNaN(actionId)) {
-          $selectedActionDefinitionId = actionId;
-        }
-      }
-    }
-  } else if (initialActionIdParam) {
-    const actionId = parseInt(initialActionIdParam, 10);
-    if (!isNaN(actionId)) {
-      $selectedActionDefinitionId = actionId;
-      $workspaceContentMode = WorkspaceContentMode.ActionDetail;
-    }
-  } else if (initialSidebarTab === 'actions') {
-    $workspaceContentMode = WorkspaceContentMode.ActionRunsList;
-  }
+  let isHandlingPopstate: boolean = false;
+  let lastKnownUrl: string = '';
 
   // Programmatic collapse/expand of left sidebar content pane
   $: if (leftPaneApi) {
@@ -373,20 +381,21 @@
     parameterDictionaries = [];
   }
 
-  // Prevent in-app navigation to other routes when there are unsaved changes
+  // Prevent in-app navigation to other routes when there are unsaved changes.
+  // Browser back/forward inside the workspace is handled by the window popstate
+  // listener in onMount; this hook only fires for cross-route navigations and
+  // intra-route shallow pushState (which is initiated by our own click handlers
+  // that already prompt themselves).
   beforeNavigate(({ cancel, to }) => {
     if (!$activeDocumentIsDirty) {
       return;
     }
-    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
-    if (to?.route.id === $page.route.id) {
-      return;
-    }
-    // Skip for external navigation (tab close, refresh) - handled by beforeunload
     if (to === null) {
       return;
     }
-    // Cancel navigation first, then show async modal and navigate if confirmed
+    if (to.route.id === $page.route.id) {
+      return;
+    }
     cancel();
     showConfirmModal(
       'Leave Page',
@@ -396,24 +405,83 @@
       'Stay on Page',
     ).then(({ confirm }) => {
       if (confirm && to?.url) {
-        // Reset content to allow navigation without re-triggering the modal
         activeDocument.markClean();
         goto(to.url);
       }
     });
   });
 
+  function syncStateFromUrl(url: URL) {
+    const { actionId, actionRunId, filePath, mode, sidebarTab } = parseUrlState(url);
+
+    $workspaceContentMode = mode;
+    $selectedActionRunId = actionRunId;
+    $selectedActionDefinitionId = actionId;
+    leftPanelActiveTab = sidebarTab;
+
+    // Only touch the active file when we're in File mode. Other modes preserve the
+    // previously-loaded file so switching back to File mode shows it again.
+    if (mode === WorkspaceContentMode.File && filePath !== selectedFilePath) {
+      if (filePath === null) {
+        // URL no longer references a file; unload directly to avoid maybeNavigate's
+        // null-path revert behavior.
+        activeDocument.close();
+        selectedFilePath = null;
+      } else {
+        // Flag tells confirmAndNavigate to skip its pushState (URL is already correct).
+        isHandlingPopstate = true;
+        selectedFilePath = filePath;
+      }
+    }
+  }
+
   onMount(() => {
+    lastKnownUrl = window.location.href;
+
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if ($activeDocumentIsDirty) {
         event.preventDefault(); // Triggers the native browser confirmation
         event.returnValue = ''; // Required for some older browser compatibility
       }
     };
+
+    // Browser back/forward inside the workspace. SvelteKit's lifecycle hooks don't
+    // fire reliably for shallow pushState entries, so we handle these directly.
+    const handlePopstate = () => {
+      const newUrl = window.location.href;
+      const previousUrl = lastKnownUrl;
+
+      if (!$activeDocumentIsDirty) {
+        syncStateFromUrl(new URL(newUrl));
+        lastKnownUrl = newUrl;
+        return;
+      }
+
+      showConfirmModal(
+        'Navigate Away',
+        'There are unsaved changes. Are you sure you want to navigate away?',
+        'Navigate Away',
+        true,
+        'Keep Editing',
+      ).then(({ confirm }) => {
+        if (confirm) {
+          activeDocument.markClean();
+          syncStateFromUrl(new URL(newUrl));
+          lastKnownUrl = newUrl;
+        } else {
+          // Roll back the URL change so the user stays on the dirty page.
+          window.history.pushState({}, '', previousUrl);
+          lastKnownUrl = previousUrl;
+        }
+      });
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopstate);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopstate);
     };
   });
 
@@ -424,21 +492,6 @@
       await tick();
       selectedFilePath = $activeDocumentPath;
       return;
-    }
-    // If we're in a non-file mode, guard against dirty action detail before switching
-    if ($workspaceContentMode !== WorkspaceContentMode.File && actionDetailIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        'There are unsaved action changes. Are you sure you want to navigate away?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-      if (!confirm) {
-        selectedFilePath = $activeDocumentPath;
-        return;
-      }
-      actionDetailIsDirty = false;
     }
     // Switch back to file mode
     $workspaceContentMode = WorkspaceContentMode.File;
@@ -674,8 +727,13 @@
         return false;
       }
     }
-    // Use replaceState to update URL immediately without triggering SvelteKit navigation
-    replaceState(getWorkspacesUrl(base, $workspaceId, filePath), {});
+    if (isHandlingPopstate) {
+      // URL was already updated by browser back/forward; don't push a duplicate entry
+      isHandlingPopstate = false;
+    } else {
+      pushState(getWorkspacesUrl(base, $workspaceId, filePath), {});
+      lastKnownUrl = window.location.href;
+    }
 
     return true;
   }
@@ -691,6 +749,7 @@
     selectedFilePath = newFilePath;
     // Manually update URL since reactive statement won't trigger (selectedFilePath === $activeDocumentPath)
     replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
+    lastKnownUrl = window.location.href;
   }
 
   async function saveBeforeOperation(
@@ -1033,11 +1092,6 @@
       activeDocument.markClean();
     }
 
-    // Silently reset dirty action detail state on navigate away
-    if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
-      actionDetailIsDirty = false;
-    }
-
     $workspaceContentMode = mode;
     if (options?.actionId !== undefined) {
       $selectedActionDefinitionId = options.actionId ?? null;
@@ -1078,7 +1132,8 @@
     }
 
     const query = params.toString();
-    replaceState(query ? `${baseUrl}?${query}` : baseUrl, {});
+    pushState(query ? `${baseUrl}?${query}` : baseUrl, {});
+    lastKnownUrl = window.location.href;
   }
 
   function onSelectAction(event: CustomEvent<{ id: number }>) {
@@ -1100,10 +1155,6 @@
     }
     // Ensure panel is open after switching tabs
     sidebarPanelOpen = true;
-  }
-
-  function onActionDetailDirty(event: CustomEvent<boolean>) {
-    actionDetailIsDirty = event.detail;
   }
 
   function onViewActionRun(event: CustomEvent<{ runId: number }>) {
@@ -1333,7 +1384,7 @@
   onMount(async () => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
-      selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+      selectedFilePath = initialUrlState.filePath;
       getWorkspaceContents(initialWorkspace);
     }
     // Wait a tick for paneforge to restore saved sizes from localStorage before showing panels
@@ -1436,7 +1487,6 @@
               workspace={$workspace}
               workspaceFiles={workspaceFileList}
               on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
-              on:dirty={onActionDetailDirty}
               on:runAction={onRunActionFromDetailView}
               on:viewRun={onViewActionRun}
             />
