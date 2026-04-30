@@ -279,7 +279,7 @@ export class Workspace {
     this.metadataCancelButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Cancel' });
     this.metadataPanel = page.locator('.user-metadata-editor').first();
     this.metadataSaveButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Save' });
-    this.metadataTabButton = page.getByRole('button', { name: 'Metadata' });
+    this.metadataTabButton = page.getByRole('button', { exact: true, name: 'Metadata' });
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');
     this.page = page;
