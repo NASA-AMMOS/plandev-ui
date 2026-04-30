@@ -5,7 +5,11 @@
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { pluralize } from '../../utilities/text';
-  import { flattenWorkspaceTreeWithPaths, getWorkspaceFileFolderDisplay } from '../../utilities/workspaces';
+  import {
+    flattenWorkspaceTreeWithPaths,
+    getWorkspaceFileFolderDisplay,
+    removeRedundantNodes,
+  } from '../../utilities/workspaces';
   import WorkspaceTreeViewIcon from '../workspace/WorkspaceTreeView/WorkspaceTreeViewIcon.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -26,7 +30,7 @@
   let typeDisplayString: string = '';
 
   $: typeDisplayString = getWorkspaceFileFolderDisplay(originalNodes);
-  $: flatNodes = originalNodes.flatMap(node => {
+  $: flatNodes = removeRedundantNodes(originalNodes).flatMap(node => {
     const top: WorkspaceTreeNodeWithFullPath = { ...node, depth: 0, fullPath: node.fullPath };
     const children =
       node.contents && node.contents.length > 0 ? flattenWorkspaceTreeWithPaths(node.contents, [node.fullPath], 1) : [];
