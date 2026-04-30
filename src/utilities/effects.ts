@@ -17,7 +17,6 @@ import {
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
-import { PATH_DELIMITER } from '../constants/workspaces';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
@@ -7275,13 +7274,7 @@ const effects = {
       );
 
       if (confirmNewFile && confirmNewFileValue) {
-        let { filePath: newFilePath } = confirmNewFileValue;
-        // Trim workspace from path to avoid making extra directory
-        if (newFilePath.includes(PATH_DELIMITER)) {
-          const newFilePathContents: Array<string> = newFilePath.split(PATH_DELIMITER);
-          newFilePathContents.shift();
-          newFilePath = newFilePathContents.join(PATH_DELIMITER);
-        }
+        const { filePath: newFilePath } = confirmNewFileValue;
         await WorkspaceApi.saveFile(workspaceId, newFilePath, expandedSequence, false, user);
 
         showSuccessToast('Workspace File Created Successfully');
