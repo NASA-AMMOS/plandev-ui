@@ -277,9 +277,8 @@
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
   $: activeFileIsSequence =
-    $activeDocumentPath !== null &&
-    $activeDocument.type !== null &&
-    $activeDocument.type === WorkspaceContentType.Sequence;
+    $activeDocumentPath === null ||
+    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
@@ -1410,9 +1409,6 @@
           {:else}
             {@const isTextOrEmpty =
               $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-            {@const isSequenceFile =
-              $activeDocumentPath === null ||
-              ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
             <div class="relative grid h-full grid-cols-1 grid-rows-1">
               {#if showLoadingSpinner && isTextOrEmpty}
                 <div
@@ -1421,7 +1417,7 @@
                   <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
                 </div>
               {/if}
-              {#if isTextOrEmpty && isSequenceFile}
+              {#if isTextOrEmpty && activeFileIsSequence}
                 <div class="flex h-full">
                   <SequenceEditor
                     bind:this={sequenceEditorRef}

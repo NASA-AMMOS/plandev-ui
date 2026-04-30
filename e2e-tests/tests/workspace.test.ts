@@ -83,6 +83,14 @@ test.describe.serial('Workspace', () => {
     await workspace.pageLoadingLocatorWithData.waitFor({ state: 'detached' });
   });
 
+  test('Right icon rail shows sequence tabs when workspace loads with no file selected', async () => {
+    // With no file in the URL the page defaults to a SequenceEditor, so the right
+    // icon rail should expose Selected Command and Command Dictionary tabs alongside Metadata.
+    await expect(setup.page.getByRole('button', { exact: true, name: 'Metadata' })).toBeVisible();
+    await expect(setup.page.getByRole('button', { exact: true, name: 'Selected Command' })).toBeVisible();
+    await expect(setup.page.getByRole('button', { exact: true, name: 'Command Dictionary' })).toBeVisible();
+  });
+
   test('Workspace header menu should be accessible', async () => {
     await expect(workspace.workspaceContextMenuButton).toBeVisible();
     await workspace.openWorkspaceContextMenu();
