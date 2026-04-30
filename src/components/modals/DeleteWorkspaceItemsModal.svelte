@@ -21,6 +21,10 @@
     confirm: void;
   }>();
 
+  let fileCount: number = 0;
+  let flatNodes: WorkspaceTreeNodeWithFullPath[] = [];
+  let typeDisplayString: string = '';
+
   $: typeDisplayString = getWorkspaceFileFolderDisplay(originalNodes);
   $: flatNodes = originalNodes.flatMap(node => {
     const top: WorkspaceTreeNodeWithFullPath = { ...node, depth: 0, fullPath: node.fullPath };
