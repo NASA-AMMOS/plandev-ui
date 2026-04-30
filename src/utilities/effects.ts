@@ -273,6 +273,7 @@ import {
   showDeleteDerivationGroupModal,
   showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
+  showDeleteWorkspaceItemsModal,
   showEditViewModal,
   showExpansionPanelModal,
   showImportWorkspaceFileModal,
@@ -4069,11 +4070,7 @@ const effects = {
         throwPermissionError(`delete ${typeDisplayString.toLowerCase()} from this workspace`);
       }
 
-      const { confirm } = await showConfirmModal(
-        `Permanently Delete ${typeDisplayString}`,
-        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the "${workspace.name}" workspace.`,
-        `Permanently Delete`,
-      );
+      const { confirm } = await showDeleteWorkspaceItemsModal(originalNodes, workspace.name);
 
       let responses: BulkOperationResponses = [];
 
