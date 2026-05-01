@@ -1,7 +1,7 @@
 {
   "name": "plandev-ui",
   "description": "The client application for PlanDev.",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "type": "module",
   "private": true,
   "license": "MIT",
