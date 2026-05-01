@@ -4619,26 +4619,20 @@ const effects = {
     try {
       const sourceData = await reqHasura<
         {
-          derivation_group: {
-            external_sources: {
-              external_events: {
-                external_event_type: {
-                  attribute_schema: object;
-                  name: string;
-                };
-              }[];
-            }[];
-          };
+          external_events: {
+            external_event_type: {
+              attribute_schema: object;
+              name: string;
+            };
+          }[];
         }[]
       >(gql.GET_PLAN_EVENT_TYPES, { plan_id }, user);
       const types: ExternalEventType[] = [];
       if (sourceData?.plan_derivation_group !== null) {
         for (const group of sourceData.plan_derivation_group) {
-          for (const source of group.derivation_group.external_sources) {
-            for (const event of source.external_events) {
-              if (types.flatMap(et => et.name).includes(event.external_event_type.name) === false) {
-                types.push(event.external_event_type);
-              }
+          for (const event of group.external_events) {
+            if (types.flatMap(et => et.name).includes(event.external_event_type.name) === false) {
+              types.push(event.external_event_type);
             }
           }
         }
