@@ -91,7 +91,7 @@
   let flattenedTree: WorkspaceTreeNodeWithFullPath[] = [];
   let expandedPaths: Set<string> = new Set();
   let nameColumnUserWidth: number | null = savedColumnStates.find(s => s.colId === 'name')?.width ?? null;
-  let selectedItemIds: RowId[] = [];
+  let selectedItemIds: RowId[] = selectedTreeNodePath ? [selectedTreeNodePath] : [];
 
   // Initialize column states from cookie, applying special processing for Name column to preserve user width if manually resized
   let columnStates: ColumnState[] = processNameColumnState(savedColumnStates);
@@ -800,7 +800,7 @@
     {columnDefs}
     {columnStates}
     columnShiftResize
-    getRowId={node => node.fullPath}
+    idKey="fullPath"
     {hasDeletePermission}
     singleItemDisplayText="File"
     pluralItemDisplayText="Files"
