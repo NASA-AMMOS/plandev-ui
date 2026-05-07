@@ -31,7 +31,7 @@
   import type { FieldStore } from '../../types/form';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
-  import { getActivityMetadata } from '../../utilities/activities';
+  import { getActivityMetadata, validateArguments } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { isInstantiationError } from '../../utilities/errors';
   import { classNames, keyByBoolean } from '../../utilities/generic';
@@ -119,7 +119,7 @@
       $activityArgumentDefaultsMap[activityType?.name || ''] ?? {},
     );
   }
-  $: validateArguments(revision ? revision.arguments : activityDirective.arguments);
+  $: getArgumentValidation(revision ? revision.arguments : activityDirective.arguments);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
@@ -402,6 +402,7 @@
       }
       const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
         directive_id: activityDirective.id,
+
         plan_id: activityDirective.plan_id,
         tag_id,
       }));
@@ -418,30 +419,15 @@
     }
   }
 
-  async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
-    if (newArguments) {
-      const { type } = activityDirective;
-      const { errors, success } = await effects.validateActivityArguments(
-        type,
+  async function getArgumentValidation(newArguments: ArgumentsMap | null): Promise<void> {
+    if (newArguments && user) {
+      parameterErrorMap = await validateArguments(
         activityDirective.id,
-        modelId,
+        activityDirective.type,
         newArguments,
-        user,
+        modelId,
+        user
       );
-
-      if (!success && errors) {
-        parameterErrorMap = errors.reduce((map: Record<string, string[]>, error) => {
-          error.subjects?.forEach(subject => {
-            if (!map[subject]) {
-              map[subject] = [];
-            }
-            map[subject].push(error.message);
-          });
-          return map;
-        }, {});
-      } else {
-        parameterErrorMap = {};
-      }
     }
   }
 

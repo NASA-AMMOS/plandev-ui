@@ -12,7 +12,7 @@
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { FormParameter } from '../../types/parameter';
-  import effects from '../../utilities/effects';
+  import { validateArguments } from '../../utilities/activities';
   import { getTarget, lowercase } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
   import { getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
@@ -102,7 +102,7 @@
     dirtyDirective.arguments = {};
     currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
     dirtyDirective.type = newType;
-    validateArguments();
+    getArgumentValidation();
   }
 
   function onTypeSelected(newType: string) {
@@ -113,31 +113,15 @@
     manualInputRef.value = newType;
   }
 
-  async function validateArguments(): Promise<void> {
-    if ($plan && $plan.model_id) {
-      const { type } = dirtyDirective;
-      const { errors, success } = await effects.validateActivityArguments(
-        type,
+  async function getArgumentValidation(): Promise<void> {
+    if ($plan && $plan.model_id && user) {
+      dirtyDirectiveErrorsMap = await validateArguments(
         undefined,
-        $plan?.model_id,
+        dirtyDirective.type,
         dirtyDirective.arguments,
-        user,
+        $plan?.model_id,
+        user
       );
-
-      if (!success && errors) {
-        console.log(errors);
-        dirtyDirectiveErrorsMap = errors.reduce((map: Record<string, string[]>, error) => {
-          error.subjects?.forEach(subject => {
-            if (!map[subject]) {
-              map[subject] = [];
-            }
-            map[subject].push(error.message);
-          });
-          return map;
-        }, {});
-      } else {
-        dirtyDirectiveErrorsMap = {};
-      }
     }
   }
 
@@ -339,7 +323,7 @@
                   on:change={event => {
                     const { name, value } = event.detail;
                     dirtyDirective.arguments[name] = value;
-                    validateArguments();
+                    getArgumentValidation();
                   }}
                 />
                 {#if !currentActivityTypeFormParams || currentActivityTypeFormParams.length === 0}
@@ -435,35 +419,6 @@
     overflow: auto;
     width: 100%;
   }
-
-  /* .manual-types-add-all {
-    align-items: center;
-    display: flex;
-    font-style: italic;
-    height: 16px;
-    padding-left: 24px;
-  }
-
-  .manual-types-filter-input {
-    background: white;
-  }
-
-  .manual-types-menu input {
-    margin: 0;
-  }
-
-  .manual-types-results {
-    margin-top: 8px;
-    max-height: 200px;
-    overflow: auto;
-  }
-  .dynamic-filter-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 200px;
-    overflow: auto;
-  } */
 
   .search-icon {
     align-items: center;

@@ -6,6 +6,8 @@ import type {
   ActivityDirectivesMap,
 } from '../types/activity';
 import type { ActivityMetadata, ActivityMetadataKey, ActivityMetadataValue } from '../types/activity-metadata';
+import type { User } from '../types/app';
+import type { ArgumentsMap } from '../types/parameter';
 import type {
   Plan,
   PlanMergeActivityDirectiveDB,
@@ -17,6 +19,7 @@ import type {
 import type { Span, SpanId, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { ActivityTransformDirection } from '../types/time';
 import { getClipboardContent, setClipboardContent } from './clipboard';
+import effects from './effects';
 import { compare, isEmpty } from './generic';
 import { pluralize } from './text';
 import {
@@ -585,4 +588,37 @@ export function packActivityDirectivesInPlan(
   });
 
   return result;
+}
+
+export async function validateArguments(
+  activityId: number | undefined,
+  activityType: string,
+  activityArguments: ArgumentsMap,
+  modelId: number,
+  user: User,
+): Promise<Record<string, string[]>> {
+  let errorsMap: Record<string, string[]> = {};
+  const { errors, success } = await effects.validateActivityArguments(
+    activityType,
+    activityId,
+    modelId,
+    activityArguments,
+    user,
+  );
+
+  if (!success && errors) {
+    console.log(errors);
+    errorsMap = errors.reduce((map: Record<string, string[]>, error) => {
+      error.subjects?.forEach(subject => {
+        if (!map[subject]) {
+          map[subject] = [];
+        }
+        map[subject].push(error.message);
+      });
+      return map;
+    }, {});
+  } else {
+    errorsMap = {};
+  }
+  return errorsMap;
 }
