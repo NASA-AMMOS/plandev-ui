@@ -155,9 +155,7 @@
   }
 
   function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
-    console.log('onCreateActivityDirective');
     if ($plan !== null && $plan.model) {
-      console.log('onCreateActivityDirective - Passed Check');
       effects.createActivityDirectivePredefined(directive, $plan, user);
       directiveBuilder.toggle();
     }

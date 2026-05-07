@@ -388,7 +388,6 @@
   }
 
   function onBuildActivityDirective(startTime: string, activityType: string) {
-    console.log(activityType);
     directiveBuilder.setCurrentActivityType(activityType);
     directiveBuilder.setCurrentActivityStart(startTime);
     directiveBuilder.show();

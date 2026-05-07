@@ -607,7 +607,6 @@ export async function validateArguments(
   );
 
   if (!success && errors) {
-    console.log(errors);
     errorsMap = errors.reduce((map: Record<string, string[]>, error) => {
       error.subjects?.forEach(subject => {
         if (!map[subject]) {
