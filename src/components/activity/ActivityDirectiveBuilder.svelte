@@ -102,6 +102,7 @@
     dirtyDirective.arguments = {};
     currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
     dirtyDirective.type = newType;
+    validateArguments();
   }
 
   function onTypeSelected(newType: string) {
