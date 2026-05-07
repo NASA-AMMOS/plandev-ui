@@ -49,8 +49,11 @@ export class Workspace {
     await this.searchInput.clear();
   }
 
-  async clickFile(name: string): Promise<void> {
-    await this.workspaceFileGrid.getByRole('row', { name }).click();
+  async clickFile(name: string, options?: { force?: boolean }): Promise<void> {
+    // `force: true` is for callers that expect the click to immediately summon a modal
+    // (e.g. unsaved-changes confirmation) — Playwright's hit-test would otherwise see the
+    // modal backdrop and retry until timeout, even though the original click registered.
+    await this.workspaceFileGrid.getByRole('row', { name }).click(options);
   }
 
   async createFolder(folderPath?: string): Promise<string> {

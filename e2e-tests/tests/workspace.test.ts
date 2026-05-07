@@ -287,7 +287,7 @@ test.describe.serial('Workspace', () => {
 
     // Try to navigate to second file
     await workspace.searchForFileAndWait(file2);
-    await workspace.clickFile(file2);
+    await workspace.clickFile(file2, { force: true });
 
     // Should show confirmation modal
     const modal = setup.page.locator('#modal-container');
