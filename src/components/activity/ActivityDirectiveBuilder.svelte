@@ -120,7 +120,7 @@
         dirtyDirective.type,
         dirtyDirective.arguments,
         $plan?.model_id,
-        user
+        user,
       );
     }
   }

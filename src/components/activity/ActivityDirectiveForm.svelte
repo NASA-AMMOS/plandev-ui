@@ -426,7 +426,7 @@
         activityDirective.type,
         newArguments,
         modelId,
-        user
+        user,
       );
     }
   }
