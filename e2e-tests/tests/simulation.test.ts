@@ -70,4 +70,24 @@ test.describe.serial('Simulation', async () => {
     await setup.plan.addActivityByDragAndDrop();
     await setup.plan.waitForSimulationStatus(Status.Modified);
   });
+
+  // Catches gross regressions in the streaming-profile pipeline that the unit
+  // tests can't see: actually exercises real Hasura cursors / interval ordering
+  // / WS reconnects via graphql-ws across a real sim → resimulate cycle, then
+  // asserts the global timeline status indicator never enters its error state
+  // and the timeline panel stays mounted. The "blank plot after resimulate"
+  // bug specifically isn't directly assertable here without canvas-pixel
+  // inspection or test hooks (deliberately avoided) — that's covered by the
+  // resimulate-fast unit test in src/stores/profile.test.ts. This e2e is a
+  // smoke test that the pipeline doesn't broadly fall over on real backend.
+  test(`Streaming pipeline survives a sim → resimulate cycle without timeline errors`, async () => {
+    const timelineErrorIndicator = setup.plan.page.getByRole('status', { name: 'Timeline data error' });
+
+    await setup.plan.runSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+
+    await setup.plan.reRunSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+    await expect(setup.plan.panelTimeline).toBeVisible();
+  });
 });

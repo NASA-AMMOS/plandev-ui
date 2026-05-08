@@ -5186,14 +5186,27 @@ const effects = {
     }
   },
 
-  getResource(
+  async getProfile(
     datasetId: number,
     name: string,
     user: User | null,
     signal: AbortSignal | undefined = undefined,
-  ): Promise<Record<string, Profile[] | null>> {
-    const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-    return data;
+  ): Promise<Profile | null> {
+    try {
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
+      const { profile: profiles } = data;
+      if (profiles && profiles.length === 1) {
+        return profiles[0];
+      }
+      return null;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      catchError(`Unable to retrieve profile ${name}`, error);
+      return null;
+    }
   },
 
   async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {

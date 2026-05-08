@@ -3304,6 +3304,38 @@ const gql = {
     }
   `,
 
+  SUB_PROFILE_HEADER: `#graphql
+    subscription SubProfileHeader($datasetId: Int!, $name: String!) {
+      ${Queries.PROFILES}(where: { _and: { dataset_id: { _eq: $datasetId }, name: { _eq: $name } } }, limit: 1) {
+        dataset_id
+        duration
+        id
+        name
+        type
+      }
+    }
+  `,
+
+  // Hasura streaming subscription. The cursor advances strictly past the last seen
+  // start_offset, so $startOffset must be < the smallest start_offset we want to
+  // receive — pass a negative Postgres interval (e.g. "-00:00:01") to capture a
+  // segment at offset 0. ISO 8601 ("-PT1S") is rejected by Hasura's interval scalar.
+  SUB_PROFILE_SEGMENTS_STREAM: `#graphql
+    subscription SubProfileSegmentsStream($datasetId: Int!, $profileId: Int!, $startOffset: interval!) {
+      ${Queries.PROFILE_SEGMENT_STREAM}(
+        cursor: { initial_value: { start_offset: $startOffset }, ordering: ASC },
+        batch_size: 2000,
+        where: { _and: { dataset_id: { _eq: $datasetId }, profile_id: { _eq: $profileId } } }
+      ) {
+        dataset_id
+        dynamics
+        is_gap
+        profile_id
+        start_offset
+      }
+    }
+  `,
+
   SUB_SCHEDULING_CONDITION: `#graphql
     subscription SubSchedulingCondition($id: Int!) {
       condition: ${Queries.SCHEDULING_CONDITION_METADATA}(id: $id) {
