@@ -162,6 +162,12 @@
   $: if (dirtyDirectiveErrorsMap || $activityValidationErrors.length) {
     currentActivityTypeFormParams = currentActivityTypeFormParams.map((formParameter: FormParameter) => {
       let errors = dirtyDirectiveErrorsMap[formParameter.name];
+      if (formParameter.required && formParameter.value === null) {
+        if (!errors) {
+          errors = [];
+        }
+        errors.push('Parameter not explicitly set');
+      }
       return { ...formParameter, errors: errors || null };
     });
   }
