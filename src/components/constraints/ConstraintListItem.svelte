@@ -432,7 +432,7 @@
         <div class="violations">
           {#each constraintResponse?.results?.violations as violation}
             {#each violation.windows as window}
-              <ConstraintViolationButton {window} />
+              <ConstraintViolationButton message={violation.message} {window} />
             {/each}
           {/each}
         </div>
