@@ -4,7 +4,7 @@
   import type { ScaleTime } from 'd3-scale';
   import { select } from 'd3-selection';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { ConstraintResultWithName } from '../../types/constraint';
+  import type { ConstraintResultWithName, ConstraintViolation } from '../../types/constraint';
   import type { RowMouseOverEvent, TimeRange } from '../../types/timeline';
 
   export let constraintResults: ConstraintResultWithName[] = [];
@@ -87,6 +87,8 @@
       const constraintResultsWithViolations: ConstraintResultWithName[] = [];
 
       for (const constraintResult of constraintResults || []) {
+        const hoveredViolations: ConstraintViolation[] = [];
+
         for (const constraintViolation of constraintResult.violations || []) {
           const { windows } = constraintViolation;
           let count = 0;
@@ -100,8 +102,15 @@
           }
 
           if (count > 0) {
-            constraintResultsWithViolations.push(constraintResult);
+            hoveredViolations.push(constraintViolation);
           }
+        }
+
+        if (hoveredViolations.length) {
+          constraintResultsWithViolations.push({
+            ...constraintResult,
+            violations: hoveredViolations,
+          });
         }
       }
 

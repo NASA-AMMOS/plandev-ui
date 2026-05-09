@@ -83,6 +83,7 @@ const gql = {
               start
             }
             violations {
+              message
               activityInstanceIds
               windows {
                 end

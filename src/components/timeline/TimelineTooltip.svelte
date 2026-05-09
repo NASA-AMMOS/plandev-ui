@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
-  import { groupBy } from 'lodash-es';
+  import { escape as escapeHtml, groupBy } from 'lodash-es';
   import { onMount } from 'svelte';
   import DirectiveIcon from '../../assets/timeline-directive.svg?raw';
   import SpanIcon from '../../assets/timeline-span.svg?raw';
@@ -413,15 +413,38 @@
   }
 
   function textForConstraintViolation(constraintViolation: ConstraintResultWithName): string {
+    const messages = [
+      ...new Set(
+        (constraintViolation.violations ?? [])
+          .map(({ message }) => message?.trim())
+          .filter((message): message is string => Boolean(message)),
+      ),
+    ];
+
     return `
       <div class='tooltip-row-container'>
         <div class='st-typography-bold' style='color: var(--st-gray-10)'>Constraint Violation</div>
         <div class='tooltip-row'>
           <span>Name:</span>
           <span class='tooltip-value-row'>
-            <span class='tooltip-value-highlight st-typography-medium'>${constraintViolation.constraintName}</span>
+            <span class='tooltip-value-highlight st-typography-medium'>${escapeHtml(constraintViolation.constraintName)}</span>
           </span>
         </div>
+        ${
+          messages.length
+            ? `<div class='tooltip-row'>
+                <span>Message${messages.length > 1 ? 's' : ''}:</span>
+                <span class='tooltip-value-row' style='align-items: flex-start; flex-direction: column; max-width: 360px;'>
+                  ${messages
+                    .map(
+                      message =>
+                        `<span class='tooltip-value-highlight tooltip-value-multiline st-typography-medium'>${escapeHtml(message)}</span>`,
+                    )
+                    .join('')}
+                </span>
+              </div>`
+            : ''
+        }
       </div>
     `;
   }
