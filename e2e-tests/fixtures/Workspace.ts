@@ -225,12 +225,15 @@ export class Workspace {
 
   /**
    * Open the right-side metadata panel by clicking the metadata tab icon.
-   * If the panel is already open on the metadata tab, this is a no-op.
+   * If the panel is already open on the metadata tab, this is a no-op — clicking again
+   * would toggle the panel closed.
    */
   async openMetadataPanel(): Promise<void> {
-    // Click the Metadata tab button in the right icon rail
-    await this.metadataTabButton.click();
-    // Wait for the metadata panel content to appear
+    // The icon rail button sets data-active="true" iff metadata tab is active AND panel is open.
+    const isAlreadyOpen = (await this.metadataTabButton.getAttribute('data-active')) === 'true';
+    if (!isAlreadyOpen) {
+      await this.metadataTabButton.click();
+    }
     await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
   }
 
