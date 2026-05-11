@@ -3,34 +3,43 @@
 <script lang="ts">
   import { LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { derived, type Readable } from 'svelte/store';
+  import { Status } from '../../enums/status';
   import { activityDirectivesDB } from '../../stores/activities';
   import { constraintRuns } from '../../stores/constraints';
   import { selectedExternalEventsRaw } from '../../stores/external-event';
-  import { profilesErroring, profilesLoading } from '../../stores/profile';
-  import { fetchingResourcesExternal, initialSpansLoading } from '../../stores/simulation';
+  import { initialSpansLoading, simulationStatus } from '../../stores/simulation';
+  import { timelineResourcesErroring, timelineResourcesLoading } from '../../stores/timelineResourceStatus';
   import { tooltip } from '../../utilities/tooltip';
 
   type StatusError = { message: string; source: string };
 
-  // Aggregate loading/error from every timeline data source. Inline rather than
-  // a dedicated store — only consumer is this indicator.
+  // Profile subs flip out of `loading` on first batch; without this the
+  // indicator would hide mid-sim while data is still streaming.
+  const simulationStreaming: Readable<boolean> = derived(
+    simulationStatus,
+    $simulationStatus => $simulationStatus === Status.Pending || $simulationStatus === Status.Incomplete,
+  );
+
   const loading: Readable<boolean> = derived(
     [
-      profilesLoading,
-      fetchingResourcesExternal,
+      timelineResourcesLoading,
       initialSpansLoading,
       activityDirectivesDB.loading,
       constraintRuns.loading,
       selectedExternalEventsRaw.loading,
+      simulationStreaming,
     ],
     values => values.some(Boolean),
   );
 
   const errors: Readable<StatusError[]> = derived(
-    [profilesErroring, activityDirectivesDB.error, constraintRuns.error, selectedExternalEventsRaw.error],
-    ([profileErrs, directivesErr, constraintsErr, eventsErr]) => {
+    [timelineResourcesErroring, activityDirectivesDB.error, constraintRuns.error, selectedExternalEventsRaw.error],
+    ([resourceErrs, directivesErr, constraintsErr, eventsErr]) => {
       const out: StatusError[] = [];
-      profileErrs.forEach(e => out.push({ message: e.error, source: `Profile ${e.name}` }));
+      resourceErrs.forEach(e => {
+        const label = e.kind === 'external' ? 'External profile' : 'Profile';
+        out.push({ message: e.error, source: `${label} ${e.name}` });
+      });
       if (directivesErr) {
         out.push({ message: directivesErr, source: 'Activity directives' });
       }
@@ -46,6 +55,8 @@
 
   $: errorCount = $errors.length;
   $: hasError = errorCount > 0;
+  // `\n` renders as a line break — tooltip.css sets white-space: pre-line
+  // on .tippy-content globally.
   $: errorTooltip = hasError ? $errors.map(e => `${e.source}: ${e.message}`).join('\n') : '';
 </script>
 

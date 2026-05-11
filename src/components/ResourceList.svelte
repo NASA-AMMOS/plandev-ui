@@ -4,12 +4,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { plan } from '../stores/plan';
-  import {
-    allResourceTypes,
-    fetchingResourcesExternal,
-    resourceTypesLoading,
-    simulationDatasetId,
-  } from '../stores/simulation';
+  import { allResourceTypes, resourceTypesLoading, simulationDatasetId } from '../stores/simulation';
   import type { User } from '../types/app';
   import type { ResourceType } from '../types/simulation';
   import type { TimelineItemType } from '../types/timeline';
@@ -34,7 +29,7 @@
   let loading: boolean = false;
 
   $: resourceDataTypes = [...new Set($allResourceTypes.map(t => t.schema.type))];
-  $: loading = $fetchingResourcesExternal || $resourceTypesLoading;
+  $: loading = $resourceTypesLoading;
   $: if (user !== null && $plan !== null) {
     hasUploadPermission = featurePermissions.externalResources.canCreate(user, $plan);
   }

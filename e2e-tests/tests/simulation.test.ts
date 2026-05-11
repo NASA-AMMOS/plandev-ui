@@ -2,6 +2,7 @@ import test, { expect } from '@playwright/test';
 import { Status } from '../../src/enums/status.js';
 import { PanelNames } from '../fixtures/Plan.js';
 import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
+import { anyCanvasHasContent } from '../utilities/canvas.js';
 
 let setup: FullSetupResult;
 
@@ -61,33 +62,36 @@ test.describe.serial('Simulation', async () => {
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
   });
 
+  // Smoke test for the windowed-pull pipeline: indicator settles cleanly and
+  // canvases render non-transparent content (catches the "blank plot" bug an
+  // indicator-only check would miss).
+  test(`Streaming pipeline: indicator settles + canvases render across two re-sims`, async () => {
+    const timelineErrorIndicator = setup.plan.page.getByRole('status', { name: 'Timeline data error' });
+    const timelineLoadingIndicator = setup.plan.page.getByRole('status', { name: 'Timeline loading' });
+    const timelineCanvasContent = () =>
+      anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas');
+
+    await setup.plan.reRunSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+    await expect(timelineLoadingIndicator).not.toBeVisible();
+    await expect.poll(timelineCanvasContent, { timeout: 10000 }).toBe(true);
+
+    await setup.plan.reRunSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+    await expect(timelineLoadingIndicator).not.toBeVisible();
+    await expect.poll(timelineCanvasContent, { timeout: 10000 }).toBe(true);
+  });
+
   test(`Plans with an invalid activity should fail simulation`, async () => {
+    const timelineLoadingIndicator = setup.plan.page.getByRole('status', { name: 'Timeline loading' });
     await setup.plan.addActivityByDragAndDrop('BakeBananaBread');
     await setup.plan.runSimulation(Status.Failed);
+    // Regression: indicator must settle for terminal-null sims too.
+    await expect(timelineLoadingIndicator).not.toBeVisible();
   });
 
   test(`Modified plans should indicate that simulation is out of date`, async () => {
     await setup.plan.addActivityByDragAndDrop();
     await setup.plan.waitForSimulationStatus(Status.Modified);
-  });
-
-  // Catches gross regressions in the streaming-profile pipeline that the unit
-  // tests can't see: actually exercises real Hasura cursors / interval ordering
-  // / WS reconnects via graphql-ws across a real sim → resimulate cycle, then
-  // asserts the global timeline status indicator never enters its error state
-  // and the timeline panel stays mounted. The "blank plot after resimulate"
-  // bug specifically isn't directly assertable here without canvas-pixel
-  // inspection or test hooks (deliberately avoided) — that's covered by the
-  // resimulate-fast unit test in src/stores/profile.test.ts. This e2e is a
-  // smoke test that the pipeline doesn't broadly fall over on real backend.
-  test(`Streaming pipeline survives a sim → resimulate cycle without timeline errors`, async () => {
-    const timelineErrorIndicator = setup.plan.page.getByRole('status', { name: 'Timeline data error' });
-
-    await setup.plan.runSimulation();
-    await expect(timelineErrorIndicator).not.toBeVisible();
-
-    await setup.plan.reRunSimulation();
-    await expect(timelineErrorIndicator).not.toBeVisible();
-    await expect(setup.plan.panelTimeline).toBeVisible();
   });
 });

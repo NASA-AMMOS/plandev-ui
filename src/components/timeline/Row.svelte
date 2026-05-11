@@ -14,13 +14,9 @@
     planDerivationGroupLinks,
   } from '../../stores/external-source';
   import { planModelActivityTypes } from '../../stores/plan';
+  import { createExternalResourceSubscription } from '../../stores/externalResource';
   import { createProfileSubscription } from '../../stores/profile';
-  import {
-    externalResources,
-    fetchingResourcesExternal,
-    resourceTypes,
-    resourceTypesLoading,
-  } from '../../stores/simulation';
+  import { resourceTypes, resourceTypesLoading } from '../../stores/simulation';
   import { selectedRow, viewAddFilterToRow } from '../../stores/views';
   import type {
     ActivityDirective,
@@ -218,7 +214,7 @@
     }
   });
 
-  $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
+  $: if (plan && simulationDataset !== null && layers && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
@@ -230,14 +226,10 @@
     });
     const resourceNames = Array.from(resourceNamesSet);
 
-    // Cancel and delete unused and stale requests as well as any external resources that
-    // are not in the list of current external resources
+    // Drop entries no longer referenced by any layer or whose sim dataset
+    // changed. Both factories own their own registry cleanup on unsubscribe.
     Object.entries(resourceRequestMap).forEach(([key, value]) => {
-      if (
-        resourceNames.indexOf(key) < 0 ||
-        value.simulationDatasetId !== simulationDatasetId ||
-        (value.type === 'external' && !$resourceTypes.find(type => type.name === name))
-      ) {
+      if (resourceNames.indexOf(key) < 0 || value.simulationDatasetId !== simulationDatasetId) {
         value.unsubscribe?.();
         delete resourceRequestMap[key];
         resourceRequestMap = { ...resourceRequestMap };
@@ -246,63 +238,42 @@
 
     const startTimeYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
     resourceNames.forEach(name => {
-      // Check if resource is external
+      if (
+        resourceRequestMap[name] &&
+        simulationDatasetId === resourceRequestMap[name].simulationDatasetId &&
+        resourceRequestMap[name].unsubscribe
+      ) {
+        return;
+      }
+
       const isExternal = !$resourceTypes.find(type => type.name === name);
-      if (isExternal) {
-        // Handle external datasets separately as they are globally loaded and subscribed to
-        let resource = null;
-        if (!$fetchingResourcesExternal) {
-          resource = $externalResources.find(resource => resource.name === name) || null;
-        }
-        let error = !resource && !$fetchingResourcesExternal ? 'External Profile not Found' : '';
+      const subscription = isExternal
+        ? createExternalResourceSubscription(simulationDatasetId, name, startTimeYmd, user)
+        : createProfileSubscription(simulationDatasetId, name, startTimeYmd, user);
+      const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
+      // Declared before .subscribe() so the closure in `unsubscribe` below
+      // doesn't lean on TDZ-via-const initialization order.
+      let storeUnsubscribe: (() => void) | null = null;
+      storeUnsubscribe = subscription.store.subscribe(({ error, loading, resource }) => {
         resourceRequestMap = {
           ...resourceRequestMap,
           [name]: {
             ...resourceRequestMap[name],
             error,
-            loading: $fetchingResourcesExternal,
+            loading,
             resource,
             simulationDatasetId,
-            type: 'external',
+            type,
+            unsubscribe: () => {
+              storeUnsubscribe?.();
+              subscription.unsubscribe();
+            },
           },
         };
-      } else {
-        // Skip if a profile subscription already exists for this (name, simulationDatasetId)
-        if (
-          resourceRequestMap[name] &&
-          simulationDatasetId === resourceRequestMap[name].simulationDatasetId &&
-          resourceRequestMap[name].unsubscribe
-        ) {
-          return;
-        }
-
-        // The sub watches simulationDataset.status itself to drive its
-        // closing-value logic and stream-sub lifecycle: while the sim is
-        // running it terminates at the last received segment; once status
-        // goes terminal it honours header.duration so lines close to plan
-        // end. No coordination needed from this caller.
-        const subscription = createProfileSubscription(simulationDatasetId, name, startTimeYmd, user);
-        const storeUnsubscribe = subscription.store.subscribe(({ error, loading, resource }) => {
-          resourceRequestMap = {
-            ...resourceRequestMap,
-            [name]: {
-              ...resourceRequestMap[name],
-              error,
-              loading,
-              resource,
-              simulationDatasetId,
-              type: 'internal',
-              unsubscribe: () => {
-                storeUnsubscribe();
-                subscription.unsubscribe();
-              },
-            },
-          };
-        });
-      }
+      });
     });
   } else if (simulationDataset === null) {
-    Object.entries(resourceRequestMap).forEach(([_key, value]) => {
+    Object.values(resourceRequestMap).forEach(value => {
       value.unsubscribe?.();
     });
     resourceRequestMap = {};
@@ -367,10 +338,8 @@
     });
     loadedResources = newLoadedResources;
     resourceLoadingErrors = newLoadingErrors;
-    // Use the per-request loading flag rather than counting loaded+errored vs
-    // total. A request with both data (e.g. from prefetch) and a streaming
-    // error would otherwise be double-counted, leaving anyResourcesLoading
-    // perpetually true and overlapping the loading + error indicators.
+    // Use per-request loading flag, not loaded+errored vs total: a request
+    // with both data and an error would be double-counted and stick true.
     anyResourcesLoading = anyLoading;
   }
 

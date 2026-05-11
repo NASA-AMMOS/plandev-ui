@@ -197,8 +197,6 @@ describe('sampleProfiles', () => {
     });
 
     test('connects consecutive segments at the same x with their respective y values', () => {
-      // values[1] (close of seg0 at 60s) and values[2] (open of seg1 at 60s)
-      // share the x but differ in y, producing the visual step jump.
       const profile = realProfile('00:02:00', [
         { initial: 0, rate: 0, start_offset: '00:00:00' },
         { initial: 10, rate: 0, start_offset: '00:01:00' },
@@ -223,13 +221,9 @@ describe('sampleProfiles', () => {
       expect(xs).toEqual([...xs].sort((a, b) => a - b));
     });
 
-    // sampleProfiles assumes profile.duration >= max(start_offset). If a caller
-    // passes a duration shorter than the last segment offset, the closing value
-    // of the last segment lands at start + durationMs — earlier than its own
-    // open x — and the values array is no longer sorted, which downstream
-    // decimation cannot handle. profile.ts synthesizes a safe duration via
-    // effectiveDuration. This test pins the contract so a future "be lenient"
-    // change to sampleProfiles doesn't regress silently.
+    // Pin: if duration < last segment offset, the closing value lands before
+    // its own open x and decimation breaks. profile.ts guards this via
+    // pickEffectiveDuration; this test catches a "be lenient" regression.
     test('garbage-in: values are NOT sorted when duration < last segment start_offset', () => {
       const profile = discreteProfile('00:00:00', [
         { start_offset: '00:00:00', value: 'A' },

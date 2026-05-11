@@ -193,7 +193,6 @@ export enum Queries {
   PLAN_SNAPSHOTS = 'plan_snapshot',
   PLAN_SNAPSHOT_ACTIVITIES = 'plan_snapshot_activities',
   PROFILES = 'profile',
-  PROFILE_SEGMENT_STREAM = 'profile_segment_stream',
   RESOURCE_TYPES = 'resource_type',
   RESTORE_ACTIVITY_FROM_CHANGELOG = 'restoreActivityFromChangelog',
   RESTORE_FROM_SNAPSHOT = 'restore_from_snapshot',

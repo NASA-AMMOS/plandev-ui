@@ -8,6 +8,7 @@ export type PlanDataset = {
   dataset: { profiles: Profile[] };
   dataset_id: number;
   offset_from_plan_start: string;
+  simulation_dataset_id: number | null;
 };
 
 export type PlanDatasetNames = {
