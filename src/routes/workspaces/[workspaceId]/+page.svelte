@@ -142,6 +142,7 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
+  let actionDetailIsDirty: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
@@ -180,7 +181,6 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
-  let actionDetailIsDirty: boolean = false;
 
   if (initialActionRunIdParam) {
     const runId = parseInt(initialActionRunIdParam, 10);
@@ -279,21 +279,14 @@
   $: activeFileIsSequence =
     $activeDocumentPath === null ||
     ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
-  $: selectedFileIsSequence =
-    $activeDocumentPath !== null &&
-    $activeDocument.type !== null &&
-    $activeDocument.type === WorkspaceContentType.Sequence;
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
-  // Switch right panel tab when the selected file's sequence-ness changes.
-  // Driven by selectedFileIsSequence (narrow) rather than activeFileIsSequence (wide),
-  // so the empty/no-file state — which renders SequenceEditor as a default canvas — does
-  // not suppress the tab switch when the user actually picks a sequence file.
-  let previousSelectedFileIsSequence: boolean = selectedFileIsSequence;
-  $: if (selectedFileIsSequence !== previousSelectedFileIsSequence) {
-    previousSelectedFileIsSequence = selectedFileIsSequence;
-    if (!selectedFileIsSequence) {
+  // Drafts count as sequences, so the tab flips to 'command' on initial draft load too.
+  let previousActiveFileIsSequence: boolean = activeFileIsSequence;
+  $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
+    previousActiveFileIsSequence = activeFileIsSequence;
+    if (!activeFileIsSequence) {
       rightPanelActiveTab = 'metadata';
     } else {
       rightPanelActiveTab = 'command';
