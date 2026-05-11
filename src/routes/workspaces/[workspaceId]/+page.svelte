@@ -276,17 +276,17 @@
   }
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
+  // "Sequence mode" — true when the editor pane is rendering a SequenceEditor. A blank-load
+  // (no file open) counts as sequence mode because we default to an empty SequenceEditor.
   $: activeFileIsSequence =
-    $activeDocumentPath !== null &&
-    $activeDocument.type !== null &&
-    $activeDocument.type === WorkspaceContentType.Sequence;
-  // True whenever the editor pane is rendering a SequenceEditor — including the draft file
-  // default case. Drives whether the right rail exposes the Selected Command / Command
-  // Dictionary tabs, independent of the strict file-type check above which drives tab transitions.
-  $: editorShowsSequence = $activeDocumentPath === null || activeFileIsSequence;
+    $activeDocumentPath === null ||
+    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
+  // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
+  // non-sequence mode. Switching between two sequence files (or between blank and a sequence
+  // file) preserves whatever tab the user last chose.
   let previousActiveFileIsSequence: boolean = activeFileIsSequence;
   $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
     previousActiveFileIsSequence = activeFileIsSequence;
@@ -1421,7 +1421,7 @@
                   <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
                 </div>
               {/if}
-              {#if isTextOrEmpty && editorShowsSequence}
+              {#if isTextOrEmpty && activeFileIsSequence}
                 <div class="flex h-full">
                   <SequenceEditor
                     bind:this={sequenceEditorRef}
@@ -1543,7 +1543,7 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
-              isSequenceFile={editorShowsSequence}
+              isSequenceFile={activeFileIsSequence}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
@@ -1558,7 +1558,7 @@
           bind:activeTab={rightPanelActiveTab}
           bind:panelOpen={rightPanelOpen}
           commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={editorShowsSequence}
+          isSequenceFile={activeFileIsSequence}
         />
       {/if}
     </div>
