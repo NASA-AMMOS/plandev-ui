@@ -142,6 +142,7 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
+  let activeFileIsSequence: boolean = false;
   let actionDetailIsDirty: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
@@ -276,8 +277,6 @@
   }
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
-  // "Sequence mode" — true when the editor pane is rendering a SequenceEditor. A blank-load
-  // (no file open) counts as sequence mode because we default to an empty SequenceEditor.
   $: activeFileIsSequence =
     $activeDocumentPath === null ||
     ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
