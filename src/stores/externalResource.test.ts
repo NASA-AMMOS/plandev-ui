@@ -235,9 +235,7 @@ describe('createExternalResourceSubscription', () => {
 
     // Duration grows (backend appended more segments). Trigger via a
     // metadata push with the new duration.
-    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(
-      segments([{ start_offset: '00:01:00', value: 'C' }]),
-    );
+    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(segments([{ start_offset: '00:01:00', value: 'C' }]));
     planDatasetsValue.set([
       makePlanDataset({ datasetId: 1, profiles: [makeProfile({ duration: '00:02:00', id: 11, name: 'r' })] }),
     ]);
@@ -269,9 +267,7 @@ describe('createExternalResourceSubscription', () => {
   });
 
   test('profile-row switch resets accumulator and refetches with sentinel offset', async () => {
-    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(
-      segments([{ start_offset: '00:00:30', value: 'A' }]),
-    );
+    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(segments([{ start_offset: '00:00:30', value: 'A' }]));
 
     const profileA = makeProfile({ duration: '00:01:00', id: 11, name: 'r' });
     planDatasetsValue.set([makePlanDataset({ datasetId: 1, profiles: [profileA] })]);
@@ -286,9 +282,7 @@ describe('createExternalResourceSubscription', () => {
     // A different profile under the same name (different id and dataset)
     // wins on the next tick. Accumulator must reset and refetch with the
     // sentinel.
-    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(
-      segments([{ start_offset: '00:00:00', value: 'B' }]),
-    );
+    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(segments([{ start_offset: '00:00:00', value: 'B' }]));
     const profileB = makeProfile({ duration: '00:01:00', id: 99, name: 'r' });
     planDatasetsValue.set([makePlanDataset({ datasetId: 2, profiles: [profileB] })]);
     await flushPromises();

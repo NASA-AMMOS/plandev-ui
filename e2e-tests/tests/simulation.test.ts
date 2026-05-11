@@ -68,8 +68,7 @@ test.describe.serial('Simulation', async () => {
   test(`Streaming pipeline: indicator settles + canvases render across two re-sims`, async () => {
     const timelineErrorIndicator = setup.plan.page.getByRole('status', { name: 'Timeline data error' });
     const timelineLoadingIndicator = setup.plan.page.getByRole('status', { name: 'Timeline loading' });
-    const timelineCanvasContent = () =>
-      anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas');
+    const timelineCanvasContent = () => anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas');
 
     await setup.plan.reRunSimulation();
     await expect(timelineErrorIndicator).not.toBeVisible();

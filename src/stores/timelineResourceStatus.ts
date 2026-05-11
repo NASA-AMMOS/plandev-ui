@@ -45,24 +45,21 @@ export const timelineResourcesLoading: Readable<boolean> = derived(resourceState
   return false;
 });
 
-export const timelineResourcesErroring: Readable<TimelineResourceError[]> = derived(
-  resourceStates,
-  $resourceStates => {
-    const errors: TimelineResourceError[] = [];
-    for (const [key, s] of $resourceStates.entries()) {
-      if (s.error) {
-        const colon = key.indexOf(':');
-        errors.push({
-          datasetId: Number(key.slice(0, colon)),
-          error: s.error,
-          kind: s.kind,
-          name: key.slice(colon + 1),
-        });
-      }
+export const timelineResourcesErroring: Readable<TimelineResourceError[]> = derived(resourceStates, $resourceStates => {
+  const errors: TimelineResourceError[] = [];
+  for (const [key, s] of $resourceStates.entries()) {
+    if (s.error) {
+      const colon = key.indexOf(':');
+      errors.push({
+        datasetId: Number(key.slice(0, colon)),
+        error: s.error,
+        kind: s.kind,
+        name: key.slice(colon + 1),
+      });
     }
-    return errors;
-  },
-);
+  }
+  return errors;
+});
 
 function registryKey(datasetId: number, name: string): string {
   return `${datasetId}:${name}`;
