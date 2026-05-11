@@ -277,12 +277,16 @@
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
   $: activeFileIsSequence =
-    $activeDocumentPath === null ||
-    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
+    $activeDocumentPath !== null &&
+    $activeDocument.type !== null &&
+    $activeDocument.type === WorkspaceContentType.Sequence;
+  // True whenever the editor pane is rendering a SequenceEditor — including the draft file
+  // default case. Drives whether the right rail exposes the Selected Command / Command
+  // Dictionary tabs, independent of the strict file-type check above which drives tab transitions.
+  $: editorShowsSequence = $activeDocumentPath === null || activeFileIsSequence;
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
-  // Drafts count as sequences, so the tab flips to 'command' on initial draft load too.
   let previousActiveFileIsSequence: boolean = activeFileIsSequence;
   $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
     previousActiveFileIsSequence = activeFileIsSequence;
@@ -1417,7 +1421,7 @@
                   <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
                 </div>
               {/if}
-              {#if isTextOrEmpty && activeFileIsSequence}
+              {#if isTextOrEmpty && editorShowsSequence}
                 <div class="flex h-full">
                   <SequenceEditor
                     bind:this={sequenceEditorRef}
@@ -1539,7 +1543,7 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
-              isSequenceFile={activeFileIsSequence}
+              isSequenceFile={editorShowsSequence}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
@@ -1554,7 +1558,7 @@
           bind:activeTab={rightPanelActiveTab}
           bind:panelOpen={rightPanelOpen}
           commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsSequence}
+          isSequenceFile={editorShowsSequence}
         />
       {/if}
     </div>
