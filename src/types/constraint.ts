@@ -86,6 +86,7 @@ export type ConstraintType = 'model' | 'plan';
 
 export type ConstraintViolation = {
   activityInstanceIds: number[];
+  message?: string | null;
   windows: TimeRange[];
 };
 
