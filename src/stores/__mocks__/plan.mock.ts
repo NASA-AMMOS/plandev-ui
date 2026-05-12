@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../../types/activity';
 import type { ModelSlim } from '../../types/model';
 import type { Plan, PlanMergeRequest, PlanMetadata } from '../../types/plan';
+import type { PlanDataset } from '../../types/simulation';
 import type { Tag } from '../../types/tags';
 import type { TimeRange } from '../../types/timeline';
 
@@ -57,6 +58,8 @@ export const planEndTimeDoy: Readable<string> = derived(plan, $plan => $plan?.en
 /* Subscriptions. */
 
 export const activityTypes = writable<ActivityType[]>([]);
+
+export const planDatasets = writable<PlanDataset[]>([]);
 
 export const planTags = writable<Tag[]>([]);
 
