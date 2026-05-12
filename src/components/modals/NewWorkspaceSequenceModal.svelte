@@ -5,7 +5,6 @@
   import { createEventDispatcher } from 'svelte';
   import InputInternal from '../../components/form/Input.svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
-  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { joinPath, removeFirstPathSegment } from '../../utilities/workspaces';
@@ -20,7 +19,6 @@
   export let height: number = 500;
   export let width: number = 380;
   export let startingPath: string = '';
-  export let user: User | null;
 
   let filePath: string = joinPath([currentWorkspace?.name ?? '', startingPath]);
   let fileName: string = '';
@@ -72,11 +70,8 @@
             <WorkspaceTreeView
               selectedTreeNodePath={filePath}
               treeNode={currentWorkspaceContents}
-              enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
-              workspace={currentWorkspace}
-              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

@@ -36,7 +36,9 @@
   $: if (browser) {
     const presetText = parameterType === 'activity' ? 'Activity Preset' : 'Simulation Template';
     const defaultText =
-      parameterType === 'goal' ? 'Default' : parameterType === 'constraint' ? 'Default' : 'Mission Model';
+      parameterType === 'goal' || parameterType === 'constraint' || parameterType === 'action'
+        ? 'Default'
+        : 'Mission Model';
     showButton = false;
     switch (source) {
       case 'user on model':

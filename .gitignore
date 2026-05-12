@@ -16,3 +16,4 @@ unit-test-results
 /blob-report/
 /playwright/.cache/
 /.playwright/
+.codex

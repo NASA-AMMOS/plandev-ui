@@ -4,21 +4,25 @@
   import { standardKeymap } from '@codemirror/commands';
   import { json, jsonParseLinter } from '@codemirror/lang-json';
   import { linter, lintGutter } from '@codemirror/lint';
-  import { Compartment, EditorState } from '@codemirror/state';
+  import { Compartment, EditorState, Transaction } from '@codemirror/state';
   import { type ViewUpdate, keymap } from '@codemirror/view';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { File } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
+  import type { LintDiagnostic } from '../../types/errors';
+  import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
+  import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
+  import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let includeActions: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
@@ -28,9 +32,11 @@
   export let textFileContent: string = '';
   export let textFilePath: string = '';
   export let textFileName: string = '';
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 
   const dispatch = createEventDispatcher<{
     download: { filePath: string };
+    lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
     textContentUpdated: { filePath: string; input: string };
@@ -41,42 +47,51 @@
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
   let editorView: EditorView;
-  let updatedTextContent: string = textFileContent;
   let isTextContentUpdated: boolean = false;
-  let previousIsJSON: boolean = isJSON;
+  let previousIsJSON: boolean | null = null;
   let previousTextFilePath: string = textFilePath;
-
-  // Create debounced listener at component level so we can cancel it when file changes
-  const debouncedTextContentUpdateListener = debounce(textContentUpdateListener, 250);
+  let updatedTextContent: string = textFileContent;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
   $: if (editorView) {
     void textFilePath;
-    editorView.dispatch({
-      changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
+    // Skip the dispatch if the editor already has the correct content (e.g., after save),
+    // to avoid resetting the cursor position.
+    if (editorView.state.doc.toString() !== textFileContent) {
+      editorView.dispatch({
+        annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
+        changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
+      });
+    }
+  }
+  $: {
+    const isEditable = !(readOnly || previewOnly || isLoading);
+    editorView?.dispatch({
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(!isEditable),
+        EditorView.editable.of(isEditable),
+      ]),
     });
   }
-  $: editorView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
-  });
   $: updatedTextContent = textFileContent;
   $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
   $: if (textFilePath !== previousTextFilePath) {
-    debouncedTextContentUpdateListener.cancel();
+    dispatchLintChange.cancel();
     previousTextFilePath = textFilePath;
   }
 
   $: if (previousIsJSON !== isJSON && editorDiv) {
+    previousIsJSON = isJSON;
+
     if (editorView) {
       editorView.destroy();
     }
     if (isJSON) {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
@@ -87,15 +102,19 @@
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
           json(),
+          EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
           jsonLinter,
-          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          EditorView.updateListener.of(viewUpdate => {
+            if (viewUpdate.docChanged) {
+              textContentUpdateListener(viewUpdate);
+            }
+          }),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
       });
     } else {
       editorView = new EditorView({
-        doc: textFileContent,
         extensions: [
           basicSetup,
           keymap.of([
@@ -105,7 +124,12 @@
           EditorView.lineWrapping,
           EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
           lintGutter(),
-          EditorView.updateListener.of(debouncedTextContentUpdateListener),
+          EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
+          EditorView.updateListener.of(viewUpdate => {
+            if (viewUpdate.docChanged) {
+              textContentUpdateListener(viewUpdate);
+            }
+          }),
           compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
         ],
         parent: editorDiv,
@@ -113,10 +137,18 @@
     }
   }
 
-  async function textContentUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
+  const dispatchLintChange = debounce((view: EditorView) => {
+    if (textFilePath) {
+      dispatch('lintChange', {
+        diagnostics: getLintDiagnostics(view),
+        filePath: textFilePath,
+      });
+    }
+  }, 300);
+
+  function textContentUpdateListener(viewUpdate: ViewUpdate): void {
     const updatedText = viewUpdate.state.doc.toString();
     disableCopyAndExport = updatedText === '';
-
     updatedTextContent = updatedText;
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
@@ -135,8 +167,10 @@
   }
 
   function onSave(): boolean {
-    if (isTextContentUpdated) {
-      dispatch('save', updatedTextContent);
+    const currentText = editorView.state.doc.toString();
+    if (currentText !== textFileContent) {
+      updatedTextContent = currentText;
+      dispatch('save', currentText);
     }
     return true;
   }
@@ -156,20 +190,30 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debouncedTextContentUpdateListener),
+        EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
+        EditorView.updateListener.of(viewUpdate => {
+          if (viewUpdate.docChanged) {
+            textContentUpdateListener(viewUpdate);
+          }
+        }),
         blockTheme,
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
       ],
       parent: editorDiv,
     });
   });
+
+  onDestroy(() => {
+    dispatchLintChange.cancel();
+    editorView?.destroy();
+  });
 </script>
 
-<Panel>
+<Panel padBody={false}>
   <svelte:fragment slot="header">
     <SectionTitle alt={textFilePath}>
       <File size={16} slot="icon" />
-      {textFileName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading ? ' (Preview-only)' : ''}
+      {textFileName || 'Untitled'}{readOnly || (previewOnly && !isLoading) ? ' (Read only)' : ''}
     </SectionTitle>
 
     <EditorToolbar
@@ -191,12 +235,9 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
-    <div
-      bind:this={editorDiv}
-      use:permissionHandler={{
-        hasPermission: !readOnly,
-        permissionError: 'This sequence has been marked as readonly.',
-      }}
-    />
+    {#if fileMetadata}
+      <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
+    {/if}
+    <div class="p-2" bind:this={editorDiv} />
   </svelte:fragment>
 </Panel>

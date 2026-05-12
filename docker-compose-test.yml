@@ -1,5 +1,5 @@
-# This compose file is used for end-to-end testing the UI against the Aerie services.
-# It assumes the main Aerie repository has been cloned into this repo as a sub-directory called 'aerie'.
+# This compose file is used for end-to-end testing the UI against the PlanDev services.
+# It assumes the main PlanDev repository has been cloned into this repo as a sub-directory called 'plandev'.
 # See .github/workflows/test.yml for how this file is utilized.
 
 version: '3.7'
@@ -9,12 +9,15 @@ services:
     depends_on: ['postgres']
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
+      HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
       LOG_FILE: console
       LOG_LEVEL: debug
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
       PORT: 27186
       AERIE_DB_HOST: postgres
       AERIE_DB_PORT: 5432
+      ACTION_COOKIE_NAMES: '${ACTION_COOKIE_NAMES}'
+      ACTION_CORS_ALLOWED_ORIGIN: '${ACTION_CORS_ALLOWED_ORIGIN}'
       ACTION_DB_USER: '${SEQUENCING_USERNAME}'
       ACTION_DB_PASSWORD: '${SEQUENCING_PASSWORD}'
       ACTION_LOCAL_STORE: /usr/src/app/action_file_store

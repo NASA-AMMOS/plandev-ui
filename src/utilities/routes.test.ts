@@ -79,11 +79,11 @@ describe('Routes utility functions', () => {
   });
 
   describe('getActionsUrl', () => {
-    test('Should generate actions URL without actionRunId', () => {
+    test('Should generate actions URL with sidebarTab param', () => {
       const base = 'http://localhost:3000';
       const workspaceId = 123;
       const result = getActionsUrl(base, workspaceId);
-      expect(result).toBe('http://localhost:3000/workspaces/123/actions');
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions');
     });
 
     test('Should generate actions URL with actionRunId', () => {
@@ -91,14 +91,23 @@ describe('Routes utility functions', () => {
       const workspaceId = 123;
       const actionRunId = 456;
       const result = getActionsUrl(base, workspaceId, actionRunId);
-      expect(result).toBe('http://localhost:3000/workspaces/123/actions/runs/456');
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions&actionRunId=456');
+    });
+
+    test('Should generate actions URL with actionRunId and actionId', () => {
+      const base = 'http://localhost:3000';
+      const workspaceId = 123;
+      const actionRunId = 456;
+      const actionId = 789;
+      const result = getActionsUrl(base, workspaceId, actionRunId, actionId);
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions&actionRunId=456&actionId=789');
     });
 
     test('Should handle null workspaceId', () => {
       const base = 'http://localhost:3000';
       const workspaceId = null;
       const result = getActionsUrl(base, workspaceId);
-      expect(result).toBe('http://localhost:3000/workspaces/actions');
+      expect(result).toBe('http://localhost:3000/workspaces?sidebarTab=actions');
     });
 
     test('Should handle null actionRunId', () => {
@@ -106,14 +115,14 @@ describe('Routes utility functions', () => {
       const workspaceId = 123;
       const actionRunId = null;
       const result = getActionsUrl(base, workspaceId, actionRunId);
-      expect(result).toBe('http://localhost:3000/workspaces/123/actions');
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions');
     });
 
     test('Should handle zero workspaceId', () => {
       const base = 'http://localhost:3000';
       const workspaceId = 0;
       const result = getActionsUrl(base, workspaceId);
-      expect(result).toBe('http://localhost:3000/workspaces/0/actions');
+      expect(result).toBe('http://localhost:3000/workspaces/0?sidebarTab=actions');
     });
 
     test('Should handle zero actionRunId', () => {
@@ -121,7 +130,7 @@ describe('Routes utility functions', () => {
       const workspaceId = 123;
       const actionRunId = 0;
       const result = getActionsUrl(base, workspaceId, actionRunId);
-      expect(result).toBe('http://localhost:3000/workspaces/123/actions/runs/0');
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions&actionRunId=0');
     });
 
     test('Should handle both workspaceId and actionRunId as null', () => {
@@ -129,28 +138,23 @@ describe('Routes utility functions', () => {
       const workspaceId = null;
       const actionRunId = null;
       const result = getActionsUrl(base, workspaceId, actionRunId);
-      expect(result).toBe('http://localhost:3000/workspaces/actions');
+      expect(result).toBe('http://localhost:3000/workspaces?sidebarTab=actions');
     });
 
     test('Should handle empty base URL', () => {
       const base = '';
       const workspaceId = 123;
       const result = getActionsUrl(base, workspaceId);
-      expect(result).toBe('/workspaces/123/actions');
+      expect(result).toBe('/workspaces/123?sidebarTab=actions');
     });
 
-    test('Should build correct URL using getWorkspacesUrl internally', () => {
+    test('Should handle actionId without actionRunId', () => {
       const base = 'http://localhost:3000';
       const workspaceId = 123;
-      const actionRunId = 456;
-
-      // This should be equivalent to calling getWorkspacesUrl + '/actions/runs/456'
-      const workspaceUrl = getWorkspacesUrl(base, workspaceId);
-      const expectedUrl = `${workspaceUrl}/actions/runs/456`;
-      const actualUrl = getActionsUrl(base, workspaceId, actionRunId);
-
-      expect(actualUrl).toBe(expectedUrl);
-      expect(actualUrl).toBe('http://localhost:3000/workspaces/123/actions/runs/456');
+      const actionRunId = null;
+      const actionId = 789;
+      const result = getActionsUrl(base, workspaceId, actionRunId, actionId);
+      expect(result).toBe('http://localhost:3000/workspaces/123?sidebarTab=actions&actionId=789');
     });
   });
 });

@@ -4,7 +4,7 @@
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
   import { lintGutter, openLintPanel } from '@codemirror/lint';
-  import { Compartment, EditorState, type Extension } from '@codemirror/state';
+  import { Compartment, EditorSelection, EditorState, Transaction, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
   import type {
@@ -17,23 +17,30 @@
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
+  import type { LintDiagnostic } from '../../types/errors';
+  import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
+  import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
-  import { permissionHandler } from '../../utilities/permissionHandler';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
+  import { replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
+  import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let phoenixContext: PhoenixContext;
   export let includeActions: boolean = false;
+  export let preserveAdaptationLog: boolean = false;
   export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
@@ -46,13 +53,18 @@
   export let showCommandFormBuilder: boolean = false;
   export let userSequenceEditorColumns: string;
   export let userSequenceEditorColumnsWithFormBuilder: string;
+  export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 
   const dispatch = createEventDispatcher<{
+    adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
     downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    editorViewChange: EditorView | null;
+    lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
     save: string;
-    sequence: { filePath: string; input: string; output?: string };
+    sequenceInputUpdate: { filePath: string; input: string };
+    sequenceOutputUpdate: { filePath: string; output?: string };
   }>();
 
   let compartmentAdaptation: Compartment;
@@ -76,8 +88,8 @@
   let outputEditorExtension: Extension = [];
   let previousSequenceFilePath: string = sequenceFilePath;
 
-  // Create debounced listener at component level so we can cancel it when file changes
-  const debouncedSequenceUpdateListener = debounce(sequenceUpdateListener, 250);
+  // Debounce only the expensive output format computation, not the state sync
+  const debouncedOutputUpdate = debounce(updateOutputFormat, 250);
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
@@ -85,8 +97,14 @@
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
   }
 
+  $: if (sequenceAdaptation.outputs.length > 0) {
+    selectedOutputFormat = sequenceAdaptation.outputs[0];
+  }
+
   $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
     outputEditorExtension = selectedOutputFormat.getEditorExtension(phoenixContext, phoenixResources);
+  } else {
+    outputEditorExtension = [];
   }
 
   // insert sequence - use sequenceFilePath as dependency to ensure editor updates when switching files
@@ -97,9 +115,16 @@
     // trigger reactivity if sequenceFilePath is a string and not if it is null / undefined.
     // In this case, we want to trigger reactivity on all possible values.
     void sequenceFilePath;
-    editorSequenceView?.dispatch({
-      changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
-    });
+    // Skip the dispatch if the editor already has the correct content (e.g., after save),
+    // to avoid resetting the cursor position. Still dispatch on file path changes since
+    // both files could have identical content.
+    if (editorSequenceView?.state.doc.toString() !== sequenceDefinition) {
+      editorSequenceView?.dispatch({
+        annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
+        changes: { from: 0, insert: sequenceDefinition, to: editorSequenceView.state.doc.length },
+        userEvent: 'file.open',
+      });
+    }
   }
 
   $: commandFormBuilderGrid = showCommandFormBuilder
@@ -115,9 +140,15 @@
     }
   }
 
-  $: editorSequenceView?.dispatch({
-    effects: compartmentReadonly.reconfigure([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
-  });
+  $: {
+    const isEditable = !(readOnly || previewOnly || isLoading);
+    editorSequenceView?.dispatch({
+      effects: compartmentReadonly.reconfigure([
+        EditorState.readOnly.of(!isEditable),
+        EditorView.editable.of(isEditable),
+      ]),
+    });
+  }
 
   $: {
     previousShowOutputs = showOutputs;
@@ -127,10 +158,6 @@
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
   } else {
     editorHeights = '1fr 3px';
-  }
-
-  $: if (sequenceAdaptation.outputs.length > 0) {
-    selectedOutputFormat = sequenceAdaptation.outputs[0];
   }
 
   $: if (showOutputs && previousShowOutputs !== showOutputs && editorOutputDiv) {
@@ -159,23 +186,56 @@
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
   $: if (sequenceFilePath !== previousSequenceFilePath) {
-    debouncedSequenceUpdateListener.cancel();
+    debouncedOutputUpdate.cancel();
+    dispatchLintChange.cancel();
     previousSequenceFilePath = sequenceFilePath;
+
+    // Clear stale output and recompute for the new file
+    if (editorOutputView) {
+      editorOutputView.dispatch({ changes: { from: 0, insert: '', to: editorOutputView.state.doc.length } });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
+  }
+  $: {
+    // Reconfigure output editor when adaptation extensions change
+    if (editorOutputView) {
+      editorOutputView.dispatch({
+        effects: [compartmentOutputAdaptation.reconfigure(outputEditorExtension)],
+      });
+      debouncedOutputUpdate(editorSequenceView?.state.doc.toString() ?? '');
+    }
   }
 
-  async function sequenceUpdateListener(viewUpdate: ViewUpdate): Promise<void> {
+  function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    let output =
-      sequenceName === undefined
-        ? undefined
-        : selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    updatedSequenceDefinition = sequence;
+
+    dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
+
+    debouncedOutputUpdate(sequence);
+  }
+
+  function updateOutputFormat(sequence: string): void {
+    let output: string | undefined;
+
+    if (!preserveAdaptationLog) {
+      clearWorkspaceAdaptationMessages();
+    }
+    try {
+      output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+    } catch (e) {
+      console.error('Adaptation toOutputFormat error:', e);
+      if (sequenceFilePath) {
+        dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
+      }
+      output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
+    }
 
     editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
 
-    updatedSequenceDefinition = sequence;
     if (output !== undefined) {
-      dispatch('sequence', { filePath: sequenceFilePath, input: sequence, output });
+      dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
     }
   }
 
@@ -192,15 +252,23 @@
     }
   }
 
+  const dispatchLintChange = debounce((view: EditorView) => {
+    if (sequenceFilePath) {
+      dispatch('lintChange', {
+        diagnostics: getLintDiagnostics(view),
+        filePath: sequenceFilePath,
+      });
+    }
+  }, 300);
+
   function downloadOutputFormat(outputLanguage: OutputLanguage): void {
     const content = editorOutputView.state.doc.toString();
-    // Remove any existing extension and add output extension
-    const outputExt = outputLanguage.fileExtension; // Keep the dot
-    const lastDotIndex = sequenceName.lastIndexOf('.');
 
-    // If there's a dot in the filename, remove everything after it; otherwise keep the whole name
-    const filenameWithoutExt = lastDotIndex > 0 ? sequenceName.slice(0, lastDotIndex) : sequenceName;
-    const filename = filenameWithoutExt + outputExt;
+    const filename = replaceFileExtension(
+      sequenceName,
+      sequenceAdaptation.input.fileExtension,
+      outputLanguage.fileExtension,
+    );
 
     dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
   }
@@ -248,10 +316,28 @@
   }
 
   function onSave(): boolean {
-    if (isSequenceDefinitionUpdated) {
-      dispatch('save', updatedSequenceDefinition);
+    const currentSequence = editorSequenceView.state.doc.toString();
+    if (currentSequence !== sequenceDefinition) {
+      updatedSequenceDefinition = currentSequence;
+      dispatch('save', currentSequence);
     }
     return true;
+  }
+
+  // Exported function to allow parent to navigate to a specific line/column
+  export function gotoLine(line: number, column: number = 0): void {
+    if (editorSequenceView) {
+      const doc = editorSequenceView.state.doc;
+      if (line > 0 && line <= doc.lines) {
+        const lineInfo = doc.line(line);
+        const pos = Math.min(lineInfo.from + column, lineInfo.to);
+        editorSequenceView.dispatch({
+          effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+          selection: EditorSelection.cursor(pos),
+        });
+        editorSequenceView.focus();
+      }
+    }
   }
 
   onMount(() => {
@@ -267,11 +353,23 @@
         EditorView.lineWrapping,
         EditorView.theme({ '.cm-gutter': { 'min-height': '0px' } }),
         lintGutter(),
-        EditorView.updateListener.of(debouncedSequenceUpdateListener),
+        EditorView.updateListener.of(viewUpdate => {
+          if (viewUpdate.docChanged) {
+            sequenceUpdateListener(viewUpdate);
+          }
+        }),
         EditorView.updateListener.of(selectedCommandUpdateListener),
+        EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
         compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+        EditorView.updateListener.of(viewUpdate => {
+          for (const tr of viewUpdate.transactions) {
+            if (tr.annotation(Transaction.userEvent) === 'sanitize.smartQuotes') {
+              showSuccessToast('Replaced curly quotes with ASCII quotes, save to accept changes');
+            }
+          }
+        }),
       ],
       parent: editorSequenceDiv,
     });
@@ -289,18 +387,29 @@
       ],
       parent: editorOutputDiv,
     });
+
+    // Compute initial output for the starting content (e.g., untitled empty sequence on page load)
+    debouncedOutputUpdate(editorSequenceView.state.doc.toString());
+
+    dispatch('editorViewChange', editorSequenceView);
+  });
+
+  onDestroy(() => {
+    dispatchLintChange.cancel();
+    editorSequenceView?.destroy();
+    editorOutputView?.destroy();
+    debouncedOutputUpdate.cancel();
+    dispatch('editorViewChange', null);
   });
 </script>
 
 <CssGrid class="z-0 w-full" bind:columns={commandFormBuilderGrid} minHeight={'0'} columnMinSizes={{ 0: 400, 2: 292 }}>
   <CssGrid rows={editorHeights} minHeight={'0'}>
-    <Panel>
+    <Panel padBody={false}>
       <svelte:fragment slot="header">
         <SectionTitle alt={sequenceFilePath} overflow="hidden">
           <FileBracesCorner size={16} slot="icon" />
-          {sequenceName || 'Untitled'}{readOnly ? ' (Read-only)' : ''}{previewOnly && !isLoading
-            ? ' (Preview-only)'
-            : ''}
+          {sequenceName || 'Untitled'}{readOnly || (previewOnly && !isLoading) ? ' (Read only)' : ''}
         </SectionTitle>
 
         <EditorToolbar
@@ -332,13 +441,10 @@
       </svelte:fragment>
 
       <svelte:fragment slot="body">
-        <div
-          bind:this={editorSequenceDiv}
-          use:permissionHandler={{
-            hasPermission: !readOnly,
-            permissionError: 'This sequence has been marked as readonly.',
-          }}
-        />
+        {#if fileMetadata}
+          <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
+        {/if}
+        <div class="p-2" bind:this={editorSequenceDiv} />
       </svelte:fragment>
     </Panel>
 

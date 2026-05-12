@@ -17,7 +17,6 @@ import {
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
-import { PATH_DELIMITER } from '../constants/workspaces';
 import { ConstraintDefinitionType } from '../enums/constraint';
 import { DictionaryTypes } from '../enums/dictionaryTypes';
 import { SchedulingDefinitionType } from '../enums/scheduling';
@@ -113,6 +112,7 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
+import type { LogMessage } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -262,6 +262,7 @@ import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
+  showApplySequenceFilterModal,
   showBulkShiftActivitiesModal,
   showCancelActionRunModal,
   showConfirmModal,
@@ -272,6 +273,7 @@ import {
   showDeleteDerivationGroupModal,
   showDeleteExternalEventSourceTypeModal,
   showDeleteExternalSourceModal,
+  showDeleteWorkspaceItemsModal,
   showEditViewModal,
   showExpansionPanelModal,
   showImportWorkspaceFileModal,
@@ -289,8 +291,6 @@ import {
   showRenameWorkspaceItemModal,
   showRestorePlanSnapshotModal,
   showRunActionModal,
-  showRunActionResultsModal,
-  showTimeRangeModal,
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
   showWorkspaceBulkOperationConflictModal,
@@ -321,6 +321,7 @@ import {
 } from './view';
 import {
   cleanPath,
+  doesFilenameMatchExtension,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
@@ -329,6 +330,7 @@ import {
   isFileConflictResponse,
   joinPath,
   mapWorkspaceTreePaths,
+  replaceFileExtension,
   separateFilenameFromPath,
   WorkspaceApi,
   type BulkOperationResponses,
@@ -432,6 +434,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             } else {
@@ -489,6 +493,8 @@ async function bulkMoveWorkspaceItems(
               overwriteResponses.forEach(overwriteResponse => {
                 if (isFileConflictResponse(overwriteResponse)) {
                   responses.unshift(overwriteResponse);
+                } else if (!isBulkOperationSuccess(overwriteResponse)) {
+                  failedFileOperations.push(overwriteResponse);
                 }
               });
             }
@@ -504,8 +510,10 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to transfer`, {
-      cause: failedFileOperations,
+    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to move`, {
+      cause: JSON.stringify(
+        failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+      ),
     });
   }
 
@@ -525,16 +533,17 @@ const effects = {
     user: User | null,
   ): Promise<void> {
     try {
-      const { confirm: timeConfirmed, value } = await showTimeRangeModal(defaultStartTime, defaultEndtime);
+      const defaultSequenceName: string = `${filter.name} Sequence (Plan ${planId})`;
+      const { confirm: timeConfirmed, value } = await showApplySequenceFilterModal(
+        defaultSequenceName,
+        defaultStartTime,
+        defaultEndtime,
+      );
 
       if (timeConfirmed && value !== undefined) {
-        const { timeRangeEnd, timeRangeStart } = value;
+        const { sequenceName, timeRangeEnd, timeRangeStart } = value;
         if (timeRangeStart !== null && timeRangeEnd !== null) {
-          const sequenceId = await effects.createExpansionSequence(
-            `${filter.name} Sequence (Plan ${planId})`,
-            simulationDatasetId,
-            user,
-          );
+          const sequenceId = await effects.createExpansionSequence(sequenceName, simulationDatasetId, user);
 
           if (!sequenceId) {
             throw Error('Failed to create sequence');
@@ -888,15 +897,6 @@ const effects = {
     }
   },
 
-  async confirmOpenActionRunResults(actionRunId: number): Promise<boolean | null> {
-    try {
-      const { confirm } = await showRunActionResultsModal(actionRunId);
-      return confirm;
-    } catch (e) {
-      return null;
-    }
-  },
-
   async createActionDefinition(
     file: File,
     name: string,
@@ -913,9 +913,9 @@ const effects = {
 
       if (actionFileId !== null) {
         const actionDefinitionInsertInput = {
-          action_file_id: actionFileId,
           description,
           name,
+          versions: { data: [{ action_file_id: actionFileId }] },
           workspace_id: workspaceId,
         };
         const data = await reqHasura<ActionDefinition>(
@@ -941,6 +941,40 @@ const effects = {
     }
   },
 
+  async createActionDefinitionVersion(file: File, actionDefinitionId: number, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.CREATE_ACTION_DEFINITION(user)) {
+        throwPermissionError('create action definition version');
+      }
+
+      const actionFileId = await effects.uploadFile(file, user);
+
+      if (actionFileId !== null) {
+        const data = await reqHasura<{ action_definition_id: number; revision: number }>(
+          gql.CREATE_ACTION_DEFINITION_VERSION,
+          { version: { action_definition_id: actionDefinitionId, action_file_id: actionFileId } },
+          user,
+        );
+        const { insert_action_definition_version_one } = data;
+        if (insert_action_definition_version_one) {
+          logMessage(
+            `Created version v${insert_action_definition_version_one.revision} for action ID=${actionDefinitionId}.`,
+          );
+          showSuccessToast('New Version Uploaded');
+          return true;
+        } else {
+          throw new Error('Version Upload Failed');
+        }
+      } else {
+        throw new Error('Version Upload Failed');
+      }
+    } catch (e) {
+      catchError('Version Upload Failed', e as Error);
+      showFailureToast('Version Upload Failed');
+      return false;
+    }
+  },
+
   async createActionRun(
     workspace: Workspace,
     actionDefinitionId: number,
@@ -948,6 +982,7 @@ const effects = {
     parameterValues: ArgumentsMap,
     settings: any,
     user: User | null,
+    revision?: number,
   ): Promise<number | null> {
     try {
       const secretParameters: ActionParametersMap = {};
@@ -966,7 +1001,7 @@ const effects = {
         throwPermissionError('create action run');
       }
 
-      const actionRunInsertInput = {
+      const actionRunInsertInput: Record<string, unknown> = {
         action_definition_id: actionDefinitionId,
         // we are now sending secrets on every run, to provide JWT token to actions
         // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
@@ -974,6 +1009,9 @@ const effects = {
         parameters: nonSecretParameters,
         settings,
       };
+      if (revision !== undefined) {
+        actionRunInsertInput.action_definition_revision = revision;
+      }
       // send initial hasura request to insert the action run in the DB
       const response = await reqHasura<{ id: number }>(gql.CREATE_ACTION_RUN, { actionRunInsertInput }, user);
       const { insert_action_run_one: actionRunResult } = response;
@@ -4021,42 +4059,6 @@ const effects = {
     }
   },
 
-  async deleteWorkspaceItem(
-    workspace: Workspace,
-    originalNode: WorkspaceTreeNode,
-    originalPath: string,
-    user: User | null,
-  ): Promise<boolean> {
-    const typeString: string = originalNode.type === WorkspaceContentType.Directory ? 'Folder' : 'File';
-    try {
-      if (!featurePermissions.workspace.canDelete(user, workspace, originalNode)) {
-        throwPermissionError(`delete this workspace ${typeString.toLowerCase()}`);
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the ${typeString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
-      );
-
-      if (confirm) {
-        await WorkspaceApi.deleteFile(workspace.id, originalPath, user);
-
-        logMessage(
-          `Deleted ${typeString.toLowerCase()} (${originalPath}) in "${workspace.name}" (ID=${workspace.id}).`,
-        );
-        showSuccessToast(`Workspace ${typeString} Deleted Successfully`);
-      }
-
-      return confirm;
-    } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeString} Delete Failed`);
-    }
-
-    return false;
-  },
-
   async deleteWorkspaceItems(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
@@ -4068,18 +4070,33 @@ const effects = {
         throwPermissionError(`delete ${typeDisplayString.toLowerCase()} from this workspace`);
       }
 
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `This will permanently delete the selected ${typeDisplayString.toLowerCase()} from the workspace: ${workspace.name}`,
-        'Delete Permanently',
-      );
+      const { confirm } = await showDeleteWorkspaceItemsModal(originalNodes, workspace.name);
+
+      let responses: BulkOperationResponses = [];
 
       if (confirm) {
-        await WorkspaceApi.deleteFiles(
+        responses = await WorkspaceApi.deleteFiles(
           workspace.id,
           originalNodes.map(({ fullPath }) => fullPath),
           user,
         );
+
+        const failedFileOperations: BulkOperationResponses = [];
+
+        while (responses.length > 0) {
+          const response = responses.shift();
+
+          if (response && !isBulkOperationSuccess(response)) {
+            failedFileOperations.push(response);
+          }
+        }
+        if (failedFileOperations.length) {
+          throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to delete`, {
+            cause: JSON.stringify(
+              failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
+            ),
+          });
+        }
 
         logMessage(
           `Deleted ${originalNodes.length} ${typeDisplayString.toLowerCase()} in "${workspace.name}" (ID=${workspace.id}).`,
@@ -5670,7 +5687,7 @@ const effects = {
         commit: 'unknown',
         commitUrl: '',
         date: new Date().toLocaleString(),
-        name: 'aerie-ui',
+        name: 'plandev-ui',
       };
     }
   },
@@ -5759,10 +5776,11 @@ const effects = {
     workspaceId: number,
     path: string = '',
     user: User | null,
+    withMetadata: boolean = false,
   ): Promise<WorkspaceTreeNode[] | null> {
     try {
       const startTime = performance.now();
-      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user);
+      const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user, withMetadata);
 
       if (workspaceContents != null) {
         logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
@@ -5818,8 +5836,12 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFilesList(workspaceId: number, user: User | null): Promise<WorkspaceTreeNodeWithFullPath[]> {
-    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user);
+  async getWorkspaceFilesList(
+    workspaceId: number,
+    user: User | null,
+    withMetadata: boolean = false,
+  ): Promise<WorkspaceTreeNodeWithFullPath[]> {
+    const workspaceContents = await effects.getWorkspaceContents(workspaceId, '', user, withMetadata);
     return flattenWorkspaceTreeWithPaths(workspaceContents ?? []);
   },
 
@@ -6008,8 +6030,6 @@ const effects = {
         sequenceAdaptation.input.name,
         sequenceAdaptation.outputs.map(language => language.fileExtension),
         startingPath,
-        workspace,
-        user,
       );
       if (confirm) {
         const {
@@ -6031,20 +6051,28 @@ const effects = {
         const convertedFiles: File[] = await Promise.all(
           filesToConvert.map(async file => {
             const outputLanguage = sequenceAdaptation.outputs.find(language =>
-              file.name.endsWith(`.${language.fileExtension.replace(/^\./, '')}`),
+              doesFilenameMatchExtension(language.fileExtension, file.name),
             );
 
             if (outputLanguage) {
-              const fileName = file.name.replace(
-                outputLanguage.fileExtension.replace(/^\./, ''),
-                sequenceAdaptation.input.fileExtension.replace(/^\./, ''),
-              );
-              const lastModified = Date.now();
-              const content = await file.text();
-              const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
+              try {
+                const fileName = replaceFileExtension(
+                  file.name,
+                  outputLanguage.fileExtension,
+                  sequenceAdaptation.input.fileExtension,
+                );
+                const lastModified = Date.now();
+                const content = await file.text();
+                const convertedContent = outputLanguage.toInputFormat(content, phoenixContext, fileName);
 
-              convertedFileMap[file.name] = fileName;
-              return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+                convertedFileMap[file.name] = fileName;
+                return new File([convertedContent], fileName, { lastModified, type: 'text/plain' });
+              } catch (error) {
+                throw Error(
+                  `There was an error trying to convert the file ${file.name}. Please check that it is formatted correctly.`,
+                  { cause: error },
+                );
+              }
             }
 
             return file;
@@ -6417,6 +6445,7 @@ const effects = {
     workspace: Workspace,
     workspaceContents: WorkspaceTreeNode,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<{ renamedFiles: Record<string, string>; skippedFiles: Set<string>; targetPath: string } | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
@@ -6425,7 +6454,12 @@ const effects = {
         throwPermissionError(`update this workspace's ${displayString.toLowerCase()}`);
       }
 
-      const { confirm, value } = await showMoveWorkspaceItemModal(workspace, workspaceContents, originalNodes, user);
+      const { confirm, value } = await showMoveWorkspaceItemModal(
+        workspace,
+        workspaceContents,
+        originalNodes,
+        hasReadOnlyNodes,
+      );
       if (confirm) {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
 
@@ -6464,10 +6498,11 @@ const effects = {
   async moveWorkspaceItemsToWorkspace(
     workspace: Workspace,
     originalNodes: WorkspaceTreeNodeWithFullPath[],
+    hasReadOnlyNodes: boolean,
     user: User | null,
   ): Promise<string | null> {
     const displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
-    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, user);
+    const { confirm, value } = await showMoveItemToWorkspaceModal(workspace, originalNodes, hasReadOnlyNodes, user);
 
     if (confirm) {
       const { shouldCopy, shouldOverwrite, targetPath, targetWorkspace } = value;
@@ -6511,7 +6546,7 @@ const effects = {
     startingPath: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceFolderModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { folderPath } = value;
       try {
@@ -6536,7 +6571,7 @@ const effects = {
     sequenceDefinition: string,
     user: User | null,
   ): Promise<string | null> {
-    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath, user);
+    const { confirm, value } = await showNewWorkspaceSequenceModal(workspace, workspaceContents, startingPath);
     if (confirm) {
       const { filePath } = value;
       try {
@@ -7035,6 +7070,9 @@ const effects = {
     workspaceSequences: WorkspaceTreeNodeWithFullPath[],
     user: User | null,
     parameters?: ArgumentsMap,
+    revision?: number,
+    isRerun?: boolean,
+    settings?: ArgumentsMap,
   ): Promise<number | null> {
     try {
       const { confirm, value } = await showRunActionModal(
@@ -7043,6 +7081,9 @@ const effects = {
         workspace,
         workspaceSequences,
         parameters,
+        revision,
+        isRerun,
+        settings,
       );
       if (confirm && value) {
         const { id } = value;
@@ -7229,17 +7270,10 @@ const effects = {
         workspaceId,
         workspaceTree,
         workspaceName,
-        user,
       );
 
       if (confirmNewFile && confirmNewFileValue) {
-        let { filePath: newFilePath } = confirmNewFileValue;
-        // Trim workspace from path to avoid making extra directory
-        if (newFilePath.includes(PATH_DELIMITER)) {
-          const newFilePathContents: Array<string> = newFilePath.split(PATH_DELIMITER);
-          newFilePathContents.shift();
-          newFilePath = newFilePathContents.join(PATH_DELIMITER);
-        }
+        const { filePath: newFilePath } = confirmNewFileValue;
         await WorkspaceApi.saveFile(workspaceId, newFilePath, expandedSequence, false, user);
 
         showSuccessToast('Workspace File Created Successfully');
@@ -7377,6 +7411,30 @@ const effects = {
     } catch (e) {
       catchError('Action Update Failed', e as Error);
       showFailureToast('Action Update Failed');
+    }
+  },
+
+  async updateActionDefinitionVersion(
+    actionDefinitionId: number,
+    revision: number,
+    setInput: { archived: boolean },
+    user: User | null,
+  ): Promise<void> {
+    try {
+      const { update_action_definition_version_by_pk } = await reqHasura(
+        gql.UPDATE_ACTION_DEFINITION_VERSION,
+        { actionDefinitionId, revision, set: setInput },
+        user,
+      );
+
+      if (update_action_definition_version_by_pk != null) {
+        showSuccessToast(setInput.archived ? 'Version Archived' : 'Version Unarchived');
+      } else {
+        throw Error('Unable to update action definition version');
+      }
+    } catch (e) {
+      catchError('Version Update Failed', e as Error);
+      showFailureToast('Version Update Failed');
     }
   },
 
@@ -8486,6 +8544,33 @@ const effects = {
     }
 
     return null;
+  },
+
+  async uploadActivities(plan: Plan, files: FileList, user: User | null): Promise<number | null> {
+    try {
+      if (!gatewayPermissions.CREATE_ACTIVITY_DIRECTIVES(user, plan)) {
+        throwPermissionError('add activities');
+      }
+
+      const file: File = files[0];
+
+      const body = new FormData();
+      body.append('plan_id', `${plan.id}`);
+      body.append('activity_file', file, file.name);
+
+      const uploadedActivities = await reqGateway<number | null>('/uploadActivities', 'POST', body, user, true);
+
+      if (uploadedActivities != null) {
+        showSuccessToast('Activities Uploaded Successfully');
+        logMessage(`Uploaded ${uploadedActivities} activites from file '${file.name}'`);
+        return uploadedActivities;
+      }
+      throw Error('Uploaded activities not found');
+    } catch (e) {
+      catchError('Unable to upload activities', e as Error);
+      showFailureToast('Activity Upload Failed');
+      return null;
+    }
   },
 
   async uploadDictionary(

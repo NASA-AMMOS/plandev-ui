@@ -1,4 +1,6 @@
 export enum SearchParameters {
+  ACTION_ID = 'actionId',
+  ACTION_RUN_ID = 'actionRunId',
   ACTIVITY_ID = 'activityId',
   CONSTRAINT_ID = 'constraintId',
   MODEL_ID = 'modelId',
@@ -9,6 +11,7 @@ export enum SearchParameters {
   SPAN_ID = 'spanId',
   SPEC_ID = 'specId',
   VIEW_ID = 'viewId',
+  SIDEBAR_TAB = 'sidebarTab',
   START_TIME = 'startTime',
   END_TIME = 'endTime',
   REVISION = 'revision',

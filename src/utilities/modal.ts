@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
+import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
@@ -11,6 +12,7 @@ import DeleteActivitiesModal from '../components/modals/DeleteActivitiesModal.sv
 import DeleteDerivationGroupModal from '../components/modals/DeleteDerivationGroupModal.svelte';
 import DeleteExternalEventSourceTypeModal from '../components/modals/DeleteExternalEventSourceTypeModal.svelte';
 import DeleteExternalSourceModal from '../components/modals/DeleteExternalSourceModal.svelte';
+import DeleteWorkspaceItemsModal from '../components/modals/DeleteWorkspaceItemsModal.svelte';
 import EditViewModal from '../components/modals/EditViewModal.svelte';
 import ExpansionPanelModal from '../components/modals/ExpansionPanelModal.svelte';
 import ExpansionSequenceModal from '../components/modals/ExpansionSequenceModal.svelte';
@@ -34,7 +36,6 @@ import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotMo
 import RunActionModal from '../components/modals/RunActionModal.svelte';
 import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
-import TimeRangeModal from '../components/modals/TimeRangeModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
@@ -269,6 +270,44 @@ export async function showDeleteExternalEventSourceTypeModal(
 }
 
 /**
+ * Shows a DeleteWorkspaceItemsModal component with the supplied arguments.
+ */
+export async function showDeleteWorkspaceItemsModal(
+  originalNodes: WorkspaceTreeNodeWithFullPath[],
+  workspaceName: string,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const deleteWorkspaceItemsModal = new DeleteWorkspaceItemsModal({
+          props: { originalNodes, workspaceName },
+          target,
+        });
+        target.resolve = resolve;
+
+        deleteWorkspaceItemsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          deleteWorkspaceItemsModal.$destroy();
+        });
+
+        deleteWorkspaceItemsModal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          deleteWorkspaceItemsModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
  * Shows a ImportWorkspaceFileModal component with the supplied arguments.
  */
 export async function showImportWorkspaceFileModal(
@@ -277,8 +316,6 @@ export async function showImportWorkspaceFileModal(
   inputLanguageName: string,
   outputLanguageExtensions: string[],
   startingPath: string,
-  workspace: Workspace | null | undefined,
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -292,8 +329,6 @@ export async function showImportWorkspaceFileModal(
             inputLanguageName,
             outputLanguageExtensions,
             startingPath,
-            user,
-            workspace,
           },
           target,
         });
@@ -502,6 +537,7 @@ export async function showMergeReviewEndedModal(
 export async function showMoveItemToWorkspaceModal(
   currentWorkspace: Workspace,
   originalNodes: WorkspaceTreeNodeWithFullPath[],
+  hasReadOnlyNodes: boolean,
   user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
@@ -510,7 +546,7 @@ export async function showMoveItemToWorkspaceModal(
 
       if (target) {
         const moveWorkspaceFileToWorkspaceModal = new MoveItemToWorkspaceModal({
-          props: { currentWorkspace, originalNodes, user },
+          props: { currentWorkspace, originalNodes, selectionHasReadOnlyNodes: hasReadOnlyNodes, user },
           target,
         });
         target.resolve = resolve;
@@ -552,7 +588,7 @@ export async function showMoveWorkspaceItemModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   originalNodes: WorkspaceTreeNodeWithFullPath[],
-  user: User | null,
+  hasReadOnlyNodes: boolean,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -564,7 +600,7 @@ export async function showMoveWorkspaceItemModal(
             currentWorkspace,
             currentWorkspaceContents,
             originalNodes,
-            user,
+            selectionHasReadOnlyNodes: hasReadOnlyNodes,
           },
           target,
         });
@@ -600,7 +636,6 @@ export async function showNewWorkspaceSequenceModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -612,7 +647,6 @@ export async function showNewWorkspaceSequenceModal(
             currentWorkspace,
             currentWorkspaceContents,
             startingPath,
-            user,
           },
           target,
         });
@@ -645,7 +679,6 @@ export async function showNewWorkspaceFolderModal(
   currentWorkspace: Workspace,
   currentWorkspaceContents: WorkspaceTreeNode,
   startingPath: string = '',
-  user: User | null,
 ): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -657,7 +690,6 @@ export async function showNewWorkspaceFolderModal(
             currentWorkspace,
             currentWorkspaceContents,
             startingPath,
-            user,
           },
           target,
         });
@@ -1330,6 +1362,9 @@ export async function showRunActionModal(
   workspace: Workspace,
   workspaceFiles: WorkspaceTreeNodeWithFullPath[],
   parameters: ArgumentsMap | undefined,
+  initialRevision?: number,
+  isRerun?: boolean,
+  initialSettings?: ArgumentsMap,
 ): Promise<ModalElementValue<{ id: number | null }>> {
   return new Promise(resolve => {
     if (browser) {
@@ -1337,7 +1372,16 @@ export async function showRunActionModal(
 
       if (target) {
         const runActionModal = new RunActionModal({
-          props: { actionDefinition, parameters, user, workspace, workspaceFiles },
+          props: {
+            actionDefinition,
+            initialRevision,
+            initialSettings,
+            isRerun: isRerun ?? false,
+            parameters,
+            user,
+            workspace,
+            workspaceFiles,
+          },
           target,
         });
         target.resolve = resolve;
@@ -1494,33 +1538,40 @@ export async function showUploadViewModal(): Promise<ModalElementValue<{ definit
 }
 
 /**
- * Shows a TimeRangeModal with the supplied arguments.
+ * Shows an ApplySequenceFilterModal with the supplied arguments.
  */
-export async function showTimeRangeModal(
+export async function showApplySequenceFilterModal(
+  defaultSequenceName: string,
   defaultStartTime: string,
   defaultEndTime: string,
-): Promise<ModalElementValue<{ timeRangeEnd: string | null; timeRangeStart: string | null }>> {
+): Promise<ModalElementValue<{ sequenceName: string; timeRangeEnd: string | null; timeRangeStart: string | null }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const timeRangeModal = new TimeRangeModal({ props: { defaultEndTime, defaultStartTime }, target });
+        const applySequenceFilterModal = new ApplySequenceFilterModal({
+          props: { defaultEndTime, defaultSequenceName, defaultStartTime },
+          target,
+        });
         target.resolve = resolve;
 
-        timeRangeModal.$on('close', () => {
+        applySequenceFilterModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
-          timeRangeModal.$destroy();
+          applySequenceFilterModal.$destroy();
         });
 
-        timeRangeModal.$on('confirm', (e: CustomEvent<{ timeRangeEnd: string; timeRangeStart: string }>) => {
-          target.replaceChildren();
-          target.resolve = null;
-          resolve({ confirm: true, value: e.detail });
-          timeRangeModal.$destroy();
-        });
+        applySequenceFilterModal.$on(
+          'confirm',
+          (e: CustomEvent<{ sequenceName: string; timeRangeEnd: string; timeRangeStart: string }>) => {
+            target.replaceChildren();
+            target.resolve = null;
+            resolve({ confirm: true, value: e.detail });
+            applySequenceFilterModal.$destroy();
+          },
+        );
       }
     } else {
       resolve({ confirm: false });

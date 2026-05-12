@@ -14,9 +14,8 @@ import effects from '../../utilities/effects';
 import { ADMIN_ROLE } from '../../utilities/permissions';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
-// Mock the user store context
-vi.mock('svelte', async () => {
-  const actual = (await vi.importActual('svelte')) as typeof import('svelte');
+vi.mock('svelte', async importOriginal => {
+  const actual = await importOriginal<typeof import('svelte')>();
   const actualGetContext = actual.getContext;
   return {
     ...actual,
@@ -35,6 +34,8 @@ vi.mock('svelte', async () => {
       // Fall through to actual getContext for other keys (e.g., bits-ui internal contexts)
       return actualGetContext(key);
     }),
+    // Explicitly define untrack function that might be used by SvelteKit
+    untrack: vi.fn(fn => fn()),
   };
 });
 
@@ -59,7 +60,7 @@ vi.spyOn(effects, 'getVersion').mockResolvedValue({
   commit: 'unknown',
   commitUrl: '',
   date: new Date().toLocaleString(),
-  name: 'aerie-ui',
+  name: 'plandev-ui',
 });
 
 const mockMergeRequest: PlanMergeRequestSchema = {
@@ -186,6 +187,7 @@ describe('PlanMergeReview component', () => {
           plan_id: 1,
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '23:06:17.622',
           tags: [],
           type: 'A_Activity',
@@ -208,6 +210,7 @@ describe('PlanMergeReview component', () => {
           plan_id: 1,
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '36:25:10.489',
           tags: [],
           type: 'A_Activity',
@@ -248,6 +251,7 @@ describe('PlanMergeReview component', () => {
           plan_id: 1,
           snapshot_id: 1,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '23:06:17.622',
           tags: [],
           type: 'A_Activity',
@@ -267,6 +271,7 @@ describe('PlanMergeReview component', () => {
           name: 'A_Activity',
           snapshot_id: 2,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '36:25:10.489',
           tags: [],
           type: 'A_Activity',
@@ -308,6 +313,7 @@ describe('PlanMergeReview component', () => {
           name: 'B_Activity',
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '46:33:39.909',
           tags: [],
           type: 'B_Activity',
@@ -336,6 +342,7 @@ describe('PlanMergeReview component', () => {
           plan_id: 1,
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '53:35:33.936',
           tags: [],
           type: 'C_Activity',
@@ -359,6 +366,7 @@ describe('PlanMergeReview component', () => {
           name: 'A_Activity',
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '23:22:32.036',
           tags: [],
           type: 'A_Activity',
@@ -379,6 +387,7 @@ describe('PlanMergeReview component', () => {
           plan_id: 1,
           snapshot_id: 6,
           source_scheduling_goal_id: -1,
+          source_scheduling_goal_invocation_id: -1,
           start_offset: '23:22:32.036',
           tags: [],
           type: 'A_Activity',

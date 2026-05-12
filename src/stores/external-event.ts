@@ -40,6 +40,13 @@ export const externalEventTypeAssociations: Readable<ExternalEventTypeAssociatio
   },
 );
 
+export const externalEventTypeAssociationsLoading: Readable<boolean> = derived(
+  [externalEventTypes.loading, sourcesUsingExternalEventTypes.loading],
+  ([$externalEventTypesLoading, $sourcesUsingExternalEventTypesLoading]) => {
+    return $externalEventTypesLoading || $sourcesUsingExternalEventTypesLoading;
+  },
+);
+
 export const selectedExternalEvents: Readable<ExternalEvent[]> = derived(
   [selectedExternalEventsRaw, plan],
   ([$externalEventsRaw, $plan]) => {

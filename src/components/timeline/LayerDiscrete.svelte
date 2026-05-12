@@ -326,7 +326,7 @@
        * Without the setTimeout, mousedown events happen before change events in the activity directive/external event selection form.
        * This caused invalid updates to activity parameters.
        * Make sure you understand the linked issue before changing this code!
-       * @see https://github.com/NASA-AMMOS/aerie-ui/issues/590
+       * @see https://github.com/NASA-AMMOS/plandev-ui/issues/590
        */
       setTimeout(() => {
         dispatch('mouseDown', { activityDirectives, e, externalEvents, spans });

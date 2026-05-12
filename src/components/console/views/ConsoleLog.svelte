@@ -1,27 +1,34 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button, cn } from '@nasa-jpl/stellar-svelte';
+  import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { onMount } from 'svelte';
-  import { selectActivity } from '../../../stores/activities';
   import type { BaseError, LogMessage } from '../../../types/errors';
-  import { getActivityIdsFromError, isLogMessage } from '../../../utilities/errors';
+  import { isLogMessage } from '../../../utilities/errors';
+
+  import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
 
   export let log: BaseError;
+  export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
+  export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
   let expandable: boolean = false;
   let leftContents: HTMLDivElement;
-  let open: boolean = false;
+  let open: boolean = defaultExpanded;
   let expansionPadding: number = 0;
   let level: string = '';
+  let renderedMessage: string = '';
 
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
+  // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
+  $: renderedMessage =
+    !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
   onMount(() => {
     // On mount, calculate the amount of padding needed for the expansion content
@@ -61,10 +68,6 @@
       return timestamp; // Return original if any error occurs
     }
   }
-
-  function handleActivityClick(activityId: number) {
-    selectActivity(activityId, null);
-  }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -92,7 +95,7 @@
         expandable ? 'cursor-pointer hover:bg-neutral-200/50' : '',
       )}
     >
-      <div class="flex items-start gap-2">
+      <div class="flex w-full items-start gap-2">
         <div class="flex flex-shrink-0 items-center gap-0.5" bind:this={leftContents}>
           {#if expandable}
             {#if open}
@@ -130,43 +133,26 @@
             {/if}
           </div>
         </div>
-        {#if log.message}
-          {@const activityIds = getActivityIdsFromError(log)}
-          <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-            {log.message}
-            {#if isLogMessage(log) && typeof log.duration === 'number'}
-              <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
-            {/if}
-            {#if activityIds.length > 0}
-              <div class="ml-2 flex shrink-0 gap-1">
-                {#each activityIds as activityId}
-                  <Button
-                    size="xs"
-                    class="inline-flex shrink-0 items-center rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-950/80 ring-1 ring-inset ring-blue-900/20 hover:bg-blue-100"
-                    on:click={e => {
-                      e.stopPropagation();
-                      handleActivityClick(activityId);
-                    }}
-                  >
-                    View Activity {activityId}
-                  </Button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          <slot name="message" {log} message={renderedMessage} {expandable} {open}>
+            {renderedMessage}
+          </slot>
+          {#if isLogMessage(log) && typeof log.duration === 'number'}
+            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
+          {/if}
+        </div>
       </div>
     </div>
   </summary>
-  {#if expandable}
+  {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
-      {#if log.timestamp}
+      {#if log.timestamp && showLongTimestamp}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>
       {/if}
-      {#if log.data && JSON.stringify(log.data) !== '{}'}
-        <pre class="m-0 whitespace-pre-wrap break-words">{JSON.stringify(log.data, undefined, 2)}</pre>
+      {#if log.data && safeStringify(log.data) !== '{}'}
+        <pre class="m-0 whitespace-pre-wrap break-words">{safeStringify(log.data, 2)}</pre>
       {/if}
       {#if log.cause}
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">

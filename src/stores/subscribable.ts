@@ -189,6 +189,7 @@ export function gqlSubscribable<T>(
             } else {
               // Non-recoverable error (e.g., GraphQL server error) — surface to UI
               setError(newError);
+              setLoading(false);
               subscribers.forEach(({ next }) => {
                 next(initialValue as T);
               });

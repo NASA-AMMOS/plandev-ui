@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { fillEditorText } from '../utilities/editor.js';
+import { filterAgGridTable } from '../utilities/helpers.js';
 
 export class SchedulingGoals {
   closeButton: Locator;
@@ -82,18 +83,7 @@ export class SchedulingGoals {
   }
 
   private async filterTable(goalName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
-
-    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
-    await nameColumnHeader.hover();
-
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(goalName);
-    await expect(this.table.getByRole('row', { name: goalName })).toBeVisible();
-    await this.page.keyboard.press('Escape');
+    await filterAgGridTable(this.page, this.table, goalName);
   }
 
   async goto() {

@@ -607,3 +607,8 @@
 .ag-theme-stellar .ag-tertiary-highlight {
   background-color: var(--ag-selected-row-background-color);
 }
+
+.ag-theme-stellar .ag-tooltip {
+  background-color: var(--ag-background-color);
+  color: var(--ag-data-color);
+}

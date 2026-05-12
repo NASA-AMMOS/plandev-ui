@@ -322,8 +322,10 @@ function getRoleWorkspacePermission(queries: string[], user: User | null, worksp
             permission = isUserOwner(user, workspace) || isUserCollaborator(user, workspace);
             break;
           case 'NO_CHECK':
-          default:
             permission = true;
+            break;
+          default:
+            permission = false;
         }
       }
       return prevValue && permission;
@@ -387,6 +389,10 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_ACTION_DEFINITION: (user: User | null): boolean => {
     const queries = [Queries.INSERT_ACTION_DEFINITION];
+    return isUserAdmin(user) && getPermission(queries, user);
+  },
+  CREATE_ACTION_DEFINITION_VERSION: (user: User | null): boolean => {
+    const queries = [Queries.INSERT_ACTION_DEFINITION_VERSION];
     return isUserAdmin(user) && getPermission(queries, user);
   },
   CREATE_ACTION_RUN: (user: User | null, workspace: Workspace): boolean => {
@@ -1064,6 +1070,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   UPDATE_ACTION_DEFINITION: (user: User | null): boolean => {
     return isUserAdmin(user) && getPermission([Queries.UPDATE_ACTION_DEFINITION], user);
   },
+  UPDATE_ACTION_DEFINITION_VERSION: (user: User | null): boolean => {
+    return isUserAdmin(user) && getPermission([Queries.UPDATE_ACTION_DEFINITION_VERSION], user);
+  },
   UPDATE_ACTIVITY_DIRECTIVE: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -1317,6 +1326,12 @@ const gatewayPermissions = {
       isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
     );
   },
+  CREATE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
+    const queries = [getFunctionPermission(Queries.INSERT_ACTIVITY_DIRECTIVES)];
+    return (
+      isUserAdmin(user) || (getPermission(queries, user) && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
+    );
+  },
   CREATE_EXTERNAL_EVENT_TYPE: (user: User | null) => {
     return isUserAdmin(user) || getPermission([getFunctionPermission(Queries.INSERT_EXTERNAL_EVENT_TYPE)], user);
   },
@@ -1354,10 +1369,13 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   createWorkspace: (user: User | null): boolean => {
-    return isUserAdmin(user) || getRoleWorkspacePermission(['create_permission'], user);
+    return isUserAdmin(user) || getRoleWorkspacePermission(['create_workspace'], user);
   },
   deleteFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);
+  },
+  deleteFileMetadata: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   deleteFiles: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['delete_file_directory'], user, workspace);
@@ -1369,6 +1387,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
   getFileContentBlob: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
+  getFileMetadata: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
@@ -1395,6 +1416,12 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
     );
   },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  setFileMetadata: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  unsetFileMetadataKeys: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   uploadFile: (user: User | null, workspace: Workspace): boolean => {

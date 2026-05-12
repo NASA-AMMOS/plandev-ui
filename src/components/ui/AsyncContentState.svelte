@@ -55,7 +55,7 @@
     {#if showRetry}
       <Button
         variant="ghost"
-        class="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        class="mt-2 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
         on:click={handleRetry}
       >
         <RefreshCw class="h-3 w-3" />

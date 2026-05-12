@@ -3,13 +3,13 @@
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import { getContext } from 'svelte';
-  import type { BaseError, LogLevel } from '../../../types/errors';
-  import { isLogMessage } from '../../../utilities/errors';
+  import type { BaseError, LogLevel, LogMessage } from '../../../types/errors';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
   import ConsoleLog from './ConsoleLog.svelte';
 
   export let autoScroll: boolean = false;
+  export let defaultExpanded: boolean = false;
   export let emptyStateMessage: string = 'No reported problems';
   export let noMatchingResultsMessage: string = 'No matches';
   export let logs: BaseError[] = [];
@@ -48,10 +48,12 @@
         }
 
         if (logLevels) {
-          if (isLogMessage(log)) {
-            return logLevelSet.has(log.level);
+          // Filter by selected log levels when the log has a level property.
+          // Items without a level (plain BaseError) always pass through.
+          if (Object.hasOwn(log, 'level')) {
+            return logLevelSet.has((log as LogMessage).level);
           } else {
-            return false;
+            return true;
           }
         } else {
           return log;
@@ -111,7 +113,15 @@
           <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
         {/if}
         {#each filteredLogs as log}
-          <ConsoleLog {showLevel} {showTimestamp} {showType} {log} />
+          {#if $$slots.message}
+            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log}>
+              <svelte:fragment slot="message" let:log={slotLog}>
+                <slot name="message" log={slotLog} />
+              </svelte:fragment>
+            </ConsoleLog>
+          {:else}
+            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log} />
+          {/if}
         {/each}
       </div>
     </div>

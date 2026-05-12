@@ -46,14 +46,8 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Actions', () => {
-  test('Navigate to workspace actions from sidebar', async () => {
-    const newPagePromise = setup.context.waitForEvent('page');
-    await setup.page.getByRole('complementary').getByRole('button', { name: 'Actions' }).click();
-    const newTab = await newPagePromise;
-    await newTab.waitForLoadState();
-    await newTab.getByText('Loading...').first().waitFor({ state: 'hidden' });
-    await newTab.waitForURL(`/workspaces/${workspaceId}/actions`);
-    await action.updatePage(newTab);
+  test('Navigate to workspace actions tab', async () => {
+    await action.switchToActionsTab();
   });
 
   test('Create an action', async () => {
@@ -64,11 +58,69 @@ test.describe.serial('Actions', () => {
     await action.inspectAction();
   });
 
+  test('Required setting disables Save button until filled', async () => {
+    await action.testRequiredSettingValidation();
+  });
+
   test('Configure an action', async () => {
     await action.configureAction();
   });
 
+  test('Required parameter disables Run button until filled', async () => {
+    await action.testRequiredParamValidation();
+  });
+
   test('Run an action', async () => {
-    await action.runAction();
+    await action.runAction({
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
+  });
+
+  test('Run an action with an unset optional variant parameter', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      stringParameters: {
+        required: 'test-required-value',
+        requiredNoDefault: 'test-no-default-value',
+      },
+    });
+  });
+
+  test('Run API integration tests', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      mode: 'api-test',
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
+  });
+
+  test('Action writes a file visible in workspace file browser', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      mode: 'write',
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
+
+    // Switch to file browser and verify the written file appears
+    await workspace.workspaceFileBrowserButton.click();
+    await workspace.workspaceFileGrid.waitFor({ state: 'visible' });
+    await workspace.workspaceRefreshButton.click();
+    await workspace.searchForFileAndWait('action_output.txt');
+
+    // Go back to the actions tab
+    await action.switchToActionsTab();
+  });
+
+  test('Archive an action prevents running', async () => {
+    // Go back to the action detail view by clicking action name in sidebar
+    await action.selectActionInSidebar();
+    await action.archiveAction();
+  });
+
+  test('Unarchive an action allows running again', async () => {
+    await action.unarchiveAction();
   });
 });

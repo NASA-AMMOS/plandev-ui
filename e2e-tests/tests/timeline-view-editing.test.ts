@@ -388,11 +388,17 @@ test.describe.serial('Timeline View Editing', () => {
   });
 
   test('Open and close the row header context menu', async () => {
-    const rowHeaderMenuButton = await setup.page
-      .getByRole('banner')
-      .filter({ hasText: 'Activities by Type' })
-      .getByLabel('Row Settings');
-    await rowHeaderMenuButton.click();
+    await setup.page.pause();
+    const rowHeader = setup.page.getByRole('banner').filter({ hasText: 'Activities by Type' });
+    // Ensure the element is in the viewport before interacting with it
+    await rowHeader.scrollIntoViewIfNeeded();
+    await rowHeader.waitFor({ state: 'visible' });
+    await rowHeader.hover();
+
+    const rowHeaderMenuButton = rowHeader.getByRole('button', { name: 'Row Settings' });
+    await rowHeaderMenuButton.waitFor({ state: 'visible' });
+    await rowHeaderMenuButton.click({ force: true });
+
     await expect(setup.page.getByRole('menu', { name: 'Context Menu' })).toBeVisible();
     await expect(setup.page.getByRole('listitem').filter({ hasText: 'Activities by Type' })).toBeVisible();
     // Wait for the context menu to not ignore clicks outside

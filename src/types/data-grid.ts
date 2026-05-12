@@ -4,6 +4,7 @@ export type DataGridColumnDef<TRowData = any> = ColDef<TRowData>;
 
 export interface DataGridRowSelection<TRowData> {
   data: TRowData;
+  event?: Event | null;
   isSelected: boolean;
 }
 export interface DataGridRowDoubleClick<TRowData> {

@@ -33,7 +33,10 @@
   <div class="mr-[3px] flex size-3.5 items-center">
     <WorkspaceTreeViewIcon size={14} toggleState={isExpanded} treeNode={data} />
   </div>
-  <span class="truncate" title={data?.fullPath ?? ''}>
+  <span
+    class={`truncate${data?.metadata?.readOnly ? ' italic' : ''}`}
+    title={data?.fullPath ? `${data?.fullPath}${data?.metadata?.readOnly ? ' (readonly)' : ''}` : ''}
+  >
     {data?.name ?? ''}
   </span>
 </div>

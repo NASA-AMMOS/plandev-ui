@@ -22,6 +22,8 @@ on:
         required: false
 
 env:
+  ACTION_COOKIE_NAMES: '${{secrets.ACTION_COOKIE_NAMES}}'
+  ACTION_CORS_ALLOWED_ORIGIN: '${{secrets.ACTION_CORS_ALLOWED_ORIGIN}}'
   AERIE_PASSWORD: '${{secrets.AERIE_PASSWORD}}'
   AERIE_USERNAME: '${{secrets.AERIE_USERNAME}}'
   HASURA_GRAPHQL_ADMIN_SECRET: '${{secrets.HASURA_GRAPHQL_ADMIN_SECRET}}'
@@ -71,7 +73,7 @@ jobs:
       - name: Setup Node (UI)
         uses: actions/setup-node@v4
         with:
-          node-version: '22.17.1'
+          node-version: '22.22.0'
           cache: npm
       - name: Extract PlanDev backend docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var

@@ -1,10 +1,10 @@
 # Deployment
 
-This document describes how to deploy aerie-ui via Docker. All of these instructions should be carried out on the machine you are deploying to.
+This document describes how to deploy plandev-ui via Docker. All of these instructions should be carried out on the machine you are deploying to.
 
 ## Dependencies
 
-The deployment of PlanDev UI depends on other PlanDev containers on the same Docker network in order to work properly. See the complete PlanDev [deployment documentation](https://github.com/NASA-AMMOS/aerie/tree/develop/deployment) for examples on how to deploy these other required containers.
+The deployment of PlanDev UI depends on other PlanDev containers on the same Docker network in order to work properly. See the complete PlanDev [deployment documentation](https://github.com/NASA-AMMOS/plandev/tree/develop/deployment) for examples on how to deploy these other required containers.
 
 ## Remote Docker Image
 
@@ -18,10 +18,10 @@ Goto [http://localhost](http://localhost)
 
 ## Local Docker Image
 
-First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the aerie-ui, build a Docker image, and start a container using the built image.
+First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequisite-software) installed. These commands build the plandev-ui, build a Docker image, and start a container using the built image.
 
 ```bash
-cd aerie-ui
+cd plandev-ui
 npm install
 npm run build
 docker build -t aerie-ui .

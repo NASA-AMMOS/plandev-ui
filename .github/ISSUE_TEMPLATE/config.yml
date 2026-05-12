@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: PlanDev Backend
-    url: https://github.com/NASA-AMMOS/aerie/issues/new/choose
+    url: https://github.com/NASA-AMMOS/plandev/issues/new/choose
     about: Issues and feature requests for the main PlanDev repo (not UI related).
   - name: PlanDev Docs
     url: https://github.com/NASA-AMMOS/plandev-docs/issues/new/choose

@@ -110,6 +110,7 @@ describe('Plan utility', () => {
               name: 'Test Activity',
               plan_id: 1,
               source_scheduling_goal_id: null,
+              source_scheduling_goal_invocation_id: null,
               start_offset: '0:00:00',
               start_time_ms: 0,
               tags: [
@@ -190,6 +191,7 @@ describe('Plan utility', () => {
           name: 'Test Activity',
           plan_id: 1,
           source_scheduling_goal_id: null,
+          source_scheduling_goal_invocation_id: null,
           start_offset: '0:00:00',
           start_time_ms: 0,
           tags: [
@@ -409,6 +411,7 @@ describe('Plan utility', () => {
           name: 'Test Activity',
           plan_id: 1,
           source_scheduling_goal_id: null,
+          source_scheduling_goal_invocation_id: null,
           start_offset: '0:00:00',
           start_time_ms: 0,
           tags: [

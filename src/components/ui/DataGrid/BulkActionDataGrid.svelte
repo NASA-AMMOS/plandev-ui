@@ -31,6 +31,7 @@
   export { className as class };
   export let autoSizeColumnsToFit: boolean = true;
   export let columnDefs: ColDef[];
+  export let columnShiftResize: boolean = false;
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
@@ -173,6 +174,7 @@
   class={className}
   {autoSizeColumnsToFit}
   {columnDefs}
+  {columnShiftResize}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
   {headerHeight}
@@ -208,6 +210,7 @@
   on:filterChanged={onFilterChanged}
   on:focus={onFocus}
   on:gridSizeChanged
+  on:columnsReset
   on:rowClicked
   on:rowDoubleClicked
   on:rowSelected

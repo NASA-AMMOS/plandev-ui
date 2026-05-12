@@ -65,7 +65,7 @@
         {/if}
         <div class="right-actions">
           {#if !hideInfo}
-            <ParameterInfo {disabled} {formParameter} on:reset />
+            <ParameterInfo {disabled} {formParameter} {parameterType} on:reset />
           {/if}
           <slot name="right-action" parameter={formParameter} />
         </div>

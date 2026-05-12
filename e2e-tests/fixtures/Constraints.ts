@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { fillEditorText } from '../utilities/editor.js';
+import { filterAgGridTable } from '../utilities/helpers.js';
 
 export class Constraints {
   closeButton: Locator;
@@ -9,7 +10,7 @@ export class Constraints {
   constraintDefinition: string = `export default function peelGreaterThanOrEqual3(): Constraint { return Real.Resource('/peel').greaterThanOrEqual(3); }`;
   constraintDescription: string = 'This is a constraint description.';
   constraintName: string;
-  emptyConstraintsLabel: Locator;
+
   inputConstraintDefinition: Locator;
   inputConstraintDescription: Locator;
   inputConstraintModel: Locator;
@@ -84,23 +85,12 @@ export class Constraints {
   }
 
   private async filterTable(constraintName: string) {
-    await this.table.waitFor({ state: 'attached' });
-    await this.table.waitFor({ state: 'visible' });
-
-    const nameColumnHeader = await this.table.getByRole('columnheader', { name: 'Name' });
-    await nameColumnHeader.hover();
-
-    const filterIcon = await nameColumnHeader.locator('.ag-icon-filter');
-    await expect(filterIcon).toBeVisible();
-    await filterIcon.click();
-    await this.page.locator('.ag-popup').getByRole('textbox', { name: 'Filter Value' }).first().fill(constraintName);
-    await expect(this.table.getByRole('row', { name: constraintName })).toBeVisible();
-    await this.page.keyboard.press('Escape');
+    await filterAgGridTable(this.page, this.table, constraintName);
   }
 
   async goto() {
     await this.page.goto('/constraints', { waitUntil: 'networkidle' });
-    await expect(this.table.or(this.emptyConstraintsLabel)).toBeVisible();
+    await expect(this.table).toBeVisible();
   }
 
   async gotoNew() {
@@ -111,7 +101,6 @@ export class Constraints {
     this.closeButton = page.locator(`button:has-text("Close")`);
     this.confirmModal = page.locator(`.modal:has-text("Delete Constraint")`);
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
-    this.emptyConstraintsLabel = page.getByText('No Constraints Found');
     this.inputConstraintDefinition = page.locator('.monaco-editor >> textarea.inputarea');
     this.inputConstraintDescription = page.locator('textarea[name="metadata-description"]');
     this.inputConstraintModel = page.locator(this.inputConstraintModelSelector);

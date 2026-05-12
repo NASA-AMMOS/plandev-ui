@@ -76,13 +76,13 @@ export class Plan {
   schedulingGoalsModalFilter: Locator;
   schedulingSatisfiedActivity: Locator;
   schedulingStatusSelector: (status: string) => string;
+  sequenceExpansionApplySequenceFilterModal: Locator;
   sequenceExpansionNewButton: Locator;
   sequenceExpansionNewSequenceButton: Locator;
   sequenceExpansionNewSequenceConfirmButton: Locator;
   sequenceExpansionNewSequenceFilterButton: Locator;
   sequenceExpansionNewSequenceName: Locator;
   sequenceExpansionOutputModal: Locator;
-  sequenceExpansionTimeRangeModal: Locator;
   simulateButton: Locator;
   simulationHistoryList: Locator;
   simulationStatusSelector: (status: string) => string;
@@ -164,8 +164,8 @@ export class Plan {
     const sequenceFilterItem = this.page.locator('.sne-items').getByText(sequenceFilterName, { exact: true });
     await sequenceFilterItem.hover();
     await this.page.getByLabel(`Apply '${sequenceFilterName}'`).click();
-    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'attached' });
-    await this.sequenceExpansionTimeRangeModal.waitFor({ state: 'visible' });
+    await this.sequenceExpansionApplySequenceFilterModal.waitFor({ state: 'attached' });
+    await this.sequenceExpansionApplySequenceFilterModal.waitFor({ state: 'visible' });
     await this.page.getByRole('button', { exact: true, name: 'Confirm' }).click();
     await this.waitForToast('Expansion Sequence Created Successfully');
     await expect(this.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`)).toBeVisible();
@@ -299,8 +299,12 @@ export class Plan {
     await this.panelActivityForm.getByPlaceholder('Enter preset name').blur();
   }
 
-  async fillExternalDatasetFileInput(importFilePath: string) {
-    const inputFile = this.page.locator('input[name="file"]');
+  async fillFileInput(importFilePath: string) {
+    const inputFile = this.page
+      .getByRole('tabpanel')
+      .filter({ hasText: 'Activity, Resource, Event Types' })
+      .first()
+      .locator('input[name="file"]');
     await setFileInputByFilepath(this.page, inputFile, importFilePath);
   }
 
@@ -351,8 +355,13 @@ export class Plan {
   async removeConstraint() {
     await this.constraintManageButton.click();
     await this.constraintModalFilter.fill(this.constraints.constraintName);
-    await expect(this.page.getByRole('row', { name: this.constraints.constraintName })).toBeVisible();
-    await this.page.getByRole('row', { name: this.constraints.constraintName }).getByRole('checkbox').uncheck();
+    const row = this.page.getByRole('row', { name: this.constraints.constraintName });
+    await expect(row).toBeVisible();
+    // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
+    const checkbox = row.getByRole('checkbox');
+    await expect(checkbox).toBeChecked();
+    await checkbox.click({ force: true });
+    await expect(checkbox).not.toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
   }
@@ -367,8 +376,13 @@ export class Plan {
   async removeSchedulingGoal(goalName: string) {
     await this.schedulingGoalManageButton.click();
     await this.schedulingGoalsModalFilter.fill(goalName);
-    await expect(this.page.getByRole('row', { name: goalName })).toBeVisible();
-    await this.page.getByRole('row', { name: goalName }).getByRole('checkbox').uncheck();
+    const row = this.page.getByRole('row', { name: goalName });
+    await expect(row).toBeVisible();
+    // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
+    const checkbox = row.getByRole('checkbox');
+    await expect(checkbox).toBeChecked();
+    await checkbox.click({ force: true });
+    await expect(checkbox).not.toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
     await this.page.locator(this.schedulingGoalListItemSelector(goalName)).waitFor({ state: 'detached' });
   }
@@ -606,14 +620,22 @@ export class Plan {
     });
     this.sequenceExpansionNewSequenceName = page.locator('input[name="sequence-name"]');
     this.sequenceExpansionNewSequenceConfirmButton = page.getByRole('button', { exact: true, name: 'Confirm' });
-    this.sequenceExpansionTimeRangeModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
+    this.sequenceExpansionApplySequenceFilterModal = page.locator(`.modal:has-text("Create Sequence from Filter")`);
     this.sequenceExpansionOutputModal = page.locator(`.modal:has-text("Sequence ID")`);
+  }
+
+  async uploadActivities(importFilePath: string) {
+    await this.panelActivityTypes.getByRole('tab', { exact: true, name: 'Activities' }).click();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Activities' }).click();
+    await this.fillFileInput(importFilePath);
+    await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();
+    await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' }).click();
   }
 
   async uploadExternalDatasets(importFilePath: string) {
     await this.panelActivityTypes.getByRole('tab', { exact: true, name: 'Resources' }).click();
     await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload Resources' }).click();
-    await this.fillExternalDatasetFileInput(importFilePath);
+    await this.fillFileInput(importFilePath);
     await expect(this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' })).toBeEnabled();
     await this.panelActivityTypes.getByRole('button', { exact: true, name: 'Upload' }).click();
   }

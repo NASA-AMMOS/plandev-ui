@@ -6,17 +6,14 @@ import { gqlSubscribable } from './subscribable';
 /* Writable */
 export const actionsColumns: Writable<string> = writable('.75fr 3px 1.5fr');
 
-export const actionDefinitions = gqlSubscribable<ActionDefinition[] | null>(gql.SUB_ACTION_DEFINITIONS, null, null);
+export const actionDefinitions = gqlSubscribable<ActionDefinition[]>(gql.SUB_ACTION_DEFINITIONS, null, []);
 
-export const actionRuns = gqlSubscribable<ActionRunSlim[] | null>(gql.SUB_ACTION_RUNS, {}, null);
+export const actionRuns = gqlSubscribable<ActionRunSlim[]>(gql.SUB_ACTION_RUNS, {}, []);
 
 /* Derived */
 export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number, ActionDefinition>>> = derived(
   actionDefinitions,
   $actionDefinitions => {
-    if (!$actionDefinitions) {
-      return {};
-    }
     return $actionDefinitions.reduce((acc: Record<number, Record<number, ActionDefinition>>, actionDefinition) => {
       if (!acc[actionDefinition.workspace_id]) {
         acc[actionDefinition.workspace_id] = {};
@@ -28,9 +25,6 @@ export const actionDefinitionsByWorkspace: Readable<Record<number, Record<number
 );
 
 export const actionRunsByWorkspace: Readable<Record<number, ActionRunSlim[]>> = derived(actionRuns, $actionRuns => {
-  if (!$actionRuns) {
-    return {};
-  }
   return $actionRuns.reduce((acc: Record<number, ActionRunSlim[]>, actionRun) => {
     if (!acc[actionRun.action_definition.workspace_id]) {
       acc[actionRun.action_definition.workspace_id] = [];

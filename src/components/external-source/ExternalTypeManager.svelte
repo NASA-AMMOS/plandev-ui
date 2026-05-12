@@ -6,12 +6,13 @@
   import type { ICellRendererParams } from 'ag-grid-community';
   import { X } from 'lucide-svelte';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
-  import { externalEventTypeAssociations } from '../../stores/external-event';
+  import { externalEventTypeAssociations, externalEventTypeAssociationsLoading } from '../../stores/external-event';
   import {
     createExternalSourceEventTypeError,
     derivationGroups,
     externalSources,
     externalSourceTypeAssociations,
+    externalSourceTypeAssociationsLoading,
     sourcesUsingExternalEventTypes,
   } from '../../stores/external-source';
   import type { User } from '../../types/app';
@@ -74,6 +75,8 @@
   const columnSize: string = '.55fr 3px 1.5fr';
 
   const creationPermissionError: string = 'You do not have permission to upload External Source & Event Types.';
+
+  const derivationGroupsLoading = derivationGroups.loading;
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {
@@ -835,6 +838,7 @@
             singleItemDisplayText="Derivation Group"
             pluralItemDisplayText="Derivation Groups"
             filterExpression={derivationGroupFilterString}
+            loading={$derivationGroupsLoading}
             items={$derivationGroups}
             {user}
             getRowId={getDerivationGroupRowId}
@@ -866,6 +870,7 @@
             pluralItemDisplayText="External Source Types"
             filterExpression={externalSourceTypeFilterString}
             items={$externalSourceTypeAssociations}
+            loading={$externalSourceTypeAssociationsLoading}
             {user}
             getRowId={getExternalSourceTypeRowId}
             on:rowClicked={({ detail }) => selectExternalSourceType(detail.data)}
@@ -896,6 +901,7 @@
             pluralItemDisplayText="External Event Types"
             filterExpression={externalEventTypeFilterString}
             items={$externalEventTypeAssociations}
+            loading={$externalEventTypeAssociationsLoading}
             {user}
             getRowId={getExternalEventTypeRowId}
             on:rowClicked={({ detail }) => selectExternalEventType(detail.data)}

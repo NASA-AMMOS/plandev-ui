@@ -4,10 +4,9 @@
   import { Checkbox } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import * as Sidebar from '../../components/ui/Sidebar/index.js';
-  import type { User } from '../../types/app';
   import type { Workspace, WorkspaceNodeEvent } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
-  import { joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
+  import { doesFilenameMatchExtension, joinPath, removeFirstPathSegment } from '../../utilities/workspaces.js';
   import InputInternal from '../form/Input.svelte';
   import WorkspaceTreeView from '../workspace/WorkspaceTreeView/WorkspaceTreeView.svelte';
   import Modal from './Modal.svelte';
@@ -22,8 +21,6 @@
   export let height: number = 400;
   export let width: number = 380;
   export let startingPath: string = '';
-  export let workspace: Workspace | null | undefined = null;
-  export let user: User | null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -52,9 +49,7 @@
     selectedFileGroupings = Array.from(files ?? []).reduce(
       (previousFileGroupings: { convertableFiles: File[]; uploadableFiles: File[] }, file) => {
         if (
-          outputLanguageExtensions.findIndex(fileExtension =>
-            file.name.endsWith(`.${fileExtension.replace(/^\./, '')}`),
-          ) > -1
+          outputLanguageExtensions.findIndex(fileExtension => doesFilenameMatchExtension(fileExtension, file.name)) > -1
         ) {
           return {
             ...previousFileGroupings,
@@ -122,11 +117,8 @@
             <WorkspaceTreeView
               selectedTreeNodePath={targetDirectory}
               treeNode={currentWorkspaceContents}
-              enableContextMenu={false}
               showFiles={false}
               showRootNode={true}
-              {workspace}
-              {user}
               on:nodeClicked={onFolderClicked}
             />
           </Sidebar.Menu>

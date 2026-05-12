@@ -6,26 +6,35 @@ import { getWorkspacesUrl } from '../../src/utilities/routes';
 import { generateRandomName, hoverRowAndWaitForButton, setFileInputByBuffer } from '../utilities/helpers';
 
 export class Workspace {
-  editSequenceButton: Locator;
-  fileInput: Locator;
-  folderNameInput: Locator;
+  editSequenceButton!: Locator;
+  fileInput!: Locator;
+  folderNameInput!: Locator;
   jsonPath: string = 'e2e-tests/data/ban00001.json';
-  navButtonSequences: Locator;
-  navButtonSequencesMenu: Locator;
-  pageLoadingLocatorWithData: Locator;
-  saveSequenceButton: Locator;
-  searchInput: Locator;
-  sequenceEditor: Locator;
-  sequenceNameInput: Locator;
-  textEditor: Locator;
-  workspaceCollaboratorInput: Locator;
-  workspaceContextMenuButton: Locator;
-  workspaceFileBrowserButton: Locator;
-  workspaceFileContextMenu: Locator;
-  workspaceFileGrid: Locator;
-  workspaceHeaderMenu: Locator;
-  workspaceSettingsButton: Locator;
-  workspaceSidebar: Locator;
+  metadataCancelButton!: Locator;
+  metadataEditButton!: Locator;
+  metadataPanel!: Locator;
+  metadataSaveButton!: Locator;
+  metadataTabButton!: Locator;
+  navButtonSequences!: Locator;
+  navButtonSequencesMenu!: Locator;
+  pageLoadingLocatorWithData!: Locator;
+  readOnlyCheckbox!: Locator;
+  rightPanelCollapseButton!: Locator;
+  saveSequenceButton!: Locator;
+  searchInput!: Locator;
+  sequenceEditor!: Locator;
+  sequenceNameInput!: Locator;
+  textEditor!: Locator;
+  userMetadataEditor!: Locator;
+  workspaceCollaboratorInput!: Locator;
+  workspaceContextMenuButton!: Locator;
+  workspaceFileBrowserButton!: Locator;
+  workspaceFileContextMenu!: Locator;
+  workspaceFileGrid!: Locator;
+  workspaceHeaderMenu!: Locator;
+  workspaceRefreshButton!: Locator;
+  workspaceSettingsButton!: Locator;
+  workspaceSidebar!: Locator;
 
   constructor(
     public page: Page,
@@ -85,30 +94,23 @@ export class Workspace {
   }
 
   async deleteFile(fileName: string): Promise<void> {
-    const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
-    const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await hoverRowAndWaitForButton(this.page, row, deleteButton);
-    await deleteButton.click();
+    await this.openFileContextMenu(fileName);
+    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
     await this.waitForToast('Workspace File Deleted Successfully');
   }
 
   async deleteFolder(folderName: string): Promise<void> {
-    const row = this.workspaceFileGrid.getByRole('row', { name: folderName });
-    const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await hoverRowAndWaitForButton(this.page, row, deleteButton);
-    await deleteButton.click();
+    await this.openFileContextMenu(folderName);
+    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
     await this.waitForToast('Workspace Folder Deleted Successfully');
   }
 
   async deleteSequence(sequenceName: string): Promise<void> {
-    const row = this.workspaceFileGrid.getByRole('row', { name: sequenceName });
-    const deleteButton = row.getByRole('button', { name: 'Delete' });
-    await hoverRowAndWaitForButton(this.page, row, deleteButton);
-    await deleteButton.click();
+    await this.openFileContextMenu(sequenceName);
+    await this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await this.page.locator('#modal-container').getByRole('button', { name: 'Delete' }).click();
-
     await this.waitForToast('Workspace File Deleted Successfully');
   }
 
@@ -158,6 +160,18 @@ export class Workspace {
     await this.sequenceNameInput.blur();
   }
 
+  /**
+   * Type content into the user metadata JSON editor (CodeMirror).
+   * Clears existing content first.
+   */
+  async fillUserMetadata(content: string): Promise<void> {
+    // Focus the CodeMirror editor
+    await this.userMetadataEditor.click();
+    // Select all and replace
+    await this.page.keyboard.press('ControlOrMeta+a');
+    await this.page.keyboard.type(content);
+  }
+
   getFileRow(name: string): Locator {
     return this.workspaceFileGrid.getByRole('row', { name });
   }
@@ -191,10 +205,30 @@ export class Workspace {
 
   async openFileContextMenu(fileName: string): Promise<void> {
     const row = this.workspaceFileGrid.getByRole('row', { name: fileName });
+    // AG Grid can briefly detach/reattach rows during re-renders (e.g., after a delete
+    // triggers a tree refetch). Wait for the row to stabilize before interacting.
+    await row.waitFor({ state: 'visible', timeout: 5000 });
+    try {
+      await row.scrollIntoViewIfNeeded();
+    } catch {
+      // Row was detached during AG Grid re-render; re-wait and retry
+      await row.waitFor({ state: 'visible', timeout: 5000 });
+    }
     const moreActionsButton = row.getByLabel('More actions');
     await hoverRowAndWaitForButton(this.page, row, moreActionsButton);
     await moreActionsButton.click();
     await this.workspaceFileContextMenu.waitFor({ state: 'visible' });
+  }
+
+  /**
+   * Open the right-side metadata panel by clicking the metadata tab icon.
+   * If the panel is already open on the metadata tab, this is a no-op.
+   */
+  async openMetadataPanel(): Promise<void> {
+    // Click the Metadata tab button in the right icon rail
+    await this.metadataTabButton.click();
+    // Wait for the metadata panel content to appear
+    await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
   }
 
   async openWorkspaceContextMenu(): Promise<void> {
@@ -237,26 +271,33 @@ export class Workspace {
 
   updatePage(page: Page): void {
     this.editSequenceButton = page.getByRole('button', { name: 'Edit Sequence' });
-    this.fileInput = page.getByRole('textbox', { name: 'File(s)' });
+    // File input is detected as a button in Chrome for Testing (Playwright 1.57+)
+    // Use locator chain: find by aria-label within the modal
+    this.fileInput = page.locator('#modal-container input[type="file"][aria-label="File(s)"]');
     this.folderNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'Folder Name' });
+    this.metadataEditButton = page.getByRole('button', { name: 'Edit user metadata' });
+    this.metadataCancelButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Cancel' });
+    this.metadataPanel = page.locator('.user-metadata-editor').first();
+    this.metadataSaveButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Save' });
+    this.metadataTabButton = page.getByRole('button', { name: 'Metadata' });
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');
     this.page = page;
-    this.pageLoadingLocatorWithData = page.getByRole('complementary').getByText('Loading workspace').first();
+    this.pageLoadingLocatorWithData = page.getByText('Loading workspace').first();
+    this.readOnlyCheckbox = page.locator('#read-only');
+    this.rightPanelCollapseButton = page.getByRole('button', { name: /Collapse panel|Expand panel/ }).last();
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.searchInput = page.getByPlaceholder('Search files and folders');
     this.sequenceEditor = page.locator('.cm-activeLine').first();
     this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
+    this.userMetadataEditor = page.locator('.user-metadata-editor .cm-content').first();
     this.workspaceFileContextMenu = page.getByTestId('context-menu');
     this.workspaceFileGrid = page.getByRole('treegrid');
     this.workspaceHeaderMenu = page.getByTestId('workspace-header-menu');
-    this.workspaceSidebar = page.getByRole('complementary');
-    this.workspaceContextMenuButton = this.workspaceSidebar
-      .getByRole('button', {
-        name: 'New Workspace Item',
-      })
-      .first();
+    this.workspaceSidebar = page.locator('[data-slot="sidebar-wrapper"]').first();
+    this.workspaceContextMenuButton = page.getByRole('button', { name: 'New Workspace Item' });
+    this.workspaceRefreshButton = page.getByRole('button', { name: 'Refresh Workspace' });
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceFileBrowserButton = page.getByRole('button', { name: 'Files' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');

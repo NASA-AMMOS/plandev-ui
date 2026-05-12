@@ -24,6 +24,7 @@
 
   export let currentWorkspace: Workspace;
   export let originalNodes: WorkspaceTreeNodeWithFullPath[];
+  export let selectionHasReadOnlyNodes: boolean;
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
@@ -39,6 +40,7 @@
   let displayString: string = getWorkspaceFileFolderDisplay(originalNodes);
   let hasSourceDeletePermission: boolean = false;
   let hasTargetEditPermission: boolean = false;
+  let moveError: string = '';
   let shouldOverwrite: boolean = false;
   let targetDirectory: string = '';
   let workspacesContents: WorkspaceTreeNode[] = [];
@@ -71,6 +73,11 @@
   } else {
     hasTargetEditPermission = false;
   }
+
+  $: moveError =
+    !hasSourceDeletePermission || !hasTargetEditPermission
+      ? `You do not have permission to move ${originalNodes.length === 1 ? 'this' : 'these'} ${displayString.toLowerCase()} from the original workspace.`
+      : 'Some read-only files selected. You cannot move read-only files.';
 
   function getWorkspaceNameFromPath(path: string) {
     const [workspaceName, ...actualTargetDirectory] = path.split(PATH_DELIMITER).filter(filterEmpty);
@@ -107,7 +114,7 @@
     const targetWorkspace = workspacesMap[workspaceName];
     if (targetWorkspace) {
       const targetWorkspaceContents = workspacesContents.find(({ name }) => workspaceName === name);
-      if (targetWorkspaceContents) {
+      if (targetWorkspaceContents && !selectionHasReadOnlyNodes) {
         dispatch('confirm', {
           shouldCopy: false,
           shouldOverwrite,
@@ -158,11 +165,8 @@
                 <WorkspaceTreeView
                   selectedTreeNodePath={targetDirectory}
                   treeNode={workspaceContents}
-                  enableContextMenu={false}
                   showFiles={false}
                   showRootNode={true}
-                  workspace={workspacesMap[workspaceContents?.name ?? '']}
-                  {user}
                   on:nodeClicked={onFolderClicked}
                 />
               {/each}
@@ -191,8 +195,8 @@
       disabled={!targetDirectory}
       on:click={onMove}
       use:permissionHandler={{
-        hasPermission: hasSourceDeletePermission && hasTargetEditPermission,
-        permissionError: `You do not have permission to move ${originalNodes.length === 1 ? 'this' : 'these'} ${displayString.toLowerCase()} from the original workspace.`,
+        hasPermission: hasSourceDeletePermission && hasTargetEditPermission && !selectionHasReadOnlyNodes,
+        permissionError: moveError,
       }}
     >
       Move {displayString}

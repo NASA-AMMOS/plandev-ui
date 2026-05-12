@@ -63,6 +63,7 @@ export async function reqActionServer<T = any>(
   };
 
   const options: RequestInit = {
+    credentials: env.PUBLIC_ACTION_INCLUDE_CREDENTIALS === 'true' ? 'include' : 'omit',
     headers,
     method,
     signal,
@@ -308,6 +309,46 @@ export async function reqWorkspace<T = any>(
 
   if (asBlob) {
     return (await response.blob()) as T;
+  }
+
+  if (asJson) {
+    return await response.json();
+  }
+
+  return (await response.text()) as T;
+}
+
+export async function reqWorkspaceMetadata<T = any>(
+  url: string,
+  method: string,
+  body: any | null,
+  user: BaseUser | User | null,
+  signal?: AbortSignal,
+  asJson: boolean = true,
+): Promise<T> {
+  const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    'Content-Type': 'application/json',
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
+  };
+  const options: RequestInit = {
+    headers,
+    method,
+    signal,
+  };
+
+  if (body !== null) {
+    options.body = body;
+  }
+
+  const postSearchParameters = method.toLowerCase() === 'post' ? '?mergeBehavior=overwrite' : '';
+  const response = await fetch(`${WORKSPACE_URL}/metadata/${url}${postSearchParameters}`, options);
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
   }
 
   if (asJson) {

@@ -47,28 +47,27 @@
   let selectedCommandDefinition: (FswCommand | HwCommand) | null;
   let selectedNode: SyntaxNode | null = null;
 
-  $: commandDictionary = phoenixContext.commandDictionary ?? emptyCommandDictionary;
+  $: commandDictionary = phoenixContext?.commandDictionary ?? emptyCommandDictionary;
 
-  $: commandNode = commandInfoMapper.getContainingCommand(selectedNode);
-  $: commandNameNode = commandInfoMapper.getNameNode(commandNode);
+  $: commandNode = commandInfoMapper?.getContainingCommand?.(selectedNode) ?? null;
+  $: commandNameNode = commandInfoMapper?.getNameNode?.(commandNode) ?? null;
   $: commandName =
     commandNameNode && unquoteUnescape(editorSequenceView.state.sliceDoc(commandNameNode.from, commandNameNode.to));
-  $: timeTagNode = commandInfoMapper.getTimeTagInfo(editorSequenceView, commandNode);
-  $: argInfoArray = commandInfoMapper.getArgumentInfo(
-    commandDef,
-    editorSequenceView,
-    commandInfoMapper.getArgumentNodeContainer(commandNode),
-    commandDef?.arguments,
-    undefined,
-    phoenixContext,
-  );
-  $: commandDef = commandInfoMapper.getCommandDef(
-    commandDictionary,
-    phoenixContext.librarySequences,
-    commandName ?? '',
-  );
+  $: timeTagNode = commandInfoMapper?.getTimeTagInfo?.(editorSequenceView, commandNode) ?? null;
+  $: argInfoArray =
+    commandInfoMapper?.getArgumentInfo?.(
+      commandDef,
+      editorSequenceView,
+      commandInfoMapper?.getArgumentNodeContainer?.(commandNode),
+      commandDef?.arguments,
+      undefined,
+      phoenixContext,
+    ) ?? [];
+  $: commandDef =
+    commandInfoMapper?.getCommandDef?.(commandDictionary, phoenixContext?.librarySequences, commandName ?? '') ?? null;
 
-  $: variablesInScope = commandInfoMapper.getVariablesInScope(editorSequenceView, currentTree, commandNode?.from);
+  $: variablesInScope =
+    commandInfoMapper?.getVariablesInScope?.(editorSequenceView, currentTree, commandNode?.from) ?? [];
 
   function formatTypeName(s: string) {
     // add spaces to CamelCase names, 'GroundEvent' -> 'Ground Event'
