@@ -7,10 +7,10 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   const nonProtectedPage: boolean =
-    url.pathname.includes('error') ||
-    url.pathname.includes('oidc') ||
-    url.pathname.includes('login') ||
-    url.pathname.includes('auth');
+    url.pathname.startsWith(`${base}/error`) ||
+    url.pathname.startsWith(`${base}/oidc`) ||
+    url.pathname.startsWith(`${base}/login`) ||
+    url.pathname.startsWith(`${base}/auth`);
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true' && !nonProtectedPage) {
     try {
       enforce(locals?.user, userIsDefined);

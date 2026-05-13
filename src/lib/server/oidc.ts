@@ -1,6 +1,6 @@
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
-import type { MaybeToken, Rule } from '$lib/types/oidc';
+import { extractClaims, type ClaimsConfig, type MaybeToken, type Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import crypto from 'crypto';
@@ -33,75 +33,21 @@ function getSupportedAlgorithms(): jwt.Algorithm[] {
 }
 
 /**
- * JWT claim path configuration.
- * These paths specify where to find user identity and role information in the JWT.
- *
+ * JWT claim path configuration (server side).
  * Default paths follow Hasura's JWT claims namespace convention:
  *   https://hasura.io/jwt/claims -> x-hasura-user-id, x-hasura-allowed-roles, x-hasura-default-role
  *
- * For custom IdP configurations, override with environment variables:
- *   OIDC_CLAIMS_NAMESPACE: The top-level claim key (default: "https://hasura.io/jwt/claims")
- *   OIDC_CLAIMS_USER_ID: The user ID claim within the namespace (default: "x-hasura-user-id")
- *   OIDC_CLAIMS_ALLOWED_ROLES: The allowed roles claim (default: "x-hasura-allowed-roles")
- *   OIDC_CLAIMS_DEFAULT_ROLE: The default role claim (default: "x-hasura-default-role")
- *
- * IMPORTANT: These must match the JWT configuration in:
- *   - Hasura's HASURA_GRAPHQL_JWT_SECRET claims_map
- *   - Aerie Gateway's JWT parsing logic
- *   - Your IdP's token mapper configuration
+ * Override via OIDC_CLAIMS_NAMESPACE / OIDC_CLAIMS_USER_ID / OIDC_CLAIMS_ALLOWED_ROLES / OIDC_CLAIMS_DEFAULT_ROLE.
+ * Must stay in lockstep with the client-side config in src/utilities/auth.ts, Hasura's HASURA_GRAPHQL_JWT_SECRET
+ * claims_map, the gateway's JWT parsing, and your IdP's token mapper.
  */
-export const CLAIMS_CONFIG = {
-  get allowedRoles() {
-    return env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles';
-  },
-  get defaultRole() {
-    return env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role';
-  },
-  get namespace() {
-    return env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims';
-  },
-  get userId() {
-    return env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id';
-  },
-};
-
-/**
- * Extract claims from a decoded JWT token using the configured claim paths.
- * Supports nested claims via the namespace configuration.
- *
- * @param token - The decoded JWT payload
- * @returns Object with userId, allowedRoles, and defaultRole
- * @throws Error if required claims are missing
- */
-export function extractClaims(token: jwt.JwtPayload): {
-  allowedRoles: string[];
-  defaultRole: string;
-  userId: string;
-} {
-  const namespace = token[CLAIMS_CONFIG.namespace];
-  if (!namespace || typeof namespace !== 'object') {
-    throw new Error(`JWT missing claims namespace: ${CLAIMS_CONFIG.namespace}`);
-  }
-
-  const userId = namespace[CLAIMS_CONFIG.userId];
-  const allowedRoles = namespace[CLAIMS_CONFIG.allowedRoles];
-  const defaultRole = namespace[CLAIMS_CONFIG.defaultRole];
-
-  if (!userId || typeof userId !== 'string') {
-    throw new Error(`JWT missing or invalid user ID claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.userId}`);
-  }
-  if (!Array.isArray(allowedRoles)) {
-    throw new Error(
-      `JWT missing or invalid allowed roles claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.allowedRoles}`,
-    );
-  }
-  if (!defaultRole || typeof defaultRole !== 'string') {
-    throw new Error(
-      `JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`,
-    );
-  }
-
-  return { allowedRoles, defaultRole, userId };
+export function getClaimsConfig(): ClaimsConfig {
+  return {
+    allowedRoles: env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
+    defaultRole: env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+    namespace: env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
+    userId: env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
+  };
 }
 
 /**
@@ -414,7 +360,7 @@ const mutation = `mutation InsertUser($input: users_insert_input!) {
 }`; // TODO: update other user tables in permissions schema?
 
 async function upsertUser(decodedAccessToken: jwt.JwtPayload, accessToken: string): Promise<void> {
-  const claims = extractClaims(decodedAccessToken);
+  const claims = extractClaims(decodedAccessToken as Record<string, unknown>, getClaimsConfig());
   const username = claims.userId;
   const allowedRoles = claims.allowedRoles;
 

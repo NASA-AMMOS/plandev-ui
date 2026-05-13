@@ -5,6 +5,7 @@ import type { BaseError, LogMessage } from '../types/errors';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
 import { ErrorTypes } from './errors';
+import { logout } from './login';
 import { INVALID_JWT } from './permissions';
 
 /**
@@ -240,16 +241,8 @@ export async function reqHasura<T = any>(
           }
         }
       } else if (code === INVALID_JWT) {
-        // This should never be triggered in the OIDC case, because we have refreshes.
-        // In any case, we do the following:
-        //   * Display an error message.
-        //   * Tell the user they need to log in again
-        //   * Provide a way to do so.
-        // Don't automatically initiate logout.
-        console.error('Expired JWT in reqHasura for query:', query);
-        throw new Error(
-          `JWT Expired in reqHasura.\nCited Reason: ${json.errors[0]?.message ?? error?.message}\nFor query: ${query}.`,
-        );
+        // awaiting here only works if SSR is disabled
+        logout(error?.message);
       } else {
         errors.push({
           ...defaultError,

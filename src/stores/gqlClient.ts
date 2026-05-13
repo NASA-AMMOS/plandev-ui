@@ -131,7 +131,7 @@ function createSharedClient(): Client {
       };
     },
     // Generate debuggable subscription IDs: "QUERY_NAME-N"
-    // Counter is managed by registerSubscription/setPendingQueryName, not here
+    // Counter is incremented by setPendingQueryName before each subscribe call
     generateID: () => {
       const queryName = pendingQueryName ?? 'unknown';
       return `${queryName}-${subscriptionCounter}`;
@@ -182,10 +182,14 @@ function createSharedClient(): Client {
           return;
         }
         console.error('WebSocket connection error', err);
-        // Check for JWT expiration in error
+        // Hasura's WS-side JWT rejection surfaces here. Two variants worth catching:
+        //   - 'JWTExpired'        — token decoded fine but exp claim passed
+        //   - 'JWSError'          — signature failed verification (key rotation, tampered cookie)
+        // Both leave the WS unable to recover on its own (graphql-ws would retry forever
+        // with the same bad token). Auto-logout so the user lands at /login.
         if (err && typeof err === 'object' && 'message' in err) {
           const errorMessage = (err as { message: string }).message;
-          if (errorMessage.includes(EXPIRED_JWT)) {
+          if (errorMessage.includes(EXPIRED_JWT) || errorMessage.includes('JWSError')) {
             logout(EXPIRED_JWT);
           }
         }
@@ -258,16 +262,13 @@ export function getSharedClient(): Client | null {
 }
 
 /**
- * Registers a subscription and returns a debuggable ID.
- * Call this before client.subscribe() to set the pending query name.
+ * Registers a subscription. Sets the pending query name so the
+ * generateID callback can build a debuggable subscription ID
+ * ("QUERY_NAME-N") for graphql-ws.
  */
-export function registerSubscription(queryName: string): string {
+export function registerSubscription(queryName: string): void {
   refCount++;
-  // Set pending query name for generateID callback
   pendingQueryName = queryName;
-  // Pre-increment to match what generateID will produce
-  const id = `${queryName}-${++subscriptionCounter}`;
-  return id;
 }
 
 /**

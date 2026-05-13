@@ -1,52 +1,21 @@
 import { env } from '$env/dynamic/public';
+import { extractClaims, type ClaimsConfig } from '$lib/types/oidc';
 import { jwtDecode } from 'jwt-decode';
 import type { BaseUser, User } from '../types/app';
 import effects from './effects';
 
 /**
  * JWT claim path configuration (client-side).
- * Must match the server-side CLAIMS_CONFIG in oidc.ts.
- *
- * Uses PUBLIC_ prefixed env vars for client accessibility.
- * Falls back to Hasura's standard claim namespace.
+ * Uses PUBLIC_ prefixed env vars so the values are available in the browser.
+ * Must stay in lockstep with the server-side getClaimsConfig() in src/lib/server/oidc.ts.
  */
-const CLAIMS_CONFIG = {
-  namespace: env.PUBLIC_OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
-  userId: env.PUBLIC_OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
-  allowedRoles: env.PUBLIC_OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
-  defaultRole: env.PUBLIC_OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
-};
-
-/**
- * Extract claims from a decoded JWT token using the configured claim paths.
- */
-function extractClaims(token: Record<string, unknown>): {
-  userId: string;
-  allowedRoles: string[];
-  defaultRole: string;
-} {
-  const namespace = token[CLAIMS_CONFIG.namespace] as Record<string, unknown> | undefined;
-  if (!namespace || typeof namespace !== 'object') {
-    throw new Error(`JWT missing claims namespace: ${CLAIMS_CONFIG.namespace}`);
-  }
-
-  const userId = namespace[CLAIMS_CONFIG.userId] as string;
-  const allowedRoles = namespace[CLAIMS_CONFIG.allowedRoles] as string[];
-  const defaultRole = namespace[CLAIMS_CONFIG.defaultRole] as string;
-
-  if (!userId || typeof userId !== 'string') {
-    throw new Error(`JWT missing or invalid user ID claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.userId}`);
-  }
-  if (!Array.isArray(allowedRoles)) {
-    throw new Error(
-      `JWT missing or invalid allowed roles claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.allowedRoles}`,
-    );
-  }
-  if (!defaultRole || typeof defaultRole !== 'string') {
-    throw new Error(`JWT missing or invalid default role claim: ${CLAIMS_CONFIG.namespace}.${CLAIMS_CONFIG.defaultRole}`);
-  }
-
-  return { userId, allowedRoles, defaultRole };
+function getClaimsConfig(): ClaimsConfig {
+  return {
+    allowedRoles: env.PUBLIC_OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
+    defaultRole: env.PUBLIC_OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+    namespace: env.PUBLIC_OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
+    userId: env.PUBLIC_OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
+  };
 }
 
 export async function computeRolesFromCookies(
@@ -84,7 +53,7 @@ export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string
   }
 
   const decodedToken = jwtDecode(baseUser.token) as Record<string, unknown>;
-  const claims = extractClaims(decodedToken);
+  const claims = extractClaims(decodedToken, getClaimsConfig());
 
   if (baseUser.id === null && env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     // Use the configured user ID claim, which should match Hasura's expected x-hasura-user-id

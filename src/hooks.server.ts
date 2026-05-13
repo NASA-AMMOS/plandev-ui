@@ -68,15 +68,15 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.startsWith('/.well-known/appspecific/com.chrome.')) {
     return new Response(null, { status: 404 });
   }
-  if (event.url.pathname.includes('error') || event.url.pathname.includes('oidc')) {
+  if (event.url.pathname.startsWith(`${base}/error`) || event.url.pathname.startsWith(`${base}/oidc`)) {
     // don't want hooks running on an error page
     const response = await resolve(event);
     return addSecurityHeaders(response);
   }
   if (
     env.PUBLIC_AUTH_OIDC_ENABLED === 'true' &&
-    !event.url.pathname.includes('changeRole') &&
-    event.url.pathname.includes('auth')
+    event.url.pathname.startsWith(`${base}/auth`) &&
+    !event.url.pathname.startsWith(`${base}/auth/changeRole`)
   ) {
     error(
       500,

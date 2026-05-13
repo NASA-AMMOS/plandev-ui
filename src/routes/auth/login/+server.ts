@@ -1,5 +1,6 @@
 import { dev } from '$app/environment';
-import { extractClaims } from '$lib/server/oidc';
+import { getClaimsConfig } from '$lib/server/oidc';
+import { extractClaims } from '$lib/types/oidc';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
@@ -20,7 +21,7 @@ export const POST: RequestHandler = async event => {
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
       const decodedToken = jwtDecode(user.token) as Record<string, unknown>;
-      const claims = extractClaims(decodedToken);
+      const claims = extractClaims(decodedToken, getClaimsConfig());
 
       event.cookies.set('activeRole', claims.defaultRole, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
       event.cookies.set('user', userCookie, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
