@@ -1,14 +1,9 @@
 import { expect, Locator, Page } from '@playwright/test';
-import { decode, JwtPayload } from 'jsonwebtoken';
+import { decode } from 'jsonwebtoken';
+import type { HasuraToken } from '../../src/lib/types/oidc';
 import { AppNav } from './AppNav';
 
-type HasuraToken = JwtPayload & {
-  'https://hasura.io/jwt/claims': {
-    'x-hasura-allowed-roles': string[];
-    'x-hasura-default-role': string;
-    'x-hasura-user-id': string;
-  };
-};
+const MAX_LOGIN_RETRIES = 5;
 
 // OIDC spans several pages.
 // As such, we will define a class for each of the pages,
@@ -29,7 +24,7 @@ class AerieLogin {
 
     let buttonClicked: boolean = false;
     await loginButton.click();
-    while (!buttonClicked) {
+    for (let attempt = 0; attempt < MAX_LOGIN_RETRIES && !buttonClicked; attempt++) {
       // this button has required variable numbers of tries
       try {
         await this.page.waitForURL('**/realms/aerie-dev/**', { timeout: 2000 });
@@ -38,6 +33,9 @@ class AerieLogin {
         // means it timed out, no new page
         await loginButton.click();
       }
+    }
+    if (!buttonClicked) {
+      throw new Error(`OIDC login button did not trigger IdP redirect after ${MAX_LOGIN_RETRIES} attempts`);
     }
   }
 
@@ -71,7 +69,7 @@ class IdPLogin {
   updatePage(page: Page) {
     this.usernameSlot = page.locator('#username');
     this.passwordSlot = page.locator('#password');
-    this.signInButton = page.getByText('Sign In').last();
+    this.signInButton = page.getByRole('button', { name: 'Sign In' });
   }
 }
 
@@ -101,12 +99,12 @@ export class OIDC {
     const { accessToken } = await this.extractTokens();
 
     if (accessToken) {
-      // otherwise it is considered potentailly undefined despite the above expect
+      // otherwise it is considered potentially undefined despite the above expect
       const decoded = decode(accessToken); // TODO: extract this into its own method ?
 
       const allowedRoles = (decoded as HasuraToken)['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
       for (const expectedRole of this.expectedRoles) {
-        expect(allowedRoles.includes(expectedRole));
+        expect(allowedRoles).toContain(expectedRole);
       }
     }
   }
@@ -182,16 +180,18 @@ export class OIDC {
       refreshToken: oldRefreshToken,
     } = await this.extractTokens();
 
-    // wait for timeout (set to 600 seconds by default in our Keycloak deployment)
-    //      NOTE: since the timer is set in the UI, the token needn't actually expire
-    //          to prompt a refresh. we just need to skip that time HERE and it'll know to refresh.
-    //          It pre-emptively refreshes 10 seconds before refresh time, so we will
-    //          skip to 1 second before that, i.e. we will timeskip 589 seconds.
-    // await this.page.clock.fastForward(1 * 1000);
-    // TURNS OUT MESSING WITH PAGE TIMER SERIOUSLY THROWS OFF DELAYS AND RESULTS IN A REFRESH LOOP!
-
-    // now it'll refresh, so we want this test itself to wait for 5 seconds
-    await this.page.waitForTimeout(11000);
+    // Wait for the UI's pre-expiry timer to fire /oidc/refresh and the new
+    // accessToken cookie to land. Polling against the actual cookie change
+    // avoids depending on a specific Keycloak access_token_lifespan value.
+    await expect
+      .poll(
+        async () => {
+          const cookies = await this.page.context().cookies();
+          return cookies.find(c => c.name === 'accessToken')?.value;
+        },
+        { intervals: [500, 1000, 2000], timeout: 15000 },
+      )
+      .not.toBe(oldAccessToken);
 
     // get new cookies
     const {
@@ -200,14 +200,32 @@ export class OIDC {
       refreshToken: newRefreshToken,
     } = await this.extractTokens();
 
-    console.log('OLD ACCESS TOKEN, NEW ACCESS TOKEN', oldAccessToken, newAccessToken);
-    console.log('OLD ID TOKEN, NEW ID TOKEN', oldIdToken, newIdToken);
-    console.log('OLD REFRESH TOKEN, NEW REFRESH TOKEN', oldRefreshToken, newRefreshToken);
-
     expect(oldAccessToken).not.toEqual(newAccessToken);
     expect(oldIdToken).not.toEqual(newIdToken);
     expect(oldRefreshToken).not.toEqual(newRefreshToken);
 
     await this.checkCookieRoles(); // should still be right!
+  }
+
+  /**
+   * Switch the active role via the Nav role dropdown and wait for the
+   * activeRole cookie to reflect the change. Caller is responsible for
+   * being on a page that renders the dropdown (e.g., /plans) and being
+   * logged in as a user with multiple allowed roles.
+   */
+  async switchRole(newRole: string) {
+    const roleCombobox = this.page.getByRole('combobox').filter({ hasText: '-' });
+    await roleCombobox.click();
+    await this.page.getByRole('option', { name: newRole }).click();
+
+    await expect
+      .poll(
+        async () => {
+          const cookies = await this.page.context().cookies();
+          return cookies.find(c => c.name === 'activeRole')?.value;
+        },
+        { intervals: [200, 500, 1000], timeout: 5000 },
+      )
+      .toBe(newRole);
   }
 }
