@@ -166,8 +166,7 @@
     initFromUrl();
   }
 
-  $: subscriptionError =
-    $modelsError || $tagsError || $usersError || $presetsError || $goalsError || '';
+  $: subscriptionError = $modelsError || $tagsError || $usersError || $presetsError || $goalsError || '';
 
   // Keep URL in sync with current filter form state after init
   $: if (browser && initialized) {

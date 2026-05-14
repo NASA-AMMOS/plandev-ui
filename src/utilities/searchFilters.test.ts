@@ -281,10 +281,7 @@ describe('buildSearchActivitiesWhereClauses', () => {
       );
       expect(clauses).toHaveLength(2);
       expect(clauses[0]).toEqual({
-        _or: [
-          { arguments: { _contains: { region: 'arctic' } } },
-          { arguments: { _contains: { region: ['arctic'] } } },
-        ],
+        _or: [{ arguments: { _contains: { region: 'arctic' } } }, { arguments: { _contains: { region: ['arctic'] } } }],
       });
       expect(clauses[1]).toEqual({
         _or: [
