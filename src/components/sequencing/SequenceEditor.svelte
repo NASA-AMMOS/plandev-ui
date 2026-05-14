@@ -13,10 +13,9 @@
     PhoenixAdaptation,
     PhoenixContext,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import { Button, Label } from '@nasa-jpl/stellar-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
+  import { FileBracesCorner } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
@@ -31,10 +30,10 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import Tooltip from '../ui/Tooltip.svelte';
   import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
+  import OutputToolbar from './OutputToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let fileMetadata: WorkspaceFileMetadata | null = null;
@@ -58,7 +57,7 @@
   const dispatch = createEventDispatcher<{
     adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
-    downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    downloadOutput: { content: string; filePath: string; filename: string };
     editorViewChange: EditorView | null;
     lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
@@ -261,16 +260,22 @@
     }
   }, 300);
 
-  function downloadOutputFormat(outputLanguage: OutputLanguage): void {
+  function downloadOutputFormat(): void {
     const content = editorOutputView.state.doc.toString();
 
-    const filename = replaceFileExtension(
-      sequenceName,
-      sequenceAdaptation.input.fileExtension,
-      outputLanguage.fileExtension,
-    );
+    if (selectedOutputFormat) {
+      const filename = replaceFileExtension(
+        sequenceName,
+        sequenceAdaptation.input.fileExtension,
+        selectedOutputFormat.fileExtension,
+      );
 
-    dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
+      dispatch('downloadOutput', {
+        content,
+        filePath: sequenceFilePath,
+        filename,
+      });
+    }
   }
 
   function downloadInputFormat(): void {
@@ -428,10 +433,6 @@
           downloadDisabled={disableCopyAndExport}
           downloadTooltip="Download sequence contents"
           onDownload={downloadInputFormat}
-          outputFormats={showOutputs ? sequenceAdaptation.outputs : []}
-          outputDisabled={disableCopyAndExport}
-          onCopyOutput={copyOutputFormatToClipboard}
-          onDownloadOutput={downloadOutputFormat}
           showSaveButton={!(readOnly || previewOnly || isLoading)}
           saveDisabled={!isSequenceDefinitionUpdated}
           saveHighlighted={isSequenceDefinitionUpdated}
@@ -455,30 +456,15 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            <div class="flex items-center gap-2">
-              {#if sequenceAdaptation.outputs.length > 0}
-                <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">
-                  Output Format
-                </Label>
-                <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
-                  {#each sequenceAdaptation.outputs as outputFormatItem}
-                    <option value={outputFormatItem}>
-                      {outputFormatItem.name}
-                    </option>
-                  {/each}
-                </select>
-              {/if}
-
-              <Tooltip content={toggleSeqJsonPreview ? `Collapse Editor` : `Expand Editor`}>
-                <Button size="icon" variant="ghost" on:click={toggleSeqJsonEditor}>
-                  {#if toggleSeqJsonPreview}
-                    <PanelBottomClose size={16} />
-                  {:else}
-                    <PanelBottomOpen size={16} />
-                  {/if}
-                </Button>
-              </Tooltip>
-            </div>
+            <OutputToolbar
+              bind:selectedOutputFormat
+              isPreviewOpen={toggleSeqJsonPreview}
+              outputLanguages={sequenceAdaptation.outputs}
+              outputDisabled={disableCopyAndExport}
+              on:copyOutput={copyOutputFormatToClipboard}
+              on:downloadOutput={downloadOutputFormat}
+              on:togglePreview={toggleSeqJsonEditor}
+            />
           </div>
         </svelte:fragment>
 

@@ -7,12 +7,7 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import type {
-    LibrarySequenceSignature,
-    OutputLanguage,
-    PhoenixContext,
-    UserSequence,
-  } from '@nasa-jpl/aerie-sequence-languages';
+  import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
   import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import type { EditorView } from 'codemirror';
   import { capitalize, startCase } from 'lodash-es';
@@ -1215,9 +1210,7 @@
     onDownloadFile(filePath);
   }
 
-  async function onDownloadOutput(
-    event: CustomEvent<{ content: string; filePath: string; filename: string; outputLanguage: OutputLanguage }>,
-  ) {
+  async function onDownloadOutput(event: CustomEvent<{ content: string; filePath: string; filename: string }>) {
     const { content, filePath, filename } = event.detail;
 
     // Check if downloading output for the active file with unsaved changes
