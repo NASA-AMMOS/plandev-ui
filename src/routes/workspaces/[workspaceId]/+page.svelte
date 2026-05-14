@@ -7,7 +7,12 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import type { LibrarySequenceSignature, PhoenixContext, UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+  import type {
+    CommandInfoMapper,
+    LibrarySequenceSignature,
+    PhoenixContext,
+    UserSequence,
+  } from '@nasa-jpl/aerie-sequence-languages';
   import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import type { EditorView } from 'codemirror';
   import { capitalize, startCase } from 'lodash-es';
@@ -92,6 +97,7 @@
     WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
+    WorkspaceFileMetadata,
     WorkspaceTreeMap,
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
@@ -138,13 +144,16 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
-  let activeFileIsSequence: boolean = false;
+  let activeFileIsInputSequence: boolean = false;
   let actionDetailIsDirty: boolean = false;
+  let activeFileMetadata: WorkspaceFileMetadata | null;
+  let activeFileIsSequence: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
+  let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let leftPaneApi: PaneAPI;
   let leftPanelActiveTab: string =
@@ -157,6 +166,7 @@
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
+  let isFileReadOnly: boolean = false;
   let parameterDictionaries: ParameterDictionary[] = [];
   let phoenixContext: PhoenixContext;
   let isWorkspaceLoading: boolean = false;
@@ -172,6 +182,7 @@
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let logLevelLabel: string = 'Default levels';
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
   let workspaceSequences: UserSequence[] = [];

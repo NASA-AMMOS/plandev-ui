@@ -67,6 +67,7 @@
     sequenceOutputUpdate: { filePath: string; output?: string };
   }>();
 
+  let commandFormBuilderGrid: string;
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
