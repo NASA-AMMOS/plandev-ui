@@ -133,24 +133,21 @@ export type PlanSnapshotActivityDB = Omit<ActivityDirectiveDB, 'anchor_validatio
   snapshot_id: number;
 };
 
-export interface ActivityDirectiveSearchResult {
-  applied_preset: AppliedPreset['preset_applied']['name'] | null;
-  arguments: ArgumentsMap;
-  created_at: string;
-  created_by: UserId;
-  directive_id: number;
-  last_modified_at: string;
-  last_modified_by: UserId;
-  name: string;
-  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'>;
-  plan_id: number;
-  source_scheduling_goal_id: number | null;
-  start_offset: string;
-  tags: {
-    tag: TagsInsertInput;
-  }[];
-  type: string;
-}
+// What SEARCH_ACTIVITIES returns per row. Extends the DB shape with the joined
+// `plan` / `source_scheduling_goal` selections and overrides fields whose
+// projected shape differs (`applied_preset` traverses through `preset_applied`,
+// `tags` only selects color/name).
+export type ActivityDirectiveSearchResult = Omit<
+  ActivityDirectiveDB,
+  'applied_preset' | 'last_modified_arguments_at' | 'source_scheduling_goal_invocation_id' | 'tags'
+> & {
+  applied_preset: { preset_applied: Pick<ActivityPreset, 'name'> } | null;
+  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
+    model: { id: number; name: string } | null;
+  };
+  source_scheduling_goal: { id: number; name: string } | null;
+  tags: { tag: TagsInsertInput }[];
+};
 
 export interface ActivitySearchResponse {
   activity_directive: ActivityDirectiveSearchResult[];

@@ -7,16 +7,21 @@ import {
 
 const EMPTY_FILTERS: ActivitySearchFilters = {
   actName: '',
-  actType: '',
+  actType: [],
   args: [],
+  createdAfter: '',
+  createdBefore: '',
   createdBy: '',
   lastModifiedAfter: '',
   lastModifiedBefore: '',
+  lastModifiedBy: '',
   modelId: undefined,
   planName: '',
   planOwner: '',
+  planTag: '',
   preset: '',
   schedulerCreatedOnly: false,
+  schedulingGoalId: '',
   startOffsetMax: '',
   startOffsetMin: '',
   tagValue: '',
@@ -49,10 +54,20 @@ describe('buildSearchActivitiesWhereClauses', () => {
       ]);
     });
 
-    test('Should emit an _eq clause for actType', () => {
-      expect(buildSearchActivitiesWhereClauses(withFilters({ actType: 'GrowBanana' }))).toEqual([
-        { type: { _eq: 'GrowBanana' } },
+    test('Should emit an _in clause for a single actType', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ actType: ['GrowBanana'] }))).toEqual([
+        { type: { _in: ['GrowBanana'] } },
       ]);
+    });
+
+    test('Should emit an _in clause covering every selected actType', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ actType: ['GrowBanana', 'PickBanana'] }))).toEqual([
+        { type: { _in: ['GrowBanana', 'PickBanana'] } },
+      ]);
+    });
+
+    test('Should not emit a type clause when actType is an empty array', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ actType: [] }))).toEqual([]);
     });
 
     test('Should emit a substring _ilike clause for actName', () => {
@@ -112,6 +127,40 @@ describe('buildSearchActivitiesWhereClauses', () => {
         { start_offset: { _lte: '02:00:00' } },
       ]);
     });
+
+    test('Should emit an _eq clause for lastModifiedBy', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ lastModifiedBy: 'alice' }))).toEqual([
+        { last_modified_by: { _eq: 'alice' } },
+      ]);
+    });
+
+    test('Should emit a nested clause for planTag', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ planTag: 'staging' }))).toEqual([
+        { plan: { tags: { tag: { name: { _eq: 'staging' } } } } },
+      ]);
+    });
+
+    test('Should emit a source_scheduling_goal_id _eq clause for schedulingGoalId', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ schedulingGoalId: '42' }))).toEqual([
+        { source_scheduling_goal_id: { _eq: 42 } },
+      ]);
+    });
+  });
+
+  describe('createdAt date range', () => {
+    test('Should convert createdAfter to an ISO string in a _gte clause', () => {
+      const clauses = buildSearchActivitiesWhereClauses(withFilters({ createdAfter: '2026-01-15T08:30' }));
+      expect(clauses).toHaveLength(1);
+      const clause = clauses[0] as { created_at: { _gte: string } };
+      expect(clause.created_at._gte).toEqual(new Date('2026-01-15T08:30').toISOString());
+    });
+
+    test('Should convert createdBefore to an ISO string in a _lte clause', () => {
+      const clauses = buildSearchActivitiesWhereClauses(withFilters({ createdBefore: '2026-02-01T00:00' }));
+      expect(clauses).toHaveLength(1);
+      const clause = clauses[0] as { created_at: { _lte: string } };
+      expect(clause.created_at._lte).toEqual(new Date('2026-02-01T00:00').toISOString());
+    });
   });
 
   describe('lastModified date range', () => {
@@ -147,24 +196,75 @@ describe('buildSearchActivitiesWhereClauses', () => {
       ]);
     });
 
-    test('Should emit a _contains clause for a string value', () => {
+    test('Should emit an _or clause covering both scalar and singleton-array shapes for an unparseable string value', () => {
       expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['region', 'arctic']] }))).toEqual([
-        { arguments: { _contains: { region: 'arctic' } } },
-      ]);
-    });
-
-    test('Should emit an _or clause covering both typed and stringified forms for numeric values', () => {
-      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['quantity', 5]] }))).toEqual([
         {
-          _or: [{ arguments: { _contains: { quantity: 5 } } }, { arguments: { _contains: { quantity: '5' } } }],
+          _or: [
+            { arguments: { _contains: { region: 'arctic' } } },
+            { arguments: { _contains: { region: ['arctic'] } } },
+          ],
         },
       ]);
     });
 
-    test('Should emit an _or clause covering both typed and stringified forms for boolean values', () => {
+    test('Should parse a numeric string and emit _or covering both scalar and singleton-array shapes', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['quantity', '5']] }))).toEqual([
+        {
+          _or: [{ arguments: { _contains: { quantity: 5 } } }, { arguments: { _contains: { quantity: [5] } } }],
+        },
+      ]);
+    });
+
+    test('Should parse a boolean string and emit _or covering both scalar and singleton-array shapes', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['enabled', 'true']] }))).toEqual([
+        {
+          _or: [{ arguments: { _contains: { enabled: true } } }, { arguments: { _contains: { enabled: [true] } } }],
+        },
+      ]);
+    });
+
+    test('Should parse a null string and emit _or covering both scalar and singleton-array shapes', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['region', 'null']] }))).toEqual([
+        {
+          _or: [{ arguments: { _contains: { region: null } } }, { arguments: { _contains: { region: [null] } } }],
+        },
+      ]);
+    });
+
+    test('Should parse a JSON-array string and emit a single _contains clause (no _or wrapping)', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['xyz', '[1,2,5]']] }))).toEqual([
+        { arguments: { _contains: { xyz: [1, 2, 5] } } },
+      ]);
+    });
+
+    test('Should parse a JSON-object string and emit a single _contains clause (no _or wrapping)', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['xyz', '{"a":1}']] }))).toEqual([
+        { arguments: { _contains: { xyz: { a: 1 } } } },
+      ]);
+    });
+
+    test('Should emit an _or covering scalar, stringified, and singleton-array shapes for numeric values', () => {
+      expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['quantity', 5]] }))).toEqual([
+        {
+          _or: [
+            { arguments: { _contains: { quantity: 5 } } },
+            { arguments: { _contains: { quantity: '5' } } },
+            { arguments: { _contains: { quantity: [5] } } },
+            { arguments: { _contains: { quantity: ['5'] } } },
+          ],
+        },
+      ]);
+    });
+
+    test('Should emit an _or covering scalar, stringified, and singleton-array shapes for boolean values', () => {
       expect(buildSearchActivitiesWhereClauses(withFilters({ args: [['enabled', true]] }))).toEqual([
         {
-          _or: [{ arguments: { _contains: { enabled: true } } }, { arguments: { _contains: { enabled: 'true' } } }],
+          _or: [
+            { arguments: { _contains: { enabled: true } } },
+            { arguments: { _contains: { enabled: 'true' } } },
+            { arguments: { _contains: { enabled: [true] } } },
+            { arguments: { _contains: { enabled: ['true'] } } },
+          ],
         },
       ]);
     });
@@ -180,9 +280,19 @@ describe('buildSearchActivitiesWhereClauses', () => {
         }),
       );
       expect(clauses).toHaveLength(2);
-      expect(clauses[0]).toEqual({ arguments: { _contains: { region: 'arctic' } } });
+      expect(clauses[0]).toEqual({
+        _or: [
+          { arguments: { _contains: { region: 'arctic' } } },
+          { arguments: { _contains: { region: ['arctic'] } } },
+        ],
+      });
       expect(clauses[1]).toEqual({
-        _or: [{ arguments: { _contains: { quantity: 3 } } }, { arguments: { _contains: { quantity: '3' } } }],
+        _or: [
+          { arguments: { _contains: { quantity: 3 } } },
+          { arguments: { _contains: { quantity: '3' } } },
+          { arguments: { _contains: { quantity: [3] } } },
+          { arguments: { _contains: { quantity: ['3'] } } },
+        ],
       });
     });
   });
@@ -191,31 +301,35 @@ describe('buildSearchActivitiesWhereClauses', () => {
     test('Should aggregate every populated filter into the result array', () => {
       const clauses = buildSearchActivitiesWhereClauses({
         actName: 'Foo',
-        actType: 'GrowBanana',
+        actType: ['GrowBanana'],
         args: [['quantity', 5]],
+        createdAfter: '2026-01-01T00:00',
+        createdBefore: '2026-06-30T23:59',
         createdBy: 'alice',
         lastModifiedAfter: '2026-01-01T00:00',
         lastModifiedBefore: '2026-12-31T23:59',
+        lastModifiedBy: 'bob',
         modelId: 3,
         planName: 'Cruise',
         planOwner: 'bob',
+        planTag: 'flight-ready',
         preset: 'HighRes',
         schedulerCreatedOnly: true,
+        schedulingGoalId: '42',
         startOffsetMax: '07:00:00',
         startOffsetMin: '01:00:00',
         tagValue: 'critical',
       });
 
-      // 13 top-level filters + 1 args clause
-      expect(clauses).toHaveLength(14);
+      // 18 top-level filters + 1 args clause
+      expect(clauses).toHaveLength(19);
 
       const expected: ActivitySearchClause[] = [
         { plan: { model_id: { _eq: 3 } } },
-        { type: { _eq: 'GrowBanana' } },
+        { type: { _in: ['GrowBanana'] } },
         { name: { _ilike: '%Foo%' } },
         { tags: { tag: { name: { _eq: 'critical' } } } },
         { applied_preset: { preset_applied: { name: { _eq: 'HighRes' } } } },
-        { created_by: { _eq: 'alice' } },
       ];
       for (let i = 0; i < expected.length; i++) {
         expect(clauses[i]).toEqual(expected[i]);

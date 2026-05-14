@@ -7,6 +7,7 @@
   import { Button, Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, CircleQuestionMark } from 'lucide-svelte';
   import { models } from '../../stores/model';
+  import { schedulingGoalResponses } from '../../stores/scheduling';
   import {
     hasSearched,
     isSearching,
@@ -22,7 +23,7 @@
   import { users } from '../../stores/user';
   import type { ActivityPreset } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { DropdownOptions } from '../../types/dropdown';
+  import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { ModelSlim } from '../../types/model';
   import type { GqlSubscribable } from '../../types/subscribable';
   import effects from '../../utilities/effects';
@@ -37,16 +38,21 @@
   // Consolidated filter state
   const DEFAULT_FILTERS = {
     actName: '',
-    actType: '',
+    actType: [] as string[],
     argName: '',
     argValue: '',
+    createdAfter: '',
+    createdBefore: '',
     createdBy: '',
     lastModifiedAfter: '',
     lastModifiedBefore: '',
+    lastModifiedBy: '',
     planName: '',
     planOwner: '',
+    planTag: '',
     preset: '',
     schedulerCreatedOnly: false,
+    schedulingGoalId: '',
     startOffsetMax: '',
     startOffsetMin: '',
     tagValue: '',
@@ -73,10 +79,13 @@
   const usersError = users.error;
   const presetsLoading = activityPresets.loading;
   const presetsError = activityPresets.error;
+  const goalsLoading = schedulingGoalResponses.loading;
+  const goalsError = schedulingGoalResponses.error;
 
   let argNameOptions: DropdownOptions = [];
   let selectedModelId: number | undefined;
   let filters = { ...DEFAULT_FILTERS };
+  let goalOptions: DropdownOptions = [];
   let initialized = false;
   let orderedModels: ModelSlim[] = [];
   let modelOptions: DropdownOptions = [];
@@ -131,7 +140,7 @@
     const paramNames = new Set<string>();
     for (const model of sourceModels) {
       for (const type of model?.activity_types ?? []) {
-        if (filters.actType && type.name !== filters.actType) {
+        if (filters.actType.length > 0 && !filters.actType.includes(type.name)) {
           continue;
         }
         for (const paramName of Object.keys(type.parameters ?? {})) {
@@ -145,12 +154,20 @@
     ];
   }
 
+  $: goalOptions = [
+    { display: '', value: '' },
+    ...[...$schedulingGoalResponses]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() })),
+  ];
+
   // Initialize from URL on first page load (browser only — SSR can't navigate)
   $: if (browser && $page.url) {
     initFromUrl();
   }
 
-  $: subscriptionError = $modelsError || $tagsError || $usersError || $presetsError || '';
+  $: subscriptionError =
+    $modelsError || $tagsError || $usersError || $presetsError || $goalsError || '';
 
   // Keep URL in sync with current filter form state after init
   $: if (browser && initialized) {
@@ -161,6 +178,16 @@
 
   function getParamName(key: FilterKey): string {
     return URL_PARAM_OVERRIDES[key] ?? key;
+  }
+
+  function onActTypeChange(values: SelectedDropdownOptionValue[]) {
+    filters = {
+      ...filters,
+      actType: values
+        .filter((v): v is string | number => v !== null)
+        .map(v => String(v))
+        .filter(s => s.length > 0),
+    };
   }
 
   function initFromUrl() {
@@ -180,7 +207,16 @@
     for (const key of Object.keys(DEFAULT_FILTERS) as FilterKey[]) {
       const val = params.get(getParamName(key));
       if (val !== null) {
-        updates[key] = (typeof DEFAULT_FILTERS[key] === 'boolean' ? val === 'true' : val) as never;
+        const defaultVal = DEFAULT_FILTERS[key];
+        let parsed: unknown;
+        if (typeof defaultVal === 'boolean') {
+          parsed = val === 'true';
+        } else if (Array.isArray(defaultVal)) {
+          parsed = val.split(',').filter(s => s.length > 0);
+        } else {
+          parsed = val;
+        }
+        updates[key] = parsed as never;
       }
     }
     if (Object.keys(updates).length) {
@@ -199,7 +235,11 @@
     }
     for (const key of Object.keys(filters) as FilterKey[]) {
       const val = filters[key];
-      if (val !== '' && val !== false) {
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params.set(getParamName(key), val.join(','));
+        }
+      } else if (val !== '' && val !== false) {
         params.set(getParamName(key), val.toString());
       }
     }
@@ -236,14 +276,19 @@
           actName: filters.actName,
           actType: filters.actType,
           args: filterArgs,
+          createdAfter: filters.createdAfter,
+          createdBefore: filters.createdBefore,
           createdBy: filters.createdBy,
           lastModifiedAfter: filters.lastModifiedAfter,
           lastModifiedBefore: filters.lastModifiedBefore,
+          lastModifiedBy: filters.lastModifiedBy,
           modelId: selectedModelId,
           planName: filters.planName,
           planOwner: filters.planOwner,
+          planTag: filters.planTag,
           preset: filters.preset,
           schedulerCreatedOnly: filters.schedulerCreatedOnly,
+          schedulingGoalId: filters.schedulingGoalId,
           startOffsetMax: filters.startOffsetMax,
           startOffsetMin: filters.startOffsetMin,
           tagValue: filters.tagValue,
@@ -317,10 +362,11 @@
         <div class="flex flex-col gap-1">
           <Label size="sm">Activity Type</Label>
           <SearchableDropdown
+            allowMultiple={true}
             options={typeOptions}
             loading={$modelsLoading}
-            on:change={e => (filters = { ...filters, actType: e.detail[0]?.toString() ?? '' })}
-            selectedOptionValues={[filters.actType]}
+            on:change={e => onActTypeChange(e.detail)}
+            selectedOptionValues={filters.actType}
           >
             <ChevronDown slot="icon" />
           </SearchableDropdown>
@@ -352,7 +398,7 @@
           <Label size="sm" for="argument-value-input" class="flex items-center gap-1">
             Argument Value
             <Tooltip
-              content="Defaults defined by the mission model are not applied to search filters, so you may need to specify argument values explicitly even if they were not provided when the activity was created."
+              content="Default argument values defined by the mission model are not persisted to activities and cannot be searched."
               class="max-h-none max-w-md whitespace-normal [&>span]:whitespace-normal"
             >
               <span class="ml-1 cursor-help text-muted-foreground"> <CircleQuestionMark size={14} /></span>
@@ -401,6 +447,39 @@
           >
             <ChevronDown slot="icon" />
           </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Last Modified By</Label>
+          <SearchableDropdown
+            options={userOptions}
+            loading={$usersLoading}
+            on:change={e => (filters = { ...filters, lastModifiedBy: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.lastModifiedBy]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="created-after-input">Created After</Label>
+          <InputStellar
+            bind:value={filters.createdAfter}
+            id="created-after-input"
+            class="w-full"
+            sizeVariant="xs"
+            type="datetime-local"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <Label size="sm" for="created-before-input">Created Before</Label>
+          <InputStellar
+            bind:value={filters.createdBefore}
+            id="created-before-input"
+            class="w-full"
+            sizeVariant="xs"
+            type="datetime-local"
+          />
         </div>
 
         <div class="flex flex-col gap-1">
@@ -465,6 +544,30 @@
             loading={$usersLoading}
             on:change={e => (filters = { ...filters, planOwner: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.planOwner]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Plan Tag</Label>
+          <SearchableDropdown
+            options={tagOptions}
+            loading={$tagsLoading}
+            on:change={e => (filters = { ...filters, planTag: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.planTag]}
+          >
+            <ChevronDown slot="icon" />
+          </SearchableDropdown>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <Label size="sm">Scheduling Goal</Label>
+          <SearchableDropdown
+            options={goalOptions}
+            loading={$goalsLoading}
+            on:change={e => (filters = { ...filters, schedulingGoalId: e.detail[0]?.toString() ?? '' })}
+            selectedOptionValues={[filters.schedulingGoalId]}
           >
             <ChevronDown slot="icon" />
           </SearchableDropdown>

@@ -38,9 +38,30 @@ export class Search {
     await this.clearFiltersButton.click();
   }
 
+  /**
+   * Click the per-row "Open in plan" icon button on the row whose Activity Name
+   * cell matches `name`. The button is rendered in the pinned-left container,
+   * not the center container, so we use the grid's row-index attribute to
+   * cross-reference the right row across containers.
+   */
+  async clickOpenInPlanForRow(name: string): Promise<void> {
+    const centerRow = this.resultsRows.filter({ hasText: name }).first();
+    const rowIndex = await centerRow.getAttribute('row-index');
+    if (rowIndex === null) {
+      throw new Error(`Could not resolve row-index for row containing "${name}"`);
+    }
+    const pinnedRow = this.resultsGrid.locator(`.ag-pinned-left-cols-container .ag-row[row-index="${rowIndex}"]`);
+    await pinnedRow.getByRole('button', { name: 'Open in plan' }).click();
+  }
+
   /** Click the row whose Activity Name cell matches `name`. */
   async clickRow(name: string): Promise<void> {
     await this.resultsRows.filter({ hasText: name }).first().click();
+  }
+
+  /** AG Grid column header by visible header name. Use to assert presence or to sort. */
+  columnHeader(headerName: string): Locator {
+    return this.resultsGrid.locator('.ag-header-cell', { hasText: headerName }).first();
   }
 
   /** Returns the count of currently rendered result rows. */

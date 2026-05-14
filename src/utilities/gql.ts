@@ -2060,6 +2060,8 @@ const gql = {
       $orderBy: [activity_directive_order_by!]
     ) {
       ${Queries.ACTIVITY_DIRECTIVES}(where: $searchFilter, order_by: $orderBy, limit: $limit, offset: $offset) {
+        anchor_id
+        anchored_to_start
         applied_preset {
           preset_applied {
             name
@@ -2068,14 +2070,19 @@ const gql = {
         arguments
         created_at
         created_by
-        directive_id: id
+        id
         last_modified_at
         last_modified_by
+        metadata
         name
         plan_id
         plan {
-          name
+          model: mission_model {
+            id
+            name
+          }
           model_id
+          name
           owner
           start_time
           tags {
@@ -2084,6 +2091,10 @@ const gql = {
               name
             }
           }
+        }
+        source_scheduling_goal {
+          id
+          name
         }
         source_scheduling_goal_id
         start_offset

@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button } from '@nasa-jpl/stellar-svelte';
-  import type { ColumnState } from 'ag-grid-community';
+  import { Button, ContextMenu } from '@nasa-jpl/stellar-svelte';
+  import type { ColDef, ColumnPinnedType, ColumnState, ICellRendererParams, SortDirection } from 'ag-grid-community';
   import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-svelte';
   import { SEARCH_RESULTS_COLUMN_STATE_KEY } from '../../constants/localStorage';
   import {
@@ -14,24 +14,26 @@
     searchRunId,
     searchTotalCount,
   } from '../../stores/search';
-  import type { ActivityDirectiveSearchResult } from '../../types/activity';
+  import type { ActivityDirective, ActivityDirectiveSearchResult } from '../../types/activity';
   import type { User } from '../../types/app';
+  import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import { getLocalStorageItem } from '../../utilities/localStorage';
-  import { getShortISOForDate } from '../../utilities/time';
+  import { getDoyTime, getShortISOForDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import ActivityTableMenu from '../activity/ActivityTableMenu.svelte';
+  import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../ui/DataGrid/DataGridTags';
-  import SingleActionDataGrid from '../ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import OpenInPlanCell from './OpenInPlanCell.svelte';
 
   export let user: User | null;
   export let activities: ActivityDirectiveSearchResult[] | null;
   export let onPageChange: (page: number) => void = () => {};
   export let onSortChange: () => void = () => {};
 
-  let resultsGrid: SingleActionDataGrid<ActivityDirectiveSearchResult> | undefined;
-  $: dataGrid = resultsGrid?.dataGrid as DataGrid<ActivityDirectiveSearchResult> | undefined;
+  let dataGrid: DataGrid<ActivityDirectiveSearchResult> | undefined;
+  let selectedItemIds: number[] = [];
 
   const formatTimestamp = (params: { value: string }) =>
     params.value ? getShortISOForDate(new Date(params.value)) : '';
@@ -44,7 +46,38 @@
     return JSON.stringify(args);
   };
 
-  const columnDefs = [
+  function openActivityCellRenderer(params: ICellRendererParams) {
+    const container = document.createElement('div');
+    container.className = 'h-full w-full';
+    new OpenInPlanCell({
+      props: {
+        onClick: () => {
+          if (params.data) {
+            window.open(getUrlForActivity(params.data), '_blank');
+          }
+        },
+      },
+      target: container,
+    });
+    return container;
+  }
+
+  // Column order groups: action → identity → plan/model context → tagging → timing → audit trail → provenance.
+  const columnDefs: ColDef[] = [
+    {
+      cellClass: 'p-0',
+      cellRenderer: openActivityCellRenderer,
+      colId: 'open_in_plan',
+      headerName: '',
+      hide: false,
+      maxWidth: 44,
+      minWidth: 44,
+      pinned: 'left' as ColumnPinnedType,
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      width: 44,
+    },
     {
       colId: 'name',
       field: 'name',
@@ -60,6 +93,15 @@
       headerName: 'Activity Type',
       hide: false,
       minWidth: 120,
+      resizable: true,
+      sortable: true,
+    },
+    {
+      colId: 'id',
+      field: 'id',
+      headerName: 'Activity ID',
+      hide: true,
+      minWidth: 80,
       resizable: true,
       sortable: true,
     },
@@ -83,6 +125,46 @@
       width: 100,
     },
     {
+      colId: 'plan_id',
+      field: 'plan_id',
+      headerName: 'Plan ID',
+      hide: true,
+      minWidth: 80,
+      resizable: true,
+      sortable: true,
+    },
+    {
+      colId: 'plan.model.name',
+      headerName: 'Model',
+      hide: false,
+      minWidth: 120,
+      resizable: true,
+      sortable: false,
+      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) => data?.plan.model?.name ?? '',
+    },
+    {
+      colId: 'plan.model.id',
+      headerName: 'Model ID',
+      hide: false,
+      minWidth: 80,
+      resizable: true,
+      sortable: false,
+      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) => data?.plan.model?.id ?? '',
+    },
+    {
+      autoHeight: true,
+      cellRenderer: tagsCellRenderer,
+      colId: 'tags',
+      field: 'tags',
+      filterValueGetter: tagsFilterValueGetter,
+      headerName: 'Tags',
+      hide: false,
+      minWidth: 120,
+      resizable: true,
+      sortable: false,
+      width: 200,
+    },
+    {
       colId: 'applied_preset.preset_applied.name',
       field: 'applied_preset.preset_applied.name',
       headerName: 'Applied Preset',
@@ -101,17 +183,14 @@
       sortable: true,
     },
     {
-      autoHeight: true,
-      cellRenderer: tagsCellRenderer,
-      colId: 'tags',
-      field: 'tags',
-      filterValueGetter: tagsFilterValueGetter,
-      headerName: 'Tags',
+      colId: 'absolute_start_time',
+      headerName: 'Absolute Start Time',
       hide: false,
-      minWidth: 120,
+      minWidth: 180,
       resizable: true,
       sortable: false,
-      width: 200,
+      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) =>
+        data ? getDoyTime(new Date(getUnixEpochTimeFromInterval(data.plan.start_time, data.start_offset))) : '',
     },
     {
       colId: 'arguments',
@@ -144,17 +223,6 @@
       valueFormatter: formatTimestamp,
     },
     {
-      colId: 'last_modified_at',
-      field: 'last_modified_at',
-      headerName: 'Last Modified',
-      hide: false,
-      minWidth: 140,
-      resizable: true,
-      sort: 'desc' as const,
-      sortable: true,
-      valueFormatter: formatTimestamp,
-    },
-    {
       colId: 'last_modified_by',
       field: 'last_modified_by',
       headerName: 'Modified By',
@@ -164,29 +232,31 @@
       sortable: true,
     },
     {
+      colId: 'last_modified_at',
+      field: 'last_modified_at',
+      headerName: 'Last Modified',
+      hide: false,
+      minWidth: 160,
+      resizable: true,
+      sort: 'desc' as SortDirection,
+      sortable: true,
+      valueFormatter: formatTimestamp,
+    },
+    {
+      colId: 'source_scheduling_goal.name',
+      headerName: 'Scheduling Goal',
+      hide: false,
+      minWidth: 140,
+      resizable: true,
+      sortable: false,
+      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) => data?.source_scheduling_goal?.name ?? '',
+    },
+    {
       colId: 'source_scheduling_goal_id',
       field: 'source_scheduling_goal_id',
       headerName: 'Sched. Goal ID',
-      hide: false,
+      hide: true,
       minWidth: 100,
-      resizable: true,
-      sortable: true,
-    },
-    {
-      colId: 'plan_id',
-      field: 'plan_id',
-      headerName: 'Plan ID',
-      hide: true,
-      minWidth: 80,
-      resizable: true,
-      sortable: true,
-    },
-    {
-      colId: 'directive_id',
-      field: 'directive_id',
-      headerName: 'Activity ID',
-      hide: true,
-      minWidth: 80,
       resizable: true,
       sortable: true,
     },
@@ -194,6 +264,9 @@
     // and a no-op local comparator avoids the flash where the visible page would briefly
     // re-order with the local rows before the server response replaces them.
   ].map(col => ('sortable' in col && col.sortable ? { ...col, comparator: () => 0 } : col));
+
+  // The Open-in-plan action column is structural — not a user-hideable data column.
+  const pickerColumnDefs = columnDefs.filter(col => col.colId !== 'open_in_plan');
 
   const savedColumnStates = getLocalStorageItem<ColumnState[]>(SEARCH_RESULTS_COLUMN_STATE_KEY) ?? [];
   let columnStates: ColumnState[] = savedColumnStates;
@@ -218,13 +291,52 @@
   }
 
   function getUrlForActivity(activity: ActivityDirectiveSearchResult): string {
-    return `/plans/${activity.plan_id}?activityId=${activity.directive_id}`;
+    return `/plans/${activity.plan_id}?activityId=${activity.id}`;
   }
 
-  function onRowClicked(event: CustomEvent) {
-    const activity: ActivityDirectiveSearchResult = event.detail.data;
-    const url = getUrlForActivity(activity);
-    window.open(url, '_blank');
+  function getSelectedRows(): ActivityDirectiveSearchResult[] {
+    if (!activities) {
+      return [];
+    }
+    const idSet = new Set(selectedItemIds);
+    return activities.filter(a => idSet.has(a.id));
+  }
+
+  function openSelectedInPlan() {
+    const rows = getSelectedRows();
+    if (rows.length === 1) {
+      window.open(getUrlForActivity(rows[0]), '_blank');
+    }
+  }
+
+  function copySelectedToClipboard() {
+    const rows = getSelectedRows();
+    if (rows.length === 0) {
+      return;
+    }
+    // copyActivityDirectivesToClipboard only reads a narrow subset of ActivityDirective fields
+    // (anchor_id, anchored_to_start, arguments, id, name, start_offset, start_time_ms, tags, type).
+    const mapped = rows.map(row => ({
+      anchor_id: row.anchor_id,
+      anchored_to_start: row.anchored_to_start,
+      arguments: row.arguments,
+      created_at: row.created_at,
+      created_by: row.created_by ?? '',
+      id: row.id,
+      last_modified_arguments_at: row.last_modified_at,
+      last_modified_at: row.last_modified_at,
+      last_modified_by: row.last_modified_by,
+      metadata: row.metadata,
+      name: row.name,
+      plan_id: row.plan_id,
+      source_scheduling_goal_id: row.source_scheduling_goal_id,
+      source_scheduling_goal_invocation_id: null,
+      start_offset: row.start_offset,
+      start_time_ms: getUnixEpochTimeFromInterval(row.plan.start_time, row.start_offset),
+      tags: row.tags as ActivityDirective['tags'],
+      type: row.type,
+    })) as ActivityDirective[];
+    copyActivityDirectivesToClipboard(null, mapped);
   }
 
   function fieldToOrderBy(field: string, direction: string): Record<string, unknown> {
@@ -269,7 +381,8 @@
 
   function onShowHideAllColumns({ detail: { hide } }: CustomEvent<{ hide: boolean }>) {
     const current = dataGrid?.getColumnState() ?? [];
-    columnStates = current.map(state => ({ ...state, hide }));
+    // The open-in-plan action column is structural and must stay visible regardless of "hide all".
+    columnStates = current.map(state => (state.colId === 'open_in_plan' ? state : { ...state, hide }));
   }
 
   function onResetColumnsFromMenu() {
@@ -296,7 +409,7 @@
           </span>
         {/if}
         <ActivityTableMenu
-          {columnDefs}
+          columnDefs={pickerColumnDefs}
           {columnStates}
           on:columns-changed={onColumnsChanged}
           on:columns-reset={onResetColumnsFromMenu}
@@ -314,22 +427,40 @@
             <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
           </div>
         {/if}
-        <SingleActionDataGrid
-          bind:this={resultsGrid}
-          idKey="directive_id"
+        <BulkActionDataGrid
+          bind:dataGrid
+          bind:selectedItemIds
+          idKey="id"
           {columnDefs}
+          columnShiftResize
           {columnStates}
           persistColumnStateKey={SEARCH_RESULTS_COLUMN_STATE_KEY}
           items={activities ?? []}
           {user}
-          itemDisplayText="Search Results"
-          on:rowClicked={onRowClicked}
-          on:sortChanged={onGridSortChanged}
-          on:columnStateChange={onGridColumnStateChange}
           hasDeletePermission={false}
           loading={$hasSearched && activities === null}
           noRowsOverlayText="No Results Found"
-        />
+          pluralItemDisplayText="Activities"
+          showCopyMenu={false}
+          showDeleteMenu={false}
+          singleItemDisplayText="Activity"
+          on:columnStateChange={onGridColumnStateChange}
+          on:rowDoubleClicked={openSelectedInPlan}
+          on:sortChanged={onGridSortChanged}
+        >
+          <svelte:fragment slot="context-menu">
+            {#if selectedItemIds.length === 1}
+              <ContextMenu.Item size="sm" on:click={openSelectedInPlan}>Open in Plan</ContextMenu.Item>
+            {/if}
+            {#if selectedItemIds.length >= 1}
+              <ContextMenu.Item size="sm" on:click={copySelectedToClipboard}>
+                Copy {selectedItemIds.length}
+                {selectedItemIds.length > 1 ? 'Activities' : 'Activity'}
+              </ContextMenu.Item>
+              <ContextMenu.Separator />
+            {/if}
+          </svelte:fragment>
+        </BulkActionDataGrid>
       </div>
 
       {#if $hasSearched && $searchTotalCount > PAGE_SIZE}

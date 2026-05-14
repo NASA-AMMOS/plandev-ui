@@ -235,7 +235,7 @@ export function transformPlanMergeNonConflictingActivities(
   }));
 }
 
-export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: ActivityDirective[]) {
+export function copyActivityDirectivesToClipboard(sourcePlan: Plan | null, activities: ActivityDirective[]) {
   const copiedActivityIds = new Set(activities.map(a => a.id));
   const clippedActivities = activities.map(activity => {
     const anchorInSelection = activity.anchor_id !== null && copiedActivityIds.has(activity.anchor_id);
@@ -254,7 +254,7 @@ export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: 
 
   const clipboard = {
     activities: clippedActivities,
-    sourcePlan: sourcePlan.id,
+    sourcePlan: sourcePlan?.id ?? null,
     type: `aerie_activity_directives`,
   };
 
@@ -308,8 +308,11 @@ export async function getActivityDirectivesToPaste(
       const planStart = getUnixEpochTime(destinationPlan.start_time_doy);
       const planEnd = getUnixEpochTime(destinationPlan.end_time_doy);
       const earliestStart = Math.min(...starts);
-      if (earliestStart < planStart || earliestStart > planEnd) {
-        pasteStartingAtTime = planStart; //if out of bounds, paste starting at the start of the plan.
+      // Only fall back to plan start when the caller didn't pick a paste time. A right-click → Paste
+      // at time X must always honor X — cross-plan pastes (e.g. from search results) routinely have
+      // source absolute times far outside the target plan's window.
+      if (pasteStartingAtTime === undefined && (earliestStart < planStart || earliestStart > planEnd)) {
+        pasteStartingAtTime = planStart;
       }
 
       //transpose in time if we're given a time or if it was out of bounds

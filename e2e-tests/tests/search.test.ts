@@ -169,18 +169,59 @@ test.describe.serial('Activity Search', () => {
     await expect(search.resultsRows).toHaveCount(2);
   });
 
-  test('Should open the activity in a new tab when a result row is clicked', async () => {
+  test('Should open the activity in a new tab when the per-row "Open in plan" button is clicked', async () => {
     await search.goto();
     await search.planNameInput.fill(setup.planName);
     await search.activityNameInput.fill(ACTIVITY_NAMES.pick);
     await search.submitAndWait();
     await expect(search.resultsRows).toHaveCount(1);
 
-    const [popup] = await Promise.all([search.page.waitForEvent('popup'), search.clickRow(ACTIVITY_NAMES.pick)]);
+    const [popup] = await Promise.all([
+      search.page.waitForEvent('popup'),
+      search.clickOpenInPlanForRow(ACTIVITY_NAMES.pick),
+    ]);
 
     await popup.waitForLoadState('domcontentloaded');
     expect(popup.url()).toContain(`/plans/${setup.planId}`);
     expect(popup.url()).toContain('activityId=');
     await popup.close();
+  });
+
+  test('Should render Model, Model ID, and Absolute Start Time columns by default', async () => {
+    await search.goto();
+    await search.planNameInput.fill(setup.planName);
+    await search.submitAndWait();
+
+    await expect(search.columnHeader('Model')).toBeVisible();
+    await expect(search.columnHeader('Model ID')).toBeVisible();
+    await expect(search.columnHeader('Absolute Start Time')).toBeVisible();
+  });
+
+  test('Should filter by union of activity types via deep-link multi-select', async () => {
+    // Multi-type filter is array-valued and serialized comma-joined into the URL.
+    // Use the deep-link path to exercise the _in clause without driving the multi-select dropdown UI.
+    await search.gotoWithParams({
+      actType: 'GrowBanana,PickBanana',
+      planName: setup.planName,
+    });
+    await expect(search.resultsPanel).toHaveAttribute('data-search-run-id', /^[1-9]\d*$/);
+
+    await expect(search.resultsRows).toHaveCount(3);
+    await expect(search.resultsGrid.getByText(ACTIVITY_NAMES.grow1, { exact: true })).toBeVisible();
+    await expect(search.resultsGrid.getByText(ACTIVITY_NAMES.grow2, { exact: true })).toBeVisible();
+    await expect(search.resultsGrid.getByText(ACTIVITY_NAMES.pick, { exact: true })).toBeVisible();
+    await expect(search.resultsGrid.getByText(ACTIVITY_NAMES.bake, { exact: true })).toBeHidden();
+  });
+
+  test('Should filter by argument value when typed as a JSON array (subset containment)', async () => {
+    await search.goto();
+    await search.planNameInput.fill(setup.planName);
+    await search.argumentValueInput.fill('[5]');
+    await search.submitAndWait();
+
+    // Type `[5]` would match an arg whose value is a superset like `[1, 2, 5]`.
+    // No activity in this test plan has an array-valued arg, so this should
+    // return zero rows — the assertion is that the query doesn't error.
+    await expect(search.noResultsOverlay).toBeVisible();
   });
 });

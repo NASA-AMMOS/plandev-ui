@@ -258,17 +258,18 @@ This has been seen to result in unintended and often glitchy behavior, which oft
    * Manually manipulate the old and newly selected row classes instead of invoking `redrawRows`
    * in order to correctly mark what the current selected row is. Calling `redrawRows` caused cellrenders to
    * lose their current state and be reinitialized. `refreshCells` is not enough to cause ag-grid to recompute
-   * all the row styles
+   * all the row styles.
+   *
+   * AG Grid renders each row in both the center and the pinned-left/right containers, so we must update every
+   * matching element — querySelector only catches the first and leaves the pinned copies with stale classes.
    */
   $: {
-    const previousSelectedRow = gridDiv?.querySelector(`[row-id="${previousSelectedRowId}"]`);
-    if (previousSelectedRow != null) {
-      previousSelectedRow.classList.remove(CURRENT_SELECTED_ROW_CLASS);
-    }
-    const currentSelectedRow = gridDiv?.querySelector(`[row-id="${currentSelectedRowId}"]`);
-    if (currentSelectedRow != null) {
-      currentSelectedRow.classList.add(CURRENT_SELECTED_ROW_CLASS);
-    }
+    gridDiv
+      ?.querySelectorAll(`[row-id="${previousSelectedRowId}"]`)
+      .forEach(row => row.classList.remove(CURRENT_SELECTED_ROW_CLASS));
+    gridDiv
+      ?.querySelectorAll(`[row-id="${currentSelectedRowId}"]`)
+      .forEach(row => row.classList.add(CURRENT_SELECTED_ROW_CLASS));
 
     previousSelectedRowId = currentSelectedRowId;
   }
