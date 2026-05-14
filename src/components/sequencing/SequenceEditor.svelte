@@ -25,7 +25,7 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { replaceFileExtension } from '../../utilities/workspaces';
+  import { doesFilenameMatchExtension, replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
@@ -151,7 +151,8 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = sequenceAdaptation.outputs.length > 0;
+    const isInputFile = doesFilenameMatchExtension(sequenceAdaptation.input.fileExtension, sequenceName);
+    showOutputs = isInputFile && sequenceAdaptation.outputs.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
