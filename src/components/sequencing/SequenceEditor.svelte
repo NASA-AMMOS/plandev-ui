@@ -41,6 +41,7 @@
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
   export let isLoading: boolean = false;
+  export let isInputFile: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceAdaptation: PhoenixAdaptation;
@@ -92,12 +93,23 @@
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
-  $: if (phoenixContext && sequenceAdaptation.input.getEditorExtension) {
+  // Only use input extensions if the sequence file matches the input file extensions
+  $: if (phoenixContext && isInputFile && sequenceAdaptation.input.getEditorExtension) {
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
+  } else if (sequenceAdaptation.outputs.length > 0) {
+    const matchingOutputLanguage = sequenceAdaptation.outputs.find(output =>
+      doesFilenameMatchExtension(output.fileExtension, sequenceName),
+    );
+    inputEditorExtension = matchingOutputLanguage?.getEditorExtension?.(phoenixContext, phoenixResources) ?? [];
+  } else {
+    inputEditorExtension = [];
   }
 
-  $: if (sequenceAdaptation.outputs.length > 0) {
+  // Only use output extensions if the sequence file is an input file
+  $: if (isInputFile && sequenceAdaptation.outputs.length > 0) {
     selectedOutputFormat = sequenceAdaptation.outputs[0];
+  } else {
+    selectedOutputFormat = undefined;
   }
 
   $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
@@ -151,7 +163,6 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    const isInputFile = doesFilenameMatchExtension(sequenceAdaptation.input.fileExtension, sequenceName);
     showOutputs = isInputFile && sequenceAdaptation.outputs.length > 0;
   }
   $: if (showOutputs) {

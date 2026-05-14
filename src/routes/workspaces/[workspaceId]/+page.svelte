@@ -109,6 +109,7 @@
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import {
     computeMovedFilePath,
+    doesFilenameMatchExtension,
     downloadWorkspaceNodesAsZip,
     findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
@@ -275,16 +276,21 @@
   $: activeFileIsSequence =
     $activeDocumentPath === null ||
     ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
+  $: activeFileIsInputSequence =
+    activeFileIsSequence &&
+    (!$activeDocument.fileName ||
+      (!!$activeDocument.fileName &&
+        doesFilenameMatchExtension($sequenceAdaptation.input.fileExtension, $activeDocument.fileName)));
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
   // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
   // non-sequence mode. Switching between two sequence files (or between blank and a sequence
   // file) preserves whatever tab the user last chose.
-  let previousActiveFileIsSequence: boolean = activeFileIsSequence;
-  $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
-    previousActiveFileIsSequence = activeFileIsSequence;
-    if (!activeFileIsSequence) {
+  let previousActiveFileIsInputSequence: boolean = activeFileIsInputSequence;
+  $: if (activeFileIsInputSequence !== previousActiveFileIsInputSequence) {
+    previousActiveFileIsInputSequence = activeFileIsInputSequence;
+    if (!activeFileIsInputSequence) {
       rightPanelActiveTab = 'metadata';
     } else {
       rightPanelActiveTab = 'command';
@@ -1422,6 +1428,7 @@
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
                     isLoading={$activeDocumentIsLoading}
+                    isInputFile={activeFileIsInputSequence}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     {preserveAdaptationLog}
                     previewOnly={!hasEditFilePermission}
@@ -1535,7 +1542,7 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
-              isSequenceFile={activeFileIsSequence}
+              isSequenceFile={activeFileIsInputSequence}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
@@ -1550,7 +1557,7 @@
           bind:activeTab={rightPanelActiveTab}
           bind:panelOpen={rightPanelOpen}
           commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsSequence}
+          isSequenceFile={activeFileIsInputSequence}
         />
       {/if}
     </div>
