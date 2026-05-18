@@ -1,6 +1,6 @@
 <svelte:options immutable={true} />
 
-<script lang="ts" generics="OutputFormat extends { name: string }">
+<script lang="ts">
   import type { OutputLanguage } from '@nasa-jpl/aerie-sequence-languages';
 
   import { Button, Label } from '@nasa-jpl/stellar-svelte';
