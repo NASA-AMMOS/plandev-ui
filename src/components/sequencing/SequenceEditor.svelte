@@ -37,7 +37,7 @@
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let fileMetadata: WorkspaceFileMetadata | null = null;
-  export let phoenixContext: PhoenixContext;
+  export let phoenixContext: PhoenixContext | undefined;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
   export let isLoading: boolean = false;
@@ -97,7 +97,7 @@
   // Only use input extensions if the sequence file matches the input file extensions
   $: if (phoenixContext && isInputFile && sequenceAdaptation.input.getEditorExtension) {
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
-  } else if (sequenceAdaptation.outputs.length > 0) {
+  } else if (phoenixContext && sequenceAdaptation.outputs.length > 0) {
     const matchingOutputLanguage = sequenceAdaptation.outputs.find(output =>
       doesFilenameMatchExtension(output.fileExtension, sequenceName),
     );
@@ -229,25 +229,28 @@
   }
 
   function updateOutputFormat(sequence: string): void {
-    let output: string | undefined;
+    if (phoenixContext) {
+      let output: string | undefined;
 
-    if (!preserveAdaptationLog) {
-      clearWorkspaceAdaptationMessages();
-    }
-    try {
-      output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
-    } catch (e) {
-      console.error('Adaptation toOutputFormat error:', e);
-      if (sequenceFilePath) {
-        dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
+      if (!preserveAdaptationLog) {
+        clearWorkspaceAdaptationMessages();
       }
-      output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
-    }
 
-    editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
+      try {
+        output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+      } catch (e) {
+        console.error('Adaptation toOutputFormat error:', e);
+        if (sequenceFilePath) {
+          dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
+        }
+        output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
+      }
 
-    if (output !== undefined) {
-      dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
+      editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
+
+      if (output !== undefined) {
+        dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
+      }
     }
   }
 
@@ -323,7 +326,7 @@
 
   function formatDocument() {
     let format = sequenceAdaptation.input.format;
-    if (format !== undefined) {
+    if (format !== undefined && phoenixContext) {
       format(editorSequenceView, phoenixContext);
     }
   }
@@ -490,7 +493,7 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if phoenixContext.commandDictionary !== null}
+    {#if phoenixContext && phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody>
