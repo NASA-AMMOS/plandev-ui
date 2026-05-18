@@ -146,7 +146,7 @@
 
   let activeFileIsInputSequence: boolean = false;
   let actionDetailIsDirty: boolean = false;
-  let activeFileMetadata: WorkspaceFileMetadata | null;
+  let activeFileMetadata: WorkspaceFileMetadata | null = null;
   let activeFileIsSequence: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
