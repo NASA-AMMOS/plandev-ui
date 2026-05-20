@@ -376,6 +376,8 @@ async function bulkMoveWorkspaceItems(
     );
   }
 
+  // Snapshot the initial responses so per-item success logging survives the shift-based loop below.
+  const initialResponses: BulkOperationResponses = [...responses];
   const failedFileOperations: BulkOperationResponses = [];
   const renamedFiles: Record<string, string> = {};
   const skippedFiles = new Set<string>();
@@ -510,7 +512,14 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw buildBulkOperationCompoundError(failedFileOperations, 'move');
+    // Log each item that DID succeed so partial-failure runs still show what worked.
+    const failedItems = new Set(failedFileOperations.map(op => op.item));
+    for (const op of initialResponses) {
+      if (isBulkOperationSuccess(op) && !skippedFiles.has(op.item) && !failedItems.has(op.item)) {
+        logMessage('log', String(op.response));
+      }
+    }
+    throw buildBulkOperationCompoundError(failedFileOperations, shouldCopy ? 'copy' : 'move');
   }
 
   return { renamedFiles, skippedFiles };

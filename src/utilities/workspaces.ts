@@ -369,14 +369,16 @@ export function isBulkOperationSuccess(response: BulkOperationResponse) {
 
 // Each `response` is a backend WorkspaceFormattedError (LogMessage-shaped). Build a CompoundError
 // so the caller's `catchError(...)` produces one Console entry per failed item with full backend
-// metadata (type, service, data, trace) preserved.
+// metadata (type, service, data, trace) preserved. The item path is stashed into `data.item` for
+// the expanded view rather than duplicated in the message (backend messages typically include it).
 export function buildBulkOperationCompoundError(failedOps: BulkOperationResponses, verb: string): CompoundError {
   const logs: LogMessage[] = failedOps.map(({ item, response }) => {
     const fmt = response as unknown as LogMessage;
     return {
       ...fmt,
+      data: { ...(fmt.data ?? {}), item },
       level: 'error',
-      message: `${item}: ${fmt.message ?? `Failed to ${verb}`}`,
+      message: fmt.message ?? `Failed to ${verb} ${item}`,
       timestamp: fmt.timestamp ?? new Date().toISOString(),
     };
   });
