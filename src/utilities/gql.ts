@@ -2709,6 +2709,10 @@ const gql = {
   SUB_MODEL: `#graphql
     subscription SubModel($id: Int!) {
       model: ${Queries.MISSION_MODEL}(id: $id) {
+        derivation_group_specification {
+          model_id
+          derivation_group_name
+        }
         constraint_specification(order_by: { order: asc }) {
           arguments
           constraint_id
