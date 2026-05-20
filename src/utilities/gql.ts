@@ -1628,16 +1628,12 @@ const gql = {
   `,
 
   GET_PLAN_EVENT_TYPES: `#graphql
-    query GetPlanEventTypes($plan_id: Int!){
+    query GetPlanEventTypes($plan_id: Int!) {
       ${Queries.PLAN_DERIVATION_GROUP}(where: {plan_id: {_eq: $plan_id}}) {
-        derivation_group {
-          external_sources {
-            external_events {
-              external_event_type {
-                attribute_schema
-                name
-              }
-            }
+        external_events (distinct_on: event_type_name) {
+          external_event_type {
+            name
+            attribute_schema
           }
         }
       }
