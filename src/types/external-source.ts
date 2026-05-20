@@ -53,6 +53,11 @@ export type PlanDerivationGroup = {
   plan_id: number;
 };
 
+export type ModelDerivationGroup = {
+  derivation_group_name: string;
+  model_id: number;
+};
+
 export type ExternalSourceEventTypeSchema = {
   event_types?: SchemaObject;
   source_types?: SchemaObject;
