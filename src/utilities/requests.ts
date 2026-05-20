@@ -264,6 +264,29 @@ export async function reqHasura<T = any>(
   return data;
 }
 
+// Workspace endpoints respond with a raw FormattedError JSON body on non-OK responses
+// (USE_HASURA_FORMATTING=false in WorkspaceBindings — no Hasura `extensions` wrapper).
+// Wraps it as a CompoundError so callers' `catchError(...)` dispatches via the typed-BaseError branch
+// and the rich metadata (type, service, data, trace) reaches the Console.
+async function throwWorkspaceError(response: Response): Promise<never> {
+  let body: any = null;
+  try {
+    body = await response.json();
+  } catch {
+    // Body wasn't JSON (e.g. proxy HTML, empty body).
+  }
+  if (body && typeof body === 'object' && typeof body.message === 'string' && typeof body.type === 'string') {
+    throw new CompoundError(body.message, [
+      {
+        ...body,
+        level: 'error',
+        timestamp: typeof body.timestamp === 'string' ? body.timestamp : new Date().toISOString(),
+      },
+    ]);
+  }
+  throw new Error(response.statusText);
+}
+
 /**
  * Function to make HTTP POST requests to the Workspace Service.
  */
@@ -298,7 +321,7 @@ export async function reqWorkspace<T = any>(
   const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    await throwWorkspaceError(response);
   }
 
   if (asBlob) {
@@ -342,7 +365,7 @@ export async function reqWorkspaceMetadata<T = any>(
   const response = await fetch(`${WORKSPACE_URL}/metadata/${url}${postSearchParameters}`, options);
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    await throwWorkspaceError(response);
   }
 
   if (asJson) {
