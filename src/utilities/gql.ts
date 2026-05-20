@@ -338,6 +338,19 @@ const gql = {
     }
   `,
 
+  CREATE_MODEL_DERIVATION_GROUP: `#graphql
+    mutation CreateModelDerivationGroup($source: model_derivation_group_insert_input!) {
+      planExternalSourceLink: ${Queries.INSERT_MODEL_DERIVATION_GROUP}(
+        object: $source,
+        on_conflict: {
+          constraint: model_derivation_group_pkey
+        }
+      ) {
+        derivation_group_name
+      }
+    }
+  `,
+
   CREATE_PARAMETER_DICTIONARY: `#graphql
     mutation CreateParameterDictionary($parameterDictionary: parameter_dictionary_insert_input!) {
       createParameterDictionary: ${Queries.INSERT_PARAMETER_DICTIONARY}(object: $parameterDictionary) {
@@ -880,6 +893,16 @@ const gql = {
       deleteSchedulingGoalModelSpec: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(where: { model_id: { _eq: $id } }) {
         returning {
           model_id
+        }
+      }
+    }
+  `,
+
+  DELETE_MODEL_DERIVATION_GROUP: `#graphql
+    mutation DeletePlanExternalSource($where: model_derivation_group_bool_exp!) {
+      modelDerivationGroupLink: ${Queries.DELETE_MODEL_DERIVATION_GROUP}(where: $where) {
+        returning {
+          derivation_group_name
         }
       }
     }
