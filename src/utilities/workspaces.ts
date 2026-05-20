@@ -13,7 +13,8 @@ import type {
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace, reqWorkspaceMetadata } from './requests';
+import type { LogMessage } from '../types/console';
+import { CompoundError, reqWorkspace, reqWorkspaceMetadata } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -364,6 +365,22 @@ export type BulkOperationResponses = BulkOperationResponse[];
 export function isBulkOperationSuccess(response: BulkOperationResponse) {
   // Check if status is between 200 and 299 (inclusive)
   return response.status >= 200 && response.status <= 299;
+}
+
+// Each `response` is a backend WorkspaceFormattedError (LogMessage-shaped). Build a CompoundError
+// so the caller's `catchError(...)` produces one Console entry per failed item with full backend
+// metadata (type, service, data, trace) preserved.
+export function buildBulkOperationCompoundError(failedOps: BulkOperationResponses, verb: string): CompoundError {
+  const logs: LogMessage[] = failedOps.map(({ item, response }) => {
+    const fmt = response as unknown as LogMessage;
+    return {
+      ...fmt,
+      level: 'error',
+      message: `${item}: ${fmt.message ?? `Failed to ${verb}`}`,
+      timestamp: fmt.timestamp ?? new Date().toISOString(),
+    };
+  });
+  return new CompoundError(`Some file${pluralize(failedOps.length)} failed to ${verb}`, logs);
 }
 
 export function isFileConflictResponse(response: BulkOperationResponse) {

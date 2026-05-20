@@ -112,7 +112,6 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
-import type { LogMessage } from '../types/console';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -322,6 +321,7 @@ import {
 import {
   cleanPath,
   doesFilenameMatchExtension,
+  buildBulkOperationCompoundError,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
@@ -510,11 +510,7 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to move`, {
-      cause: JSON.stringify(
-        failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
-      ),
-    });
+    throw buildBulkOperationCompoundError(failedFileOperations, 'move');
   }
 
   return { renamedFiles, skippedFiles };
@@ -4130,11 +4126,7 @@ const effects = {
           }
         }
         if (failedFileOperations.length) {
-          throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to delete`, {
-            cause: JSON.stringify(
-              failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
-            ),
-          });
+          throw buildBulkOperationCompoundError(failedFileOperations, 'delete');
         }
 
         logMessage(
@@ -6255,9 +6247,7 @@ const effects = {
           }
 
           if (failedFileOperations.length) {
-            throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to upload`, {
-              cause: failedFileOperations,
-            });
+            throw buildBulkOperationCompoundError(failedFileOperations, 'upload');
           }
 
           showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
@@ -6510,32 +6500,25 @@ const effects = {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
 
         const cleanedTargetPath = cleanPath(targetPath);
-        try {
-          const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
-            workspace,
-            originalNodes.map(({ fullPath }) => fullPath),
-            shouldCopy,
-            shouldOverwrite,
-            targetPath,
-            user,
-          );
+        const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
+          workspace,
+          originalNodes.map(({ fullPath }) => fullPath),
+          shouldCopy,
+          shouldOverwrite,
+          targetPath,
+          user,
+        );
 
-          showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
-          logMessage(
-            'log',
-            `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
-          );
+        showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
+        logMessage(
+          'log',
+          `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
+        );
 
-          return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
-        } catch (e) {
-          throw Error(
-            `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,
-            e as Error,
-          );
-        }
+        return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
       }
     } catch (e) {
-      catchError('log', 'Unable to move workspace item', e as Error);
+      catchError('log', `Workspace ${displayString.toLowerCase()} could not be moved`, e as Error);
       showFailureToast((e as Error).message);
     }
 
