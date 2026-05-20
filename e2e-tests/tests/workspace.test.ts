@@ -635,12 +635,8 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
-    // Open metadata panel if it's not already open
-    if (!(await workspace.userMetadataEditor.isVisible())) {
-      await workspace.openMetadataPanel();
-    }
-
-    // Enter edit mode
+    // Open metadata panel and enter edit mode
+    await workspace.openMetadataPanel();
     await expect(workspace.metadataEditButton).toBeVisible({ timeout: 5000 });
     await workspace.metadataEditButton.click();
 

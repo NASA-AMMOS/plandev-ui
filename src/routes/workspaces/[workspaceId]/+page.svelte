@@ -285,13 +285,16 @@
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
   $: activeFileIsSequence =
-    $activeDocumentPath === null ||
-    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
-  $: activeFileIsInputSequence =
-    activeFileIsSequence &&
-    (!$activeDocument.fileName ||
-      (!!$activeDocument.fileName &&
-        doesFilenameMatchExtension($sequenceAdaptation.input.fileExtension, $activeDocument.fileName)));
+    $activeDocumentPath !== null &&
+    $activeDocument.type !== null &&
+    $activeDocument.type === WorkspaceContentType.Sequence;
+  $: {
+    activeFileIsInputSequence =
+      activeFileIsSequence &&
+      (!$activeDocument.fileName ||
+        (!!$activeDocument.fileName &&
+          doesFilenameMatchExtension($sequenceAdaptation.input.fileExtension, $activeDocument.fileName)));
+  }
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
