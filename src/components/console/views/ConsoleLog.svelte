@@ -4,12 +4,12 @@
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { onMount } from 'svelte';
-  import type { BaseError, LogMessage } from '../../../types/errors';
+  import type { ConsoleEntry, LogMessage } from '../../../types/console';
 
   import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
 
-  export let log: BaseError;
+  export let log: ConsoleEntry;
   export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;

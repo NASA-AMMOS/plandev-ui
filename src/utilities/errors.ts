@@ -6,8 +6,8 @@ import type {
   ActivityErrorRollup,
   ActivityValidationErrors,
   AnchorValidationError,
-  BaseError,
-} from '../types/errors';
+  ConsoleEntry,
+} from '../types/console';
 
 export enum ErrorTypes {
   ACTIVITY_VALIDATION_ERROR = 'ACTIVITY_VALIDATION_ERROR', // TODO this is made up by client, is that ok?
@@ -143,7 +143,7 @@ export function generateActivityValidationErrorRollups(
   });
 }
 
-export function getActivityIdsFromError(error: BaseError): number[] {
+export function getActivityIdsFromError(error: ConsoleEntry): number[] {
   if (error.type === ErrorTypes.ANCHOR_VALIDATION_ERROR || error.type === ErrorTypes.ACTIVITY_VALIDATION_ERROR) {
     return [(error as AnchorValidationError).data.activityId];
   } else if (

@@ -20,7 +20,7 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
-  import type { LintDiagnostic } from '../../types/errors';
+  import type { LintDiagnostic } from '../../types/console';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { blockTheme } from '../../utilities/codemirror/themes/block';

@@ -6,11 +6,11 @@ import type {
   ActivityErrorRollup,
   ActivityValidationErrors,
   AnchorValidationError,
-  BaseError,
+  ConsoleEntry,
   ErrorCategory,
   LogLevel,
   LogMessage,
-} from '../types/errors';
+} from '../types/console';
 import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
 import { compare } from '../utilities/generic';
@@ -105,7 +105,7 @@ export const activityErrorRollupsMap: Readable<Record<ActivityDirectiveId, Activ
 
 export const consoleEntries: Writable<LogMessage[]> = writable([]);
 
-export const constraintRunErrors: Readable<LogMessage[]> = derived(
+export const constraintErrors: Readable<LogMessage[]> = derived(
   [relevantConstraintRuns, consoleEntries],
   ([$relevantConstraintRuns, $consoleEntries]) => {
     const fromRuns: LogMessage[] = $relevantConstraintRuns
@@ -129,7 +129,7 @@ export const constraintRunErrors: Readable<LogMessage[]> = derived(
   },
 );
 
-export const simulationDatasetErrors: Readable<LogMessage[]> = derived(
+export const simulationErrors: Readable<LogMessage[]> = derived(
   [simulationDataset, consoleEntries],
   ([$simulationDataset, $consoleEntries]) => {
     const fromDataset: LogMessage[] =
@@ -184,30 +184,30 @@ export const errorLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
   $pe.filter(e => e.category === 'log' && e.level === 'error'),
 );
 
-export const allProblems: Readable<BaseError[]> = derived(
+export const allProblems: Readable<ConsoleEntry[]> = derived(
   [
-    simulationDatasetErrors,
+    simulationErrors,
     schedulingErrors,
     anchorValidationErrors,
-    constraintRunErrors,
+    constraintErrors,
     modelErrors,
     activityValidationErrors,
     activityErrorRollupsMap,
   ],
   ([
-    $simulationDatasetErrors,
+    $simulationErrors,
     $schedulingErrors,
     $anchorValidationErrors,
-    $constraintRunErrors,
+    $constraintErrors,
     $modelErrors,
     $activityValidationErrors,
     $activityErrorRollupsMap,
   ]) =>
     [
-      ...($simulationDatasetErrors ?? []),
+      ...($simulationErrors ?? []),
       ...($schedulingErrors ?? []),
       ...($anchorValidationErrors ?? []),
-      ...($constraintRunErrors ?? []),
+      ...($constraintErrors ?? []),
       ...($modelErrors ?? []),
       ...($activityValidationErrors
         ? $activityValidationErrors
@@ -222,7 +222,7 @@ export const allProblems: Readable<BaseError[]> = derived(
                 },
                 0,
               );
-              const errorMessage: BaseError = {
+              const errorMessage: ConsoleEntry = {
                 data: {
                   ...error,
                 },
@@ -233,7 +233,7 @@ export const allProblems: Readable<BaseError[]> = derived(
               return errorMessage;
             })
         : []),
-    ].sort((errorA: BaseError, errorB: BaseError) =>
+    ].sort((errorA: ConsoleEntry, errorB: ConsoleEntry) =>
       compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),
     ),
 );
@@ -289,11 +289,11 @@ function compoundErrorToLogMessages(message: string, error: Error | CompoundErro
 }
 
 // Dispatches on `error instanceof Error`: thrown Errors / CompoundErrors get the `message` prefix;
-// plain BaseError objects (backend graceful-failure responses) are spread directly.
+// plain ConsoleEntry objects (backend graceful-failure responses) are spread directly.
 export function catchError(
   category: ErrorCategory,
   message: string,
-  error: Error | CompoundError | BaseError,
+  error: Error | CompoundError | ConsoleEntry,
   options?: { level?: LogLevel; shouldLog?: boolean },
 ): void {
   const shouldLog = options?.shouldLog ?? true;

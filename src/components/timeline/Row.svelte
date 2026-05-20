@@ -9,7 +9,7 @@
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import { Status } from '../../enums/status';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { catchError, logMessage } from '../../stores/errors';
+  import { catchError, logMessage } from '../../stores/console';
   import {
     derivationGroupVisibilityMap,
     externalSources,

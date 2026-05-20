@@ -2,10 +2,10 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { BaseError } from '../../../types/errors';
+  import type { ConsoleEntry } from '../../../types/console';
   import { ErrorTypes } from '../../../utilities/errors';
 
-  export let log: BaseError;
+  export let log: ConsoleEntry;
 
   const dispatch = createEventDispatcher<{
     gotoLine: { column: number; line: number };

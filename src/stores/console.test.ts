@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import type { BaseError } from '../types/errors';
+import type { ConsoleEntry } from '../types/console';
 import { ErrorTypes } from '../utilities/errors';
 import { CompoundError } from '../utilities/requests';
 import {
@@ -11,12 +11,12 @@ import {
   logMessage,
   consoleEntries,
   schedulingErrors,
-} from './errors';
+} from './console';
 
 vi.mock('$env/dynamic/public', () => ({ env: {} }));
 vi.mock('$app/environment', () => ({ browser: true }));
 
-function backendError(type: ErrorTypes, service: string, msg = 'something failed'): BaseError {
+function backendError(type: ErrorTypes, service: string, msg = 'something failed'): ConsoleEntry {
   return {
     data: { specification_id: 659 },
     message: msg,
@@ -27,7 +27,7 @@ function backendError(type: ErrorTypes, service: string, msg = 'something failed
   };
 }
 
-function compoundFrom(...errors: BaseError[]): CompoundError {
+function compoundFrom(...errors: ConsoleEntry[]): CompoundError {
   return new CompoundError(
     errors[0]?.message ?? 'multi',
     errors.map(e => ({ ...e, level: 'error' })),
@@ -68,7 +68,7 @@ describe('catchError routes by call-site category', () => {
     expect(errs[0].message).toContain('Simulation failed');
   });
 
-  test('BaseError payload spreads directly (graceful failure path)', () => {
+  test('ConsoleEntry payload spreads directly (graceful failure path)', () => {
     const reason = backendError(ErrorTypes.NO_SUCH_SCHEDULING_SPECIFICATION, 'aerie_permissions');
     catchError('scheduling', '', reason);
     const errs = get(schedulingErrors);

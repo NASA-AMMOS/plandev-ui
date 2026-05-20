@@ -42,7 +42,7 @@
     activeDocumentIsLoading,
     activeDocumentPath,
   } from '../../../stores/activeDocument';
-  import { allLogs, catchError, clearLogs, errorLogs, logMessage } from '../../../stores/errors';
+  import { allLogs, catchError, clearLogs, errorLogs, logMessage } from '../../../stores/console';
   import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
@@ -80,7 +80,7 @@
   } from '../../../stores/workspaces';
   import type { ActionDefinition } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
-  import type { LintDiagnostic, LogLevel } from '../../../types/errors';
+  import type { LintDiagnostic, LogLevel } from '../../../types/console';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
     ChannelDictionaryMetadata,

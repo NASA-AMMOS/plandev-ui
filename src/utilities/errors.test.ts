@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { AnchorValidationError, BaseError } from '../types/errors';
+import type { AnchorValidationError, ConsoleEntry } from '../types/console';
 import {
   ErrorTypes,
   generateActivityValidationErrorRollups,
@@ -234,7 +234,7 @@ describe('Errors Util', () => {
         message: '',
         timestamp: '',
         type: ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED,
-      } as BaseError),
+      } as ConsoleEntry),
     ).deep.eq([1, 2]);
   });
 });

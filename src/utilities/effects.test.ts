@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as Errors from '../stores/errors';
+import * as Errors from '../stores/console';
 import { mockUser } from '../tests/mocks/user/mockUser';
 import type { DerivationGroupInsertInput } from '../types/external-source';
 import type { Model } from '../types/model';

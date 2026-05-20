@@ -12,7 +12,7 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionDefinitionVersion, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { LogMessage } from '../../../types/errors';
+  import type { LogMessage } from '../../../types/console';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import {
     getActionDefinitionForRun,

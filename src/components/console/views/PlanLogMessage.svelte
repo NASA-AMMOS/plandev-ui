@@ -2,10 +2,10 @@
 
 <script lang="ts">
   import { selectActivity } from '../../../stores/activities';
-  import type { BaseError } from '../../../types/errors';
+  import type { ConsoleEntry } from '../../../types/console';
   import { getActivityIdsFromError } from '../../../utilities/errors';
 
-  export let log: BaseError;
+  export let log: ConsoleEntry;
 
   let activityIds: number[] = [];
 

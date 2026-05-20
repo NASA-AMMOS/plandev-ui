@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import type { BaseUser, User } from '../types/app';
-import type { BaseError, LogMessage } from '../types/errors';
+import type { ConsoleEntry, LogMessage } from '../types/console';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
 import { logout } from '../utilities/login';
@@ -207,7 +207,7 @@ export async function reqHasura<T = any>(
     const defaultErrorMessage = 'An unexpected error occurred';
     json.errors.forEach((error: any) => {
       const extensions:
-        | (Omit<BaseError, 'message' | 'type'> & { code?: string; internal?: any; type?: string })
+        | (Omit<ConsoleEntry, 'message' | 'type'> & { code?: string; internal?: any; type?: string })
         | undefined = error?.extensions;
 
       const { data, service, timestamp, trace, cause, code, type } = extensions ?? {};

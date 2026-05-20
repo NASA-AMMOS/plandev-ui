@@ -31,7 +31,7 @@ import {
   checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
-import { catchError, clearConsoleEntries, logMessage } from '../stores/errors';
+import { catchError, clearConsoleEntries, logMessage } from '../stores/console';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
@@ -112,7 +112,7 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
-import type { LogMessage } from '../types/errors';
+import type { LogMessage } from '../types/console';
 import type {
   ExpandedSequence,
   ExpansionRule,
