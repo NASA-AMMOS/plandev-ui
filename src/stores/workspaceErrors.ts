@@ -1,6 +1,13 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActionRunSlim } from '../types/actions';
-import type { AdaptationLog, AdaptationMessage, ConsoleEntry, LintDiagnostic, LintError, LogLevel } from '../types/console';
+import type {
+  AdaptationLog,
+  AdaptationMessage,
+  ConsoleEntry,
+  LintDiagnostic,
+  LintError,
+  LogLevel,
+} from '../types/console';
 import { ErrorTypes } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
