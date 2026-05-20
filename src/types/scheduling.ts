@@ -1,6 +1,6 @@
 import type { SchedulingDefinitionType } from '../enums/scheduling';
 import type { PartialWith } from './app';
-import type { SchedulingError } from './errors';
+import type { BaseError } from './errors';
 import type { BaseDefinition, BaseMetadata } from './metadata';
 import type { ArgumentsMap } from './parameter';
 import type { SchedulingTagsInsertInput } from './tags';
@@ -141,7 +141,7 @@ export type SchedulingGoalAnalysis = {
 
 export type SchedulingResponse = {
   analysisId: number | null;
-  reason: SchedulingError;
+  reason: BaseError;
 };
 
 export type SchedulingGoalModelSpecification = {
@@ -211,7 +211,7 @@ export type SchedulingRequest = {
   analysis_id: number;
   canceled: boolean;
   dataset_id: number | null;
-  reason: SchedulingError | null;
+  reason: BaseError | null;
   requested_at: string;
   requested_by: string;
   specification_id: number;

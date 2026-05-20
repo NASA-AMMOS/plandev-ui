@@ -5,7 +5,6 @@
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
-  import { isLogMessage } from '../../../utilities/errors';
 
   import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
@@ -17,15 +16,17 @@
   export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
+  let duration: number | undefined;
   let expandable: boolean = false;
-  let leftContents: HTMLDivElement;
-  let open: boolean = defaultExpanded;
   let expansionPadding: number = 0;
+  let leftContents: HTMLDivElement;
   let level: string = '';
+  let open: boolean = defaultExpanded;
   let renderedMessage: string = '';
 
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
+  $: duration = (log as LogMessage).duration;
   // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
   $: renderedMessage =
     !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
@@ -137,8 +138,8 @@
           <slot name="message" {log} message={renderedMessage} {expandable} {open}>
             {renderedMessage}
           </slot>
-          {#if isLogMessage(log) && typeof log.duration === 'number'}
-            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
+          {#if typeof duration === 'number'}
+            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(duration)})</div>
           {/if}
         </div>
       </div>

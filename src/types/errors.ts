@@ -1,5 +1,4 @@
 import type { ErrorTypes } from '../utilities/errors';
-import type { ConstraintResult, UserCodeError } from './constraint';
 
 export type LogLevel = 'error' | 'warn' | 'info';
 
@@ -13,10 +12,13 @@ export interface BaseError {
   type: ErrorTypes; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
 }
 
+export type ErrorCategory = 'activity' | 'anchor' | 'constraint' | 'log' | 'model' | 'scheduling' | 'simulation';
+
 export interface LogMessage extends BaseError {
-  duration?: number; // optional ms
+  category?: ErrorCategory; // set when the entry enters consoleEntries; unset for pre-categorization shapes
+  duration?: number;
   level: LogLevel;
-  type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
+  type: ErrorTypes;
 }
 
 export interface AnchorValidationError extends BaseError {
@@ -33,37 +35,6 @@ export interface ActivityValidationErrors {
   errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
   status: ActivityValidationStatus;
   type: string;
-}
-
-export interface ConstraintRunError extends BaseError {
-  data: {
-    constraintId: number;
-    errors?: UserCodeError[];
-    violations?: Pick<ConstraintResult, 'violations'>;
-  };
-}
-
-export interface SchedulingError extends BaseError {
-  data: {
-    errors: {
-      [activityId: string]: unknown;
-    };
-    success: boolean;
-  };
-}
-
-export interface SimulationDatasetError extends BaseError {
-  data: {
-    activityStackStrace?: string;
-    elapsedTime?: string;
-    errors?: {
-      [activityId: string]: unknown;
-    };
-    executingActivityType?: string;
-    executingDirectiveId?: number;
-    success?: boolean;
-    utcTimeDoy?: string;
-  };
 }
 
 export interface ActivityDirectiveInstantiationError {

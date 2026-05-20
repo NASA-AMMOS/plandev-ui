@@ -308,9 +308,9 @@
             if (profile && profile.length === 1) {
               resource = sampleProfiles([profile[0]], startTimeYmd)[0];
               logMessage(
+                'log',
                 `Retrieved profile ${name} (${profile[0].profile_segments.length} segment${pluralize(profile[0].profile_segments.length)}) for simulation ${simulationDatasetId}.`,
-                '',
-                performance.now() - startTime,
+                { duration: performance.now() - startTime },
               );
             } else {
               throw new Error('Profile not Found');
@@ -320,7 +320,7 @@
             if (err.name === 'AbortError') {
               aborted = true;
             } else {
-              catchError(`Profile Download Failed for ${name}`, e as Error);
+              catchError('log', `Profile Download Failed for ${name}`, e as Error);
               error = err.message;
             }
           } finally {

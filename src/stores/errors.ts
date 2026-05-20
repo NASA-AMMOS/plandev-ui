@@ -7,11 +7,9 @@ import type {
   ActivityValidationErrors,
   AnchorValidationError,
   BaseError,
-  ConstraintRunError,
+  ErrorCategory,
   LogLevel,
   LogMessage,
-  SchedulingError,
-  SimulationDatasetError,
 } from '../types/errors';
 import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
@@ -105,39 +103,48 @@ export const activityErrorRollupsMap: Readable<Record<ActivityDirectiveId, Activ
   ([$activityErrorRollups]) => keyBy($activityErrorRollups, 'id'),
 );
 
-export const constraintRunErrors: Readable<ConstraintRunError[]> = derived(
-  [relevantConstraintRuns],
-  ([$relevantConstraintRuns]) => {
-    return $relevantConstraintRuns
+export const consoleEntries: Writable<LogMessage[]> = writable([]);
+
+export const constraintRunErrors: Readable<LogMessage[]> = derived(
+  [relevantConstraintRuns, consoleEntries],
+  ([$relevantConstraintRuns, $consoleEntries]) => {
+    const fromRuns: LogMessage[] = $relevantConstraintRuns
       .filter(run => run.results.violations?.length || run.errors?.length)
-      .map(run => {
-        return {
-          data: {
-            constraintId: run.constraint_id,
-            errors: run.errors,
-            violations: run.results.violations || undefined,
-          },
-          message: run.errors?.length
-            ? run.errors[0].message
-            : `Constraint "${run.results.constraintName}" has ${run.results.violations?.length ?? 0} violation${pluralize(run.results.violations?.length ?? 0)}`,
-          timestamp: run.requested_at,
-          type: ErrorTypes.CONSTRAINT_RUN_ERROR,
-        } as ConstraintRunError;
-      });
+      .map(run => ({
+        category: 'constraint',
+        data: {
+          constraintId: run.constraint_id,
+          errors: run.errors,
+          violations: run.results.violations || undefined,
+        },
+        level: 'error',
+        message: run.errors?.length
+          ? run.errors[0].message
+          : `Constraint "${run.results.constraintName}" has ${run.results.violations?.length ?? 0} violation${pluralize(run.results.violations?.length ?? 0)}`,
+        timestamp: run.requested_at,
+        type: ErrorTypes.CONSTRAINT_RUN_ERROR,
+      }));
+    const fromExceptions = $consoleEntries.filter(e => e.category === 'constraint');
+    return [...fromRuns, ...fromExceptions];
   },
 );
 
-export const simulationDatasetErrors: Readable<SimulationDatasetError[]> = derived(
-  [simulationDataset],
-  ([$simulationDataset]) => {
-    return $simulationDataset && $simulationDataset.reason
-      ? [
-          {
-            ...$simulationDataset.reason,
-            message: parseErrorReason($simulationDataset.reason.message),
-          },
-        ]
-      : [];
+export const simulationDatasetErrors: Readable<LogMessage[]> = derived(
+  [simulationDataset, consoleEntries],
+  ([$simulationDataset, $consoleEntries]) => {
+    const fromDataset: LogMessage[] =
+      $simulationDataset && $simulationDataset.reason
+        ? [
+            {
+              ...$simulationDataset.reason,
+              category: 'simulation',
+              level: 'error',
+              message: parseErrorReason($simulationDataset.reason.message),
+            },
+          ]
+        : [];
+    const fromExceptions = $consoleEntries.filter(e => e.category === 'simulation');
+    return [...fromDataset, ...fromExceptions];
   },
   [],
 );
@@ -167,12 +174,14 @@ export const modelErrors: Readable<LogMessage[]> = derived(
   [],
 );
 
-export const schedulingErrors: Writable<SchedulingError[]> = writable([]);
+export const schedulingErrors: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
+  $pe.filter(e => e.category === 'scheduling'),
+);
 
-export const allLogs: Writable<LogMessage[]> = writable([]);
+export const allLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe => $pe.filter(e => e.category === 'log'));
 
-export const errorLogs: Readable<LogMessage[]> = derived([allLogs], ([$allLogs]) =>
-  $allLogs.filter(log => log.type === ErrorTypes.CAUGHT_ERROR),
+export const errorLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
+  $pe.filter(e => e.category === 'log' && e.level === 'error'),
 );
 
 export const allProblems: Readable<BaseError[]> = derived(
@@ -259,81 +268,93 @@ function generateLogMessageForModelLog(modelLog: ModelLog | null, status: ModelS
   }
 }
 
-export function logMessage(
-  message: string,
-  details?: string,
-  duration?: number,
-  level: LogLevel = 'info',
-  shouldLog: boolean = false,
-): void {
-  allLogs.update(l => {
-    l.push({
-      level,
-      message: cleanLogMessage(message),
-      timestamp: `${new Date()}`,
-      ...(details ? { cause: details } : {}),
-      ...(typeof duration === 'number' ? { duration } : {}),
-      type: ErrorTypes.LOG,
-    });
-    return [...l];
-  });
-
-  if (shouldLog) {
-    console.log(details ?? message);
+function compoundErrorToLogMessages(message: string, error: Error | CompoundError): LogMessage[] {
+  // Returns [] for AbortError so the caller can bail without pushing.
+  if ((error as Error).name === 'AbortError') {
+    return [];
   }
+  if ((error as CompoundError).name === 'CompoundError') {
+    return (error as CompoundError).errors.map(e => ({ ...e, message: `${message}: ${e.message}` }));
+  }
+  return [
+    {
+      cause: error.cause ? (typeof error.cause === 'object' ? JSON.stringify(error.cause) : String(error.cause)) : '',
+      level: 'error',
+      message: `${message}: ${cleanLogMessage(`${error}`)}`,
+      timestamp: `${new Date()}`,
+      trace: error.stack,
+      type: ErrorTypes.CAUGHT_ERROR,
+    },
+  ];
 }
 
-export function catchError(message: string, error: Error | CompoundError, shouldLog: boolean = true): void {
-  let errors: LogMessage[] = [];
+// Dispatches on `error instanceof Error`: thrown Errors / CompoundErrors get the `message` prefix;
+// plain BaseError objects (backend graceful-failure responses) are spread directly.
+export function catchError(
+  category: ErrorCategory,
+  message: string,
+  error: Error | CompoundError | BaseError,
+  options?: { level?: LogLevel; shouldLog?: boolean },
+): void {
+  const shouldLog = options?.shouldLog ?? true;
+  const level: LogLevel = options?.level ?? 'error';
+  let entries: LogMessage[];
 
-  // ignore the error if it is an AbortError
-  if ((error as Error).name && (error as Error).name === 'AbortError') {
-    return;
-  }
-
-  if ((error as CompoundError).name === 'CompoundError') {
-    errors = (error as CompoundError).errors.map(e => ({ ...e, message: `${message}: ${e.message}` }));
+  if (error instanceof Error) {
+    const logs = compoundErrorToLogMessages(message, error);
+    if (!logs.length) {
+      return;
+    }
+    entries = logs.map(l => ({ ...l, category, level }));
   } else {
-    errors = [
-      {
-        cause: `${typeof error.cause === 'object' ? JSON.stringify(error.cause) : error.cause}` || '',
-        level: 'error',
-        message: `${message}: ${cleanLogMessage(`${error}`)}`,
-        timestamp: `${new Date()}`,
-        trace: error.stack,
-        type: ErrorTypes.CAUGHT_ERROR,
-      },
-    ];
+    entries = [{ ...error, category, level, message: message ? `${message}: ${error.message}` : error.message }];
   }
 
-  allLogs.update(l => {
-    return l.concat(errors);
-  });
+  consoleEntries.update(arr => arr.concat(entries));
 
   if (shouldLog) {
     console.log(error);
   }
 }
 
-export function catchSchedulingError(error: SchedulingError) {
-  schedulingErrors.update(errors => {
-    errors.push({
-      ...error,
-      message: parseErrorReason(error.message),
-    });
-    return [...errors];
-  });
+export function logMessage(
+  category: ErrorCategory,
+  message: string,
+  options?: { details?: string; duration?: number; level?: LogLevel; shouldLog?: boolean },
+): void {
+  const level: LogLevel = options?.level ?? 'info';
+  const entry: LogMessage = {
+    category,
+    level,
+    message: cleanLogMessage(message),
+    timestamp: `${new Date()}`,
+    type: ErrorTypes.LOG,
+    ...(options?.details ? { cause: options.details } : {}),
+    ...(typeof options?.duration === 'number' ? { duration: options.duration } : {}),
+  };
+  consoleEntries.update(arr => arr.concat([entry]));
+
+  if (options?.shouldLog) {
+    console.log(options?.details ?? message);
+  }
+}
+
+export function clearConsoleEntries(category?: ErrorCategory): void {
+  if (category === undefined) {
+    consoleEntries.set([]);
+  } else {
+    consoleEntries.update(arr => arr.filter(e => e.category !== category));
+  }
 }
 
 export function clearSchedulingErrors(): void {
-  schedulingErrors.set([]);
+  clearConsoleEntries('scheduling');
 }
 
 export function clearLogs(): void {
-  allLogs.set([]);
+  clearConsoleEntries('log');
 }
 
 export function resetErrorStores(): void {
-  clearLogs();
-  clearSchedulingErrors();
+  clearConsoleEntries();
 }

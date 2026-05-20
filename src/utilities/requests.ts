@@ -206,13 +206,13 @@ export async function reqHasura<T = any>(
 
     const defaultErrorMessage = 'An unexpected error occurred';
     json.errors.forEach((error: any) => {
-      const extensions: (Omit<BaseError, 'message'> & { code: string; internal?: any }) | undefined = error?.extensions;
+      const extensions:
+        | (Omit<BaseError, 'message' | 'type'> & { code?: string; internal?: any; type?: string })
+        | undefined = error?.extensions;
 
-      // Extract legacy and current fields from extensions if they exist
-      const { data, service, timestamp, trace, cause, code } = extensions ?? {};
+      const { data, service, timestamp, trace, cause, code, type } = extensions ?? {};
       const baseErrorFields = { data, service, timestamp: timestamp ?? defaultError.timestamp, trace };
 
-      // May need a custom error or piggyback cause
       const errorMessage = extensions?.internal?.error?.message ?? error?.message ?? defaultErrorMessage;
 
       if (code === 'unexpected' || code === 'postgres-error') {
@@ -247,8 +247,9 @@ export async function reqHasura<T = any>(
         errors.push({
           ...defaultError,
           ...baseErrorFields,
+          cause,
           message: error?.message ?? defaultErrorMessage,
-          trace: cause,
+          type: (type as ErrorTypes) ?? ErrorTypes.CAUGHT_ERROR,
         });
       }
     });

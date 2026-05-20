@@ -565,7 +565,9 @@
         addWorkspaceAdaptationLog(log.level as LogLevel, log.args);
       });
       setSequenceLanguages(adaptation);
-      logMessage(`Loaded adaptation "${metadata.name}" (ID=${id}).`, '', performance.now() - startTime);
+      logMessage('log', `Loaded adaptation "${metadata.name}" (ID=${id}).`, {
+        duration: performance.now() - startTime,
+      });
     } catch (e) {
       console.error(e);
       showFailureToast('Invalid sequence adaptation');
@@ -910,7 +912,7 @@
       }
       showSuccessToast(`File marked as ${readOnly ? 'read only' : 'editable'}`);
     } catch (e) {
-      catchError('Failed to update read-only status', e as Error);
+      catchError('log', 'Failed to update read-only status', e as Error);
       showFailureToast('Failed to update read-only status');
     }
   }
@@ -929,7 +931,7 @@
       }
       showSuccessToast('User metadata updated');
     } catch (e) {
-      catchError('Failed to update user metadata', e as Error);
+      catchError('log', 'Failed to update user metadata', e as Error);
       showFailureToast('Failed to update user metadata');
     }
   }
