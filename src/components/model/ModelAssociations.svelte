@@ -3,6 +3,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { DefinitionType } from '../../enums/association';
+  import type { User } from '../../types/app';
   import type {
     Association,
     AssociationSpecification,
@@ -19,6 +20,7 @@
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import RadioButton from '../ui/RadioButtons/RadioButton.svelte';
   import RadioButtons from '../ui/RadioButtons/RadioButtons.svelte';
+  import DGModelSpecification from './DGModelSpecification.svelte';
   import ModelAssociationsListItem from './ModelAssociationsListItem.svelte';
   import ModelSpecification from './ModelSpecification.svelte';
 
@@ -30,8 +32,10 @@
   export let model: Model | null = null;
   export let numOfPrivateAssociations: number = 0;
   export let selectedAssociation: Association = 'constraint';
+  export let selectedDerivationGroups: string[];
   export let selectedSpecifications: AssociationSpecificationMap = {};
   export let selectedSpecificationsList: AssociationSpecification[] = [];
+  export let user: User | null = null;
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -157,6 +161,7 @@
       <RadioButton id="constraint"><div class="association-button">Constraints</div></RadioButton>
       <RadioButton id="goal"><div class="association-button">Goals</div></RadioButton>
       <RadioButton id="condition"><div class="association-button">Conditions</div></RadioButton>
+      <RadioButton id="derivation_group"><div class="association-button">Derivation Groups</div></RadioButton>
     </RadioButtons>
     <div class="action-buttons">
       <button class="st-button secondary w-full" on:click={onClose}> Close </button>
@@ -175,118 +180,125 @@
   </div>
   <CssGrid class="associations-css-grid" columns="1fr 3px 1fr">
     <div class="associations-content">
-      <div class="associations-view">
-        <RadioButtons selectedButtonId={selectedViewId} on:select-radio-button={onSelectView}>
-          <RadioButton id="model"><div class="association-button">Model</div></RadioButton>
-          <RadioButton id="library"><div class="association-button">Library</div></RadioButton>
-        </RadioButtons>
-      </div>
-      {#if selectedViewId === 'library'}
-        <ModelSpecification
-          {hasCreatePermission}
-          {hasEditSpecPermission}
-          {loading}
-          {metadataList}
-          metadataType={selectedAssociation}
-          selectedMetadata={selectedDefinition}
-          {selectedSpecifications}
-          on:selectDefinition={onSelectDefinition}
-          on:toggleSpecification
-          on:newMetadata
-          on:viewMetadata
-        />
-      {:else}
-        <div class="association-items-container">
-          {#if loading}
-            <div class="message">
-              <Loading />
-            </div>
-          {:else if model !== null && selectedSpecificationsList.length > 0}
-            <div class="private-label">
-              {#if numOfPrivateAssociations > 0}
-                {numOfPrivateAssociations}
-                {selectedAssociation}{numOfPrivateAssociations !== 1 ? 's' : ''}
-                {numOfPrivateAssociations > 1 ? 'are' : 'is'} private and not shown
-              {/if}
-            </div>
-            {#each selectedSpecificationsList as spec, itemIndex (spec.id)}
-              {#if selectedSpecifications[spec.metadata_id] && metadataMap[spec.metadata_id]}
-                {#if selectedAssociationId === 'goal'}
-                  <ModelAssociationsListItem
-                    hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.id === spec.id}
-                    id={spec.id}
-                    invocationArguments={spec.arguments}
-                    metadataId={spec.metadata_id}
-                    metadataName={metadataMap[spec.metadata_id].name}
-                    metadataType={selectedAssociationId}
-                    priority={spec.priority}
-                    versions={metadataMap[spec.metadata_id].versions}
-                    selectedRevision={spec.revision}
-                    shouldShowUpButton={(spec?.priority ?? 0) > 0}
-                    shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
-                    on:updatePriority={onUpdatePriority}
-                    on:updateRevision={onUpdateRevision}
-                    on:selectDefinition={onSelectDefinition}
-                    on:updateArguments={onUpdateArguments}
-                    on:duplicateInvocation
-                    on:deleteInvocation
-                  />
-                {:else if selectedAssociationId === 'constraint'}
-                  <ModelAssociationsListItem
-                    hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.id === spec.id}
-                    id={spec.id}
-                    invocationArguments={spec.arguments}
-                    metadataId={spec.metadata_id}
-                    metadataName={metadataMap[spec.metadata_id].name}
-                    metadataType={selectedAssociationId}
-                    priority={spec?.priority ?? 0}
-                    priorityLabel="Order"
-                    versions={metadataMap[spec.metadata_id].versions}
-                    selectedRevision={spec.revision}
-                    shouldShowUpButton={(spec?.priority ?? 0) > 0}
-                    shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
-                    on:updatePriority={onUpdatePriority}
-                    on:updateRevision={onUpdateRevision}
-                    on:selectDefinition={onSelectDefinition}
-                    on:updateArguments={onUpdateArguments}
-                    on:duplicateInvocation
-                    on:deleteInvocation
-                  />
-                {:else}
-                  <ModelAssociationsListItem
-                    hasEditPermission={hasEditSpecPermission}
-                    isSelected={selectedDefinition?.id === spec.id}
-                    id={spec.id}
-                    metadataId={spec.metadata_id}
-                    metadataName={metadataMap[spec.metadata_id].name}
-                    metadataType={selectedAssociationId}
-                    versions={metadataMap[spec.metadata_id].versions}
-                    selectedRevision={spec.revision}
-                    on:updateRevision={onUpdateRevision}
-                    on:selectDefinition={onSelectDefinition}
-                  />
-                {/if}
-              {/if}
-            {/each}
-          {:else}
-            <div class="message st-typography-body">
-              No {selectedAssociationTitle.toLowerCase()}s associated with this model yet.
-            </div>
-          {/if}
+      <!-- if DG, then different-->
+      {#if selectedAssociationId !== 'derivation_group'}
+        <div class="associations-view">
+          <RadioButtons selectedButtonId={selectedViewId} on:select-radio-button={onSelectView}>
+            <RadioButton id="model"><div class="association-button">Model</div></RadioButton>
+            <RadioButton id="library"><div class="association-button">Library</div></RadioButton>
+          </RadioButtons>
         </div>
+        {#if selectedViewId === 'library'}
+          <ModelSpecification
+            {hasCreatePermission}
+            {hasEditSpecPermission}
+            {loading}
+            {metadataList}
+            metadataType={selectedAssociation}
+            selectedMetadata={selectedDefinition}
+            {selectedSpecifications}
+            on:selectDefinition={onSelectDefinition}
+            on:toggleSpecification
+            on:newMetadata
+            on:viewMetadata
+          />
+        {:else}
+          <div class="association-items-container">
+            {#if loading}
+              <div class="message">
+                <Loading />
+              </div>
+            {:else if model !== null && selectedSpecificationsList.length > 0}
+              <div class="private-label">
+                {#if numOfPrivateAssociations > 0}
+                  {numOfPrivateAssociations}
+                  {selectedAssociation}{numOfPrivateAssociations !== 1 ? 's' : ''}
+                  {numOfPrivateAssociations > 1 ? 'are' : 'is'} private and not shown
+                {/if}
+              </div>
+              {#each selectedSpecificationsList as spec, itemIndex (spec.id)}
+                {#if selectedSpecifications[spec.metadata_id] && metadataMap[spec.metadata_id]}
+                  {#if selectedAssociationId === 'goal'}
+                    <ModelAssociationsListItem
+                      hasEditPermission={hasEditSpecPermission}
+                      isSelected={selectedDefinition?.id === spec.id}
+                      id={spec.id}
+                      invocationArguments={spec.arguments}
+                      metadataId={spec.metadata_id}
+                      metadataName={metadataMap[spec.metadata_id].name}
+                      metadataType={selectedAssociationId}
+                      priority={spec.priority}
+                      versions={metadataMap[spec.metadata_id].versions}
+                      selectedRevision={spec.revision}
+                      shouldShowUpButton={(spec?.priority ?? 0) > 0}
+                      shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
+                      on:updatePriority={onUpdatePriority}
+                      on:updateRevision={onUpdateRevision}
+                      on:selectDefinition={onSelectDefinition}
+                      on:updateArguments={onUpdateArguments}
+                      on:duplicateInvocation
+                      on:deleteInvocation
+                    />
+                  {:else if selectedAssociationId === 'constraint'}
+                    <ModelAssociationsListItem
+                      hasEditPermission={hasEditSpecPermission}
+                      isSelected={selectedDefinition?.id === spec.id}
+                      id={spec.id}
+                      invocationArguments={spec.arguments}
+                      metadataId={spec.metadata_id}
+                      metadataName={metadataMap[spec.metadata_id].name}
+                      metadataType={selectedAssociationId}
+                      priority={spec?.priority ?? 0}
+                      priorityLabel="Order"
+                      versions={metadataMap[spec.metadata_id].versions}
+                      selectedRevision={spec.revision}
+                      shouldShowUpButton={(spec?.priority ?? 0) > 0}
+                      shouldShowDownButton={itemIndex < selectedSpecificationsList.length - 1}
+                      on:updatePriority={onUpdatePriority}
+                      on:updateRevision={onUpdateRevision}
+                      on:selectDefinition={onSelectDefinition}
+                      on:updateArguments={onUpdateArguments}
+                      on:duplicateInvocation
+                      on:deleteInvocation
+                    />
+                  {:else}
+                    <ModelAssociationsListItem
+                      hasEditPermission={hasEditSpecPermission}
+                      isSelected={selectedDefinition?.id === spec.id}
+                      id={spec.id}
+                      metadataId={spec.metadata_id}
+                      metadataName={metadataMap[spec.metadata_id].name}
+                      metadataType={selectedAssociationId}
+                      versions={metadataMap[spec.metadata_id].versions}
+                      selectedRevision={spec.revision}
+                      on:updateRevision={onUpdateRevision}
+                      on:selectDefinition={onSelectDefinition}
+                    />
+                  {/if}
+                {/if}
+              {/each}
+            {:else}
+              <div class="message st-typography-body">
+                No {selectedAssociationTitle.toLowerCase()}s associated with this model yet.
+              </div>
+            {/if}
+          </div>
+        {/if}
+      {:else}
+        <DGModelSpecification {user} bind:selectedDerivationGroups />
       {/if}
     </div>
-    <CssGridGutter track={1} type="column" />
+    {#if selectedAssociationId !== 'derivation_group'}
+      <CssGridGutter track={1} type="column" />
 
-    <DefinitionEditor
-      referenceModelId={model?.id}
-      definition={selectedDefinitionCode ?? `No ${selectedAssociationTitle} Definition Selected`}
-      definitionType={selectedDefinition?.definitionType}
-      readOnly={true}
-      title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}
-    />
+      <DefinitionEditor
+        referenceModelId={model?.id}
+        definition={selectedDefinitionCode ?? `No ${selectedAssociationTitle} Definition Selected`}
+        definitionType={selectedDefinition?.definitionType}
+        readOnly={true}
+        title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}
+      />
+    {/if}
   </CssGrid>
 </div>
 
@@ -331,9 +343,12 @@
 
   .associations-content {
     display: grid;
-    grid-template-rows: min-content auto;
+    grid-template-rows: min-content 1fr;
     min-width: 300px;
     overflow: hidden;
+
+    height: 100%;
+    min-height: 0;
   }
 
   .associations-view {
