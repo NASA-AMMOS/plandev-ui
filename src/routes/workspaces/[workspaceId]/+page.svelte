@@ -142,6 +142,8 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
+  let activeFileIsSequence: boolean = false;
+  let actionDetailIsDirty: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
@@ -180,7 +182,6 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
-  let actionDetailIsDirty: boolean = false;
 
   if (initialActionRunIdParam) {
     const runId = parseInt(initialActionRunIdParam, 10);
@@ -277,13 +278,14 @@
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
   $: activeFileIsSequence =
-    $activeDocumentPath !== null &&
-    $activeDocument.type !== null &&
-    $activeDocument.type === WorkspaceContentType.Sequence;
+    $activeDocumentPath === null ||
+    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
-  // Switch right panel tab when file type changes
+  // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
+  // non-sequence mode. Switching between two sequence files (or between blank and a sequence
+  // file) preserves whatever tab the user last chose.
   let previousActiveFileIsSequence: boolean = activeFileIsSequence;
   $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
     previousActiveFileIsSequence = activeFileIsSequence;
@@ -1410,9 +1412,6 @@
           {:else}
             {@const isTextOrEmpty =
               $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-            {@const isSequenceFile =
-              $activeDocumentPath === null ||
-              ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence)}
             <div class="relative grid h-full grid-cols-1 grid-rows-1">
               {#if showLoadingSpinner && isTextOrEmpty}
                 <div
@@ -1421,7 +1420,7 @@
                   <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
                 </div>
               {/if}
-              {#if isTextOrEmpty && isSequenceFile}
+              {#if isTextOrEmpty && activeFileIsSequence}
                 <div class="flex h-full">
                   <SequenceEditor
                     bind:this={sequenceEditorRef}
