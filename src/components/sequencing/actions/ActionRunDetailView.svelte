@@ -120,6 +120,7 @@
     }
     downloadJSON(
       {
+        canceled: actionRun.canceled,
         duration: actionRun.duration,
         error: actionRun.error,
         id: actionRun.id,
