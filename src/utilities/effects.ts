@@ -27,11 +27,11 @@ import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
 } from '../stores/activities';
+import { catchError, clearConsoleEntries, logMessage } from '../stores/console';
 import {
   checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
-import { catchError, clearConsoleEntries, logMessage } from '../stores/console';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
@@ -257,7 +257,6 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { ErrorTypes } from './errors';
 import { compare, convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
@@ -319,9 +318,9 @@ import {
   validateViewJSONAgainstSchema,
 } from './view';
 import {
+  buildBulkOperationCompoundError,
   cleanPath,
   doesFilenameMatchExtension,
-  buildBulkOperationCompoundError,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
   getWorkspaceFileFolderDisplay,
@@ -514,9 +513,10 @@ async function bulkMoveWorkspaceItems(
   if (failedFileOperations.length) {
     // Log each item that DID succeed so partial-failure runs still show what worked.
     const failedItems = new Set(failedFileOperations.map(op => op.item));
+    const verb = shouldCopy ? 'Copied' : 'Moved';
     for (const op of initialResponses) {
       if (isBulkOperationSuccess(op) && !skippedFiles.has(op.item) && !failedItems.has(op.item)) {
-        logMessage('log', String(op.response));
+        logMessage('log', `${verb} ${op.item}`);
       }
     }
     throw buildBulkOperationCompoundError(failedFileOperations, shouldCopy ? 'copy' : 'move');
@@ -818,7 +818,7 @@ const effects = {
     } catch (e) {
       checkConstraintsQueryStatusStore.set(Status.Failed);
       catchError('constraint', 'Check Constraints Failed', e as Error);
-      showFailureToast('Check Constraints Failed');
+      showFailureToast('Check Constraints Failed', e);
     }
   },
 
@@ -2558,7 +2558,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Workspace Create Failed', e as Error);
-      showFailureToast('Workspace Create Failed');
+      showFailureToast('Workspace Create Failed', e);
     }
 
     return null;
@@ -2594,7 +2594,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Workspace Collaborator Create Failed', e as Error);
-      showFailureToast('Workspace Collaborator Create Failed');
+      showFailureToast('Workspace Collaborator Create Failed', e);
       return;
     }
   },
@@ -4071,7 +4071,7 @@ const effects = {
         return true;
       }
     } catch (e) {
-      showFailureToast('Workspace Delete Failed');
+      showFailureToast('Workspace Delete Failed', e);
       catchError('log', 'Workspace delete failed', e as Error);
     }
 
@@ -4098,7 +4098,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Remove Workspace Collaborator Failed', e as Error);
-      showFailureToast('Remove Workspace Collaborator Failed');
+      showFailureToast('Remove Workspace Collaborator Failed', e);
       return false;
     }
   },
@@ -4147,7 +4147,7 @@ const effects = {
       return confirm;
     } catch (e) {
       catchError('log', `Workspace ${typeDisplayString} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`);
+      showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`, e);
     }
 
     return false;
@@ -5835,7 +5835,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Unable to retrieve workspace', e as Error);
-      showFailureToast('Workspace Retrieval Failed');
+      showFailureToast('Workspace Retrieval Failed', e);
     }
 
     return null;
@@ -5853,7 +5853,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Unable to retrieve workspace file', e as Error);
-      showFailureToast('Workspace File Retrieval Failed');
+      showFailureToast('Workspace File Retrieval Failed', e);
     }
 
     return null;
@@ -5875,7 +5875,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Unable to retrieve workspace file', e as Error);
-      showFailureToast('Workspace File Retrieval Failed');
+      showFailureToast('Workspace File Retrieval Failed', e);
     }
 
     return null;
@@ -6266,7 +6266,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', `Workspace file upload failed`, e as Error);
-      showFailureToast(`Workspace file upload failed`);
+      showFailureToast(`Workspace file upload failed`, e);
     }
 
     return null;
@@ -6574,7 +6574,7 @@ const effects = {
           `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
           e as Error,
         );
-        showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
+        showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`, e);
       }
     }
 
@@ -6598,7 +6598,7 @@ const effects = {
         return folderPath;
       } catch (e) {
         catchError('log', 'Workspace folder was unable to be created', e as Error);
-        showFailureToast('Workspace Folder Creation Failed');
+        showFailureToast('Workspace Folder Creation Failed', e);
       }
     }
 
@@ -6624,7 +6624,7 @@ const effects = {
         return filePath;
       } catch (e) {
         catchError('log', 'Workspace file was unable to be created', e as Error);
-        showFailureToast('Workspace File Creation Failed');
+        showFailureToast('Workspace File Creation Failed', e);
       }
     }
 
@@ -6985,7 +6985,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', `Workspace ${typeString.toLowerCase()} was unable to be renamed`, e as Error);
-      showFailureToast(`Workspace ${typeString} Rename Failed`);
+      showFailureToast(`Workspace ${typeString} Rename Failed`, e);
     }
 
     return null;
@@ -7153,7 +7153,7 @@ const effects = {
       logMessage('log', `Saved workspace file "${filePath}".`);
     } catch (e) {
       catchError('log', 'Workspace file was unable to be saved', e as Error);
-      showFailureToast('Workspace File Save Failed');
+      showFailureToast('Workspace File Save Failed', e);
     }
   },
 
@@ -7247,7 +7247,7 @@ const effects = {
       }
     } catch (e) {
       catchError('scheduling', 'Unable to schedule', e as Error);
-      showFailureToast('Scheduling failed');
+      showFailureToast('Scheduling failed', e);
     }
   },
 
@@ -7326,7 +7326,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Workspace file was unable to be created', e as Error);
-      showFailureToast('Workspace File Creation Failed');
+      showFailureToast('Workspace File Creation Failed', e);
     }
     return null;
   },
@@ -7405,12 +7405,8 @@ const effects = {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
           if (simulate.status === 'failed') {
-            catchError('simulation', '', {
-              ...simulate.reason,
-              message: `Unable to run simulation ID=${newSimulationDatasetId}. ${simulate.reason.message}.`,
-              timestamp: simulate.reason.timestamp ?? new Date().toISOString(),
-              type: simulate.reason.type ?? ErrorTypes.CAUGHT_ERROR,
-            });
+            // The simulationDataset subscription surfaces simulate.reason into the
+            // Simulation tab via the `fromDataset` branch in console.ts. We just toast.
             showFailureToast('Simulation failed');
             return;
           }
@@ -7423,7 +7419,7 @@ const effects = {
       }
     } catch (e) {
       catchError('simulation', 'Simulation failed', e as Error);
-      showFailureToast('Simulation failed');
+      showFailureToast('Simulation failed', e);
     }
   },
 
@@ -8590,7 +8586,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Workspace Update Failed', e as Error);
-      showFailureToast('Workspace Update Failed');
+      showFailureToast('Workspace Update Failed', e);
     }
 
     return null;

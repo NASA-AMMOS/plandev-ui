@@ -15,7 +15,7 @@ import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { getModelStatusRollup } from '../utilities/model';
-import type { CompoundError } from '../utilities/requests';
+import { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
 import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
@@ -129,26 +129,6 @@ export const constraintErrors: Readable<LogMessage[]> = derived(
   },
 );
 
-export const simulationErrors: Readable<LogMessage[]> = derived(
-  [simulationDataset, consoleEntries],
-  ([$simulationDataset, $consoleEntries]) => {
-    const fromDataset: LogMessage[] =
-      $simulationDataset && $simulationDataset.reason
-        ? [
-            {
-              ...$simulationDataset.reason,
-              category: 'simulation',
-              level: 'error',
-              message: parseErrorReason($simulationDataset.reason.message),
-            },
-          ]
-        : [];
-    const fromExceptions = $consoleEntries.filter(e => e.category === 'simulation');
-    return [...fromDataset, ...fromExceptions];
-  },
-  [],
-);
-
 export const modelLogs: Readable<LogMessage[]> = derived(
   [plan],
   ([$plan]) => {
@@ -176,6 +156,26 @@ export const modelErrors: Readable<LogMessage[]> = derived(
 
 export const schedulingErrors: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
   $pe.filter(e => e.category === 'scheduling'),
+);
+
+export const simulationErrors: Readable<LogMessage[]> = derived(
+  [simulationDataset, consoleEntries],
+  ([$simulationDataset, $consoleEntries]) => {
+    const fromDataset: LogMessage[] =
+      $simulationDataset && $simulationDataset.reason
+        ? [
+            {
+              ...$simulationDataset.reason,
+              category: 'simulation',
+              level: 'error',
+              message: parseErrorReason($simulationDataset.reason.message),
+            },
+          ]
+        : [];
+    const fromExceptions = $consoleEntries.filter(e => e.category === 'simulation');
+    return [...fromDataset, ...fromExceptions];
+  },
+  [],
 );
 
 export const allLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe => $pe.filter(e => e.category === 'log'));
@@ -273,8 +273,8 @@ function compoundErrorToLogMessages(message: string, error: Error | CompoundErro
   if ((error as Error).name === 'AbortError') {
     return [];
   }
-  if ((error as CompoundError).name === 'CompoundError') {
-    return (error as CompoundError).errors.map(e => ({ ...e, message: `${message}: ${e.message}` }));
+  if (error instanceof CompoundError) {
+    return error.errors.map(e => ({ ...e, message: `${message}: ${e.message}` }));
   }
   return [
     {

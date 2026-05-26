@@ -7,9 +7,9 @@ import {
   allLogs,
   catchError,
   clearConsoleEntries,
+  consoleEntries,
   errorLogs,
   logMessage,
-  consoleEntries,
   schedulingErrors,
 } from './console';
 

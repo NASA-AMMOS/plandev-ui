@@ -7,6 +7,7 @@ import type {
   ActivityValidationErrors,
   AnchorValidationError,
   ConsoleEntry,
+  LogMessage,
 } from '../types/console';
 
 export enum ErrorTypes {
@@ -62,6 +63,64 @@ export enum ErrorTypes {
   WORKSPACE_ADAPTATION_ERROR = 'WORKSPACE_ADAPTATION_ERROR',
   WORKSPACE_ADAPTATION_LOG = 'WORKSPACE_ADAPTATION_LOG',
   WORKSPACE_LINT_ERROR = 'WORKSPACE_LINT_ERROR',
+}
+
+// Structural mirror of CompoundError from ./requests (which carries `errors: LogMessage[]`).
+// Declared here as a type instead of importing the class so callers don't have to pull in
+// the requests.ts → $env/dynamic/public chain at runtime.
+type CompoundErrorShape = Error & { errors: LogMessage[] };
+
+const MULTIPLE_ERRORS_MESSAGE = 'Multiple errors occurred';
+
+// Composes a display string from a static label and an arbitrary error,
+// surfacing the backend message from a CompoundError when present.
+// Format: "<label>: <backend message>" when backend message is available,
+// otherwise just "<label>".
+export function composeErrorMessage(label: string, error: unknown): string {
+  const backendMessage = error !== undefined ? extractBackendMessage(error) : null;
+  return backendMessage !== null ? `${label}: ${backendMessage}` : label;
+}
+
+// Pulls a user-facing message out of a CompoundError when one is available.
+// Returns null when the caller should fall back to its own static label.
+//
+// Backend convention (FormattedError.java): `message` is the developer-written
+// wrapper sentence ("Unable to move X to Y"); `cause` is the underlying
+// exception's getMessage() ("./foo already exists.") — the actionable bit.
+// Prefer cause when it's substantive.
+export function extractBackendMessage(error: unknown): string | null {
+  if (!isCompoundError(error)) {
+    return null;
+  }
+
+  // Single-error branch: check inner fields, NOT outer .message. Path-1
+  // CompoundErrors (HTTP not-OK in reqHasura) have outer = statusText
+  // ("Internal Server Error") and empty inner; those fall through here.
+  if (error.errors.length === 1) {
+    const { cause, message } = error.errors[0];
+    if (isSubstantive(cause)) {
+      return cause;
+    }
+    return isSubstantive(message) ? message : null;
+  }
+
+  // Multi-error / bulk-op branch: outer message is the constructed summary
+  // ("Some files failed to move") and is fine to surface.
+  if (error.errors.length > 1 && isSubstantive(error.message)) {
+    return error.message;
+  }
+
+  return null;
+}
+
+function isCompoundError(error: unknown): error is CompoundErrorShape {
+  return (
+    error instanceof Error && error.name === 'CompoundError' && Array.isArray((error as CompoundErrorShape).errors)
+  );
+}
+
+function isSubstantive(msg: string | undefined): msg is string {
+  return typeof msg === 'string' && msg.trim().length > 0 && msg !== MULTIPLE_ERRORS_MESSAGE;
 }
 
 export function isInstantiationError(

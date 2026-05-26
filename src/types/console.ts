@@ -14,7 +14,7 @@ export interface ConsoleEntry {
   type: ErrorTypes; // category/class identifier in SCREAMING_SNAKE_CASE, e.g. "NO_SUCH_SCHEDULING_SPECIFICATION"
 }
 
-export type ErrorCategory = 'activity' | 'anchor' | 'constraint' | 'log' | 'model' | 'scheduling' | 'simulation';
+export type ErrorCategory = 'constraint' | 'log' | 'scheduling' | 'simulation';
 
 export interface LogMessage extends ConsoleEntry {
   category?: ErrorCategory; // set when the entry enters consoleEntries; unset for pre-categorization shapes

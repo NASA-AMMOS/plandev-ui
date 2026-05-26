@@ -266,8 +266,8 @@ export async function reqHasura<T = any>(
 
 // Workspace endpoints respond with a raw FormattedError JSON body on non-OK responses
 // (USE_HASURA_FORMATTING=false in WorkspaceBindings — no Hasura `extensions` wrapper).
-// Wraps it as a CompoundError so callers' `catchError(...)` dispatches via the typed-BaseError branch
-// and the rich metadata (type, service, data, trace) reaches the Console.
+// Wraps it as a CompoundError so callers' `catchError(...)` dispatches via the typed-ConsoleEntry
+// branch and the rich metadata (type, service, data, trace) reaches the Console.
 async function throwWorkspaceError(response: Response): Promise<never> {
   let body: any = null;
   try {
