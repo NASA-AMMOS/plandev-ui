@@ -7405,8 +7405,8 @@ const effects = {
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
           if (simulate.status === 'failed') {
-            // The simulationDataset subscription surfaces simulate.reason into the
-            // Simulation tab via the `fromDataset` branch in console.ts. We just toast.
+            // simulationDataset subscription surfaces simulate.reason in the Simulation
+            // tab via the fromDataset branch in console.ts — no catchError needed here.
             showFailureToast('Simulation failed');
             return;
           }

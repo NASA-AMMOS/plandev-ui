@@ -65,19 +65,15 @@ export enum ErrorTypes {
   WORKSPACE_LINT_ERROR = 'WORKSPACE_LINT_ERROR',
 }
 
-// Structural mirror of CompoundError from ./requests (which carries `errors: LogMessage[]`).
-// Declared here as a type instead of importing the class so callers don't have to pull in
-// the requests.ts → $env/dynamic/public chain at runtime.
+// Structural mirror of CompoundError from ./requests. Avoiding the value import keeps callers
+// off the requests.ts → $env/dynamic/public chain at runtime.
 type CompoundErrorShape = Error & { errors: LogMessage[] };
 
 const MULTIPLE_ERRORS_MESSAGE = 'Multiple errors occurred';
 
-// Composes a display string from a static label and an arbitrary error,
-// surfacing the backend message from a CompoundError when present.
-// Format: "<label>: <backend message>" when backend message is available,
-// otherwise just "<label>".
+// Returns "<label>: <backend message>" when a backend message can be extracted, else just <label>.
 export function composeErrorMessage(label: string, error: unknown): string {
-  const backendMessage = error !== undefined ? extractBackendMessage(error) : null;
+  const backendMessage = extractBackendMessage(error);
   return backendMessage !== null ? `${label}: ${backendMessage}` : label;
 }
 
@@ -93,9 +89,8 @@ export function extractBackendMessage(error: unknown): string | null {
     return null;
   }
 
-  // Single-error branch: check inner fields, NOT outer .message. Path-1
-  // CompoundErrors (HTTP not-OK in reqHasura) have outer = statusText
-  // ("Internal Server Error") and empty inner; those fall through here.
+  // Single-error branch: check inner cause/message, NOT outer. Path-1 CompoundErrors
+  // (HTTP not-OK in reqHasura) have a non-user-friendly outer and empty inner — fall through.
   if (error.errors.length === 1) {
     const { cause, message } = error.errors[0];
     if (isSubstantive(cause)) {
