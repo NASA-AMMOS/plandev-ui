@@ -14,7 +14,6 @@ on:
       - 'dev-[0-9]+.[0-9]+.[0-9]+'
   schedule:
     - cron: '42 2 * * 0' # weekly cron scan
-  workflow_dispatch:
 
 jobs:
   analyze:
@@ -91,7 +90,7 @@ jobs:
       # It may be possible to remove in future iterations
       - name: Post-Process Output
         run: |
-          python3 -m pip install nasa-scrub
+          python3 -m pip install nasa-scrub==3.0
 
           results_dir=`realpath ${{ github.workspace }}/../results`
           sarif_files=`find $results_dir -name '*.sarif'`
