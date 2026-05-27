@@ -102,6 +102,11 @@ jobs:
             python3 -m scrub.tools.parsers.translate_results $sarif_file $output_file ${{ github.workspace }} sarifv2.1.0
           done
 
+          # TEMPORARY WORKAROUND: remove this once nasa-scrub emits valid SARIF 2.1.0.
+          # https://github.com/nasa/scrub/issues/118
+          python3 .github/workflows/scripts/repair-scrub-sarif.py "$results_dir"
+          # END TEMPORARY WORKAROUND
+
           echo "RESULTS_DIR=$results_dir" >> $GITHUB_ENV
 
       # This step makes the analysis artifacts available for download
