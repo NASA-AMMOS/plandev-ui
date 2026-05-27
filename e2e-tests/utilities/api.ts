@@ -139,12 +139,12 @@ export class AerieApi {
     // Upload the action file first
     const actionFileId = await this.uploadFile(actionFilePath);
 
-    // Create the action definition
+    // Create the action definition with an initial version (revision 0)
     const data = await this.gqlQuery<{ insert_action_definition_one: { id: number } }>(gql.CREATE_ACTION_DEFINITION, {
       actionDefinitionInsertInput: {
-        action_file_id: actionFileId,
         description,
         name,
+        versions: { data: [{ action_file_id: actionFileId }] },
         workspace_id: workspaceId,
       },
     });

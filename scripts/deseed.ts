@@ -11,8 +11,10 @@
 
 import { AerieApi } from '../e2e-tests/utilities/api.js';
 
-// Pattern to identify seeded items: name ends with " (animal-suffix)" from unique-names-generator
-const isSeedItem = (name: string): boolean => /\(\w+\)$/.test(name);
+// Pattern to identify seeded items: name ends with " • animal-suffix".
+// The bullet sentinel is paired with the seed script and is vanishingly
+// unlikely to collide with organically created plan/model/etc. names.
+const isSeedItem = (name: string): boolean => / • [a-z][a-z-]*$/.test(name);
 
 // External type name prefixes from seed script (actual names have _suffix appended)
 const SEED_EXTERNAL_SOURCE_TYPE_PREFIX = 'BananaSupplySource_';
@@ -86,7 +88,12 @@ async function deseed() {
   const seededGoals = schedulingGoals.filter(g => isSeedItem(g.name));
   const seededConditions = schedulingConditions.filter(c => isSeedItem(c.name));
   const seededViews = views.filter(v => isSeedItem(v.name));
-  const seededDerivationGroups = derivationGroups.filter(dg => isSeedItem(dg.name));
+  // Derivation groups are identified by their ASCII source_type_name (the seed
+  // intentionally omits the unicode marker from the group's name so the bulk
+  // `_in`-based delete mutation works — see seed.ts for details).
+  const seededDerivationGroups = derivationGroups.filter(dg =>
+    dg.source_type_name.startsWith(SEED_EXTERNAL_SOURCE_TYPE_PREFIX),
+  );
   // External sources belong to seeded derivation groups
   const seededDerivationGroupNames = new Set(seededDerivationGroups.map(dg => dg.name));
   const seededExternalSources = externalSources.filter(s => seededDerivationGroupNames.has(s.derivation_group_name));

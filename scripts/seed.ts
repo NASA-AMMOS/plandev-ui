@@ -38,8 +38,18 @@ import { ResourceType } from '../src/types/simulation.js';
 import { getIntervalFromDoyRange, getUnixEpochTime } from '../src/utilities/time.js';
 import { generateDefaultView } from '../src/utilities/view.js';
 
+// Seed marker — embedded in human-readable names so deseed can identify
+// seeded items unambiguously (a plain "(word)" suffix collides with organic names).
+// The bullet acts as both visual separator and the seed sentinel.
+const SEED_MARKER = '•';
+
 // Generate unique suffix for this seed run
 const uniqueSuffix = uniqueNamesGenerator({ dictionaries: [animals], separator: '-' });
+
+// Suffix appended to human-readable names as `Name • animal`. ASCII-only
+// `uniqueSuffix` is still used for filesystem paths, dictionary mission names,
+// and external type names.
+const seedNameSuffix = `${SEED_MARKER} ${uniqueSuffix}`;
 
 // Banana-themed tags with colors
 const TAGS = [
@@ -374,8 +384,14 @@ function generateExternalDataset(startTime: string, durationHours: number) {
   };
 }
 
+function fmtMs(ms: number): string {
+  if (ms < 1000) return `${ms.toFixed(0)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
 async function seed() {
-  console.log(`Starting Aerie seed (${uniqueSuffix})...\n`);
+  const seedStart = performance.now();
+  console.log(`Starting Aerie seed ${seedNameSuffix}...\n`);
 
   const api = new AerieApi();
 
@@ -390,7 +406,7 @@ async function seed() {
   console.log(`JAR uploaded with ID: ${jarId}\n`);
 
   // Create model
-  const modelName = `Banananation (${uniqueSuffix})`;
+  const modelName = `Banananation ${seedNameSuffix}`;
   console.log('Creating model...');
   const model = await api.createModel({
     description: 'Seeded model for development and testing',
@@ -405,7 +421,7 @@ async function seed() {
   console.log('Creating tags...');
   const createdTags: Array<{ id: number; name: string }> = [];
   for (const tag of TAGS) {
-    const tagName = `${tag.name} (${uniqueSuffix})`;
+    const tagName = `${tag.name} ${seedNameSuffix}`;
     const created = await api.createTag(tagName, tag.color);
     createdTags.push({ id: created.id, name: tagName });
     console.log(`  - Created tag: ${tagName} (ID: ${created.id})`);
@@ -424,7 +440,7 @@ async function seed() {
 
   for (const planConfig of PLANS) {
     // Create plan with unique name
-    const planName = `${planConfig.name} (${uniqueSuffix})`;
+    const planName = `${planConfig.name} ${seedNameSuffix}`;
     const plan = await api.createPlan({
       duration: getIntervalFromDoyRange(planConfig.startTime, planConfig.endTime),
       model_id: model.id,
@@ -468,12 +484,27 @@ async function seed() {
 
     // Bulk insert in batches of 1000
     const BATCH_SIZE = 1000;
+    const planInsertStart = performance.now();
+    const batchTimings: number[] = [];
     for (let i = 0; i < activities.length; i += BATCH_SIZE) {
       const batch = activities.slice(i, i + BATCH_SIZE);
+      const batchStart = performance.now();
       await api.createActivityDirectives(batch);
-      console.log(`      Progress: ${Math.min(i + BATCH_SIZE, totalActivities)}/${totalActivities}`);
+      const batchMs = performance.now() - batchStart;
+      batchTimings.push(batchMs);
+      const done = Math.min(i + BATCH_SIZE, totalActivities);
+      const rate = Math.round(batch.length / (batchMs / 1000));
+      console.log(`      Progress: ${done}/${totalActivities} (batch=${fmtMs(batchMs)}, ${rate} rows/s)`);
     }
-    console.log(`    Created ${totalActivities} activities`);
+    const planInsertMs = performance.now() - planInsertStart;
+    const overallRate = Math.round(totalActivities / (planInsertMs / 1000));
+    const avgBatch = batchTimings.reduce((a, b) => a + b, 0) / batchTimings.length;
+    const minBatch = Math.min(...batchTimings);
+    const maxBatch = Math.max(...batchTimings);
+    console.log(
+      `    Created ${totalActivities} activities in ${fmtMs(planInsertMs)} (${overallRate} rows/s, ` +
+        `batch avg=${fmtMs(avgBatch)} min=${fmtMs(minBatch)} max=${fmtMs(maxBatch)})`,
+    );
 
     const durationHours = planDurationMinutes / 60;
     createdPlans.push({
@@ -489,7 +520,7 @@ async function seed() {
   console.log('\nCreating constraints...');
   const createdConstraints: Array<{ id: number; name: string }> = [];
   for (const constraint of CONSTRAINTS) {
-    const constraintName = `${constraint.name} (${uniqueSuffix})`;
+    const constraintName = `${constraint.name} ${seedNameSuffix}`;
     const created = await api.createConstraint({
       description: constraint.description,
       name: constraintName,
@@ -514,7 +545,7 @@ async function seed() {
   console.log('\nCreating scheduling goals...');
   const createdGoals: Array<{ id: number; name: string }> = [];
   for (const goal of SCHEDULING_GOALS) {
-    const goalName = `${goal.name} (${uniqueSuffix})`;
+    const goalName = `${goal.name} ${seedNameSuffix}`;
     const created = await api.createSchedulingGoal({
       description: goal.description,
       name: goalName,
@@ -539,7 +570,7 @@ async function seed() {
   console.log('\nCreating scheduling conditions...');
   const createdConditions: Array<{ id: number; name: string }> = [];
   for (const condition of SCHEDULING_CONDITIONS) {
-    const conditionName = `${condition.name} (${uniqueSuffix})`;
+    const conditionName = `${condition.name} ${seedNameSuffix}`;
     const created = await api.createSchedulingCondition({
       description: condition.description,
       name: conditionName,
@@ -580,7 +611,11 @@ async function seed() {
 
   // Create external source and event types first (needed for views)
   console.log('\nCreating external source types...');
-  const derivationGroupName = `Banana Supply (${uniqueSuffix})`;
+  // Derivation group name is intentionally ASCII-only (no marker): we identify
+  // seeded ones in deseed via their ASCII source_type_name, which lets the
+  // bulk `_in`-based delete mutation work (Hasura's `_in` silently no-ops on
+  // strings containing non-ASCII characters).
+  const derivationGroupName = `Banana Supply ${uniqueSuffix}`;
   const sourceTypeName = `${EXTERNAL_SOURCE_TYPE}_${uniqueSuffix.replace(/-/g, '_')}`;
   const eventTypeName = `${EXTERNAL_EVENT_TYPE}_${uniqueSuffix.replace(/-/g, '_')}`;
   const eventTypeSchema = {
@@ -663,7 +698,7 @@ async function seed() {
 
   const createdViews: Array<{ id: number; name: string }> = [];
   for (const viewConfig of VIEW_CONFIGS) {
-    const viewName = `${viewConfig.name} (${uniqueSuffix})`;
+    const viewName = `${viewConfig.name} ${seedNameSuffix}`;
     const defaultView = generateDefaultView(allResourceTypes, externalEventTypes);
     Object.assign(defaultView.definition.plan.grid, viewConfig.grid);
     const created = await api.createView({
@@ -716,7 +751,7 @@ async function seed() {
 
   // Read and upload sequence adaptation
   const adaptationCode = fs.readFileSync('e2e-tests/data/sequence-adaptation.js', 'utf-8');
-  const adaptationName = `Seed Adaptation (${uniqueSuffix})`;
+  const adaptationName = `Seed Adaptation ${seedNameSuffix}`;
   const adaptationResult = await api.createSequenceAdaptation({
     adaptation: adaptationCode,
     name: adaptationName,
@@ -724,7 +759,7 @@ async function seed() {
   console.log(`  - Created sequence adaptation: ${adaptationResult.name}`);
 
   // Create parcel bundling the dictionaries
-  const parcelName = `Seed Parcel (${uniqueSuffix})`;
+  const parcelName = `Seed Parcel ${seedNameSuffix}`;
   const parcel = await api.createParcel({
     channel_dictionary_id: channelDictId ?? null,
     command_dictionary_id: commandDictId,
@@ -748,7 +783,7 @@ async function seed() {
     })
   ];
 }`,
-      name: `BiteBanana Expansion (${uniqueSuffix})`,
+      name: `BiteBanana Expansion ${seedNameSuffix}`,
     },
     {
       activity_type: 'PeelBanana',
@@ -764,7 +799,7 @@ async function seed() {
     })
   ];
 }`,
-      name: `PeelBanana Expansion (${uniqueSuffix})`,
+      name: `PeelBanana Expansion ${seedNameSuffix}`,
     },
     {
       activity_type: 'PickBanana',
@@ -778,7 +813,7 @@ async function seed() {
     })
   ];
 }`,
-      name: `PickBanana Expansion (${uniqueSuffix})`,
+      name: `PickBanana Expansion ${seedNameSuffix}`,
     },
   ];
 
@@ -797,7 +832,7 @@ async function seed() {
   }
 
   // Create expansion set bundling all rules
-  const expansionSetName = `Seed Expansion Set (${uniqueSuffix})`;
+  const expansionSetName = `Seed Expansion Set ${seedNameSuffix}`;
   const expansionSet = await api.createExpansionSet(
     parcel.id,
     model.id,
@@ -809,14 +844,14 @@ async function seed() {
 
   // Create workspace using the parcel
   console.log('\nCreating workspace...');
-  const workspaceName = `Seed Workspace (${uniqueSuffix})`;
+  const workspaceName = `Seed Workspace ${seedNameSuffix}`;
   const workspaceLocation = `seed_workspace_${uniqueSuffix}`;
   const workspaceId = await api.createWorkspace(workspaceLocation, parcel.id, workspaceName);
   console.log(`  - Created workspace: ${workspaceName} (ID: ${workspaceId}, location: ${workspaceLocation})`);
 
   // Create action definition in the workspace
   console.log('\nCreating action...');
-  const actionName = `Seed Action (${uniqueSuffix})`;
+  const actionName = `Seed Action ${seedNameSuffix}`;
   const actionDescription = 'Demo action that fetches data from GitHub API';
   const action = await api.createActionDefinition(
     workspaceId,
@@ -830,7 +865,7 @@ async function seed() {
   // Extensions receive POST with { planId, selectedActivityDirectiveId, simulationDatasetId, gateway, hasura }
   // and must return { success: boolean, message: string, url: string }
   console.log('\nCreating extension...');
-  const extensionName = `Plan Analyzer (${uniqueSuffix})`;
+  const extensionName = `Plan Analyzer ${seedNameSuffix}`;
   const extensionDescription =
     'Demo extension - analyzes plan data and opens results (requires local extension server)';
   const extensionUrl = 'http://localhost:8000/analyze';
@@ -889,7 +924,7 @@ async function seed() {
 
   // Create second workspace with thousands of files for performance testing
   console.log('\nCreating large workspace...');
-  const largeWorkspaceName = `Large Workspace (${uniqueSuffix})`;
+  const largeWorkspaceName = `Large Workspace ${seedNameSuffix}`;
   const largeWorkspaceLocation = `large_workspace_${uniqueSuffix}`;
   const largeWorkspaceId = await api.createWorkspace(largeWorkspaceLocation, parcel.id, largeWorkspaceName);
   console.log(`  - Created workspace: ${largeWorkspaceName} (ID: ${largeWorkspaceId})`);
@@ -1006,6 +1041,9 @@ async function seed() {
   console.log(`  Action: ${actionName} (ID: ${action.id})`);
   console.log(`  Extension: ${extensionName} (ID: ${extension.id})`);
   console.log('\nYou can now view these in the Aerie UI at http://localhost:3000');
+
+  const totalMs = performance.now() - seedStart;
+  console.log(`\nTotal seed time: ${fmtMs(totalMs)}`);
 }
 
 // Run the seed script
