@@ -173,6 +173,14 @@ export class AerieApi {
     await this.gqlQuery(gql.DELETE_TAG, { id });
   }
 
+  async duplicatePlan(planId: number, newPlanName: string): Promise<{ id: number }> {
+    const data = await this.gqlQuery<{ duplicate_plan: { new_plan_id: number } }>(gql.DUPLICATE_PLAN, {
+      new_plan_name: newPlanName,
+      plan_id: planId,
+    });
+    return { id: data.duplicate_plan.new_plan_id };
+  }
+
   async getPlan(id: number): Promise<unknown> {
     const data = await this.gqlQuery<{ plan: unknown }>(gql.GET_PLAN, { id });
     return data.plan;

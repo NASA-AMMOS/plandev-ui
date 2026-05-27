@@ -236,15 +236,24 @@ export function transformPlanMergeNonConflictingActivities(
 }
 
 export function copyActivityDirectivesToClipboard(sourcePlan: Plan | null, activities: ActivityDirective[]) {
-  const copiedActivityIds = new Set(activities.map(a => a.id));
+  // Activity directive ids are unique per-plan but not globally. When the
+  // selection spans multiple plans (e.g. from cross-plan activity search),
+  // anchor membership must be checked against `(plan_id, id)` — otherwise an
+  // anchor_id from plan B can spuriously match an id from plan A in the same
+  // selection and silently rewire across plans on paste. The clipped payload
+  // also carries the source `plan_id` so the paste-side anchor remap in
+  // `cloneActivityDirectives` can disambiguate same-id activities.
+  const copiedActivityKeys = new Set(activities.map(a => `${a.plan_id}:${a.id}`));
   const clippedActivities = activities.map(activity => {
-    const anchorInSelection = activity.anchor_id !== null && copiedActivityIds.has(activity.anchor_id);
+    const anchorInSelection =
+      activity.anchor_id !== null && copiedActivityKeys.has(`${activity.plan_id}:${activity.anchor_id}`);
     return {
       anchor_id: anchorInSelection ? activity.anchor_id : null,
       anchored_to_start: activity.anchored_to_start,
       arguments: activity.arguments,
       id: activity.id,
       name: activity.name,
+      plan_id: activity.plan_id,
       start_offset: activity.anchor_id !== null && !anchorInSelection ? '0' : activity.start_offset,
       start_time_ms: activity.start_time_ms,
       tags: activity.tags,

@@ -33,7 +33,14 @@
   export let onSortChange: () => void = () => {};
 
   let dataGrid: DataGrid<ActivityDirectiveSearchResult> | undefined;
-  let selectedItemIds: number[] = [];
+  // Activity directive ids are unique per-plan but not globally — cross-plan results
+  // can collide. Key rows (and selection) by `${plan_id}:${id}` so AG-Grid never sees
+  // duplicate row IDs and selection state stays scoped to the right source plan.
+  let selectedItemIds: string[] = [];
+
+  function getRowKey(activity: ActivityDirectiveSearchResult): string {
+    return `${activity.plan_id}:${activity.id}`;
+  }
 
   const formatTimestamp = (params: { value: string }) =>
     params.value ? getShortISOForDate(new Date(params.value)) : '';
@@ -298,8 +305,8 @@
     if (!activities) {
       return [];
     }
-    const idSet = new Set(selectedItemIds);
-    return activities.filter(a => idSet.has(a.id));
+    const keySet = new Set(selectedItemIds);
+    return activities.filter(a => keySet.has(getRowKey(a)));
   }
 
   function openSelectedInPlan() {
@@ -430,6 +437,7 @@
         <BulkActionDataGrid
           bind:dataGrid
           bind:selectedItemIds
+          getRowId={getRowKey}
           idKey="id"
           {columnDefs}
           columnShiftResize
