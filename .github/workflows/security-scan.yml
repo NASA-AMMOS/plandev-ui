@@ -1,6 +1,6 @@
 # AMMOS OSS Security Scan
 # (internal) docs - https://wiki.jpl.nasa.gov/pages/viewpage.action?spaceKey=AmmosArch&title=Code+Vulnerability+Scanning+Set+Up+for+AMMOS+Open+Source+Software
-name: "Security Scan"
+name: 'Security Scan'
 
 on:
   push:
@@ -83,7 +83,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba #4.35.5
         with:
-          category: "/language:${{matrix.language}}"
+          category: '/language:${{matrix.language}}'
           output: ../results
 
       # This step is required by AMMOS to remove malformed data from the CodeQL output
