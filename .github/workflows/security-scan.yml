@@ -20,9 +20,6 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    env:
-      # PRs for forks can't use secrets, can't upload to Sonar
-      CAN_USE_SECRETS: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     permissions:
       # required for all workflows
       security-events: write
@@ -117,17 +114,39 @@ jobs:
           name: codeql-artifacts-${{ matrix.language }}
           path: ${{ env.RESULTS_DIR }}
 
+  sonar:
+    name: SonarQube Scan
+    needs: analyze
+    runs-on: ubuntu-latest
+    # PRs for forks can't use secrets, can't upload to Sonar
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
+        with:
+          fetch-depth: 0
+
+      - name: Download CodeQL Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: codeql-artifacts-*
+          path: codeql-results
+
       - name: collect stripped .sarif file paths
-        if: env.CAN_USE_SECRETS == 'true'
         shell: bash
         run: |
-          sarif_paths="$(find "${{ github.workspace }}/../results" -name '*_stripped.sarif' -type f | paste -sd, -)"
+          echo "downloaded CodeQL artifact files:"
+          find "${{ github.workspace }}/codeql-results" -type f | sort
+
+          sarif_paths="$(find "${{ github.workspace }}/codeql-results" -name '*_stripped.sarif' -type f | paste -sd, -)"
           echo "sarif paths: $sarif_paths"
           test -n "$sarif_paths"
           echo "SARIF_REPORT_PATHS=$sarif_paths" >> "$GITHUB_ENV"
 
       - name: SonarQube Scan
-        if: env.CAN_USE_SECRETS == 'true'
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
