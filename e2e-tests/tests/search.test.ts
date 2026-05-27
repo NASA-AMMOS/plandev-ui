@@ -311,9 +311,7 @@ test.describe.serial('Activity Search — Cross-Plan ID Collisions', () => {
       await expect(crossPlanSearch.resultsRows).toHaveCount(4);
 
       // Both plans should each contribute two rows (target + anchored).
-      await expect(
-        crossPlanSearch.resultsGrid.getByText(crossPlanSetup.planName, { exact: true }),
-      ).toHaveCount(2);
+      await expect(crossPlanSearch.resultsGrid.getByText(crossPlanSetup.planName, { exact: true })).toHaveCount(2);
       await expect(crossPlanSearch.resultsGrid.getByText(duplicatedPlanName, { exact: true })).toHaveCount(2);
 
       expect(gridProblemMessages).toEqual([]);
