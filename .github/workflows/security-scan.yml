@@ -14,6 +14,7 @@ on:
       - 'dev-[0-9]+.[0-9]+.[0-9]+'
   schedule:
     - cron: '42 2 * * 0' # weekly cron scan
+  workflow_dispatch:
 
 jobs:
   analyze:
