@@ -12,7 +12,11 @@ export function shouldRedirectToLogin(user: User | null) {
 export async function logout(reason?: string) {
   if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
     if (browser) {
-      window.location.href = `${base}/oidc/logout`;
+      // Pass reason as a query param so the server can persist it across the IdP roundtrip
+      // (the IdP strips post_logout_redirect_uri query params, so a cookie is set in /oidc/logout
+      // and consumed by +layout.server.ts when redirecting to /login).
+      const query = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+      window.location.href = `${base}/oidc/logout${query}`;
     } else {
       console.error(
         `Logout triggered from server. NOTE - this is exceptional behavior and this logout handling exists to avoid a crash. Cited reason: ${reason}:`,

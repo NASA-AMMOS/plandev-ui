@@ -56,6 +56,15 @@ if (browser) {
  * - Connection-level error handling separate from subscription-level errors
  */
 
+// Custom close code + reason used when WE intentionally restart the WebSocket
+// (e.g., after a token refresh or role switch). The closed handler matches BOTH
+// to suppress the 'reconnecting' state — keeps the banner from flashing on the
+// fast path. If our reconnect happens to hang on a network/server issue, the
+// natural close that follows will use a different code and surface the banner
+// via the normal path (with graphql-ws's connectionAckWaitTimeout latency).
+const INTENTIONAL_RESTART_CODE = 4999;
+const INTENTIONAL_RESTART_REASON = 'Client Restart';
+
 // Singleton client instance
 let client: Client | null = null;
 
@@ -143,16 +152,20 @@ function createSharedClient(): Client {
           return;
         }
         activeSocket = null;
-        // Update state to reconnecting (graphql-ws will auto-retry)
-        connectionStateStore.set('reconnecting');
-        // Check for auth-related close codes
-        if (event && typeof event === 'object' && 'code' in event) {
-          const closeEvent = event as CloseEvent;
-          // 4401 = Unauthorized
-          // 4403 = Forbidden
-          if (closeEvent.code === 4401 || closeEvent.code === 4403) {
-            logout('Session expired');
-          }
+        const closeEvent =
+          event && typeof event === 'object' && 'code' in event ? (event as CloseEvent) : undefined;
+        const code = closeEvent?.code;
+        // Our own intentional restart (token refresh, role switch). Reconnect is immediate
+        // and intentional — skip the reconnecting state so the banner doesn't flash.
+        // Gate on BOTH code and reason so a foreign close can't silently swallow the banner.
+        const isIntentionalRestart =
+          code === INTENTIONAL_RESTART_CODE && closeEvent?.reason === INTENTIONAL_RESTART_REASON;
+        if (!isIntentionalRestart) {
+          connectionStateStore.set('reconnecting');
+        }
+        // 4401 = Unauthorized, 4403 = Forbidden
+        if (code === 4401 || code === 4403) {
+          logout('Session expired');
         }
       },
       connected: (socket: unknown) => {
@@ -230,8 +243,9 @@ function createSharedClient(): Client {
  */
 function doRestart(): void {
   if (activeSocket && activeSocket.readyState === WebSocket.OPEN) {
-    // Custom close code (4205) triggers graphql-ws to reconnect
-    activeSocket.close(4205, 'Client Restart');
+    // Custom close code triggers graphql-ws to reconnect. The closed handler
+    // recognizes this code+reason pair and suppresses the 'reconnecting' state.
+    activeSocket.close(INTENTIONAL_RESTART_CODE, INTENTIONAL_RESTART_REASON);
   } else {
     // Socket not ready, flag for restart when it opens
     restartRequested = true;

@@ -1,3 +1,4 @@
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { Client } from '$lib/server/oidc';
 import { redirect } from '@sveltejs/kit';
@@ -9,7 +10,7 @@ import { redirect } from '@sveltejs/kit';
  * @returns a redirection to the IDP session destruction endpoint.
  */
 
-export const GET = async ({ cookies }) => {
+export const GET = async ({ cookies, url }) => {
   console.debug('/oidc/logout (GET)');
 
   const client = await Client.instance;
@@ -21,6 +22,13 @@ export const GET = async ({ cookies }) => {
   cookies.delete('refreshToken', { path: '/' });
 
   cookies.delete('activeRole', { path: '/' });
+
+  // Stash the logout reason so +layout.server.ts can surface it on /login after the IdP roundtrip
+  // (the IdP strips query params from post_logout_redirect_uri, so we can't pass it through the URL).
+  const reason = url.searchParams.get('reason');
+  if (reason) {
+    cookies.set('logoutReason', reason, { httpOnly: true, maxAge: 60, path: '/', sameSite: 'lax', secure: !dev });
+  }
 
   if (!idToken) {
     // No id token available (e.g., already cleared by another tab's logout or refresh failure).
