@@ -465,7 +465,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
     return (
-      isUserAdmin(user) || (getPermission([Queries.INSERT_PLAN_DERIVATION_GROUP], user) && isModelOwner(user, model))
+      isUserAdmin(user) || (getPermission([Queries.INSERT_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
     );
   },
   CREATE_PARAMETER_DICTIONARY: (user: User | null): boolean => {
@@ -675,7 +675,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
     return (
-      isUserAdmin(user) || (getPermission([Queries.DELETE_PLAN_DERIVATION_GROUP], user) && isModelOwner(user, model))
+      isUserAdmin(user) || (getPermission([Queries.DELETE_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
     );
   },
   DELETE_PARAMETER_DICTIONARY: (user: User | null): boolean => {

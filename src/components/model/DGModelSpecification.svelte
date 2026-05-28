@@ -24,8 +24,6 @@
   export let user: User | null;
   export let selectedDerivationGroups: string[];
 
-  $: console.log('dgmodelspec -> selectedDerivationGroups', selectedDerivationGroups);
-
   type CellRendererParams = {
     viewDerivationGroup: (derivationGroup: DerivationGroup) => void;
   };
@@ -85,16 +83,6 @@
   $: hasUpdateDerivationGroupLinkPermission =
     featurePermissions.derivationGroupModelLink.canCreate(user) &&
     featurePermissions.derivationGroupModelLink.canDelete(user);
-
-  // $: selectedDerivationGroups = $selectedModelDerivationGroupNames.reduce(
-  //   (prevBooleanMap: Record<string, boolean>, derivationGroupName: string) => {
-  //     return {
-  //       ...prevBooleanMap,
-  //       [derivationGroupName]: true,
-  //     };
-  //   },
-  //   {},
-  // );
 
   $: if (selectedDerivationGroups && dataGrid) {
     dataGrid.refreshCells({ columns: ['selected'] });

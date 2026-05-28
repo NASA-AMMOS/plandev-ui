@@ -340,7 +340,7 @@ const gql = {
 
   CREATE_MODEL_DERIVATION_GROUP: `#graphql
     mutation CreateModelDerivationGroup($source: model_derivation_group_insert_input!) {
-      planExternalSourceLink: ${Queries.INSERT_MODEL_DERIVATION_GROUP}(
+      modelExternalSourceLink: ${Queries.INSERT_MODEL_DERIVATION_GROUP}(
         object: $source,
         on_conflict: {
           constraint: model_derivation_group_pkey
@@ -899,7 +899,7 @@ const gql = {
   `,
 
   DELETE_MODEL_DERIVATION_GROUP: `#graphql
-    mutation DeletePlanExternalSource($where: model_derivation_group_bool_exp!) {
+    mutation DeleteModelDerivationGroup($where: model_derivation_group_bool_exp!) {
       modelDerivationGroupLink: ${Queries.DELETE_MODEL_DERIVATION_GROUP}(where: $where) {
         returning {
           derivation_group_name

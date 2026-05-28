@@ -163,8 +163,6 @@
     version: string;
   } | null = null;
 
-  // to get derivation groups here, just need the store, and the table toggle button sends a request to update it.
-
   let selectedConstraintSpecificationMap: UpdatedAssociationSpecificationMap;
   let selectedConditionSpecificationMap: UpdatedAssociationSpecificationMap;
   let selectedGoalSpecificationMap: UpdatedAssociationSpecificationMap;
@@ -370,7 +368,6 @@
       {},
     );
   }
-
   $: {
     let lastPriority = -1;
     selectedVisibleConstraintSpecificationsList = selectedVisibleConstraintSpecificationsList

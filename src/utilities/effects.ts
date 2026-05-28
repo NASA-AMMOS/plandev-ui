@@ -3010,7 +3010,7 @@ const effects = {
   ): Promise<void> {
     try {
       if ((model && !queryPermissions.DELETE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
-        throwPermissionError('delete a derivation group from the plan');
+        throwPermissionError('delete a derivation group from a model');
       }
       if (model) {
         derivationGroupModelLinkErrorStore.set(null);
@@ -3018,7 +3018,6 @@ const effects = {
           const data = await reqHasura<{
             returning: {
               derivation_group_name: string;
-              model: number;
             }[];
           }>(
             gql.DELETE_MODEL_DERIVATION_GROUP,
@@ -6319,30 +6318,28 @@ const effects = {
   ): Promise<void> {
     try {
       if ((model && !queryPermissions.CREATE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
-        throwPermissionError('add a derivation group to the plan');
+        throwPermissionError('add a derivation group to the model');
       }
-      if (model) {
-        derivationGroupModelLinkErrorStore.set(null);
-        if (plan !== null) {
-          const data = await reqHasura<ModelDerivationGroup>(
-            gql.CREATE_MODEL_DERIVATION_GROUP,
-            {
-              source: {
-                derivation_group_name: derivationGroupName,
-                model_id: model.id,
-              },
+
+      derivationGroupModelLinkErrorStore.set(null);
+      if (model !== null) {
+        const data = await reqHasura<ModelDerivationGroup>(
+          gql.CREATE_MODEL_DERIVATION_GROUP,
+          {
+            source: {
+              derivation_group_name: derivationGroupName,
             },
-            user,
-          );
-          const { planExternalSourceLink: sourceAssociation } = data;
-          // If the return was null, do nothing - only act on success or non-null
-          if (sourceAssociation !== null) {
-            logMessage(`Linked derivation group "${derivationGroupName}" to plan "${model.name}" (ID=${model.id}).`);
-            showSuccessToast('Derivation Group Linked Successfully');
-          }
-        } else {
-          throw Error('Plan is not defined.');
+          },
+          user,
+        );
+        const { modelExternalSourceLink: sourceAssociation } = data;
+        // If the return was null, do nothing - only act on success or non-null
+        if (sourceAssociation !== null) {
+          logMessage(`Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          showSuccessToast('Derivation Group Linked Successfully');
         }
+      } else {
+        throw Error('Model is not defined.');
       }
     } catch (e) {
       catchError('Derivation Group Linking Failed', e as Error);
