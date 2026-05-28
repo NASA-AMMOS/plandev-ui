@@ -3289,7 +3289,7 @@ const effects = {
 
   async deleteExternalSource(
     externalSources: ExternalSourceSlim[] | null,
-    planDerivationGroupLinks: PlanDerivationGroup[], // TODO: add modelDerivationGroup checking? Don't believe it is necessary.
+    planDerivationGroupLinks: PlanDerivationGroup[],
     user: User | null,
   ): Promise<boolean> {
     try {
