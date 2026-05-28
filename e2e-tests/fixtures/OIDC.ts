@@ -82,17 +82,22 @@ export class OIDC {
     public username: string,
     public password: string,
   ) {
+    // Role names match the canonical Aerie Keycloak realm in e2e-tests/oauth/realm-export.json.
+    // expectedDefaultRole is the role the UI's priority logic picks
+    // (aerie_admin > user > viewer; see src/lib/server/oidc.ts:upsertUser).
     switch (username) {
       case 'AerieAdmin':
-        this.expectedRoles = ['1-aerie_admin', '2-user', '3-viewer'];
+        this.expectedRoles = ['aerie_admin', 'user', 'viewer'];
+        this.expectedDefaultRole = 'aerie_admin';
         break;
       case 'AerieUser':
-        this.expectedRoles = ['2-user', '3-viewer'];
+        this.expectedRoles = ['user', 'viewer'];
+        this.expectedDefaultRole = 'user';
         break;
       default: // AerieViewer
-        this.expectedRoles = ['3-viewer'];
+        this.expectedRoles = ['viewer'];
+        this.expectedDefaultRole = 'viewer';
     }
-    this.expectedDefaultRole = this.expectedRoles[0];
   }
 
   async checkCookieRoles() {
@@ -110,12 +115,12 @@ export class OIDC {
   }
 
   async checkCurrentRole() {
-    // while this element shows up in Plan.ts, it is too cumbersome to define that object here.
-    // if it would make things more consistent and clean, a local class for the plans page for
-    //      just elements like this (and cookies too?) can be created.
-    const currentRole = this.page.getByRole('combobox').filter({ hasText: '-' });
-    await expect(currentRole).toBeVisible();
-    await expect(currentRole).toHaveText(this.expectedDefaultRole);
+    // Cookie-based check: the UI's role priority logic writes the activeRole cookie on login,
+    // and that cookie drives the dropdown text. Asserting the cookie value is more reliable
+    // than scraping the dropdown — the dropdown isn't even rendered for single-role users.
+    const cookies = await this.page.context().cookies();
+    const activeRole = cookies.find(c => c.name === 'activeRole')?.value;
+    expect(activeRole).toBe(this.expectedDefaultRole);
   }
 
   async expectNoCookies() {
@@ -166,7 +171,9 @@ export class OIDC {
     await appNav.show();
     await appNav.appMenuItemLogout.click();
 
-    await this.page.waitForURL('**/login');
+    // Match /login with or without a query string (the OIDC-mode redirect from
+    // the layout's enforce() guard tacks on ?redirectTo=...).
+    await this.page.waitForURL(/\/login(\?.*)?$/);
 
     await this.expectNoCookies();
   }
@@ -214,7 +221,9 @@ export class OIDC {
    * logged in as a user with multiple allowed roles.
    */
   async switchRole(newRole: string) {
-    const roleCombobox = this.page.getByRole('combobox').filter({ hasText: '-' });
+    // The role-switch combobox is the only one rendered in the Nav for multi-role users.
+    // We rely on it being the first (and effectively only) combobox on /plans.
+    const roleCombobox = this.page.getByRole('combobox').first();
     await roleCombobox.click();
     await this.page.getByRole('option', { name: newRole }).click();
 

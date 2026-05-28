@@ -101,6 +101,8 @@ jobs:
       - name: Install Playwright Dependencies (Test - e2e)
         run: npx playwright install chromium --with-deps
       - name: Test (e2e)
+        # `npm run test:e2e` runs everything EXCEPT the `oidc tests` project — see package.json.
+        # OIDC needs Hasura on RS256+jwk_url and a running Keycloak; it runs in its own phase below.
         run: npm run test:e2e
       - name: Upload Results
         if: always()
@@ -117,6 +119,42 @@ jobs:
         run: |
           docker ps -a
           docker compose -f docker-compose-test.yml down
+          docker ps -a
+
+      # --- OIDC phase ---
+      # The HS256 stack is down. Bring everything back up with Hasura on RS256+jwk_url
+      # and Keycloak as the IdP, then run the OIDC-only Playwright project. All env
+      # config lives in .env.test.oidc (single source of truth for backend + UI).
+      - name: Start Services (OIDC phase)
+        run: |
+          npm run test:e2e:oidc:setup
+          docker ps -a --no-trunc
+      - name: Wait for Keycloak readiness
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8000/realms/aerie-dev/.well-known/openid-configuration > /dev/null; then
+              echo "Keycloak ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Keycloak did not become ready within 60s"; exit 1
+      - name: Test (e2e OIDC)
+        run: npm run test:e2e:oidc
+      - name: Upload OIDC Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: E2E OIDC Test Results
+          path: |
+            **/e2e-test-results
+      - name: Print Logs for OIDC Services
+        if: always()
+        run: docker compose --env-file .env.test.oidc -f docker-compose-test.yml --profile oidc logs -t
+      - name: Stop OIDC Services
+        if: always()
+        run: |
+          docker ps -a
+          npm run test:e2e:oidc:teardown
           docker ps -a
       - name: Prune Volumes (PlanDev)
         if: always()

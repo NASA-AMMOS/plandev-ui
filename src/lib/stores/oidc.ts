@@ -51,14 +51,19 @@ export function cookieStoreListener() {
     console.error('Cookie store is not available in this environment. It is *required* for automatic refresh of JWT.');
   }
 
-  // Delay is a `derived` value from the access token.
-  // Whenever the delay changes, any prior timeout is cancelled and a new timeout
-  // is created (using the new value of delay).
-  const unsubscribe = delay.subscribe(value => {
-    if (value !== null && value >= 0 && get(accessTokenDecoded)) {
-      console.debug(`Scheduling token refresh in ${value}ms`);
-      prior = reschedule(refresh, value, prior);
+  // Subscribe to accessTokenDecoded (object) rather than delay (number).
+  // Svelte's safe_not_equal treats every object emission as a change, so the
+  // subscriber fires on every accessToken update — including consecutive
+  // refreshes that happen to produce the same numeric delay (which a `delay`
+  // subscribe would silently dedupe, leaving the schedule un-armed).
+  const unsubscribe = accessTokenDecoded.subscribe($decoded => {
+    if (!$decoded?.exp) {
+      return;
     }
+    const refreshTime = $decoded.exp * 1000 - 10 * 1000;
+    const delayMs = Math.max(0, refreshTime - Date.now());
+    console.debug(`Scheduling token refresh in ${delayMs}ms`);
+    prior = reschedule(refresh, delayMs, prior);
   });
 
   // Return a cleanup function to remove the cookie store change listener

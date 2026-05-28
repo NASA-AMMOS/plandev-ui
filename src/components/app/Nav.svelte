@@ -11,7 +11,9 @@
 
   let userRoles: UserRole[] = [];
 
-  $: userRoles = $user?.allowedRoles ?? [];
+  // Sort alphabetically so the dropdown order is stable across logins/refreshes;
+  // Keycloak's x-hasura-allowed-roles emits roles in non-deterministic order.
+  $: userRoles = ($user?.allowedRoles ?? []).slice().sort();
 
   async function changeRole(value: string) {
     const updatedUser = await changeUserRole(value as string);

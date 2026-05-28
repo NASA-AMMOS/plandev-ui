@@ -22,55 +22,67 @@ export const USER_STORAGE_STATES: Record<string, string> = {
 const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
 const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';
 
+// OIDC tests are opt-in via the OIDC_TESTS env var. They require Keycloak running
+// and Hasura configured for RS256+jwk_url, so we exclude them from the default
+// `playwright test` run and only enable them under `npm run test:e2e:oidc` (which
+// sets OIDC_TESTS=true). When opted in, the regular projects are excluded entirely
+// since the stack is in OIDC mode and HS256-signed test logins won't work.
+const isOidcRun = process.env.OIDC_TESTS === 'true';
+
+const regularProjects: PlaywrightTestConfig['projects'] = [
+  {
+    name: 'setup-auth',
+    testMatch: /global\.setup\.auth\.ts/,
+    use: {
+      baseURL: MAIN_TEST_SUITE_BASE_URL,
+    },
+  },
+  {
+    name: 'setup-jar',
+    testMatch: /global\.setup\.jar\.ts/,
+  },
+  {
+    dependencies: ['setup-auth', 'setup-jar'],
+    name: 'e2e tests',
+    teardown: 'teardown',
+    testDir: './e2e-tests',
+    testIgnore: /.*\/(sequence-templates|oidc)\.test\.ts/,
+    use: {
+      baseURL: MAIN_TEST_SUITE_BASE_URL,
+      storageState: STORAGE_STATE,
+    },
+  },
+  {
+    dependencies: ['setup-auth', 'setup-jar'],
+    name: 'e2e sequence template tests',
+    teardown: 'teardown',
+    testDir: './e2e-tests',
+    testMatch: /.*\/sequence-templates\.test\.ts/,
+    use: {
+      baseURL: SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL,
+      storageState: STORAGE_STATE,
+    },
+  },
+  {
+    name: 'teardown',
+    testMatch: /global\.teardown\.ts/,
+  },
+];
+
+const oidcProjects: PlaywrightTestConfig['projects'] = [
+  {
+    name: 'oidc tests',
+    testDir: './e2e-tests',
+    testMatch: /.*\/oidc\.test\.ts/,
+    use: {
+      baseURL: MAIN_TEST_SUITE_BASE_URL,
+    },
+  },
+];
+
 const config: PlaywrightTestConfig = {
   forbidOnly: !!process.env.CI,
-  projects: [
-    {
-      name: 'setup-auth',
-      testMatch: /global\.setup\.auth\.ts/,
-      use: {
-        baseURL: MAIN_TEST_SUITE_BASE_URL,
-      },
-    },
-    {
-      name: 'setup-jar',
-      testMatch: /global\.setup\.jar\.ts/,
-    },
-    {
-      dependencies: ['setup-auth', 'setup-jar'],
-      name: 'e2e tests',
-      teardown: 'teardown',
-      testDir: './e2e-tests',
-      testIgnore: /.*\/(sequence-templates)|(oidc)\.test\.ts/, // TODO: make this also skip over the oidc stuff
-      use: {
-        baseURL: MAIN_TEST_SUITE_BASE_URL,
-        storageState: STORAGE_STATE,
-      },
-    },
-    {
-      name: 'oidc tests',
-      testDir: './e2e-tests',
-      testMatch: /.*\/oidc\.test\.ts/,
-      use: {
-        baseURL: MAIN_TEST_SUITE_BASE_URL,
-      },
-    },
-    {
-      dependencies: ['setup-auth', 'setup-jar'],
-      name: 'e2e sequence template tests',
-      teardown: 'teardown',
-      testDir: './e2e-tests',
-      testMatch: /.*\/sequence-templates\.test\.ts/,
-      use: {
-        baseURL: SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL,
-        storageState: STORAGE_STATE,
-      },
-    },
-    {
-      name: 'teardown',
-      testMatch: /global\.teardown\.ts/,
-    },
-  ],
+  projects: isOidcRun ? oidcProjects : regularProjects,
   reportSlowTests: {
     max: 0,
     threshold: 60000,
@@ -91,9 +103,15 @@ const config: PlaywrightTestConfig = {
   },
   webServer: [
     {
-      command: 'npm run preview',
+      // Preview ("production") mode hardcodes `dev=false` in $app/environment, so
+      // src/lib/server/oidc.ts:updateWithNewTokens sets cookies with secure=true,
+      // which the browser silently drops over http://localhost. Use the dev server
+      // for OIDC tests so cookies actually land; preview is fine everywhere else.
+      command: isOidcRun ? 'npm run dev' : 'npm run preview',
       port: 3000,
-      reuseExistingServer: !process.env.CI,
+      // OIDC tests need a fresh dev server (see command comment above); reusing
+      // a stale preview server would silently reintroduce the secure-cookie bug.
+      reuseExistingServer: isOidcRun ? false : !process.env.CI,
     },
     {
       command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',

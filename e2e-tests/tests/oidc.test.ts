@@ -20,13 +20,15 @@ const users = [
 ];
 
 test.describe('Different Logins', () => {
-  // need to destroy everything between test runs
-  test.beforeAll(async ({ browser }) => {
+  // Fresh browser context per test — login tests need isolated session/cookie
+  // state, otherwise the previous user's tokens or Keycloak SSO cookie bleed
+  // through and the next test never sees the "Login Using OIDC" landing page.
+  test.beforeEach(async ({ browser }) => {
     context = await browser.newContext();
     page = await context.newPage();
   });
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     await page.close();
     await context.close();
   });
@@ -54,9 +56,11 @@ test.describe('Different Logins', () => {
     await oidc.login();
     await oidc.checkCookieRoles();
 
-    // Viewer has only one allowed role, so the role-switch combobox is suppressed.
-    // Lock that in rather than skipping the assertion.
-    await expect(page.getByRole('combobox').filter({ hasText: '-' })).not.toBeVisible();
+    // Viewer has only one allowed role, so the role-switch combobox is suppressed
+    // (Nav.svelte gates it on userRoles.length > 1). Lock that in via the
+    // role-switcher's aria-label, since /plans has other comboboxes (filters etc.)
+    // that we don't want to assert against.
+    await expect(page.getByLabel('Select Role')).not.toBeVisible();
   });
 });
 
@@ -257,7 +261,7 @@ test.describe('Role Switching', () => {
     page.on('websocket', ws => newWebSockets.push(ws.url()));
     const wsCountBefore = newWebSockets.length;
 
-    await oidc.switchRole('2-user');
+    await oidc.switchRole('user');
 
     // graphql-ws reconnects within a few hundred ms after the role change;
     // poll rather than rely on a fixed sleep.

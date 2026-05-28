@@ -1,13 +1,12 @@
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
-import { extractClaims, type ClaimsConfig, type MaybeToken, type Rule } from '$lib/types/oidc';
+import { type ClaimsConfig, type MaybeToken, type Rule } from '$lib/types/oidc';
 import { type Cookies, type RequestEvent } from '@sveltejs/kit';
 import * as arctic from 'arctic';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import type { User } from '../../types/app';
-import { reqHasura } from '../../utilities/requests';
 
 /**
  * Generate a cryptographically secure nonce for OIDC.
@@ -224,41 +223,6 @@ export class Client {
     // Use init() for async initialization
   }
 
-  private async init(): Promise<void> {
-    // Fetch well-known configuration first if URL is provided
-    if (env.OIDC_WELL_KNOWN_URL) {
-      try {
-        const res = await fetch(env.OIDC_WELL_KNOWN_URL);
-        const data = await res.json();
-        this.authorizationEndpoint = data.authorization_endpoint ?? data.authorizationEndpoint;
-        this.tokenEndpoint = data.token_endpoint ?? data.tokenEndpoint;
-        this.logoutEndpoint = data.end_session_endpoint ?? data.endSessionEndpoint;
-      } catch (err) {
-        console.error('Error fetching OIDC configuration:', err);
-      }
-    }
-
-    // Fall back to explicit env vars if not set from well-known
-    this.authorizationEndpoint ??= env.OIDC_AUTHORIZATION_URL;
-    this.tokenEndpoint ??= env.OIDC_TOKEN_URL;
-    this.redirectEndpoint = env.OIDC_REDIRECT_URI;
-    this.logoutEndpoint ??= env.OIDC_LOGOUT_URL;
-    this.clientId = env.OIDC_CLIENT_ID;
-    this.clientSecret = env.OIDC_CLIENT_SECRET || null;
-    this.scopes = env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
-
-    // The entire client configuration is validated here, this should help
-    // people understand everything they need to set without having to fix
-    // one problem... then another... then another...
-    const problems = this.validateConfiguration();
-
-    if (problems.length > 0) {
-      throw new Error('OAuth2 client configuration is incomplete.', { cause: problems });
-    } else {
-      this.client = new arctic.OAuth2Client(this.clientId, this.clientSecret, this.redirectEndpoint);
-    }
-  }
-
   static get instance(): Promise<Client> {
     if (!this._initPromise) {
       const client = new Client();
@@ -306,6 +270,41 @@ export class Client {
     return this.redirectEndpoint;
   }
 
+  private async init(): Promise<void> {
+    // Fetch well-known configuration first if URL is provided
+    if (env.OIDC_WELL_KNOWN_URL) {
+      try {
+        const res = await fetch(env.OIDC_WELL_KNOWN_URL);
+        const data = await res.json();
+        this.authorizationEndpoint = data.authorization_endpoint ?? data.authorizationEndpoint;
+        this.tokenEndpoint = data.token_endpoint ?? data.tokenEndpoint;
+        this.logoutEndpoint = data.end_session_endpoint ?? data.endSessionEndpoint;
+      } catch (err) {
+        console.error('Error fetching OIDC configuration:', err);
+      }
+    }
+
+    // Fall back to explicit env vars if not set from well-known
+    this.authorizationEndpoint ??= env.OIDC_AUTHORIZATION_URL;
+    this.tokenEndpoint ??= env.OIDC_TOKEN_URL;
+    this.redirectEndpoint = env.OIDC_REDIRECT_URI;
+    this.logoutEndpoint ??= env.OIDC_LOGOUT_URL;
+    this.clientId = env.OIDC_CLIENT_ID;
+    this.clientSecret = env.OIDC_CLIENT_SECRET || null;
+    this.scopes = env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
+
+    // The entire client configuration is validated here, this should help
+    // people understand everything they need to set without having to fix
+    // one problem... then another... then another...
+    const problems = this.validateConfiguration();
+
+    if (problems.length > 0) {
+      throw new Error('OAuth2 client configuration is incomplete.', { cause: problems });
+    } else {
+      this.client = new arctic.OAuth2Client(this.clientId, this.clientSecret, this.redirectEndpoint);
+    }
+  }
+
   /**
    * Request new tokens using a refresh token.
    *
@@ -347,46 +346,6 @@ export class Client {
   }
 }
 
-const mutation = `mutation InsertUser($input: users_insert_input!) {
-  insert_users_one(
-    object: $input,
-    on_conflict: {
-      constraint: users_pkey,
-      update_columns: default_role
-    }
-  ) {
-    username
-  }
-}`; // TODO: update other user tables in permissions schema?
-
-async function upsertUser(decodedAccessToken: jwt.JwtPayload, accessToken: string): Promise<void> {
-  const claims = extractClaims(decodedAccessToken as Record<string, unknown>, getClaimsConfig());
-  const username = claims.userId;
-  const allowedRoles = claims.allowedRoles;
-
-  // Set the active and default role based on priority (aerie_admin > user > viewer)
-  let defaultRole = 'viewer';
-  if (allowedRoles.includes('aerie_admin')) {
-    defaultRole = 'aerie_admin';
-  } else if (allowedRoles.includes('user')) {
-    defaultRole = 'user';
-  }
-
-  const input = { default_role: defaultRole, username };
-  const user: User = {
-    activeRole: defaultRole,
-    allowedRoles,
-    defaultRole,
-    id: username,
-    permissibleQueries: null,
-    rolePermissions: null,
-    token: accessToken,
-  };
-  console.debug('Registering user:', username);
-  const result = await reqHasura(mutation, { input }, user);
-  console.debug('Registered user:', username);
-}
-
 export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
   console.debug('Persisting tokens following a refresh...');
 
@@ -407,9 +366,10 @@ export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth
     cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
     cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/', sameSite: 'lax', secure: !dev });
 
-    // sort of an edge case, but if default role does change at the idp, it wouldn't hurt to update the local entry
-    // TODO: should this be here? Where else could it go?
-    await upsertUser(accessJwt as jwt.JwtPayload, tokens.accessToken());
+    // User row provisioning is handled gateway-side via session()'s lazy upsert
+    // (see aerie-gateway/src/packages/auth/functions.ts:session). Doing it here
+    // through Hasura with the user's own JWT would require widening permissions.users
+    // insert/update rights to user/viewer roles, which we deliberately avoid.
     return true;
   }
 
