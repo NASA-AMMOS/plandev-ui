@@ -2,7 +2,8 @@
 
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
-  import { getContext } from 'svelte';
+  import { createVirtualizer } from '@tanstack/svelte-virtual';
+  import { getContext, onMount, tick } from 'svelte';
   import type { BaseError, LogLevel, LogMessage } from '../../../types/errors';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
@@ -26,6 +27,7 @@
   let emptyStateTitle: string = '';
   let isScrolledToBottom = true;
   let scrollContainer: HTMLDivElement;
+  let scrollTick = 0;
   let logLevelSet: Set<LogLevel> = new Set();
   let visible: boolean = false;
 
@@ -60,6 +62,50 @@
         }
       });
 
+  const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+    count: 0,
+    estimateSize: () => 24,
+    getScrollElement: () => scrollContainer,
+    overscan: 8,
+  });
+
+  let mounted = false;
+
+  function onVirtualizerChange() {
+    scrollTick++;
+  }
+
+  onMount(async () => {
+    await tick();
+    $virtualizer.setOptions({
+      count: filteredLogs.length,
+      estimateSize: () => 24,
+      getScrollElement: () => scrollContainer,
+      onChange: onVirtualizerChange,
+      overscan: 8,
+    });
+    mounted = true;
+  });
+
+  $: if (mounted) {
+    $virtualizer.setOptions({
+      count: filteredLogs.length,
+      estimateSize: () => 24,
+      getScrollElement: () => scrollContainer,
+      onChange: onVirtualizerChange,
+      overscan: 8,
+    });
+  }
+
+  // The TanStack virtualizer mutates its internal state on scroll/resize. Its writable
+  // emits same-ref notifications that don't reliably retrigger Svelte reactives, so
+  // we tie these computations to known-changing primitives: filteredLogs.length (count
+  // updates) and scrollTick (incremented from onScroll via rAF).
+  $: totalSize =
+    mounted && filteredLogs.length >= 0 && scrollContainer && scrollTick >= 0 ? $virtualizer.getTotalSize() : 0;
+  $: virtualItems =
+    mounted && filteredLogs.length >= 0 && scrollContainer && scrollTick >= 0 ? $virtualizer.getVirtualItems() : [];
+
   $: if (filteredLogs && scrollContainer) {
     scrollToBottomIfNeeded();
   }
@@ -81,21 +127,20 @@
   }
 
   function scrollToBottomIfNeeded() {
-    if (autoScroll && scrollContainer) {
+    if (autoScroll && scrollContainer && filteredLogs.length > 0) {
       window.requestAnimationFrame(() => {
         if (isScrolledToBottom && scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+          $virtualizer.scrollToIndex(filteredLogs.length - 1, { align: 'end' });
         }
       });
     }
   }
 
   function onScroll() {
-    // Check if user is near the bottom of the scroll container
+    // Check if user is near the bottom of the scroll container (for autoscroll)
     const scrollPosition = scrollContainer.scrollTop;
     const containerHeight = scrollContainer.clientHeight;
     const totalHeight = scrollContainer.scrollHeight;
-
     // Add a small tolerance (e.g., 1 pixel) to account for rounding errors
     isScrolledToBottom = totalHeight - containerHeight <= scrollPosition + 1;
   }
@@ -103,30 +148,49 @@
 
 <Tabs.Content
   {value}
-  class="mt-0 h-full w-full overflow-x-hidden font-mono text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  class="relative mt-0 h-full w-full overflow-hidden font-mono text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 >
   <!-- TODO also show counts in dropdown -->
-  {#if hasLogs && filteredLogs.length}
-    <div class="flex h-full w-full">
-      <div class="flex w-full flex-col overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
-        {#if filteredLogs.length !== logs.length}
-          <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
-        {/if}
-        {#each filteredLogs as log}
-          {#if $$slots.message}
-            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log}>
-              <svelte:fragment slot="message" let:log={slotLog}>
-                <slot name="message" log={slotLog} />
-              </svelte:fragment>
-            </ConsoleLog>
-          {:else}
-            <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} {log} />
-          {/if}
+  <div class="absolute inset-0 flex flex-col" class:invisible={!hasLogs || !filteredLogs.length}>
+    {#if filteredLogs.length !== logs.length}
+      <div class="mb-1 ml-4 mt-2 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
+    {/if}
+    <div class="min-h-0 w-full flex-1 overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
+      <div style="height: {totalSize}px; position: relative; width: 100%;">
+        {#each virtualItems as virtualRow (virtualRow.key)}
+          <div
+            data-index={virtualRow.index}
+            use:$virtualizer.measureElement
+            style="left: 0; position: absolute; top: 0; transform: translateY({virtualRow.start}px); width: 100%;"
+          >
+            {#if $$slots.message}
+              <ConsoleLog
+                {defaultExpanded}
+                {showLevel}
+                {showTimestamp}
+                {showType}
+                log={filteredLogs[virtualRow.index]}
+              >
+                <svelte:fragment slot="message" let:log={slotLog}>
+                  <slot name="message" log={slotLog} />
+                </svelte:fragment>
+              </ConsoleLog>
+            {:else}
+              <ConsoleLog
+                {defaultExpanded}
+                {showLevel}
+                {showTimestamp}
+                {showType}
+                log={filteredLogs[virtualRow.index]}
+              />
+            {/if}
+          </div>
         {/each}
       </div>
     </div>
-  {:else}
-    <div class="flex h-full">
+  </div>
+  {#if !hasLogs || !filteredLogs.length}
+    <div class="absolute inset-0 flex h-full">
       <EmptyState title={emptyStateTitle} />
     </div>
   {/if}
