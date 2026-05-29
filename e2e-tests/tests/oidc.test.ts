@@ -208,8 +208,10 @@ test.describe('Multi-tab Refresh', () => {
       await secondPage.goto('/plans');
       await secondPage.waitForURL('**/plans');
 
-      // Wait for the refresh timer to fire. We don't know the exact TTL
-      // configured at the IdP, so poll the accessToken cookie for any change.
+      // Wait for the refresh timer to fire. Test realm sets access.token.lifespan=20s
+      // and the UI's refresh fires at exp-10s, so the new cookie should land ~10s
+      // after login. Polling rather than sleeping keeps the test resilient if the
+      // realm TTL is tuned later.
       await expect
         .poll(
           async () => {
@@ -241,7 +243,8 @@ test.describe('Role Switching', () => {
   });
 
   // Exercises the WS-restart path triggered by /auth/changeRole. The shared
-  // graphql-ws client should close the active socket with custom code 4205,
+  // graphql-ws client should close the active socket with the intentional
+  // restart code 4999 (see INTENTIONAL_RESTART_CODE in src/stores/gqlClient.ts),
   // reconnect with the new x-hasura-role in connectionParams, and resume
   // subscriptions transparently. We can't read the close code from
   // Playwright's WebSocket API directly, so we verify the observable signals

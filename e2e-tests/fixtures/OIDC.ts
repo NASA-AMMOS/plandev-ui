@@ -215,17 +215,36 @@ export class OIDC {
   }
 
   /**
-   * Switch the active role via the Nav role dropdown and wait for the
-   * activeRole cookie to reflect the change. Caller is responsible for
-   * being on a page that renders the dropdown (e.g., /plans) and being
-   * logged in as a user with multiple allowed roles.
+   * Switch the active role via the Nav role dropdown and assert that the
+   * change propagated (success toast, updated dropdown text, activeRole
+   * cookie). Caller is responsible for being on a page that renders the
+   * dropdown (e.g., /plans) and being logged in as a user with multiple
+   * allowed roles.
    */
   async switchRole(newRole: string) {
-    // The role-switch combobox is the only one rendered in the Nav for multi-role users.
-    // We rely on it being the first (and effectively only) combobox on /plans.
-    const roleCombobox = this.page.getByRole('combobox').first();
-    await roleCombobox.click();
-    await this.page.getByRole('option', { name: newRole }).click();
+    const combobox = this.page.getByRole('navigation').getByRole('combobox');
+    await combobox.waitFor({ state: 'visible' });
+
+    // Right after the OIDC login redirect lands on /plans, a click on the
+    // role switcher can register before melt-ui has fully wired up its
+    // pointer handler (hydration race). Retry the click until the listbox
+    // shows up.
+    const listbox = this.page.getByRole('listbox');
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await combobox.click();
+      try {
+        await listbox.waitFor({ state: 'visible', timeout: 1500 });
+        break;
+      } catch {
+        if (attempt === 3) {
+          throw new Error('Role-switcher dropdown did not open after 3 click attempts');
+        }
+      }
+    }
+
+    await listbox.getByRole('option', { name: newRole }).click();
+    await expect(this.page.getByText('Changed Role Successfully')).toBeVisible();
+    await expect(combobox).toHaveText(newRole);
 
     await expect
       .poll(
