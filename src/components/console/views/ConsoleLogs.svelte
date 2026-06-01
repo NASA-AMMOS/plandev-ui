@@ -29,6 +29,7 @@
   let scrollContainer: HTMLDivElement;
   let scrollTick = 0;
   let logLevelSet: Set<LogLevel> = new Set();
+  let mounted = false;
   let visible: boolean = false;
 
   $: visible = $selectedTabStore === value;
@@ -69,42 +70,33 @@
     overscan: 8,
   });
 
-  let mounted = false;
-
-  function onVirtualizerChange() {
-    scrollTick++;
-  }
-
   onMount(async () => {
     await tick();
-    $virtualizer.setOptions({
-      count: filteredLogs.length,
-      estimateSize: () => 24,
-      getScrollElement: () => scrollContainer,
-      onChange: onVirtualizerChange,
-      overscan: 8,
-    });
     mounted = true;
   });
 
+  // @tanstack/svelte-virtual emits same-reference writable.set on every notify; Svelte 4's
+  // $$invalidate uses a strict-equality bailout, so auto-sub of `$virtualizer` never fires
+  // the reactives below. Route the virtualizer's onChange through a primitive counter that
+  // does pass that check, so the reactives re-fire and pull fresh values out of the
+  // (in-place mutated) virtualizer instance.
   $: if (mounted) {
     $virtualizer.setOptions({
       count: filteredLogs.length,
       estimateSize: () => 24,
       getScrollElement: () => scrollContainer,
-      onChange: onVirtualizerChange,
+      onChange: () => scrollTick++,
       overscan: 8,
     });
   }
 
-  // The TanStack virtualizer mutates its internal state on scroll/resize. Its writable
-  // emits same-ref notifications that don't reliably retrigger Svelte reactives, so
-  // we tie these computations to known-changing primitives: filteredLogs.length (count
-  // updates) and scrollTick (incremented from onScroll via rAF).
-  $: totalSize =
-    mounted && filteredLogs.length >= 0 && scrollContainer && scrollTick >= 0 ? $virtualizer.getTotalSize() : 0;
-  $: virtualItems =
-    mounted && filteredLogs.length >= 0 && scrollContainer && scrollTick >= 0 ? $virtualizer.getVirtualItems() : [];
+  // Track filteredLogs.length so vState re-computes when count changes (setOptions
+  // doesn't fire notify when scrollElement is unchanged, so scrollTick alone wouldn't
+  // catch count-only updates).
+  $: vState =
+    mounted && scrollContainer && filteredLogs.length >= 0 && scrollTick >= 0
+      ? { items: $virtualizer.getVirtualItems(), totalSize: $virtualizer.getTotalSize() }
+      : { items: [] as ReturnType<typeof $virtualizer.getVirtualItems>, totalSize: 0 };
 
   $: if (filteredLogs && scrollContainer) {
     scrollToBottomIfNeeded();
@@ -137,10 +129,11 @@
   }
 
   function onScroll() {
-    // Check if user is near the bottom of the scroll container (for autoscroll)
+    // Check if user is near the bottom of the scroll container
     const scrollPosition = scrollContainer.scrollTop;
     const containerHeight = scrollContainer.clientHeight;
     const totalHeight = scrollContainer.scrollHeight;
+
     // Add a small tolerance (e.g., 1 pixel) to account for rounding errors
     isScrolledToBottom = totalHeight - containerHeight <= scrollPosition + 1;
   }
@@ -148,29 +141,23 @@
 
 <Tabs.Content
   {value}
-  class="relative mt-0 h-full w-full overflow-hidden font-mono text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  class="relative mt-0 h-full w-full overflow-x-hidden font-mono text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 >
   <!-- TODO also show counts in dropdown -->
   <div class="absolute inset-0 flex flex-col" class:invisible={!hasLogs || !filteredLogs.length}>
     {#if filteredLogs.length !== logs.length}
-      <div class="mb-1 ml-4 mt-2 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
+      <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
     {/if}
     <div class="min-h-0 w-full flex-1 overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
-      <div style="height: {totalSize}px; position: relative; width: 100%;">
-        {#each virtualItems as virtualRow (virtualRow.key)}
+      <div style="height: {vState.totalSize}px; position: relative; width: 100%;">
+        {#each vState.items as virtualRow (virtualRow.key)}
           <div
             data-index={virtualRow.index}
             use:$virtualizer.measureElement
             style="left: 0; position: absolute; top: 0; transform: translateY({virtualRow.start}px); width: 100%;"
           >
             {#if $$slots.message}
-              <ConsoleLog
-                {defaultExpanded}
-                {showLevel}
-                {showTimestamp}
-                {showType}
-                log={filteredLogs[virtualRow.index]}
-              >
+              <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} log={filteredLogs[virtualRow.index]}>
                 <svelte:fragment slot="message" let:log={slotLog}>
                   <slot name="message" log={slotLog} />
                 </svelte:fragment>
