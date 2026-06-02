@@ -23,6 +23,8 @@
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
   const selectedTabStore = consoleContext?.selectedTab;
+  const estimatedRowHeight = 20;
+  const overscan = 30;
 
   let emptyStateTitle: string = '';
   let isScrolledToBottom = true;
@@ -30,6 +32,8 @@
   let scrollTick = 0;
   let logLevelSet: Set<LogLevel> = new Set();
   let mounted = false;
+  let openIndices: Set<number> = new Set();
+  let prevFilterKey: string | null = null;
   let visible: boolean = false;
 
   $: visible = $selectedTabStore === value;
@@ -65,9 +69,9 @@
 
   const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: 0,
-    estimateSize: () => 24,
+    estimateSize: () => estimatedRowHeight,
     getScrollElement: () => scrollContainer,
-    overscan: 8,
+    overscan,
   });
 
   onMount(async () => {
@@ -83,10 +87,10 @@
   $: if (mounted) {
     $virtualizer.setOptions({
       count: filteredLogs.length,
-      estimateSize: () => 24,
+      estimateSize: () => estimatedRowHeight,
       getScrollElement: () => scrollContainer,
       onChange: () => scrollTick++,
-      overscan: 8,
+      overscan,
     });
   }
 
@@ -100,6 +104,21 @@
 
   $: if (filteredLogs && scrollContainer) {
     scrollToBottomIfNeeded();
+  }
+
+  // When the filter or log-level selection changes, the index to log mapping shifts,
+  // so any indices we've tracked as "open" now point at different logs. Reset the
+  // open set and snap the virtualizer's size cache for those indices back to the
+  // estimate, so previously-expanded slots don't leave gaps in the new view.
+  $: {
+    const filterKey = `${$filterStore ?? ''}|${(logLevels ?? []).join(',')}`;
+    if (prevFilterKey !== null && filterKey !== prevFilterKey && openIndices.size > 0) {
+      if (mounted) {
+        openIndices.forEach(idx => $virtualizer.resizeItem(idx, estimatedRowHeight));
+      }
+      openIndices = new Set();
+    }
+    prevFilterKey = filterKey;
   }
 
   $: {
@@ -128,6 +147,17 @@
     }
   }
 
+  function onRowToggle(e: CustomEvent<{ index: number; open: boolean; size: number }>) {
+    const { index, open, size } = e.detail;
+    if (open) {
+      openIndices.add(index);
+    } else {
+      openIndices.delete(index);
+    }
+    openIndices = new Set(openIndices);
+    $virtualizer.resizeItem(index, size);
+  }
+
   function onScroll() {
     // Check if user is near the bottom of the scroll container
     const scrollPosition = scrollContainer.scrollTop;
@@ -146,32 +176,44 @@
   <!-- TODO also show counts in dropdown -->
   <div class="absolute inset-0 flex flex-col" class:invisible={!hasLogs || !filteredLogs.length}>
     {#if filteredLogs.length !== logs.length}
-      <div class="mb-1 ml-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
+      <div class="my-1 border-b pb-1 pl-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
     {/if}
     <div class="min-h-0 w-full flex-1 overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
       <div style="height: {vState.totalSize}px; position: relative; width: 100%;">
         {#each vState.items as virtualRow (virtualRow.key)}
-          <div
-            data-index={virtualRow.index}
-            use:$virtualizer.measureElement
-            style="left: 0; position: absolute; top: 0; transform: translateY({virtualRow.start}px); width: 100%;"
-          >
-            {#if $$slots.message}
-              <ConsoleLog {defaultExpanded} {showLevel} {showTimestamp} {showType} log={filteredLogs[virtualRow.index]}>
-                <svelte:fragment slot="message" let:log={slotLog}>
-                  <slot name="message" log={slotLog} />
-                </svelte:fragment>
-              </ConsoleLog>
-            {:else}
-              <ConsoleLog
-                {defaultExpanded}
-                {showLevel}
-                {showTimestamp}
-                {showType}
-                log={filteredLogs[virtualRow.index]}
-              />
-            {/if}
-          </div>
+          {@const log = filteredLogs[virtualRow.index]}
+          {#if log}
+            <div
+              data-index={virtualRow.index}
+              style="left: 0; position: absolute; top: 0; transform: translateY({virtualRow.start}px); width: 100%;"
+            >
+              {#if $$slots.message}
+                <ConsoleLog
+                  index={virtualRow.index}
+                  defaultExpanded={defaultExpanded || openIndices.has(virtualRow.index)}
+                  {showLevel}
+                  {showTimestamp}
+                  {showType}
+                  {log}
+                  on:toggle={onRowToggle}
+                >
+                  <svelte:fragment slot="message" let:log={slotLog}>
+                    <slot name="message" log={slotLog} />
+                  </svelte:fragment>
+                </ConsoleLog>
+              {:else}
+                <ConsoleLog
+                  index={virtualRow.index}
+                  defaultExpanded={defaultExpanded || openIndices.has(virtualRow.index)}
+                  {showLevel}
+                  {showTimestamp}
+                  {showType}
+                  {log}
+                  on:toggle={onRowToggle}
+                />
+              {/if}
+            </div>
+          {/if}
         {/each}
       </div>
     </div>

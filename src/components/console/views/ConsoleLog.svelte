@@ -3,7 +3,7 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
   import { isLogMessage } from '../../../utilities/errors';
 
@@ -11,12 +11,18 @@
   import { formatMS } from '../../../utilities/time';
 
   export let log: BaseError;
+  export let index: number = -1;
   export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
   export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
+  const dispatch = createEventDispatcher<{
+    toggle: { index: number; open: boolean; size: number };
+  }>();
+
+  let detailsEl: HTMLDetailsElement;
   let expandable: boolean = false;
   let leftContents: HTMLDivElement;
   let open: boolean = defaultExpanded;
@@ -30,10 +36,37 @@
   $: renderedMessage =
     !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
+  // All layout measurement is deferred to toggle time. Per-row measurement on mount
+  // (via `use:measureElement` or onMount reads) was the dominant cost during scroll —
+  // each row mount forced a sync layout, scaling with overscan and scroll velocity.
+  // On toggle we read once, then push the new size into the virtualizer imperatively
+  // via `resizeItem` (handled by the parent through the dispatched event).
+  async function dispatchSize() {
+    if (index < 0) {
+      return;
+    }
+    await tick();
+    if (!detailsEl) {
+      return;
+    }
+    const size = detailsEl.getBoundingClientRect().height;
+    dispatch('toggle', { index, open, size });
+  }
+
+  async function onToggle() {
+    if (open && leftContents && !expansionPadding) {
+      expansionPadding = leftContents.clientWidth + 12;
+    }
+    await dispatchSize();
+  }
+
+  // When a row mounts already open (e.g. it was open before the virtualizer
+  // recycled it out of view), the browser does not fire a `toggle` event, so
+  // we push the real size to the virtualizer once on mount. Collapsed rows
+  // skip this — they match the estimate, so no measurement is needed.
   onMount(() => {
-    // On mount, calculate the amount of padding needed for the expansion content
-    if (leftContents) {
-      expansionPadding = leftContents.clientWidth + 12; // Add 12px to account for gaps
+    if (open) {
+      dispatchSize();
     }
   });
 
@@ -72,8 +105,10 @@
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <details
+  bind:this={detailsEl}
   class="group"
   bind:open
+  on:toggle={onToggle}
   on:keypress={e => {
     // prevent expansion when no content is available
     if (!expandable) {
