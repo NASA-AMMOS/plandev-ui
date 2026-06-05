@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '0 * * * *' # every hour at the top of the hour
 
+permissions:
+  contents: read
+
 jobs:
   canary:
     uses: ./.github/workflows/test.yml

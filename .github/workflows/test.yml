@@ -40,6 +40,9 @@ env:
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
   PR_BODY: '${{github.event.pull_request.body}}'
 
+permissions:
+  contents: read
+
 jobs:
   unit-test:
     runs-on: ubuntu-latest
