@@ -754,6 +754,33 @@ test.describe.serial('Workspace', () => {
     await expect(consoleNode.getByRole('tab', { name: 'Adaptation' })).toHaveAttribute('data-state', 'active');
   });
 
+  test('Linting tab populates from invalid sequence content and respects the search filter', async () => {
+    const { sequenceName } = await workspace.createSequence();
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.clickFile(sequenceName);
+
+    // Type a command that's not in the dictionary so the CodeMirror linter fires.
+    await workspace.fillSequenceContent('R00:00:00 ZZZ_NOT_A_REAL_COMMAND\n');
+    await workspace.saveSequence();
+
+    const consoleNode = setup.page.getByTestId('console');
+    await consoleNode.getByRole('tab', { name: 'Linting' }).click();
+    const tabPanel = consoleNode.getByRole('tabpanel').first();
+    await expect(tabPanel.getByText(sequenceName).first()).toBeVisible();
+
+    // Now that we know the Linting tab has at least one row, exercise the shared
+    // ConsoleLogs filter path on the workspace side. A filter that excludes every
+    // row should swap the list for the noMatchingResultsMessage empty state.
+    const search = consoleNode.getByPlaceholder('Search');
+    await search.fill('definitely-no-such-lint-error');
+    await expect(tabPanel.getByText(/No matches/i).first()).toBeVisible();
+    await search.fill('');
+    await expect(tabPanel.getByText(sequenceName).first()).toBeVisible();
+
+    await workspace.searchForFileAndWait(sequenceName);
+    await workspace.deleteFile(sequenceName);
+  });
+
   test('Users not authorized to modify the workspace should not be able to', async () => {
     // Use userB's separate browser context - no login/logout needed!
     // userB is NOT a collaborator on this workspace

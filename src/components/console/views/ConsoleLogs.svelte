@@ -67,11 +67,14 @@
         }
       });
 
-  const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: 0,
+  const baseVirtualizerOptions = {
     estimateSize: () => estimatedRowHeight,
     getScrollElement: () => scrollContainer,
     overscan,
+  };
+  const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+    ...baseVirtualizerOptions,
+    count: 0,
   });
 
   onMount(async () => {
@@ -86,11 +89,9 @@
   // (in-place mutated) virtualizer instance.
   $: if (mounted) {
     $virtualizer.setOptions({
+      ...baseVirtualizerOptions,
       count: filteredLogs.length,
-      estimateSize: () => estimatedRowHeight,
-      getScrollElement: () => scrollContainer,
       onChange: () => scrollTick++,
-      overscan,
     });
   }
 
@@ -178,39 +179,36 @@
     {#if filteredLogs.length !== logs.length}
       <div class="my-1 border-b pb-1 pl-4 italic text-muted-foreground">{logs.length - filteredLogs.length} hidden</div>
     {/if}
-    <div class="min-h-0 w-full flex-1 overflow-auto py-2" bind:this={scrollContainer} on:scroll={onScroll}>
+    <div
+      class="min-h-0 w-full flex-1 overflow-auto py-2"
+      data-testid="console-logs-list"
+      bind:this={scrollContainer}
+      on:scroll={onScroll}
+    >
       <div style="height: {vState.totalSize}px; position: relative; width: 100%;">
         {#each vState.items as virtualRow (virtualRow.key)}
           {@const log = filteredLogs[virtualRow.index]}
           {#if log}
+            {@const rowProps = {
+              defaultExpanded: defaultExpanded || openIndices.has(virtualRow.index),
+              index: virtualRow.index,
+              log,
+              showLevel,
+              showTimestamp,
+              showType,
+            }}
             <div
               data-index={virtualRow.index}
               style="left: 0; position: absolute; top: 0; transform: translateY({virtualRow.start}px); width: 100%;"
             >
               {#if $$slots.message}
-                <ConsoleLog
-                  index={virtualRow.index}
-                  defaultExpanded={defaultExpanded || openIndices.has(virtualRow.index)}
-                  {showLevel}
-                  {showTimestamp}
-                  {showType}
-                  {log}
-                  on:toggle={onRowToggle}
-                >
+                <ConsoleLog {...rowProps} on:toggle={onRowToggle}>
                   <svelte:fragment slot="message" let:log={slotLog}>
                     <slot name="message" log={slotLog} />
                   </svelte:fragment>
                 </ConsoleLog>
               {:else}
-                <ConsoleLog
-                  index={virtualRow.index}
-                  defaultExpanded={defaultExpanded || openIndices.has(virtualRow.index)}
-                  {showLevel}
-                  {showTimestamp}
-                  {showType}
-                  {log}
-                  on:toggle={onRowToggle}
-                />
+                <ConsoleLog {...rowProps} on:toggle={onRowToggle} />
               {/if}
             </div>
           {/if}
