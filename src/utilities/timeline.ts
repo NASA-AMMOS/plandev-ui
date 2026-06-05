@@ -52,7 +52,7 @@ import type {
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
-import { filterEmpty, lowercase } from './generic';
+import { filterEmpty, lowercase, stringCompare } from './generic';
 import { getDoyTime } from './time';
 
 export enum TimelineLockStatus {
@@ -884,7 +884,7 @@ export function minMaxDecimation<T>(
     point = data[i];
     x = ((point.x - xMin) / dx) * availableWidth;
     y = point.y;
-    const truncX = x | 0;
+    const truncX = Math.trunc(x);
 
     if (truncX === prevX) {
       // Determine `minY` / `maxY` and `avgX` while we stay within same x-position
@@ -1005,7 +1005,7 @@ export function generateDiscreteTreeUtil(
   if (hasActivityLayer) {
     const allKeys = new Set(Object.keys(groupedSpans).concat(Object.keys(groupedDirectives)));
     Array.from(allKeys)
-      .sort()
+      .sort(stringCompare)
       .forEach(type => {
         const spanGroup = groupedSpans[type];
         const directiveGroup = groupedDirectives[type];
@@ -1083,7 +1083,7 @@ export function generateDiscreteTreeUtil(
       const allKeys = Object.keys(groupedExternalEvents);
       // Iterate through all groups - either external event types, external source types, or external sources
       Array.from(allKeys)
-        .sort()
+        .sort(stringCompare)
         .forEach(type => {
           const externalEventsGroup = groupedExternalEvents[type];
           const id = type;
@@ -1252,7 +1252,7 @@ export function getSpanSubtrees(
     }
     const groupedSpanChildren = groupBy(computedSpans, 'type');
     Object.keys(groupedSpanChildren)
-      .sort()
+      .sort(stringCompare)
       .forEach(key => {
         const spanGroup = groupedSpanChildren[key];
         const id = `${parentId}_${key}`;
