@@ -78,10 +78,9 @@ test.describe.serial('Plan error console', () => {
     // Wait for X/X in the activity-checking menu (matching numerator + denominator
     // via the backreference) — strongest signal that the full batch has validated.
     await setup.plan.hoverMenu(setup.plan.navButtonActivityChecking);
-    await expect(setup.plan.navButtonActivityCheckingMenu).toContainText(
-      /(\d+)\/\1 activities checked/,
-      { timeout: 30_000 },
-    );
+    await expect(setup.plan.navButtonActivityCheckingMenu).toContainText(/(\d+)\/\1 activities checked/, {
+      timeout: 30_000,
+    });
 
     // $allProblems regenerates `new Date()` timestamps on every derive, so
     // `[data-index="0"]` is unstable. Pin to a directive ID instead — the row's
@@ -94,9 +93,7 @@ test.describe.serial('Plan error console', () => {
     if (!idMatch) {
       throw new Error(`Could not extract directive ID from first row: ${firstRowText}`);
     }
-    const targetRow = tabPanel
-      .locator('details')
-      .filter({ hasText: `Activity Directive ${idMatch[1]} ` });
+    const targetRow = tabPanel.locator('details').filter({ hasText: `Activity Directive ${idMatch[1]} ` });
 
     await targetRow.locator('summary').click();
     await expect(targetRow).toHaveAttribute('open', '');
