@@ -3,7 +3,7 @@
 <script lang="ts">
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
-  import { lintGutter, openLintPanel } from '@codemirror/lint';
+  import { lintGutter, openLintPanel, setDiagnostics } from '@codemirror/lint';
   import { Compartment, EditorSelection, EditorState, Transaction, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
@@ -149,6 +149,8 @@
       editorSequenceView.dispatch({
         effects: [compartmentAdaptation.reconfigure(inputEditorExtension)],
       });
+      // Clear any stale diagnostics
+      editorSequenceView.dispatch(setDiagnostics(editorSequenceView.state, []));
     }
   }
 
