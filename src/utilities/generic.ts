@@ -58,6 +58,13 @@ export function compare(a: number | string, b: number | string, isAsc = true): n
 }
 
 /**
+ * Comparator function for strings using locale-aware alphabetical ordering.
+ */
+export function stringCompare(a: string, b: string): number {
+  return a.localeCompare(b);
+}
+
+/**
  * Clamp a number between min and max.
  */
 export function clamp(num: number, min: number, max: number): number {

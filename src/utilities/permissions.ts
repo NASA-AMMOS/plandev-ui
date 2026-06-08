@@ -949,6 +949,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.SCHEDULE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  SEARCH_ACTIVITIES: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.SEARCH_ACTIVITIES], user);
+  },
   SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
@@ -968,6 +971,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_ACTIVITY_PRESETS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.ACTIVITY_PRESETS], user);
   },
+  SUB_ACTIVITY_PRESETS_ALL: () => true,
   SUB_ACTIVITY_TYPES: () => true,
   SUB_ANCHOR_VALIDATION_STATUS: () => true,
   SUB_CHANNEL_DICTIONARIES: () => true,

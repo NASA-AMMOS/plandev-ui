@@ -553,6 +553,14 @@ export class AerieApi {
     }
   }
 
+  async duplicatePlan(planId: number, newPlanName: string): Promise<{ id: number }> {
+    const data = await this.gqlQuery<{ duplicate_plan: { new_plan_id: number } }>(gql.DUPLICATE_PLAN, {
+      new_plan_name: newPlanName,
+      plan_id: planId,
+    });
+    return { id: data.duplicate_plan.new_plan_id };
+  }
+
   /**
    * Execute a request against the Gateway API.
    */

@@ -1,49 +1,158 @@
-name: Security Scan
+# AMMOS OSS Security Scan
+# (internal) docs - https://wiki.jpl.nasa.gov/pages/viewpage.action?spaceKey=AmmosArch&title=Code+Vulnerability+Scanning+Set+Up+for+AMMOS+Open+Source+Software
+name: 'Security Scan'
 
 on:
-  pull_request:
-    branches:
-      - develop
-      - dev-[0-9]+.[0-9]+.[0-9]+
   push:
     branches:
       - develop
     tags:
-      - v*
+      - 'v*'
+  pull_request:
+    branches:
+      - develop
+      - 'dev-[0-9]+.[0-9]+.[0-9]+'
+  schedule:
+    - cron: '42 2 * * 0' # weekly cron scan
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   analyze:
-    name: Analyze
-    runs-on: ubuntu-latest
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
+      # required for all workflows
+      security-events: write
+      # required to fetch internal or private CodeQL packs
+      packages: read
+      # only required for workflows in private repositories
       actions: read
       contents: read
-      security-events: write
 
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript']
-
+        include:
+          - language: actions
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      # Add any setup steps before running the `github/codeql-action/init` action.
+      # This includes steps like installing compilers or runtimes (`actions/setup-node`
+      # or others). This is typically only required for manual builds.
+      # - name: Setup runtime (example)
+      #   uses: actions/setup-example@v1
+
+      # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
           languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-      - name: NASA Scrub
+          build-mode: ${{ matrix.build-mode }}
+          # If you wish to specify custom queries, you can do so here or in a config file.
+          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+          # queries: security-extended,security-and-quality
+
+      # If the analyze step fails for one of the languages you are analyzing with
+      # "We were unable to automatically build your code", modify the matrix above
+      # to set the build mode to "manual" for that language. Then modify this step
+      # to build your code.
+      # ℹ️ Command-line programs to run using the OS shell.
+      # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+      - name: Run manual build steps
+        if: matrix.build-mode == 'manual'
+        shell: bash
         run: |
-          pip install nasa-scrub
-          python3 -m scrub.tools.parsers.translate_results ${{ runner.workspace }}/results/*.sarif ${{ runner.workspace }}/results/codeql.scrub ${{ github.workspace }} scrub
-          python3 -m scrub.tools.parsers.csv_parser ${{ runner.workspace }}/results
-      - name: Upload Security Scan Results
-        uses: actions/upload-artifact@v4
+          echo 'If you are using a "manual" build mode for one or more of the' \
+            'languages you are analyzing, replace this with the commands to build' \
+            'your code, for example:'
+          echo '  make bootstrap'
+          echo '  make release'
+          exit 1
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
-          name: Security Scan Results
-          path: ${{ runner.workspace }}/results/*
+          category: '/language:${{matrix.language}}'
+          output: ../results
+
+      # This step is required by AMMOS to remove malformed data from the CodeQL output
+      # It may be possible to remove in future iterations
+      - name: Post-Process Output
+        run: |
+          python3 -m pip install nasa-scrub==3.0
+
+          results_dir=`realpath ${{ github.workspace }}/../results`
+          sarif_files=`find $results_dir -name '*.sarif'`
+
+          for sarif_file in $sarif_files
+          do
+            output_file="$results_dir/$(basename $sarif_file .sarif)_stripped.sarif"
+
+            python3 -m scrub.tools.parsers.translate_results $sarif_file $output_file ${{ github.workspace }} sarifv2.1.0
+          done
+
+          # TEMPORARY WORKAROUND: remove this once nasa-scrub emits valid SARIF 2.1.0.
+          # https://github.com/nasa/scrub/issues/118
+          python3 .github/workflows/scripts/repair-scrub-sarif.py "$results_dir"
+          # END TEMPORARY WORKAROUND
+
+          echo "RESULTS_DIR=$results_dir" >> $GITHUB_ENV
+
+      # This step makes the analysis artifacts available for download
+      # This can be helpful for debugging and archive purposes
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: codeql-artifacts-${{ matrix.language }}
+          path: ${{ env.RESULTS_DIR }}
+
+  sonar:
+    name: SonarQube Scan
+    needs: analyze
+    runs-on: ubuntu-latest
+    # PRs for forks can't use secrets, can't upload to Sonar
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - name: Download CodeQL Artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: codeql-artifacts-*
+          path: codeql-results
+
+      - name: collect stripped .sarif file paths
+        shell: bash
+        run: |
+          echo "downloaded CodeQL artifact files:"
+          find "${{ github.workspace }}/codeql-results" -type f | sort
+
+          sarif_paths="$(find "${{ github.workspace }}/codeql-results" -name '*_stripped.sarif' -type f | paste -sd, -)"
+          echo "sarif paths: $sarif_paths"
+          test -n "$sarif_paths"
+          echo "SARIF_REPORT_PATHS=$sarif_paths" >> "$GITHUB_ENV"
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.sarifReportPaths=${{ env.SARIF_REPORT_PATHS }}

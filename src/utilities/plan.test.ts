@@ -41,6 +41,7 @@ describe('Plan utility', () => {
             id: 1,
             is_locked: false,
             model: {
+              activity_types: [],
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
               default_view_id: 0,
@@ -229,6 +230,7 @@ describe('Plan utility', () => {
             id: 1,
             is_locked: false,
             model: {
+              activity_types: [],
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
               default_view_id: 0,
@@ -339,6 +341,7 @@ describe('Plan utility', () => {
         id: 1,
         is_locked: false,
         model: {
+          activity_types: [],
           constraint_specification: [],
           created_at: '2024-01-01T00:00:00',
           default_view_id: 0,

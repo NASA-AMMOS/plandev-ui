@@ -40,14 +40,17 @@ env:
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
   PR_BODY: '${{github.event.pull_request.body}}'
 
+permissions:
+  contents: read
+
 jobs:
   unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo (UI)
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Setup Node (UI)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -59,7 +62,7 @@ jobs:
         run: npm run test:unit:coverage
       - name: Upload Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Unit Test Results
           path: |
@@ -69,9 +72,9 @@ jobs:
     environment: ${{ inputs.env || 'test-workflow' }}
     steps:
       - name: Checkout Repo (UI)
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Setup Node (UI)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.22.0'
           cache: npm
@@ -80,13 +83,13 @@ jobs:
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
         run: |
-          echo "AERIE_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
+          echo "AERIE_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
       - name: Extract PlanDev gateway docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
         run: |
-          echo "GATEWAY_IMAGE_TAG=pr-$(echo $PR_BODY | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> $GITHUB_ENV
+          echo "GATEWAY_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
       - name: Start Services (PlanDev)
         run: |
           echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
@@ -104,7 +107,7 @@ jobs:
         run: npm run test:e2e
       - name: Upload Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: E2E Test Results
           path: |
