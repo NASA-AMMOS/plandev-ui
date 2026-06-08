@@ -83,6 +83,24 @@ export const activityDirectivesMap = derived(
   },
 );
 
+// sources
+export const directiveSources = gqlSubscribable<{ type: string; valid: boolean; value: object }[]>(
+  `subscription SubAnchorValidationStatus($selectedActivityDirectiveId: Int!) {
+        scheduling_sources(where: { scheduled_directive_id: { _eq: $selectedActivityDirectiveId } }) {
+          sources
+        }
+      }`,
+  { selectedActivityDirectiveId },
+  [],
+  res => {
+    if (res.length === 0) {
+      return res;
+    } else {
+      return res[0]['sources'];
+    }
+  },
+);
+
 /* Loading stores. */
 export const initialActivityDirectivesLoading = activityDirectivesDB.loading;
 
