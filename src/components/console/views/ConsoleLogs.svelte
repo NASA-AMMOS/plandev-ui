@@ -23,7 +23,7 @@
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
   const selectedTabStore = consoleContext?.selectedTab;
-  const estimatedRowHeight = 20;
+  const closedRowHeight = 20;
   const overscan = 30;
 
   let emptyStateTitle: string = '';
@@ -35,6 +35,10 @@
   let openIndices: Set<number> = new Set();
   let prevFilterKey: string | null = null;
   let visible: boolean = false;
+  let virtualizerState: { items: ReturnType<typeof $virtualizer.getVirtualItems>; totalSize: number } = {
+    items: [],
+    totalSize: 0,
+  };
 
   $: visible = $selectedTabStore === value;
   $: hasLogs = logs.length > 0;
@@ -54,21 +58,18 @@
           }
         }
 
-        if (logLevels) {
-          // Filter by selected log levels when the log has a level property.
-          // Items without a level (plain BaseError) always pass through.
-          if (Object.hasOwn(log, 'level')) {
-            return logLevelSet.has((log as LogMessage).level);
-          } else {
-            return true;
-          }
-        } else {
-          return log;
+        // Plain BaseErrors (no level) always pass; LogMessages must match the selected levels.
+        if (!logLevels) {
+          return true;
         }
+        if (!Object.hasOwn(log, 'level')) {
+          return true;
+        }
+        return logLevelSet.has((log as LogMessage).level);
       });
 
   const baseVirtualizerOptions = {
-    estimateSize: () => estimatedRowHeight,
+    estimateSize: () => closedRowHeight,
     getScrollElement: () => scrollContainer,
     overscan,
   };
@@ -82,12 +83,11 @@
     mounted = true;
   });
 
-  // @tanstack/svelte-virtual emits same-reference writable.set on every notify; Svelte 4's
-  // $$invalidate uses a strict-equality bailout, so auto-sub of `$virtualizer` never fires
-  // the reactives below. Route the virtualizer's onChange through a primitive counter that
-  // does pass that check, so the reactives re-fire and pull fresh values out of the
-  // (in-place mutated) virtualizer instance.
+  // The pre-setOptions getVirtualItems() flushes any pending measurements against
+  // the *current* count. Without it, a shrink (filter narrows) leaves stale entries
+  // in TanStack's measurementsCache and the total scroll height stays inflated.
   $: if (mounted) {
+    $virtualizer.getVirtualItems();
     $virtualizer.setOptions({
       ...baseVirtualizerOptions,
       count: filteredLogs.length,
@@ -95,47 +95,53 @@
     });
   }
 
-  // Track filteredLogs.length so vState re-computes when count changes (setOptions
-  // doesn't fire notify when scrollElement is unchanged, so scrollTick alone wouldn't
-  // catch count-only updates).
-  $: vState =
+  $: virtualizerState =
     mounted && scrollContainer && filteredLogs.length >= 0 && scrollTick >= 0
       ? { items: $virtualizer.getVirtualItems(), totalSize: $virtualizer.getTotalSize() }
       : { items: [] as ReturnType<typeof $virtualizer.getVirtualItems>, totalSize: 0 };
 
-  $: if (filteredLogs && scrollContainer) {
+  $: if (scrollContainer && filteredLogs.length >= 0) {
     scrollToBottomIfNeeded();
   }
 
-  // When the filter or log-level selection changes, the index to log mapping shifts,
-  // so any indices we've tracked as "open" now point at different logs. Reset the
-  // open set and snap the virtualizer's size cache for those indices back to the
-  // estimate, so previously-expanded slots don't leave gaps in the new view.
+  // Filter/level changes remap every index → log, so drop open tracking and
+  // clear cached measurements (open rows would otherwise bleed sizes into new logs).
   $: {
     const filterKey = `${$filterStore ?? ''}|${(logLevels ?? []).join(',')}`;
-    if (prevFilterKey !== null && filterKey !== prevFilterKey && openIndices.size > 0) {
+    if (prevFilterKey !== null && filterKey !== prevFilterKey) {
       if (mounted) {
-        openIndices.forEach(idx => $virtualizer.resizeItem(idx, estimatedRowHeight));
+        $virtualizer.measure();
       }
       openIndices = new Set();
     }
     prevFilterKey = filterKey;
   }
 
-  $: {
-    if (!logs.length) {
-      emptyStateTitle = emptyStateMessage;
-    } else {
-      if (!filteredLogs.length && $filterStore) {
-        emptyStateTitle = noMatchingResultsMessage;
-      } else {
-        if (filteredLogs.length !== logs.length) {
-          emptyStateTitle = `${noMatchingResultsMessage} (${logs.length - filteredLogs.length} hidden)`;
-        } else {
-          emptyStateTitle = emptyStateMessage;
-        }
-      }
+  $: emptyStateTitle = computeEmptyStateTitle(
+    logs.length,
+    filteredLogs.length,
+    !!$filterStore,
+    emptyStateMessage,
+    noMatchingResultsMessage,
+  );
+
+  function computeEmptyStateTitle(
+    total: number,
+    filtered: number,
+    hasSearch: boolean,
+    emptyMsg: string,
+    noMatchMsg: string,
+  ): string {
+    if (total === 0) {
+      return emptyMsg;
     }
+    if (filtered === 0 && hasSearch) {
+      return noMatchMsg;
+    }
+    if (filtered !== total) {
+      return `${noMatchMsg} (${total - filtered} hidden)`;
+    }
+    return emptyMsg;
   }
 
   function scrollToBottomIfNeeded() {
@@ -160,12 +166,10 @@
   }
 
   function onScroll() {
-    // Check if user is near the bottom of the scroll container
     const scrollPosition = scrollContainer.scrollTop;
     const containerHeight = scrollContainer.clientHeight;
     const totalHeight = scrollContainer.scrollHeight;
-
-    // Add a small tolerance (e.g., 1 pixel) to account for rounding errors
+    // 1px tolerance for rounding.
     isScrolledToBottom = totalHeight - containerHeight <= scrollPosition + 1;
   }
 </script>
@@ -185,8 +189,8 @@
       bind:this={scrollContainer}
       on:scroll={onScroll}
     >
-      <div style="height: {vState.totalSize}px; position: relative; width: 100%;">
-        {#each vState.items as virtualRow (virtualRow.key)}
+      <div style="height: {virtualizerState.totalSize}px; position: relative; width: 100%;">
+        {#each virtualizerState.items as virtualRow (virtualRow.key)}
           {@const log = filteredLogs[virtualRow.index]}
           {#if log}
             {@const rowProps = {
