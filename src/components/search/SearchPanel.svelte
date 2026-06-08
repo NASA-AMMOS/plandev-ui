@@ -87,6 +87,8 @@
   let filters = { ...DEFAULT_FILTERS };
   let goalOptions: DropdownOptions = [];
   let initialized = false;
+  let searchAbortController: AbortController | null = null;
+  let latestSearchRequestId = 0;
   let orderedModels: ModelSlim[] = [];
   let modelOptions: DropdownOptions = [];
   let tagOptions: DropdownOptions = [];
@@ -255,6 +257,10 @@
     searchCurrentPage.set(pageNumber);
     isSearching.set(true);
 
+    searchAbortController?.abort();
+    searchAbortController = new AbortController();
+    const requestId = ++latestSearchRequestId;
+
     const filterArgs: [name: string, value: string | number | boolean][] = [];
     if (filters.argName || filters.argValue) {
       const v = filters.argValue;
@@ -298,7 +304,13 @@
           orderBy: $searchOrderBy,
         },
         user,
+        searchAbortController.signal,
       );
+
+      // Return early if this response is stale
+      if (requestId !== latestSearchRequestId) {
+        return;
+      }
 
       if (result) {
         searchResults.set(result.results);
@@ -307,8 +319,10 @@
 
       await updateUrl();
     } finally {
-      isSearching.set(false);
-      searchRunId.update(n => n + 1);
+      if (requestId === latestSearchRequestId) {
+        isSearching.set(false);
+        searchRunId.update(n => n + 1);
+      }
     }
   }
 

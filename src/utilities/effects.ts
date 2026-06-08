@@ -7217,6 +7217,7 @@ const effects = {
       orderBy: Record<string, string>[];
     },
     user: User | null,
+    signal?: AbortSignal,
   ): Promise<{ results: ActivityDirectiveSearchResult[]; totalCount: number } | null> {
     try {
       const clauses = buildSearchActivitiesWhereClauses(filters);
@@ -7230,6 +7231,7 @@ const effects = {
           searchFilter: { _and: clauses },
         },
         user,
+        signal,
       )) as unknown as ActivitySearchResponse;
 
       if (data.activity_directive) {
@@ -7239,6 +7241,9 @@ const effects = {
         };
       }
     } catch (e) {
+      if ((e as Error)?.name === 'AbortError') {
+        return null;
+      }
       catchError('Search Failed', e as Error);
       showFailureToast('Search Failed');
     }
