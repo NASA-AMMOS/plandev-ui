@@ -154,6 +154,27 @@ test.describe.serial('Plan Metadata', () => {
     await planA.renamePlan(planA.planName);
   });
 
+  test('Plan revision increments by one when the plan changes', async () => {
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
+
+    const revisionInput = planA.panelPlanMetadata.getByRole('textbox', { exact: true, name: 'Revision' });
+
+    // Read the true current revision from the DB (the UI value can lag behind the metadata subscription).
+    const revisionBefore = await apiA.getPlanRevision(planAId);
+
+    await planA.renamePlan(planA.planName + '_rev');
+
+    // A single rename triggers exactly one plan update, bumping the revision by one...
+    expect(await apiA.getPlanRevision(planAId)).toBe(revisionBefore + 1);
+    // ...and the metadata panel must reflect the new revision via its live subscription (the
+    // regression guard: before the fix the panel showed a stale revision from initial load).
+    await expect(revisionInput).toHaveValue(String(revisionBefore + 1));
+
+    // Restore the original name, which bumps the revision once more.
+    await planA.renamePlan(planA.planName);
+    await expect(revisionInput).toHaveValue(String(revisionBefore + 2));
+  });
+
   test('Plan name uniqueness validation enforced', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.fillPlanName(planB.planName);

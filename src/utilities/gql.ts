@@ -1676,6 +1676,14 @@ const gql = {
     }
   `,
 
+  GET_PLAN_REVISION: `#graphql
+    query GetPlanRevision($planId: Int!) {
+      plan: ${Queries.PLAN}(id: $planId) {
+        revision
+      }
+    }
+  `,
+
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: `#graphql
     query GetPlanSnapshotActivityDirectives($planSnapshotId: Int!) {
       plan_snapshot_activity_directives: ${Queries.PLAN_SNAPSHOT_ACTIVITIES}(where: { snapshot_id: { _eq: $planSnapshotId } }, order_by: { start_offset: asc }) {
@@ -3245,20 +3253,13 @@ const gql = {
         model_id
         name
         owner
+        revision
         updated_at
         updated_by
         created_at
         collaborators {
           collaborator
         }
-      }
-    }
-  `,
-
-  SUB_PLAN_REVISION: `#graphql
-    subscription SubPlanRevision($planId: Int!) {
-      plan: ${Queries.PLAN}(id: $planId) {
-        revision
       }
     }
   `,

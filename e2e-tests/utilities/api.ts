@@ -186,6 +186,11 @@ export class AerieApi {
     return data.plan;
   }
 
+  async getPlanRevision(planId: number): Promise<number> {
+    const data = await this.gqlQuery<{ plan: { revision: number } }>(gql.GET_PLAN_REVISION, { planId });
+    return data.plan.revision;
+  }
+
   async getSimulationDataset(id: number): Promise<{ reason: string | null; status: string }> {
     const data = await this.gqlQuery<{
       simulation_dataset_by_pk: { reason: string | null; status: string };

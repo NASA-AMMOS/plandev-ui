@@ -56,6 +56,8 @@ export const planModelId: Readable<number> = derived(plan, $plan => $plan?.model
 
 export const planModelRevision: Readable<number> = derived(plan, $plan => $plan?.model?.revision ?? -1);
 
+export const planRevision: Readable<number> = derived(plan, $plan => $plan?.revision ?? -1);
+
 /* Other Subscriptions. */
 
 export const planModelActivityTypes = gqlSubscribable<ActivityType[]>(
@@ -102,13 +104,6 @@ export const planMergeRequestsOutgoing = gqlSubscribable<PlanMergeRequest[]>(
   [],
   (planMergeRequests: PlanMergeRequestSchema[]): PlanMergeRequest[] =>
     planMergeRequests.map(planMergeRequest => ({ ...planMergeRequest, pending: false, type: 'outgoing' })),
-);
-
-export const planRevision = gqlSubscribable<number>(
-  gql.SUB_PLAN_REVISION,
-  { planId },
-  -1,
-  ({ revision }: Pick<Plan, 'revision'>) => revision,
 );
 
 /* Helper Functions. */

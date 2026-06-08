@@ -5083,8 +5083,7 @@ const effects = {
 
   async getPlanRevision(planId: number, user: User | null): Promise<number | null> {
     try {
-      const query = convertToQuery(gql.SUB_PLAN_REVISION);
-      const data = await reqHasura<Pick<Plan, 'revision'>>(query, { planId }, user);
+      const data = await reqHasura<Pick<Plan, 'revision'>>(gql.GET_PLAN_REVISION, { planId }, user);
       const { plan } = data;
       if (plan != null) {
         const { revision } = plan;

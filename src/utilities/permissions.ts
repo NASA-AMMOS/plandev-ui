@@ -832,6 +832,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   GET_PLAN_EVENT_TYPES: () => true,
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: () => true,
+  GET_PLAN_REVISION: () => true,
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOT_ACTIVITIES], user);
   },
@@ -1039,7 +1040,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_PLAN_MERGE_REQUEST_IN_PROGRESS: () => true,
   SUB_PLAN_MERGE_REQUEST_STATUS: () => true,
   SUB_PLAN_METADATA: () => true,
-  SUB_PLAN_REVISION: () => true,
   SUB_PLAN_SNAPSHOTS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOTS], user);
   },
