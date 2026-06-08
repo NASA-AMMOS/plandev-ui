@@ -64,6 +64,11 @@
   width: min-content;
 }
 
+.tooltip-row .tooltip-value-multiline {
+  white-space: normal;
+  width: auto;
+}
+
 .tooltip,
 .tippy-content {
   color: var(--st-white);

@@ -302,7 +302,7 @@ export class ExternalSources {
     await expect(this.page.getByRole('button', { exact: true, name: sourceTypeName })).not.toBeVisible();
   }
 
-  async updatePage(page: Page): Promise<void> {
+  updatePage(page: Page): void {
     this.deleteSourceButton = page.getByRole('button', { exact: true, name: 'Delete external source' });
     this.deleteSourceButtonConfirmation = page.getByRole('button', { exact: true, name: 'Delete' });
     this.externalEventSelectedForm = page.locator('.external-event-form-container');

@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Button, Tabs } from '@nasa-jpl/stellar-svelte';
   import { capitalize } from 'lodash-es';
-  import { ArrowLeft, Ban, RefreshCw } from 'lucide-svelte';
+  import { ArrowLeft, Ban, Download, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { writable } from 'svelte/store';
   import { Status } from '../../../enums/status';
@@ -12,25 +12,26 @@
   import { workspaceId } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionDefinitionVersion, ActionRun } from '../../../types/actions';
   import type { User } from '../../../types/app';
-  import type { LogMessage } from '../../../types/errors';
   import type { ArgumentsMap, FormParameter } from '../../../types/parameter';
   import {
     getActionDefinitionForRun,
     getDefaultsFromSchema,
     getLatestRunnableVersion,
     getStatusForActionRun,
+    parseActionLogLines,
+    type ParsedActionLog,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
-  import { ErrorTypes } from '../../../utilities/errors';
+  import { downloadJSON } from '../../../utilities/generic';
   import gql from '../../../utilities/gql';
   import { getFormParameters } from '../../../utilities/parameters';
   import { permissionHandler } from '../../../utilities/permissionHandler';
   import { formatMS } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
-  import ConsoleLog from '../../console/views/ConsoleLog.svelte';
   import Parameters from '../../parameters/Parameters.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+  import ActionRunLogs from './ActionRunLogs.svelte';
 
   const dispatch = createEventDispatcher<{
     back: void;
@@ -55,6 +56,7 @@
   let actionDefinition: ActionDefinition | null = null;
   let latestVersion: ActionDefinitionVersion | null = null;
   let isLatestVersion: boolean = false;
+  let parsedLogs: ParsedActionLog[] = [];
   let status: Status | null = null;
 
   $: actionRunIdStore.set(actionRunId);
@@ -71,6 +73,16 @@
   $: latestVersion = getLatestRunnableVersion(actionRun?.action_definition.versions ?? []);
   $: isLatestVersion = latestVersion != null && actionRun?.action_definition_revision === latestVersion.revision;
   $: status = actionRun ? getStatusForActionRun(actionRun) : null;
+  $: parsedLogs = actionRun?.logs ? parseActionLogLines(actionRun.logs) : ([] as ParsedActionLog[]);
+  $: errorEntry =
+    actionRun?.error?.message != null
+      ? ({
+          level: 'error',
+          message: actionRun.error.message,
+          timestamp: actionRun.requested_at,
+          trace: actionRun.error.stack,
+        } satisfies ParsedActionLog)
+      : null;
 
   function updateActionSettingsAndParameters(run: ActionRun) {
     const version =
@@ -102,64 +114,26 @@
     );
   }
 
-  function parseLogLines(logString: string): LogMessage[] {
-    // Action server formats logs as: TIMESTAMP [LEVEL] message
-    // Continuation lines (multi-line errors/stack traces) appear as: [LEVEL] text (indented, no timestamp)
-    const serverLogPattern = /^(\S+)\s+\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
-    const continuationLevelPattern = /^\s*\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
-    const results: LogMessage[] = [];
-
-    for (const line of logString.split('\n')) {
-      if (!line.trim()) {
-        continue;
-      }
-
-      const mainMatch = line.match(serverLogPattern);
-      if (mainMatch) {
-        const [, timestamp, rawLevel, message] = mainMatch;
-        results.push({
-          level: rawLevel.toLowerCase() as LogMessage['level'],
-          message,
-          timestamp,
-          type: ErrorTypes.LOG,
-        });
-        continue;
-      }
-
-      // Continuation line — strip [LEVEL] prefix and merge into previous entry's trace
-      const contMatch = line.match(continuationLevelPattern);
-      const cleanLine = contMatch ? contMatch[2] : line;
-
-      if (results.length > 0) {
-        const prev = results[results.length - 1];
-        prev.trace = prev.trace ? `${prev.trace}\n${cleanLine}` : cleanLine;
-      } else {
-        results.push({
-          level: 'info',
-          message: cleanLine,
-          timestamp: '',
-          type: ErrorTypes.LOG,
-        });
-      }
+  function onDownloadRun() {
+    if (!actionRun) {
+      return;
     }
-
-    // Post-process: when a message ends with '{' and trace contains the rest of
-    // a JSON object, reassemble and parse it into `data` for clean rendering.
-    for (const entry of results) {
-      if (entry.message.endsWith('{') && entry.trace) {
-        const jsonCandidate = '{\n' + entry.trace;
-        try {
-          const parsed = JSON.parse(jsonCandidate);
-          entry.message = entry.message.slice(0, -1).trimEnd();
-          entry.data = parsed;
-          entry.trace = undefined;
-        } catch {
-          // Not valid JSON, leave as-is
-        }
-      }
-    }
-
-    return results;
+    downloadJSON(
+      {
+        canceled: actionRun.canceled,
+        duration: actionRun.duration,
+        error: actionRun.error,
+        id: actionRun.id,
+        logs: parsedLogs,
+        parameters: actionRun.parameters,
+        requestedAt: actionRun.requested_at,
+        requestedBy: actionRun.requested_by,
+        results: actionRun.results,
+        settings: actionRun.settings,
+        status: actionRun.status,
+      },
+      `${actionRun.action_definition.name}-${actionRun.id}.json`,
+    );
   }
 
   async function onCancelRun() {
@@ -213,6 +187,10 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <Button variant="outline" on:click={onDownloadRun}>
+          <Download size={12} class="mr-1" />
+          Download
+        </Button>
         {#if actionDefinition && !actionDefinition.archived}
           <div
             use:permissionHandler={{
@@ -287,19 +265,13 @@
         <!-- Output tab (errors, results, logs) -->
         <Tabs.Content value="output" class="mt-0 flex-1 overflow-y-auto">
           <div class="mx-auto flex max-w-5xl flex-col gap-4 p-6">
-            {#if actionRun.error?.message}
-              {@const errorLog = {
-                level: 'error',
-                message: actionRun.error.message,
-                timestamp: actionRun.requested_at,
-                trace: actionRun.error.stack,
-                type: ErrorTypes.CAUGHT_ERROR,
-              }}
-              <div class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4">
+            {#if errorEntry}
+              <div
+                class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4"
+                data-testid="action-run-error-log"
+              >
                 <h3 class="text-sm font-medium text-destructive">Error</h3>
-                <div class="overflow-auto rounded bg-muted py-2 font-mono text-xs" data-testid="action-run-error-log">
-                  <ConsoleLog log={errorLog} showType={false} showLongTimestamp={false} />
-                </div>
+                <ActionRunLogs logs={[errorEntry]} />
               </div>
             {/if}
             <div class="flex flex-col gap-3 rounded border border-border p-4">
@@ -318,26 +290,8 @@
             </div>
             <div class="flex flex-col gap-3 rounded border border-border p-4">
               <h3 class="text-sm font-medium">Logs</h3>
-              {#if actionRun.logs}
-                {@const logMessages = parseLogLines(actionRun.logs)}
-                <div class="max-h-[600px] overflow-auto rounded bg-muted py-2 font-mono text-xs">
-                  {#each logMessages as log}
-                    <ConsoleLog {log} defaultExpanded={true} showType={false} showLongTimestamp={false}>
-                      <svelte:fragment slot="message" let:message let:expandable let:open>
-                        {#if expandable && !open}
-                          <!-- "preview" text for expandable logs, ellipsize to one line -->
-                          <span class="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-pre">
-                            {message}
-                          </span>
-                        {:else}
-                          <span class="block w-full min-w-0 whitespace-pre-wrap break-words">
-                            {message}
-                          </span>
-                        {/if}
-                      </svelte:fragment>
-                    </ConsoleLog>
-                  {/each}
-                </div>
+              {#if parsedLogs.length}
+                <ActionRunLogs logs={parsedLogs} />
               {:else}
                 <p class="text-xs italic text-muted-foreground">No logs</p>
               {/if}

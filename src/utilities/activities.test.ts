@@ -1,5 +1,6 @@
 import { keyBy, reverse } from 'lodash-es';
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { makeMockActivityDirective } from '../tests/mocks/activity/mockActivityDirective';
 import type { ActivityDirective, ActivityDirectiveDB } from '../types/activity';
 import type { Plan } from '../types/plan';
 import type { Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
@@ -7,6 +8,7 @@ import {
   addAbsoluteTimeToRevision,
   bulkShiftActivityDirectivesInPlan,
   computeActivityDirectivesMap,
+  copyActivityDirectivesToClipboard,
   createSpanUtilityMaps,
   getActivityMetadata,
   getAllSpanChildrenIds,
@@ -297,6 +299,7 @@ function getTestPlan(): Plan {
     id: 1,
     is_locked: false,
     model: {
+      activity_types: [],
       constraint_specification: [],
       created_at: '2006-07-11T00:00:00',
       default_view_id: 0,
@@ -720,5 +723,84 @@ describe('bulkShiftActivityDirectivesInPlan', () => {
     expect(shiftedRight[0].start_offset === '12:00:00');
     expect(shiftedRight[1].start_offset === '09:00:00'); //Was anchored to activity with id=1 so shift happens automatically
     expect(shiftedRight[2].start_offset === '10:00:00');
+  });
+});
+
+describe('copyActivityDirectivesToClipboard', () => {
+  // Capture the JSON written to clipboard. jsdom doesn't ship navigator.clipboard, so
+  // we stub it inline. setClipboardContent serializes via JSON.stringify(content).
+  let writeTextMock: ReturnType<typeof vi.fn>;
+  beforeEach(() => {
+    writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(global.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: writeTextMock },
+    });
+  });
+
+  function getClippedActivities(): any[] {
+    expect(writeTextMock).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(writeTextMock.mock.calls[0][0]);
+    return payload.activities;
+  }
+
+  test('single-plan copy preserves intra-selection anchors', () => {
+    // A=1, B=2 anchored to A (both in plan 1). Expect B's anchor preserved.
+    const a = makeMockActivityDirective({ id: 1, plan_id: 1 });
+    const b = makeMockActivityDirective({ anchor_id: 1, id: 2, plan_id: 1, start_offset: '02:00:00' });
+    copyActivityDirectivesToClipboard(null, [a, b]);
+    const clipped = getClippedActivities();
+    expect(clipped).toHaveLength(2);
+    expect(clipped[0]).toMatchObject({ anchor_id: null, id: 1, plan_id: 1 });
+    expect(clipped[1]).toMatchObject({ anchor_id: 1, id: 2, plan_id: 1, start_offset: '02:00:00' });
+  });
+
+  test('strips anchor when anchor target is not in selection', () => {
+    // B=2 anchored to id=99 (not selected). Expect anchor stripped, start_offset reset.
+    const b = makeMockActivityDirective({ anchor_id: 99, id: 2, plan_id: 1, start_offset: '02:00:00' });
+    copyActivityDirectivesToClipboard(null, [b]);
+    const clipped = getClippedActivities();
+    expect(clipped[0]).toMatchObject({ anchor_id: null, id: 2, plan_id: 1, start_offset: '0' });
+  });
+
+  test('cross-plan: anchor_id colliding with another plan id is NOT preserved', () => {
+    // A=5 in plan 1, C=7 anchored to id=5 in plan 2. C's anchor refers to plan 2's id=5
+    // (NOT plan 1's A) — must be stripped despite the id collision in the selection.
+    const a = makeMockActivityDirective({ id: 5, plan_id: 1 });
+    const c = makeMockActivityDirective({ anchor_id: 5, id: 7, plan_id: 2, start_offset: '03:00:00' });
+    copyActivityDirectivesToClipboard(null, [a, c]);
+    const clipped = getClippedActivities();
+    expect(clipped[0]).toMatchObject({ anchor_id: null, id: 5, plan_id: 1 });
+    expect(clipped[1]).toMatchObject({ anchor_id: null, id: 7, plan_id: 2, start_offset: '0' });
+  });
+
+  test('cross-plan: each anchor is scoped to its own plan', () => {
+    // Two parallel anchor chains in different plans, all in selection:
+    // plan 1: A(id=5), C(id=10, anchor=5) — anchor preserved
+    // plan 2: B(id=5), D(id=11, anchor=5) — anchor preserved
+    // C's anchor must end up scoped to plan 1's A, not plan 2's B.
+    const a = makeMockActivityDirective({ id: 5, plan_id: 1 });
+    const b = makeMockActivityDirective({ id: 5, plan_id: 2 });
+    const c = makeMockActivityDirective({ anchor_id: 5, id: 10, plan_id: 1 });
+    const d = makeMockActivityDirective({ anchor_id: 5, id: 11, plan_id: 2 });
+    copyActivityDirectivesToClipboard(null, [a, b, c, d]);
+    const clipped = getClippedActivities();
+    expect(clipped).toHaveLength(4);
+    expect(clipped[0]).toMatchObject({ anchor_id: null, id: 5, plan_id: 1 });
+    expect(clipped[1]).toMatchObject({ anchor_id: null, id: 5, plan_id: 2 });
+    // Anchors are preserved on both rows — the scoping is enforced at paste time via
+    // (plan_id, id) in cloneActivityDirectives' remap (covered in effects.test.ts).
+    expect(clipped[2]).toMatchObject({ anchor_id: 5, id: 10, plan_id: 1 });
+    expect(clipped[3]).toMatchObject({ anchor_id: 5, id: 11, plan_id: 2 });
+  });
+
+  test('payload always carries plan_id per activity', () => {
+    const a = makeMockActivityDirective({ id: 1, plan_id: 7 });
+    const b = makeMockActivityDirective({ id: 2, plan_id: 9 });
+    copyActivityDirectivesToClipboard(null, [a, b]);
+    const clipped = getClippedActivities();
+    expect(clipped.every((c: { plan_id?: number }) => typeof c.plan_id === 'number')).toBe(true);
+    expect(clipped[0].plan_id).toBe(7);
+    expect(clipped[1].plan_id).toBe(9);
   });
 });

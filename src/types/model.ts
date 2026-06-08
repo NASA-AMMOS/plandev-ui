@@ -34,6 +34,7 @@ export type ModelLog = {
 };
 
 export type ModelSchema = {
+  activity_types: { name: string; parameters: ParametersMap }[];
   constraint_specification: ConstraintModelSpecification[];
   created_at: string;
   default_view_id: number | null;
@@ -57,6 +58,7 @@ export type ModelSchema = {
 
 export type ModelSlim = Pick<
   Model,
+  | 'activity_types'
   | 'created_at'
   | 'description'
   | 'id'

@@ -81,7 +81,7 @@ export class SequenceTemplates {
     await option.click();
   }
 
-  async updatePage(page: Page) {
+  updatePage(page: Page) {
     this.newSequenceTemplateActivityTypeInput = page
       .getByRole('combobox')
       .filter({ hasText: 'Select an activity type' });

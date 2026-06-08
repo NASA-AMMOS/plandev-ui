@@ -235,16 +235,25 @@ export function transformPlanMergeNonConflictingActivities(
   }));
 }
 
-export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: ActivityDirective[]) {
-  const copiedActivityIds = new Set(activities.map(a => a.id));
+export function copyActivityDirectivesToClipboard(sourcePlan: Plan | null, activities: ActivityDirective[]) {
+  // Activity directive ids are unique per-plan but not globally. When the
+  // selection spans multiple plans (e.g. from cross-plan activity search),
+  // anchor membership must be checked against `(plan_id, id)` — otherwise an
+  // anchor_id from plan B can spuriously match an id from plan A in the same
+  // selection and silently rewire across plans on paste. The clipped payload
+  // also carries the source `plan_id` so the paste-side anchor remap in
+  // `cloneActivityDirectives` can disambiguate same-id activities.
+  const copiedActivityKeys = new Set(activities.map(a => `${a.plan_id}:${a.id}`));
   const clippedActivities = activities.map(activity => {
-    const anchorInSelection = activity.anchor_id !== null && copiedActivityIds.has(activity.anchor_id);
+    const anchorInSelection =
+      activity.anchor_id !== null && copiedActivityKeys.has(`${activity.plan_id}:${activity.anchor_id}`);
     return {
       anchor_id: anchorInSelection ? activity.anchor_id : null,
       anchored_to_start: activity.anchored_to_start,
       arguments: activity.arguments,
       id: activity.id,
       name: activity.name,
+      plan_id: activity.plan_id,
       start_offset: activity.anchor_id !== null && !anchorInSelection ? '0' : activity.start_offset,
       start_time_ms: activity.start_time_ms,
       tags: activity.tags,
@@ -254,7 +263,7 @@ export function copyActivityDirectivesToClipboard(sourcePlan: Plan, activities: 
 
   const clipboard = {
     activities: clippedActivities,
-    sourcePlan: sourcePlan.id,
+    sourcePlan: sourcePlan?.id ?? null,
     type: `aerie_activity_directives`,
   };
 
@@ -308,8 +317,11 @@ export async function getActivityDirectivesToPaste(
       const planStart = getUnixEpochTime(destinationPlan.start_time_doy);
       const planEnd = getUnixEpochTime(destinationPlan.end_time_doy);
       const earliestStart = Math.min(...starts);
-      if (earliestStart < planStart || earliestStart > planEnd) {
-        pasteStartingAtTime = planStart; //if out of bounds, paste starting at the start of the plan.
+      // Only fall back to plan start when the caller didn't pick a paste time. A right-click → Paste
+      // at time X must always honor X — cross-plan pastes (e.g. from search results) routinely have
+      // source absolute times far outside the target plan's window.
+      if (pasteStartingAtTime === undefined && (earliestStart < planStart || earliestStart > planEnd)) {
+        pasteStartingAtTime = planStart;
       }
 
       //transpose in time if we're given a time or if it was out of bounds

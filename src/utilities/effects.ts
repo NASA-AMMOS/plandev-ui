@@ -86,6 +86,8 @@ import type {
   ActivityDirectiveId,
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
+  ActivityDirectiveSearchResult,
+  ActivitySearchResponse,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
@@ -297,6 +299,7 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
+import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { compareEvents } from './simulation';
@@ -844,7 +847,11 @@ const effects = {
         throwPermissionError('clone activity directives into the plan');
       }
 
-      const activityRemap: Record<number, number> = {};
+      // Source activity ids are only unique per-plan, so anchor remap is keyed by
+      // `${source_plan_id}:${id}` — see `copyActivityDirectivesToClipboard`, which
+      // carries `plan_id` per clipped activity for this purpose. Cross-plan pastes
+      // without compound keys would alias same-id rows from different source plans.
+      const activityRemap: Record<string, number> = {};
       const activityDirectivesInsertInput = activities.map(
         ({ anchored_to_start, arguments: activityArguments, metadata, name, start_offset, type }) => {
           const activityDirectiveInsertInput: ActivityDirectiveInsertInput = {
@@ -872,15 +879,18 @@ const effects = {
       if (createdActivities !== null) {
         const { returning: clonedActivitiesReferences } = createdActivities;
         clonedActivitiesReferences.forEach((directive, index) => {
-          const { id } = activities[index];
-          activityRemap[id] = directive.id;
+          const { id, plan_id: sourcePlanId } = activities[index];
+          activityRemap[`${sourcePlanId}:${id}`] = directive.id;
         });
 
         const anchorUpdates = activities
           .filter(({ anchor_id: anchorId }) => anchorId !== null)
-          .map(({ anchor_id: anchorId, id }) => ({
-            _set: { anchor_id: activityRemap[anchorId as number] },
-            where: { id: { _eq: activityRemap[id] }, plan_id: { _eq: (plan as PlanSchema).id } },
+          .map(({ anchor_id: anchorId, id, plan_id: sourcePlanId }) => ({
+            _set: { anchor_id: activityRemap[`${sourcePlanId}:${anchorId as number}`] ?? null },
+            where: {
+              id: { _eq: activityRemap[`${sourcePlanId}:${id}`] },
+              plan_id: { _eq: (plan as PlanSchema).id },
+            },
           }));
 
         await reqHasura<ActivityDirectiveDB>(gql.UPDATE_ACTIVITY_DIRECTIVES, { updates: anchorUpdates }, user);
@@ -4619,26 +4629,20 @@ const effects = {
     try {
       const sourceData = await reqHasura<
         {
-          derivation_group: {
-            external_sources: {
-              external_events: {
-                external_event_type: {
-                  attribute_schema: object;
-                  name: string;
-                };
-              }[];
-            }[];
-          };
+          external_events: {
+            external_event_type: {
+              attribute_schema: object;
+              name: string;
+            };
+          }[];
         }[]
       >(gql.GET_PLAN_EVENT_TYPES, { plan_id }, user);
       const types: ExternalEventType[] = [];
       if (sourceData?.plan_derivation_group !== null) {
         for (const group of sourceData.plan_derivation_group) {
-          for (const source of group.derivation_group.external_sources) {
-            for (const event of source.external_events) {
-              if (types.flatMap(et => et.name).includes(event.external_event_type.name) === false) {
-                types.push(event.external_event_type);
-              }
+          for (const event of group.external_events) {
+            if (types.flatMap(et => et.name).includes(event.external_event_type.name) === false) {
+              types.push(event.external_event_type);
             }
           }
         }
@@ -7205,6 +7209,47 @@ const effects = {
       catchError('Unable to schedule', e as Error);
       showFailureToast('Scheduling failed');
     }
+  },
+
+  async searchActivities(
+    filters: ActivitySearchFilters,
+    pagination: {
+      limit: number;
+      offset: number;
+      orderBy: Record<string, string>[];
+    },
+    user: User | null,
+    signal?: AbortSignal,
+  ): Promise<{ results: ActivityDirectiveSearchResult[]; totalCount: number } | null> {
+    try {
+      const clauses = buildSearchActivitiesWhereClauses(filters);
+
+      const data: ActivitySearchResponse = (await reqHasura(
+        gql.SEARCH_ACTIVITIES,
+        {
+          limit: pagination.limit,
+          offset: pagination.offset,
+          orderBy: pagination.orderBy,
+          searchFilter: { _and: clauses },
+        },
+        user,
+        signal,
+      )) as unknown as ActivitySearchResponse;
+
+      if (data.activity_directive) {
+        return {
+          results: data.activity_directive,
+          totalCount: data.activity_directive_aggregate?.aggregate?.count ?? 0,
+        };
+      }
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') {
+        return null;
+      }
+      catchError('Search Failed', e as Error);
+      showFailureToast('Search Failed');
+    }
+    return null;
   },
 
   async sendActionSecretParameters(

@@ -274,7 +274,7 @@ export class Dictionaries {
     }
   }
 
-  async updatePage(page: Page): Promise<void> {
+  updatePage(page: Page): void {
     this.page = page;
     this.createButton = this.page.locator(`button:has-text("Create")`);
     this.inputFile = this.page.locator('input[name="file"]');

@@ -36,6 +36,8 @@
   export let columnStates: ColumnState[] = [];
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let dataGrid: DataGrid<RowData> | undefined = undefined;
+  export let persistColumnStateKey: string | null = null;
+  export let transformColumnState: ((state: ColumnState[]) => ColumnState[]) | null = null;
   export let filterExpression: string = '';
   export let hasDeletePermission: PermissionCheck<RowData> | boolean = true;
   export let hasDeletePermissionError: string | ((user: User, data: RowData) => string) | undefined =
@@ -157,6 +159,8 @@
   {columnShiftResize}
   {columnStates}
   {columnsToForceRefreshOnDataUpdate}
+  {persistColumnStateKey}
+  {transformColumnState}
   {filterExpression}
   {headerHeight}
   {idKey}
@@ -187,6 +191,8 @@
   on:columnPinned
   on:columnResized
   on:columnStateChange
+  on:columnVisible
+  on:columnsReset
   on:filterChanged
   on:focus={onFocus}
   on:rowClicked

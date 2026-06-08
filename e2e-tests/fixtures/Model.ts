@@ -123,7 +123,7 @@ export class Model {
     await expect(this.nameInput).toHaveValue(modelName);
   }
 
-  async updatePage(page: Page): Promise<Promise<void>> {
+  updatePage(page: Page): void {
     this.closeButton = page.getByRole('button', { name: 'Close' });
     this.conditionRadioButton = page.getByRole('radio', { name: 'Conditions' });
     this.constraintRadioButton = page.getByRole('radio', { name: 'Constraints' });
