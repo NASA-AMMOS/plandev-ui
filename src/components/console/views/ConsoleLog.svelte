@@ -3,7 +3,7 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
-  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
   import { isLogMessage } from '../../../utilities/errors';
 
@@ -39,28 +39,13 @@
   $: renderedMessage =
     !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
-  // Size measurement happens at toggle time only (and once on mount when the row
-  // re-enters the virtualizer already open).
-  async function dispatchSize() {
-    if (index < 0) {
-      return;
-    }
-    await tick();
-    if (!detailsEl) {
-      return;
-    }
-    dispatch('toggle', { index, open, size: detailsEl.getBoundingClientRect().height });
-  }
-
-  async function onToggle() {
+  function onToggle() {
     if (open && leftContents && !expansionPadding) {
       expansionPadding = leftContents.clientWidth + 12;
     }
-    await dispatchSize();
   }
 
-  // ResizeObserver tells us whether the message overflows its truncated container.
-  // Browser batches the reads, so this is cheap across all mounted rows.
+  // Truncation detection: tracks whether the message overflows the truncated container.
   function observeOverflow(node: HTMLElement) {
     const update = () => {
       isTruncated = node.scrollWidth > node.clientWidth;
@@ -70,13 +55,20 @@
     return { destroy: () => observer.disconnect() };
   }
 
-  onMount(() => {
-    // Browser only fires `toggle` on state changes, not on initial render with
-    // open=true — so push the open size manually when remounting an open row.
-    if (open) {
-      dispatchSize();
-    }
-  });
+  // Row size dispatch: fires whenever <details> resizes (initial mount, user toggle,
+  // expansion area appearing/disappearing because truncation status changed on
+  // window resize). One mechanism covers all paths that affect the virtualizer's
+  // cached size for this row.
+  function observeRowSize(node: HTMLDetailsElement) {
+    const observer = new ResizeObserver(() => {
+      if (index < 0) {
+        return;
+      }
+      dispatch('toggle', { index, open, size: node.getBoundingClientRect().height });
+    });
+    observer.observe(node);
+    return { destroy: () => observer.disconnect() };
+  }
 
   function formatTimestamp(timestamp: string, mode: 'short' | 'long'): string {
     try {
@@ -96,6 +88,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <details
   bind:this={detailsEl}
+  use:observeRowSize
   class="group"
   bind:open
   on:toggle={onToggle}
