@@ -438,7 +438,6 @@
           bind:dataGrid
           bind:selectedItemIds
           getRowId={getRowKey}
-          idKey="id"
           {columnDefs}
           columnShiftResize
           {columnStates}
