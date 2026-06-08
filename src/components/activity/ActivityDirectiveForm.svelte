@@ -8,8 +8,9 @@
   import { History } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { activityArgumentDefaultsMap } from '../../stores/activities';
+  import { activityArgumentDefaultsMap, , directiveSources, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/console';
+  import { selectedExternalEventId, selectExternalEvent } from '../../stores/external-event';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -793,6 +794,157 @@
         on:reset={onAutoFixFormParameters}
       />
     {/if}
+
+    <fieldset>
+      <Collapse title="Scheduling Sources" contentClass="px-1" defaultExpanded={false}>
+        <!-- TODO: move Source Scheduling Goal and such Here -->
+
+        <!-- TODO: make a list of sources here-->
+        {#each $directiveSources as source}
+          {#if source['type'] === 'activity'}
+            <Highlight highlight={highlightKeysMap.id}>
+              <Input layout="inline">
+                <label
+                  use:tooltip={{
+                    content: 'The id of the activity directive that this directive was scheduled in relation to',
+                    placement: 'top',
+                  }}
+                  for="id">Activity Source Directive ID</label
+                >
+                <input
+                  on:click={() => {
+                    selectedActivityDirectiveId.set(Number(source['value']));
+                  }}
+                  class="st-input w-full"
+                  name="id"
+                  id="id"
+                  readonly
+                  value={source['value']}
+                />
+                <input class="st-input w-full" name="valid" id="valid" disabled value={source['valid']} />
+                <!-- TODO: if clicking it and it is a directive, will update selected directive ID to the source-->
+              </Input>
+            </Highlight>
+          {:else if source['type'] === 'resource'}
+            <Highlight highlight={highlightKeysMap.id}>
+              <Input layout="inline">
+                <label
+                  use:tooltip={{
+                    content: 'The name of the resource that this directive was scheduled in relation to',
+                    placement: 'top',
+                  }}
+                  for="id">Resource Source Name</label
+                >
+                <input class="st-input w-full" disabled name="id" id="id" value={source['value']} />
+                <input class="st-input w-full" name="valid" id="valid" disabled value={source['valid']} />
+                <!-- TODO: if clicking it and it is a directive, will update selected directive ID to the source-->
+              </Input>
+            </Highlight>
+          {:else}
+            <Highlight highlight={highlightKeysMap.id}>
+              <Input layout="inline">
+                <label
+                  use:tooltip={{
+                    content: 'The name of the external event that this directive was scheduled in relation to',
+                    placement: 'top',
+                  }}
+                  for="id">Resource External Event</label
+                >
+                <div>
+                  <input
+                    on:click={() => {
+                      selectExternalEvent(
+                        source['value']['referenced_event_derivation_group'] +
+                          source['value']['referenced_event_source_key'] +
+                          source['value']['referenced_event_type'] +
+                          source['value']['referenced_event_key'],
+                        true,
+                        true,
+                      );
+                    }}
+                    class="st-input w-full"
+                    readonly
+                    name="id"
+                    id="id"
+                    value={source['value']['referenced_event_key']}
+                  />
+                  <input
+                    on:click={() => {
+                      selectExternalEvent(
+                        source['value']['referenced_event_derivation_group'] +
+                          source['value']['referenced_event_source_key'] +
+                          source['value']['referenced_event_type'] +
+                          source['value']['referenced_event_key'],
+                        true,
+                        true,
+                      );
+                    }}
+                    class="st-input w-full"
+                    readonly
+                    name="id"
+                    id="id"
+                    value={source['value']['referenced_event_derivation_group']}
+                  />
+                  <input
+                    on:click={() => {
+                      selectExternalEvent(
+                        source['value']['referenced_event_derivation_group'] +
+                          source['value']['referenced_event_source_key'] +
+                          source['value']['referenced_event_type'] +
+                          source['value']['referenced_event_key'],
+                        true,
+                        true,
+                      );
+                    }}
+                    class="st-input w-full"
+                    readonly
+                    name="id"
+                    id="id"
+                    value={source['value']['referenced_event_type']}
+                  />
+                  <input
+                    on:click={() => {
+                      selectExternalEvent(
+                        source['value']['referenced_event_derivation_group'] +
+                          source['value']['referenced_event_source_key'] +
+                          source['value']['referenced_event_type'] +
+                          source['value']['referenced_event_key'],
+                        true,
+                        true,
+                      );
+                    }}
+                    class="st-input w-full"
+                    readonly
+                    name="id"
+                    id="id"
+                    value={source['value']['referenced_event_source_key']}
+                  />
+                  <input
+                    on:click={() => {
+                      selectExternalEvent(
+                        source['value']['referenced_event_derivation_group'] +
+                          source['value']['referenced_event_source_key'] +
+                          source['value']['referenced_event_type'] +
+                          source['value']['referenced_event_key'],
+                        true,
+                        true,
+                      );
+                    }}
+                    class="st-input w-full"
+                    readonly
+                    name="id"
+                    id="id"
+                    value={source['value']['referenced_event_source_created_at']}
+                  />
+                  <input class="st-input w-full" name="valid" id="valid" disabled value={source['valid']} />
+                </div>
+                <!-- TODO: if clicking it and it is a directive, will update selected directive ID to the source-->
+              </Input>
+            </Highlight>
+          {/if}
+        {/each}
+      </Collapse>
+    </fieldset>
 
     <fieldset>
       <Collapse title="Annotations">
