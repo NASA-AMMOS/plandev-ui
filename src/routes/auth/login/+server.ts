@@ -23,7 +23,12 @@ export const POST: RequestHandler = async event => {
       const decodedToken = jwtDecode(user.token) as Record<string, unknown>;
       const claims = extractClaims(decodedToken, getClaimsConfig());
 
-      event.cookies.set('activeRole', claims.defaultRole, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
+      event.cookies.set('activeRole', claims.defaultRole, {
+        httpOnly: false,
+        path: '/',
+        sameSite: 'lax',
+        secure: !dev,
+      });
       event.cookies.set('user', userCookie, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
       return json({ success: true, user });
     } else {

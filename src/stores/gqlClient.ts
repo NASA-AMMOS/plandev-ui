@@ -152,8 +152,7 @@ function createSharedClient(): Client {
           return;
         }
         activeSocket = null;
-        const closeEvent =
-          event && typeof event === 'object' && 'code' in event ? (event as CloseEvent) : undefined;
+        const closeEvent = event && typeof event === 'object' && 'code' in event ? (event as CloseEvent) : undefined;
         const code = closeEvent?.code;
         // Our own intentional restart (token refresh, role switch). Reconnect is immediate
         // and intentional — skip the reconnecting state so the banner doesn't flash.

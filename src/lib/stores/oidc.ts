@@ -141,7 +141,9 @@ export async function refresh(): Promise<void> {
     return;
   } else {
     consecutiveFailures++;
-    console.error(`Token refresh failed (attempt ${consecutiveFailures}/${MAX_REFRESH_FAILURES}), status: ${res.status}`);
+    console.error(
+      `Token refresh failed (attempt ${consecutiveFailures}/${MAX_REFRESH_FAILURES}), status: ${res.status}`,
+    );
     throw new Error('Token refresh failed');
   }
 }

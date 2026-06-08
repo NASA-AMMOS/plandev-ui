@@ -127,10 +127,7 @@ async function refresh(evt: RequestEvent) {
         // Refresh token is expired or invalid at the IdP.
         // Clear remaining tokens and let the request proceed unauthenticated.
         // The app's auth guards will redirect to login.
-        console.error(
-          'Token refresh failed (refresh token likely expired):',
-          err instanceof Error ? err.message : err,
-        );
+        console.error('Token refresh failed (refresh token likely expired):', err instanceof Error ? err.message : err);
         evt.cookies.delete('accessToken', { path: '/' });
         evt.cookies.delete('idToken', { path: '/' });
       }
