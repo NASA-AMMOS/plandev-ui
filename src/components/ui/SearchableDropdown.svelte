@@ -34,6 +34,7 @@
   export let disabled: boolean = false;
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
+  export let loading: boolean = false;
   export let options: DropdownOptions = [];
   export let maxListHeight: string = '300px';
   export let name: string | undefined = undefined;
@@ -85,20 +86,44 @@
   let searchFilter: string = '';
   let selectedOptions: DropdownOptions = [];
   let maxWidth: number = 0;
+  let measureCanvasContext: CanvasRenderingContext2D | null = null;
+  let measureRef: HTMLSpanElement | undefined;
 
-  $: {
-    selectedOptions = [];
-    let maxOptionChars = 0;
-    options.forEach(option => {
-      if (selectedOptionValues.find(value => value === option.value)) {
-        selectedOptions.push(option);
-      }
-      const optionCharacterLength = option.display.toString().length;
-      maxOptionChars = Math.max(maxOptionChars, optionCharacterLength);
-    });
-    // avg char length + 48 padding for the rest of the menu
-    maxWidth = Math.max(50, maxOptionChars * 8 + 48);
+  function getMeasureContext(): CanvasRenderingContext2D | null {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+    if (!measureCanvasContext) {
+      const canvas = document.createElement('canvas');
+      measureCanvasContext = canvas.getContext('2d');
+    }
+    return measureCanvasContext;
   }
+
+  function measureMaxOptionWidth(opts: DropdownOptions): number {
+    const ctx = getMeasureContext();
+    if (!ctx || !measureRef) {
+      return 0;
+    }
+    // Read the actual rendered font from a span that mirrors the option's CSS class —
+    // canvas needs the font in its own string format. One DOM read per measurement pass,
+    // not per option.
+    const cs = getComputedStyle(measureRef);
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    let max = 0;
+    for (const opt of opts) {
+      const w = ctx.measureText(opt.display.toString()).width;
+      if (w > max) {
+        max = w;
+      }
+    }
+    return max;
+  }
+
+  // Measure the widest option text and add room for the row chrome:
+  //   px-3 (left) + icon 24 + gap 4 + px-3 (right) + scrollbar ~16 + small canvas-vs-browser buffer ~4
+  // = 72px. Re-runs when `options` changes or once `measureRef` is bound on mount.
+  $: maxWidth = measureRef ? Math.max(50, Math.ceil(measureMaxOptionWidth(options)) + 72) : 50;
 
   $: selectedOptions = options.filter(option => {
     return !!selectedOptionValues.find(value => value === option.value);
@@ -174,6 +199,14 @@
 </script>
 
 <div class={rootClasses}>
+  <!-- Hidden ref used to read the option text's computed font for canvas measurement; never visible.
+       Mirrors the classes the real option text inherits (MenuItem applies text-[13px] font-medium). -->
+  <span
+    bind:this={measureRef}
+    class="dropdown-item-text text-[13px] font-medium"
+    aria-hidden="true"
+    style="pointer-events: none; position: absolute; visibility: hidden;"
+  ></span>
   <!-- svelte-ignore a11y-click-events-have-key-events a11y-interactive-supports-focus -->
   <div
     class="selected-display st-input st-select w-full"
@@ -191,8 +224,10 @@
     }}
     use:tooltip={{ content: error || selectTooltip, placement: selectTooltipPlacement }}
   >
-    <span class="selected-display-value" class:error>{label}</span>
-    <button class="icon st-button icon-right" aria-label={name} on:click|stopPropagation={toggleMenu}>
+    <span class="selected-display-value" class:error class:loading-placeholder={loading}>
+      {loading ? 'Loading…' : label}
+    </span>
+    <button type="button" class="icon st-button icon-right" aria-label={name} on:click|stopPropagation={toggleMenu}>
       {#if $$slots.icon}
         <slot name="icon" />
       {:else}
@@ -228,21 +263,23 @@
           </Input>
         </div>
         <RowVirtualizerFixed
-          count={displayedOptions.length}
+          items={displayedOptions}
           overscan={100}
+          estimatedItemHeight={36}
           maxHeight={maxListHeight}
           minWidth="{maxWidth}px"
           selectedIndex={selectedOptions.length
             ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
             : undefined}
+          let:item
           let:index
         >
-          {@const displayedOption = displayedOptions[index]}
+          {@const displayedOption = item}
           {@const selected =
             !!selectedOptions.find(o => o.value === displayedOption.value) ||
             (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
           <MenuItem
-            className="py-2"
+            className="min-h-9 py-2"
             {selected}
             use={[
               [
@@ -364,5 +401,10 @@
   .dropdown-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .selected-display-value.loading-placeholder {
+    color: var(--st-gray-50);
   }
 </style>

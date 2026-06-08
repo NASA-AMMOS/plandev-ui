@@ -2052,6 +2052,68 @@ const gql = {
     }
   `,
 
+  SEARCH_ACTIVITIES: `#graphql
+    query SearchActivities(
+      $searchFilter: activity_directive_bool_exp!,
+      $limit: Int!,
+      $offset: Int!,
+      $orderBy: [activity_directive_order_by!]
+    ) {
+      ${Queries.ACTIVITY_DIRECTIVES}(where: $searchFilter, order_by: $orderBy, limit: $limit, offset: $offset) {
+        anchor_id
+        anchored_to_start
+        applied_preset {
+          preset_applied {
+            name
+          }
+        }
+        arguments
+        created_at
+        created_by
+        id
+        last_modified_at
+        last_modified_by
+        metadata
+        name
+        plan_id
+        plan {
+          model: mission_model {
+            id
+            name
+          }
+          model_id
+          name
+          owner
+          start_time
+          tags {
+            tag {
+              color
+              name
+            }
+          }
+        }
+        source_scheduling_goal {
+          id
+          name
+        }
+        source_scheduling_goal_id
+        start_offset
+        tags {
+          tag {
+            color
+            name
+          }
+        }
+        type
+      }
+      activity_directive_aggregate(where: $searchFilter) {
+        aggregate {
+          count
+        }
+      }
+    }
+  `,
+
   SIMULATE: `#graphql
     query Simulate($planId: Int!, $force: Boolean!) {
       ${Queries.SIMULATE}(planId: $planId, force: $force) {
@@ -2227,6 +2289,19 @@ const gql = {
         model_id: { _eq: $modelId },
         associated_activity_type: { _eq: $activityTypeName }
       }) {
+        id
+        model_id
+        name
+        associated_activity_type
+        arguments
+        owner
+      }
+    }
+  `,
+
+  SUB_ACTIVITY_PRESETS_ALL: `#graphql
+    subscription SubActivityPresetsAll {
+      ${Queries.ACTIVITY_PRESETS} {
         id
         model_id
         name
@@ -2723,6 +2798,10 @@ const gql = {
   SUB_MODELS: `#graphql
     subscription SubModels {
       models: ${Queries.MISSION_MODELS}(order_by: { name: asc }) {
+        activity_types {
+          name
+          parameters
+        }
         created_at
         description
         id

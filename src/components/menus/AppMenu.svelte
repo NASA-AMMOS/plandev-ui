@@ -21,6 +21,7 @@
     Info,
     LogOut,
     Network,
+    Search as SearchIcon,
     Tags,
   } from 'lucide-svelte';
   import PlanDevWordmarkDark from '../../assets/plandev-logo-dark.svg?component';
@@ -94,6 +95,10 @@
           <MenuLink className="text-sm py-1.5" href="{base}/external-sources">
             <Boxes size={16} />
             External Sources
+          </MenuLink>
+          <MenuLink className="text-sm py-1.5" href="{base}/search">
+            <SearchIcon size={16} />
+            Activity Search
           </MenuLink>
         </div>
 

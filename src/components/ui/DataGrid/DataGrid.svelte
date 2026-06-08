@@ -60,6 +60,7 @@
   import { SvelteComponent, createEventDispatcher, onDestroy, onMount, type ComponentEvents } from 'svelte';
   import type { Dispatcher } from '../../../types/component';
   import type { DataGridRowDoubleClick, DataGridRowSelection, RowId, TRowData } from '../../../types/data-grid';
+  import { removeLocalStorageItem, setLocalStorageItem } from '../../../utilities/localStorage';
   import ContextMenuInternal from '../../context-menu/ContextMenu.svelte';
   import ColumnResizeContextMenu from './column-menu/ColumnResizeContextMenu.svelte';
   import DataGridSkeleton from './DataGridSkeleton.svelte';
@@ -113,6 +114,10 @@
   export let columnsToForceRefreshOnDataUpdate: (keyof RowData)[] = [];
   export let columnShiftResize: boolean = false;
   export let columnStates: ColumnState[] = [];
+  /** When set, column state (visibility, order, width, sort, pinning) is persisted to localStorage under this key. */
+  export let persistColumnStateKey: string | null = null;
+  /** Optional transform applied both to loaded saved state (before applying to grid) and live state (before saving). */
+  export let transformColumnState: ((state: ColumnState[]) => ColumnState[]) | null = null;
   export let currentSelectedRowId: RowId | null = null;
   export let filterExpression: string = '';
   export let headerHeight: number = 32;
@@ -253,17 +258,18 @@ This has been seen to result in unintended and often glitchy behavior, which oft
    * Manually manipulate the old and newly selected row classes instead of invoking `redrawRows`
    * in order to correctly mark what the current selected row is. Calling `redrawRows` caused cellrenders to
    * lose their current state and be reinitialized. `refreshCells` is not enough to cause ag-grid to recompute
-   * all the row styles
+   * all the row styles.
+   *
+   * AG Grid renders each row in both the center and the pinned-left/right containers, so we must update every
+   * matching element — querySelector only catches the first and leaves the pinned copies with stale classes.
    */
   $: {
-    const previousSelectedRow = gridDiv?.querySelector(`[row-id="${previousSelectedRowId}"]`);
-    if (previousSelectedRow != null) {
-      previousSelectedRow.classList.remove(CURRENT_SELECTED_ROW_CLASS);
-    }
-    const currentSelectedRow = gridDiv?.querySelector(`[row-id="${currentSelectedRowId}"]`);
-    if (currentSelectedRow != null) {
-      currentSelectedRow.classList.add(CURRENT_SELECTED_ROW_CLASS);
-    }
+    gridDiv
+      ?.querySelectorAll(`[row-id="${previousSelectedRowId}"]`)
+      .forEach(row => row.classList.remove(CURRENT_SELECTED_ROW_CLASS));
+    gridDiv
+      ?.querySelectorAll(`[row-id="${currentSelectedRowId}"]`)
+      .forEach(row => row.classList.add(CURRENT_SELECTED_ROW_CLASS));
 
     previousSelectedRowId = currentSelectedRowId;
   }
@@ -356,11 +362,19 @@ This has been seen to result in unintended and often glitchy behavior, which oft
   function onResetColumns() {
     gridApi?.resetColumnState();
     gridApi?.sizeColumnsToFit();
+    if (persistColumnStateKey) {
+      removeLocalStorageItem(persistColumnStateKey);
+    }
     dispatch('columnsReset');
   }
 
   function onColumnStateChange() {
-    dispatch('columnStateChange', gridApi?.getColumnState());
+    const state = gridApi?.getColumnState();
+    dispatch('columnStateChange', state);
+    if (persistColumnStateKey && state) {
+      const toSave = transformColumnState ? transformColumnState(state) : state;
+      setLocalStorageItem(persistColumnStateKey, toSave);
+    }
   }
 
   function onCellContextMenu(event: CellContextMenuEvent<RowData>) {
