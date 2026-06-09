@@ -122,7 +122,9 @@
     findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    isPathInBreadcrumb,
     mapWorkspaceTreePaths,
+    parseUrlState,
     removeRedundantNodes,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -132,34 +134,6 @@
   export let data: PageData;
 
   type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
-
-  function parseUrlState(url: URL) {
-    const filePath = url.searchParams.get(SearchParameters.SEQUENCE_ID);
-    const actionRunIdParam = url.searchParams.get(SearchParameters.ACTION_RUN_ID);
-    const actionIdParam = url.searchParams.get(SearchParameters.ACTION_ID);
-    const sidebarTabParam = url.searchParams.get(SearchParameters.SIDEBAR_TAB);
-
-    const actionRunId = actionRunIdParam ? parseInt(actionRunIdParam, 10) || null : null;
-    const actionId = actionIdParam ? parseInt(actionIdParam, 10) || null : null;
-
-    let mode: WorkspaceContentMode;
-    let sidebarTab: string;
-    if (actionRunId !== null) {
-      mode = WorkspaceContentMode.ActionRunDetail;
-      sidebarTab = 'actions';
-    } else if (actionId !== null) {
-      mode = WorkspaceContentMode.ActionDetail;
-      sidebarTab = 'actions';
-    } else if (sidebarTabParam === 'actions') {
-      mode = WorkspaceContentMode.ActionRunsList;
-      sidebarTab = 'actions';
-    } else {
-      mode = WorkspaceContentMode.File;
-      sidebarTab = 'files';
-    }
-
-    return { actionId, actionRunId, filePath, mode, sidebarTab };
-  }
 
   // Initialize state from URL before first render to avoid flash
   const initialUrlState = parseUrlState($page.url);
@@ -411,8 +385,44 @@
     });
   });
 
+  // Centralize URL mutation so the lastKnownUrl bookkeeping (used by the popstate
+  // rollback path) can't get out of sync with the pushed URL.
+  function pushUrl(url: string): void {
+    pushState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+  function replaceUrl(url: string): void {
+    replaceState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+
+  // Prompts the user about discarding unsaved file changes. Resolves true if the
+  // user confirmed (and the doc was marked clean); false if they kept editing.
+  async function confirmNavigateAway(): Promise<boolean> {
+    if (!$activeDocumentIsDirty) {
+      return true;
+    }
+    const { confirm } = await showConfirmModal(
+      'Navigate Away',
+      'There are unsaved changes. Are you sure you want to navigate away?',
+      'Navigate Away',
+      true,
+      'Keep Editing',
+    );
+    if (confirm) {
+      activeDocument.markClean();
+    }
+    return confirm;
+  }
+
   function syncStateFromUrl(url: URL) {
     const { actionId, actionRunId, filePath, mode, sidebarTab } = parseUrlState(url);
+
+    // Reset the flag defensively in case the previous popstate set it but the
+    // selectedFilePath reactive never fired to consume it (e.g., the workspace
+    // was reloading at that moment, or the file path already matched). Without
+    // this, a stale flag would suppress the next user-initiated pushUrl.
+    isHandlingPopstate = false;
 
     $workspaceContentMode = mode;
     $selectedActionRunId = actionRunId;
@@ -431,6 +441,15 @@
         // Flag tells confirmAndNavigate to skip its pushState (URL is already correct).
         isHandlingPopstate = true;
         selectedFilePath = filePath;
+
+        // If the new path lives above or outside the current breadcrumb view,
+        // the file browser would filter it out (it only renders descendants of
+        // currentBreadcrumbPath). Pull the breadcrumb up to the file's parent
+        // so the row is visible. Paths *below* the current view are fine — the
+        // tree auto-expands to them via expandToPath in the file browser.
+        if (!isPathInBreadcrumb(filePath, sidebarBreadcrumbPath)) {
+          sidebarBreadcrumbPath = separateFilenameFromPath(filePath).path ?? '';
+        }
       }
     }
   }
@@ -447,25 +466,18 @@
 
     // Browser back/forward inside the workspace. SvelteKit's lifecycle hooks don't
     // fire reliably for shallow pushState entries, so we handle these directly.
+    // Cross-route popstates (back/forward out of this workspace) are handled by
+    // beforeNavigate above — we early-return here to avoid stacking two modals.
     const handlePopstate = () => {
       const newUrl = window.location.href;
-      const previousUrl = lastKnownUrl;
-
-      if (!$activeDocumentIsDirty) {
-        syncStateFromUrl(new URL(newUrl));
-        lastKnownUrl = newUrl;
+      const expectedPathname = `${base}/workspaces/${$workspaceId}`;
+      if (new URL(newUrl).pathname !== expectedPathname) {
         return;
       }
+      const previousUrl = lastKnownUrl;
 
-      showConfirmModal(
-        'Navigate Away',
-        'There are unsaved changes. Are you sure you want to navigate away?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      ).then(({ confirm }) => {
-        if (confirm) {
-          activeDocument.markClean();
+      confirmNavigateAway().then(confirmed => {
+        if (confirmed) {
           syncStateFromUrl(new URL(newUrl));
           lastKnownUrl = newUrl;
         } else {
@@ -521,6 +533,11 @@
       activeDocument.close();
       if (nextPath && !workspaceTreeMap[nextPath]) {
         showFailureToast('The selected file does not exist in the workspace.');
+        // Clear selectedFilePath and clean up the stale URL so the reactive
+        // doesn't re-fire (which would push a new history entry and clobber the
+        // browser's forward stack) and so a reload doesn't re-toast.
+        selectedFilePath = null;
+        replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
       }
     }
   }
@@ -621,8 +638,14 @@
     }
 
     if (content === null) {
-      // File may have been deleted or renamed — refresh tree so the UI self-corrects
+      // File may have been deleted or renamed — refresh tree so the UI self-corrects.
+      // Also clear selectedFilePath + the stale URL inline (same reason as the
+      // "doesn't exist in tree" branch in maybeNavigate): otherwise the
+      // selectedFilePath reactive re-fires after close() sets $activeDocumentPath
+      // to null, which would push a duplicate entry and clobber the forward stack.
       activeDocument.close();
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
       refreshWorkspaceContents();
       return;
     }
@@ -714,27 +737,15 @@
   }
 
   async function confirmAndNavigate(filePath: string | null) {
-    if ($activeDocumentIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        `There are unsaved changes. Are you sure you want navigate away from the current file?`,
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-
-      if (!confirm) {
-        return false;
-      }
+    if (!(await confirmNavigateAway())) {
+      return false;
     }
     if (isHandlingPopstate) {
       // URL was already updated by browser back/forward; don't push a duplicate entry
       isHandlingPopstate = false;
     } else {
-      pushState(getWorkspacesUrl(base, $workspaceId, filePath), {});
-      lastKnownUrl = window.location.href;
+      pushUrl(getWorkspacesUrl(base, $workspaceId, filePath));
     }
-
     return true;
   }
 
@@ -748,8 +759,7 @@
     activeDocument.updatePath(newFilePath, filename ?? undefined, newType);
     selectedFilePath = newFilePath;
     // Manually update URL since reactive statement won't trigger (selectedFilePath === $activeDocumentPath)
-    replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
-    lastKnownUrl = window.location.href;
+    replaceUrl(getWorkspacesUrl(base, $workspaceId, newFilePath));
   }
 
   async function saveBeforeOperation(
@@ -1129,11 +1139,14 @@
       params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
     } else if (mode === WorkspaceContentMode.ActionRunsList) {
       params.set(SearchParameters.SIDEBAR_TAB, 'actions');
+    } else if (mode === WorkspaceContentMode.File && $activeDocumentPath) {
+      // Preserve the currently-open file in the URL so a reload (or browser
+      // back to this entry) still shows it.
+      params.set(SearchParameters.SEQUENCE_ID, $activeDocumentPath);
     }
 
     const query = params.toString();
-    pushState(query ? `${baseUrl}?${query}` : baseUrl, {});
-    lastKnownUrl = window.location.href;
+    pushUrl(query ? `${baseUrl}?${query}` : baseUrl);
   }
 
   function onSelectAction(event: CustomEvent<{ id: number }>) {
@@ -1162,7 +1175,12 @@
   }
 
   function onActionRunBack() {
-    // Navigate back to the previous action view
+    // Navigate back to the previous action view. We intentionally use
+    // switchToContentMode (which pushes a forward history entry) rather than
+    // history.back(). The action-run-detail → action-detail transition is a
+    // forward action conceptually, not a reversal of a browser navigation, so
+    // pushing keeps the back stack consistent across users who arrived here
+    // via a deep link vs. a click.
     if ($selectedActionDefinitionId !== null) {
       switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: $selectedActionDefinitionId });
     } else {

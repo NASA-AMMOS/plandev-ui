@@ -14,6 +14,7 @@ let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
+let sequenceB: { sequenceName: string; sequencePath: string };
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
@@ -23,6 +24,19 @@ let workspaceForUnauthorized: Workspace;
 // Separate browser contexts for multi-user tests
 let setupAuthorized: BrowserSetupResult; // userA - will be added as collaborator
 let setupUnauthorized: BrowserSetupResult; // userB - not a collaborator
+
+/**
+ * Asserts the three invariants of "this sequence is the active workspace file":
+ * URL matches, the file's row is selected in the tree, and the editor pane has
+ * rendered the file's section title. Used by the back/forward navigation tests.
+ */
+async function expectSequenceActive(seq: { sequenceName: string; sequencePath: string }): Promise<void> {
+  await expect(setup.page).toHaveURL(
+    getWorkspacesUrl(workspace.baseURL, parseInt(workspaceId), `${seq.sequencePath}/${seq.sequenceName}`),
+  );
+  await expect(workspace.getFileRow(seq.sequenceName)).toHaveAttribute('aria-selected', 'true');
+  await expect(setup.page.getByTitle(`${seq.sequencePath}/${seq.sequenceName}`).first()).toBeVisible();
+}
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
@@ -130,6 +144,49 @@ test.describe.serial('Workspace', () => {
         `${sequence.sequencePath}/${sequence.sequenceName}`,
       ),
     );
+  });
+
+  // The next six tests exercise the workspace's browser-history state machine:
+  // open a second file, walk back/forward, switch to the actions tab and back.
+  // Each transition is verified against three invariants — URL, tree selection,
+  // and the editor pane's rendered section title — via expectSequenceActive.
+  test('Back/forward: create a second sequence and open it builds the back stack', async () => {
+    sequenceB = await workspace.createSequence();
+    await workspace.clearSearch();
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.clickFile(sequenceB.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: browser back returns to the previously opened sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequence);
+  });
+
+  test('Back/forward: browser forward returns to the more recent sequence', async () => {
+    await setup.page.goForward();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: switching to the actions tab updates the URL', async () => {
+    await setup.page.getByLabel('Actions', { exact: true }).click();
+    await expect(setup.page).toHaveURL(/sidebarTab=actions/);
+  });
+
+  test('Back/forward: browser back from actions tab returns to the previously open sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: restore state for downstream tests (sequence A active, B deleted)', async () => {
+    await workspace.searchForFileAndWait(sequence.sequenceName);
+    await workspace.clickFile(sequence.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequence);
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.deleteSequence(sequenceB.sequenceName);
+    await workspace.clearSearch();
   });
 
   test('Update the selected sequence content', async () => {
