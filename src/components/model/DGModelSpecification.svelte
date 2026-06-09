@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import type { CellEditingStoppedEvent, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
+  import type { CellEditingStoppedEvent, ValueGetterParams } from 'ag-grid-community';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { derivationGroups, externalSources } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
@@ -17,17 +17,11 @@
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import DataGrid from '../ui/DataGrid/DataGrid.svelte';
-  import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
 
   export let user: User | null;
   export let selectedDerivationGroups: string[];
-
-  type CellRendererParams = {
-    viewDerivationGroup: (derivationGroup: DerivationGroup) => void;
-  };
-  type DerivationGroupCellRendererParams = ICellRendererParams<DerivationGroup> & CellRendererParams;
 
   const derivationGroupBaseColumnDefs: DataGridColumnDef<DerivationGroup>[] = [
     {
@@ -36,8 +30,9 @@
       headerName: 'Derivation Group',
       resizable: true,
       sortable: true,
-      suppressAutoSize: false,
-      suppressSizeToFit: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 250,
     },
     {
       field: 'source_type_name',
@@ -54,18 +49,19 @@
       headerName: 'Owner',
       resizable: true,
       sortable: true,
+      suppressAutoSize: false,
+      suppressSizeToFit: false,
     },
     {
       field: 'derived_event_total',
       filter: 'number',
-      headerName: 'Derived Events in Derivation Group',
+      headerName: 'Derived Events',
       sortable: true,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
+      suppressAutoSize: false,
+      suppressSizeToFit: false,
       valueFormatter: params => {
         return params?.value.length;
       },
-      width: 250,
     },
   ];
 
@@ -104,7 +100,7 @@
       cellDataType: 'boolean',
       colId: 'selected',
       editable: hasUpdateDerivationGroupLinkPermission,
-      headerName: 'Included in Model',
+      headerName: '',
       resizable: false,
       suppressAutoSize: true,
       suppressSizeToFit: true,
@@ -115,46 +111,47 @@
         }
         return false;
       },
-      width: 115,
+      width: 50,
     },
-    {
-      cellClass: 'action-cell-container',
-      cellRenderer: (params: DerivationGroupCellRendererParams) => {
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions-cell';
-        new DataGridActions({
-          props: {
-            rowData: params.data,
-            viewCallback: params.viewDerivationGroup,
-            viewTooltip: {
-              content: 'View Derivation Group',
-              placement: 'bottom',
-            },
-          },
-          target: actionsDiv,
-        });
+    // {
+    //   cellClass: 'action-cell-container',
+    //   cellRenderer: (params: DerivationGroupCellRendererParams) => {
+    //     const actionsDiv = document.createElement('div');
+    //     actionsDiv.className = 'actions-cell';
+    //     new DataGridActions({
+    //       props: {
+    //         rowData: params.data,
+    //         viewCallback: params.viewDerivationGroup,
+    //         viewTooltip: {
+    //           content: 'View Derivation Group',
+    //           placement: 'bottom',
+    //         },
+    //       },
+    //       target: actionsDiv,
+    //     });
 
-        return actionsDiv;
-      },
-      cellRendererParams: {
-        viewDerivationGroup,
-      } as CellRendererParams,
-      headerName: '',
-      resizable: false,
-      sortable: false,
-      suppressAutoSize: true,
-      suppressSizeToFit: true,
-      width: 40,
-    },
+    //     return actionsDiv;
+    //   },
+    //   cellRendererParams: {
+    //     viewDerivationGroup,
+    //   } as CellRendererParams,
+    //   headerName: '',
+    //   resizable: false,
+    //   sortable: false,
+    //   suppressAutoSize: true,
+    //   suppressSizeToFit: true,
+    //   width: 40,
+    // },
   ];
 
   $: if (selectedDerivationGroups) {
     dataGrid?.redrawRows();
   }
 
-  function viewDerivationGroup(viewedDerivationGroup: DerivationGroup) {
+  function viewDerivationGroup(event: CustomEvent<DerivationGroup[]>) {
+    const { detail: viewedDerivationGroup } = event;
     const derivationGroup = $derivationGroups.find(
-      derivationGroup => derivationGroup.name === viewedDerivationGroup.name,
+      derivationGroup => derivationGroup.name === viewedDerivationGroup[0].name,
     );
     if (derivationGroup === selectedDerivationGroup) {
       selectedDerivationGroup = undefined;
@@ -178,99 +175,93 @@
   }
 </script>
 
-<div class="metadata-container">
-  <div class="metadata-filter-container">
-    <CssGrid columns="1fr 3px 1fr" minHeight="100%">
-      <div class="derivation-groups-modal-container">
-        <div class="derivation-groups-modal-filter-container">
-          <Input layout="inline">
-            <input bind:value={filterText} class="st-input" placeholder="Filter derivation groups" />
-          </Input>
-          <button
-            class="st-button secondary ellipsis new-external-source-button"
-            name="new-external-source"
-            on:click={() => window.open(`${base}/external-sources`)}
-          >
-            Upload
-          </button>
-        </div>
-        <hr />
-        <div class="derivation-groups-modal-table-container">
-          <DataGrid
-            bind:this={dataGrid}
-            columnDefs={derivationGroupColumnDefs}
-            noRowsOverlayText="No Derivation Groups Found"
-            rowData={filteredDerivationGroups}
-            getRowId={getDerivationGroupRowId}
-            on:cellEditingStopped={onToggleDerivationGroup}
-          />
-        </div>
-      </div>
-      {#if selectedDerivationGroup !== undefined}
-        <CssGridGutter track={1} type="column" />
-        <Panel borderRight padBody={true} overflowYBody="scroll">
-          <svelte:fragment slot="header">
-            <SectionTitle overflow="hidden">
-              <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup.name}'
-            </SectionTitle>
-          </svelte:fragment>
-          <svelte:fragment slot="body">
-            {#if selectedDerivationGroupSources.length > 0}
-              {#each selectedDerivationGroupSources as source}
-                <!-- Collapsible details -->
-                <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
-                  <svelte:fragment slot="right">
-                    <p class="st-typography-body derived-event-count">
-                      {selectedDerivationGroup.sources.get(source.key)?.event_counts} events
-                    </p>
-                  </svelte:fragment>
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Key:</div>
-                    {source.key}
-                  </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Source Type:</div>
-                    {source.source_type_name}
-                  </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Start Time:</div>
-                    {formatDate(new Date(source.start_time), $plugins.time.primary.format)}
-                  </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">End Time:</div>
-                    {formatDate(new Date(source.end_time), $plugins.time.primary.format)}
-                  </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Valid At:</div>
-                    {formatDate(new Date(source.valid_at), $plugins.time.primary.format)}
-                  </div>
-
-                  <div class="st-typography-body">
-                    <div class="st-typography-bold">Created At:</div>
-                    {formatDate(new Date(source.created_at), $plugins.time.primary.format)}
-                  </div>
-                </Collapse>
-              {/each}
-            {:else}
-              <p class="st-typography-body">No sources in this group.</p>
-            {/if}
-          </svelte:fragment>
-        </Panel>
-      {/if}
-    </CssGrid>
+<CssGrid columns="3fr 3px 2fr" minHeight="100%" class="h-full w-full">
+  <div class="derivation-groups-modal-container">
+    <div class="derivation-groups-modal-filter-container">
+      <Input layout="inline">
+        <input bind:value={filterText} class="st-input" placeholder="Filter derivation groups" />
+      </Input>
+      <button
+        class="st-button secondary ellipsis new-external-source-button"
+        name="new-external-source"
+        on:click={() => window.open(`${base}/external-sources`)}
+      >
+        Upload
+      </button>
+    </div>
+    <hr />
+    <div class="derivation-groups-modal-table-container">
+      <DataGrid
+        bind:this={dataGrid}
+        columnDefs={derivationGroupColumnDefs}
+        noRowsOverlayText="No Derivation Groups Found"
+        rowData={filteredDerivationGroups}
+        getRowId={getDerivationGroupRowId}
+        rowSelection="single"
+        on:selectionChanged={viewDerivationGroup}
+        on:cellEditingStopped={onToggleDerivationGroup}
+      />
+    </div>
   </div>
-</div>
+  <CssGridGutter track={1} type="column" />
+  <Panel borderRight padBody={true} overflowYBody="scroll">
+    <svelte:fragment slot="header">
+      <SectionTitle overflow="hidden">
+        <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup?.name ?? 'Unknown'}'
+      </SectionTitle>
+    </svelte:fragment>
+    <svelte:fragment slot="body">
+      {#if selectedDerivationGroupSources.length > 0}
+        {#each selectedDerivationGroupSources as source}
+          <!-- Collapsible details -->
+          <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
+            <svelte:fragment slot="right">
+              <p class="st-typography-body derived-event-count">
+                {selectedDerivationGroup?.sources.get(source.key)?.event_counts ?? -1} events
+              </p>
+            </svelte:fragment>
+            <div class="st-typography-body">
+              <div class="st-typography-bold">Key:</div>
+              {source.key}
+            </div>
+
+            <div class="st-typography-body">
+              <div class="st-typography-bold">Source Type:</div>
+              {source.source_type_name}
+            </div>
+
+            <div class="st-typography-body">
+              <div class="st-typography-bold">Start Time:</div>
+              {formatDate(new Date(source.start_time), $plugins.time.primary.format)}
+            </div>
+
+            <div class="st-typography-body">
+              <div class="st-typography-bold">End Time:</div>
+              {formatDate(new Date(source.end_time), $plugins.time.primary.format)}
+            </div>
+
+            <div class="st-typography-body">
+              <div class="st-typography-bold">Valid At:</div>
+              {formatDate(new Date(source.valid_at), $plugins.time.primary.format)}
+            </div>
+
+            <div class="st-typography-body">
+              <div class="st-typography-bold">Created At:</div>
+              {formatDate(new Date(source.created_at), $plugins.time.primary.format)}
+            </div>
+          </Collapse>
+        {/each}
+      {:else}
+        <p class="st-typography-body">No sources in this group.</p>
+      {/if}
+    </svelte:fragment>
+  </Panel>
+</CssGrid>
 
 <style>
   .derivation-groups-modal-container {
     display: grid;
     grid-template-rows: min-content min-content auto;
-    height: 100%;
-    height: 100%;
     row-gap: 0.5rem;
   }
 
@@ -290,9 +281,7 @@
   }
 
   .derivation-groups-modal-table-container {
-    height: 400px;
     padding: 0 1rem 0.5rem;
-    width: 900px;
   }
 
   .derived-event-count {
@@ -303,26 +292,5 @@
     align-items: center;
     display: flex;
     width: 100px;
-  }
-
-  .metadata-container {
-    display: grid;
-    grid-template-rows: min-content min-content auto;
-    row-gap: 0.5rem;
-  }
-
-  .metadata-container hr {
-    border: none;
-    border-top: 1px solid #e0e0e0;
-    margin: 0 1rem;
-    width: auto;
-  }
-
-  .metadata-filter-container {
-    align-items: center;
-    column-gap: 0.25rem;
-    display: grid;
-    grid-template-columns: min-content auto min-content;
-    margin: 0.5rem 1rem 0;
   }
 </style>

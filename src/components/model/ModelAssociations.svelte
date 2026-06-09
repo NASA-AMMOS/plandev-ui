@@ -178,10 +178,10 @@
       </button>
     </div>
   </div>
-  <CssGrid class="associations-css-grid" columns="1fr 3px 1fr">
-    <div class="associations-content">
-      <!-- if DG, then different-->
-      {#if selectedAssociationId !== 'derivation_group'}
+  {#if selectedAssociationId !== 'derivation_group'}
+    <CssGrid class="associations-css-grid" columns="1fr 3px 1fr">
+      <div class="associations-content">
+        <!-- if DG, then different-->
         <div class="associations-view">
           <RadioButtons selectedButtonId={selectedViewId} on:select-radio-button={onSelectView}>
             <RadioButton id="model"><div class="association-button">Model</div></RadioButton>
@@ -284,11 +284,7 @@
             {/if}
           </div>
         {/if}
-      {:else}
-        <DGModelSpecification {user} bind:selectedDerivationGroups />
-      {/if}
-    </div>
-    {#if selectedAssociationId !== 'derivation_group'}
+      </div>
       <CssGridGutter track={1} type="column" />
 
       <DefinitionEditor
@@ -298,8 +294,10 @@
         readOnly={true}
         title={`${selectedAssociationTitle} - Definition Editor (Read-only)`}
       />
-    {/if}
-  </CssGrid>
+    </CssGrid>
+  {:else}
+    <DGModelSpecification {user} bind:selectedDerivationGroups />
+  {/if}
 </div>
 
 <style>
@@ -335,6 +333,7 @@
   .association-button {
     padding-left: 16px;
     padding-right: 16px;
+    white-space: nowrap;
   }
 
   .associations-container :global(.associations-css-grid) {
