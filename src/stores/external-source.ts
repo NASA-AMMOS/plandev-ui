@@ -96,7 +96,6 @@ export function resetExternalSourceStores(): void {
   createDerivationGroupError.set(null);
   derivationGroupPlanLinkError.set(null);
   planDerivationGroupLinks.updateValue(() => []);
-  derivationGroupVisibilityMap.set({});
 }
 
 function transformDerivationGroups(
