@@ -27,7 +27,7 @@
  * - 1 extension (demo plan analyzer, requires local extension server)
  */
 
-import fs from 'fs';
+import fs from 'node:fs';
 import { animals, uniqueNamesGenerator } from 'unique-names-generator';
 import { AerieApi } from '../e2e-tests/utilities/api.js';
 import { ConstraintDefinitionType } from '../src/enums/constraint.js';
@@ -616,8 +616,8 @@ async function seed() {
   // bulk `_in`-based delete mutation work (Hasura's `_in` silently no-ops on
   // strings containing non-ASCII characters).
   const derivationGroupName = `Banana Supply ${uniqueSuffix}`;
-  const sourceTypeName = `${EXTERNAL_SOURCE_TYPE}_${uniqueSuffix.replace(/-/g, '_')}`;
-  const eventTypeName = `${EXTERNAL_EVENT_TYPE}_${uniqueSuffix.replace(/-/g, '_')}`;
+  const sourceTypeName = `${EXTERNAL_SOURCE_TYPE}_${uniqueSuffix.replaceAll('-', '_')}`;
+  const eventTypeName = `${EXTERNAL_EVENT_TYPE}_${uniqueSuffix.replaceAll('-', '_')}`;
   const eventTypeSchema = {
     properties: { quantity: { type: 'number' }, supplier: { type: 'string' } },
     required: [],
@@ -1047,7 +1047,9 @@ async function seed() {
 }
 
 // Run the seed script
-seed().catch(error => {
+try {
+  await seed();
+} catch (error) {
   console.error('Seed failed:', error);
   process.exit(1);
-});
+}

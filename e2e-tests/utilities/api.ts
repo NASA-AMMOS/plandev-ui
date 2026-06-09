@@ -69,7 +69,7 @@ export class AerieApi {
   private gatewayUrl: string;
   private hasuraUrl: string;
   private user: BaseUser | null = null;
-  private workspaceUrl: string;
+  private readonly workspaceUrl: string;
 
   constructor(
     hasuraUrl: string = DEFAULT_HASURA_URL,
@@ -391,7 +391,7 @@ export class AerieApi {
     let body: FormData | undefined;
     if (!isFolder) {
       const pathParts = path.split('/');
-      const fileName = pathParts[pathParts.length - 1];
+      const fileName = pathParts.at(-1) ?? '';
 
       let blob: Blob;
       if (typeof content === 'string') {

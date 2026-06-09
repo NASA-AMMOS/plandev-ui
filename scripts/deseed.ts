@@ -506,7 +506,9 @@ async function deseed() {
 }
 
 // Run the deseed script
-deseed().catch(error => {
+try {
+  await deseed();
+} catch (error) {
   console.error('De-seed failed:', error);
   process.exit(1);
-});
+}
