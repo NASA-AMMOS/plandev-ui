@@ -25,7 +25,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
   test.setTimeout(60000); // 60 seconds
 
-  // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
   setup = await setupTest(browser, { model: false });
 
   dictionaries = new Dictionaries(setup.page);
@@ -96,7 +95,8 @@ for (let i = 0; i < adaptation.outputs.length; i++) {
       const outputEditor = workspace.page.getByTestId('output-editor');
 
       await workspace.page.getByRole('combobox', { name: 'Output Format' }).selectOption({ index: i });
-      // Validate that the output editor contains the correct output for the adaptation's first output language
+
+      // Validate that the output editor contains the correct output for the selected adaptation output language
       await expect(outputEditor).toContainText(languageOutput);
     });
 
@@ -108,6 +108,8 @@ for (let i = 0; i < adaptation.outputs.length; i++) {
 
       // Read from clipboard and verify
       const clipboardText = await setup.page.evaluate(() => navigator.clipboard.readText());
+
+      // Validate that the clipboard contains the correct output for the selected adaptation output language
       expect(clipboardText).toContain(languageOutput);
     });
   });
