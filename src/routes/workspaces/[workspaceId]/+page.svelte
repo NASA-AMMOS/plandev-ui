@@ -146,7 +146,6 @@
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
   let activeFileIsSequence: boolean = false;
-  let actionDetailIsDirty: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
