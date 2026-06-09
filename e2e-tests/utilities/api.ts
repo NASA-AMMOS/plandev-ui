@@ -345,9 +345,7 @@ export class AerieApi {
   }
 
   async createWorkspace(location: string, parcelId: number, name?: string): Promise<number> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const body = JSON.stringify({
       parcelId,
@@ -358,10 +356,10 @@ export class AerieApi {
     const response = await fetch(`${this.workspaceUrl}/ws/create`, {
       body,
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'Content-Type': 'application/json',
         'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'POST',
     });
@@ -381,9 +379,7 @@ export class AerieApi {
    * @param content - File content (string or Uint8Array), or undefined for folders
    */
   async createWorkspaceItem(workspaceId: number, path: string, content?: string | Uint8Array): Promise<void> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const isFolder = content === undefined;
     const type = isFolder ? 'directory' : 'file';
@@ -412,9 +408,9 @@ export class AerieApi {
     const response = await fetch(`${this.workspaceUrl}/ws/${workspaceId}/${path}?type=${type}`, {
       body,
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'PUT',
     });
@@ -534,15 +530,13 @@ export class AerieApi {
   }
 
   async deleteWorkspace(id: number): Promise<void> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const response = await fetch(`${this.workspaceUrl}/ws/${id}`, {
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'DELETE',
     });
@@ -569,14 +563,12 @@ export class AerieApi {
     method: 'GET' | 'POST' | 'DELETE' = 'GET',
     body?: FormData | string,
   ): Promise<T> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.user.token}`,
+      Authorization: `Bearer ${user.token}`,
       'x-hasura-role': 'aerie_admin',
-      'x-hasura-user-id': this.user.id as string,
+      'x-hasura-user-id': user.id,
     };
 
     // Don't set Content-Type for FormData - browser will set it with boundary
@@ -768,17 +760,15 @@ export class AerieApi {
     variables: Record<string, unknown> = {},
     role: string = 'aerie_admin',
   ): Promise<T> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const response = await fetch(this.hasuraUrl, {
       body: JSON.stringify({ query: queryString, variables }),
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'Content-Type': 'application/json',
         'x-hasura-role': role,
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'POST',
     });
@@ -818,6 +808,16 @@ export class AerieApi {
 
     this.user = { id: username, token: data.token };
     return this.user;
+  }
+
+  /**
+   * Return the current user, throwing if not logged in. Narrows `id` to a non-null string.
+   */
+  private requireUser(): BaseUser & { id: string } {
+    if (this.user?.id == null) {
+      throw new Error('Not logged in. Call login() first.');
+    }
+    return this.user as BaseUser & { id: string };
   }
 
   /**
@@ -861,9 +861,7 @@ export class AerieApi {
       };
     },
   ): Promise<void> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const formData = new FormData();
     formData.append('derivation_group_name', derivationGroupName);
@@ -873,9 +871,9 @@ export class AerieApi {
     const response = await fetch(`${this.gatewayUrl}/uploadExternalSource`, {
       body: formData,
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'POST',
     });
@@ -890,9 +888,7 @@ export class AerieApi {
    * Upload a JAR file to the Gateway and return the uploaded file ID.
    */
   async uploadFile(filePath: string): Promise<number> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const fileBuffer = fs.readFileSync(filePath);
     const fileName = nodePath.basename(filePath);
@@ -909,9 +905,9 @@ export class AerieApi {
     const response = await fetch(`${this.gatewayUrl}/file`, {
       body: formData,
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id as string,
+        'x-hasura-user-id': user.id,
       },
       method: 'POST',
     });

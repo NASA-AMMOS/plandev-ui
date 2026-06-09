@@ -385,7 +385,9 @@ function generateExternalDataset(startTime: string, durationHours: number) {
 }
 
 function fmtMs(ms: number): string {
-  if (ms < 1000) return `${ms.toFixed(0)}ms`;
+  if (ms < 1000) {
+    return `${ms.toFixed(0)}ms`;
+  }
   return `${(ms / 1000).toFixed(2)}s`;
 }
 

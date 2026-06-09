@@ -7,6 +7,11 @@
  *
  * Identifies seeded items by their naming pattern: "Name (animal-suffix)"
  * Deletes in reverse order to respect foreign key constraints.
+ *
+ * WARNING: this is GLOBAL, not run-scoped. It deletes every item DB-wide that
+ * matches the seed sentinels (" • <animal>" names, the Seed_ / BananaSupplySource_ /
+ * BananaDelivery_ prefixes), regardless of which run created it — so a human-named
+ * plan like "Foo • bar" would also be removed.
  */
 
 import { AerieApi } from '../e2e-tests/utilities/api.js';
