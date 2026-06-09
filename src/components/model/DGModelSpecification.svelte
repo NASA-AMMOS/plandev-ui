@@ -207,7 +207,9 @@
   <Panel borderRight padBody={true} overflowYBody="scroll">
     <svelte:fragment slot="header">
       <SectionTitle overflow="hidden">
-        <ExternalSourceIcon slot="icon" />Sources in '{selectedDerivationGroup?.name ?? 'Unknown'}'
+        <ExternalSourceIcon slot="icon" />{selectedDerivationGroup
+          ? `Sources in '${selectedDerivationGroup.name}'`
+          : 'No Derivation Group Selected'}
       </SectionTitle>
     </svelte:fragment>
     <svelte:fragment slot="body">
@@ -217,7 +219,7 @@
           <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
             <svelte:fragment slot="right">
               <p class="st-typography-body derived-event-count">
-                {selectedDerivationGroup?.sources.get(source.key)?.event_counts ?? -1} events
+                {selectedDerivationGroup?.sources.get(source.key)?.event_counts} events
               </p>
             </svelte:fragment>
             <div class="st-typography-body">
@@ -252,7 +254,9 @@
           </Collapse>
         {/each}
       {:else}
-        <p class="st-typography-body">No sources in this group.</p>
+        <p class="st-typography-body">
+          {selectedDerivationGroup ? 'No sources in this group.' : 'Please select a derivation group.'}
+        </p>
       {/if}
     </svelte:fragment>
   </Panel>
