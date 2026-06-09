@@ -42,6 +42,59 @@ export class Parcels {
     await expect(this.page.locator(`.ag-row:has-text("${secondCommandDictionaryName}") >> input`)).toBeChecked();
   }
 
+  async createParcel(dictionaryName: string, baseURL?: string) {
+    await this.page.goto(`${baseURL}/parcels/new`, { waitUntil: 'load' });
+    await this.page.getByText(dictionaryName).click();
+    this.updatePage(this.page);
+    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
+    await this.nameField.fill(this.parcelName);
+    await this.createButton.click();
+
+    const editParcelUrlRegex = new RegExp(`${baseURL}/parcels/edit/(?<parcelId>\\d+)`);
+    await this.page.waitForURL(editParcelUrlRegex);
+
+    await this.closeButton.click();
+
+    const parcelsUrlRegex = new RegExp(`${baseURL}/parcels`);
+    await this.page.waitForURL(parcelsUrlRegex);
+
+    await this.tableRow(this.parcelName).waitFor({ state: 'attached' });
+    await this.tableRow(this.parcelName).waitFor({ state: 'visible' });
+    await this.filterTable(this.parcelName);
+  }
+
+  async deleteParcel() {
+    await this.filterTable(this.parcelName);
+    await expect(this.tableRow(this.parcelName)).toBeVisible();
+
+    await this.tableRow(this.parcelName).hover();
+    await expect(this.tableRow(this.parcelName).locator('.actions-cell')).toBeVisible();
+    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'attached' });
+    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'visible' });
+    await expect(this.tableRowDeleteButton(this.parcelName)).toBeVisible();
+
+    await expect(this.confirmModal).not.toBeVisible();
+    await this.tableRowDeleteButton(this.parcelName).click({ position: { x: 2, y: 2 } });
+    await this.confirmModal.waitFor({ state: 'attached' });
+    await this.confirmModal.waitFor({ state: 'visible' });
+    await expect(this.confirmModal).toBeVisible();
+
+    await expect(this.confirmModalDeleteButton).toBeVisible();
+    await this.confirmModalDeleteButton.click();
+    await this.tableRow(this.parcelName).waitFor({ state: 'detached' });
+    await this.tableRow(this.parcelName).waitFor({ state: 'hidden' });
+    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
+  }
+
+  async filterTable(parcelName: string) {
+    await filterAgGridTable(this.page, this.table, parcelName);
+  }
+
+  async goto() {
+    await this.page.goto('/parcels', { waitUntil: 'load' });
+    await this.pageLoadingLocator.waitFor({ state: 'detached' });
+  }
+
   async updateDictionarySelections({
     channelDictionaryName,
     commandDictionaryName,
@@ -128,59 +181,6 @@ export class Parcels {
     }
 
     await this.page.getByRole('button', { name: 'Save' }).click();
-  }
-
-  async createParcel(dictionaryName: string, baseURL?: string) {
-    await this.page.goto(`${baseURL}/parcels/new`, { waitUntil: 'load' });
-    await this.page.getByText(dictionaryName).click();
-    this.updatePage(this.page);
-    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
-    await this.nameField.fill(this.parcelName);
-    await this.createButton.click();
-
-    const editParcelUrlRegex = new RegExp(`${baseURL}/parcels/edit/(?<parcelId>\\d+)`);
-    await this.page.waitForURL(editParcelUrlRegex);
-
-    await this.closeButton.click();
-
-    const parcelsUrlRegex = new RegExp(`${baseURL}/parcels`);
-    await this.page.waitForURL(parcelsUrlRegex);
-
-    await this.tableRow(this.parcelName).waitFor({ state: 'attached' });
-    await this.tableRow(this.parcelName).waitFor({ state: 'visible' });
-    await this.filterTable(this.parcelName);
-  }
-
-  async deleteParcel() {
-    await this.filterTable(this.parcelName);
-    await expect(this.tableRow(this.parcelName)).toBeVisible();
-
-    await this.tableRow(this.parcelName).hover();
-    await expect(this.tableRow(this.parcelName).locator('.actions-cell')).toBeVisible();
-    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'attached' });
-    await this.tableRowDeleteButton(this.parcelName).waitFor({ state: 'visible' });
-    await expect(this.tableRowDeleteButton(this.parcelName)).toBeVisible();
-
-    await expect(this.confirmModal).not.toBeVisible();
-    await this.tableRowDeleteButton(this.parcelName).click({ position: { x: 2, y: 2 } });
-    await this.confirmModal.waitFor({ state: 'attached' });
-    await this.confirmModal.waitFor({ state: 'visible' });
-    await expect(this.confirmModal).toBeVisible();
-
-    await expect(this.confirmModalDeleteButton).toBeVisible();
-    await this.confirmModalDeleteButton.click();
-    await this.tableRow(this.parcelName).waitFor({ state: 'detached' });
-    await this.tableRow(this.parcelName).waitFor({ state: 'hidden' });
-    await expect(this.tableRow(this.parcelName)).not.toBeVisible();
-  }
-
-  async filterTable(parcelName: string) {
-    await filterAgGridTable(this.page, this.table, parcelName);
-  }
-
-  async goto() {
-    await this.page.goto('/parcels', { waitUntil: 'load' });
-    await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
   updatePage(page: Page): void {
