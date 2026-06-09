@@ -6,6 +6,9 @@
 
   export let hint: string = '';
   export let hintPosition: 'center' | 'bottom' = 'center';
+  // When true, don't disable pointer events on children during drag
+  // Use this when the DropTarget contains elements that use pragmatic DND
+  export let disablePointerBlock: boolean = false;
 
   let isDropTarget: boolean = false;
   let isDragging: boolean = false;
@@ -16,11 +19,27 @@
     drop: { items?: TimelineItemType[]; metadata?: TimelineItemMetadata; type?: string };
   }>();
 
-  function onDragEnter() {
+  // Check if this drag event is from pragmatic-drag-and-drop (row/section reordering)
+  // Pragmatic DND sets a specific MIME type 'application/vnd.pdnd' in the dataTransfer
+  function isPragmaticDragAndDrop(e: DragEvent): boolean {
+    if (!e.dataTransfer) {
+      return false;
+    }
+    const types = Array.from(e.dataTransfer.types);
+    return types.includes('application/vnd.pdnd');
+  }
+
+  function onDragEnter(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = true;
   }
 
   function onDragLeave(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = false;
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
@@ -28,6 +47,9 @@
   }
 
   function onDragOver(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = true;
     if (e.dataTransfer?.effectAllowed === 'copyLink') {
       e.dataTransfer.dropEffect = 'link';
@@ -35,6 +57,9 @@
   }
 
   function onDrop(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = false;
 
     if (e.dataTransfer !== null) {
@@ -47,12 +72,30 @@
 
 <svelte:window
   on:dragstart={e => {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDragging = true;
     dispatch('dragstart', e);
   }}
   on:dragend={e => {
+    // Always reset states on dragend, even for pragmatic DND
+    // This ensures we clean up stuck states from rapid/cancelled drags
+    const wasDragging = isDragging;
     isDragging = false;
-    dispatch('dragend', e);
+    isDropTarget = false;
+
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
+    if (wasDragging) {
+      dispatch('dragend', e);
+    }
+  }}
+  on:drop={e => {
+    // Reset on any window-level drop as a fallback
+    isDragging = false;
+    isDropTarget = false;
   }}
 />
 
@@ -65,7 +108,7 @@
   on:dragover|preventDefault={onDragOver}
   on:drop|preventDefault={onDrop}
 >
-  <div class="content-wrapper" class:disable-pointer={isDragging}>
+  <div class="content-wrapper" class:disable-pointer={isDragging && !disablePointerBlock}>
     <slot />
     {#if isDropTarget && hint}
       <div class="hint" style:margin-top={hintPosition === 'bottom' ? '16px' : ''}>

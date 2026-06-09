@@ -693,10 +693,18 @@
       const { offsetX } = e;
       overlaySvgSelection.selectAll('.activity-drag-guide').remove();
       if (e.dataTransfer !== null) {
+        // Ignore pragmatic-drag-and-drop events (row/section reordering)
+        const types = Array.from(e.dataTransfer.types);
+        if (types.includes('application/vnd.pdnd')) {
+          return;
+        }
         const unixEpochTime = xScaleView.invert(offsetX).getTime();
         const start_time = getDoyTime(new Date(unixEpochTime));
         const data = e.dataTransfer.getData('text');
-        const json = JSON.parse(data || '');
+        if (!data) {
+          return;
+        }
+        const json = JSON.parse(data);
         const type = json.type ?? '';
         const items = (json.items as TimelineItemType[]) ?? '';
         const metadata = (json.metadata as TimelineItemMetadata) ?? {};
