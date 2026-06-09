@@ -8,8 +8,8 @@
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
+    CommandInfoMapper,
     LibrarySequenceSignature,
-    OutputLanguage,
     PhoenixContext,
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
@@ -97,6 +97,7 @@
     WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
+    WorkspaceFileMetadata,
     WorkspaceTreeMap,
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
@@ -114,6 +115,7 @@
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import {
     computeMovedFilePath,
+    doesFilenameMatchExtension,
     downloadWorkspaceNodesAsZip,
     findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
@@ -142,13 +144,16 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
-  let activeFileIsSequence: boolean = false;
+  let activeFileIsInputSequence: boolean = false;
   let actionDetailIsDirty: boolean = false;
+  let activeFileMetadata: WorkspaceFileMetadata | null = null;
+  let activeFileIsSequence: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
+  let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let leftPaneApi: PaneAPI;
   let leftPanelActiveTab: string =
@@ -161,6 +166,7 @@
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
+  let isFileReadOnly: boolean = false;
   let parameterDictionaries: ParameterDictionary[] = [];
   let phoenixContext: PhoenixContext;
   let isWorkspaceLoading: boolean = false;
@@ -176,6 +182,7 @@
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let logLevelLabel: string = 'Default levels';
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
   let workspaceSequences: UserSequence[] = [];
@@ -280,16 +287,23 @@
   $: activeFileIsSequence =
     $activeDocumentPath === null ||
     ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
+  $: {
+    activeFileIsInputSequence =
+      activeFileIsSequence &&
+      (!$activeDocument.fileName ||
+        (!!$activeDocument.fileName &&
+          doesFilenameMatchExtension($sequenceAdaptation.input.fileExtension, $activeDocument.fileName)));
+  }
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
   // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
   // non-sequence mode. Switching between two sequence files (or between blank and a sequence
   // file) preserves whatever tab the user last chose.
-  let previousActiveFileIsSequence: boolean = activeFileIsSequence;
-  $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
-    previousActiveFileIsSequence = activeFileIsSequence;
-    if (!activeFileIsSequence) {
+  let previousActiveFileIsInputSequence: boolean = activeFileIsInputSequence;
+  $: if (activeFileIsInputSequence !== previousActiveFileIsInputSequence) {
+    previousActiveFileIsInputSequence = activeFileIsInputSequence;
+    if (!activeFileIsInputSequence) {
       rightPanelActiveTab = 'metadata';
     } else {
       rightPanelActiveTab = 'command';
@@ -1215,9 +1229,7 @@
     onDownloadFile(filePath);
   }
 
-  async function onDownloadOutput(
-    event: CustomEvent<{ content: string; filePath: string; filename: string; outputLanguage: OutputLanguage }>,
-  ) {
+  async function onDownloadOutput(event: CustomEvent<{ content: string; filePath: string; filename: string }>) {
     const { content, filePath, filename } = event.detail;
 
     // Check if downloading output for the active file with unsaved changes
@@ -1429,6 +1441,7 @@
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
                     isLoading={$activeDocumentIsLoading}
+                    isInputFile={activeFileIsInputSequence}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     {preserveAdaptationLog}
                     previewOnly={!hasEditFilePermission}
@@ -1542,7 +1555,7 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
-              isSequenceFile={activeFileIsSequence}
+              isSequenceFile={activeFileIsInputSequence}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
@@ -1557,7 +1570,7 @@
           bind:activeTab={rightPanelActiveTab}
           bind:panelOpen={rightPanelOpen}
           commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsSequence}
+          isSequenceFile={activeFileIsInputSequence}
         />
       {/if}
     </div>

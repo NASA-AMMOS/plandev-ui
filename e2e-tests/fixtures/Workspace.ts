@@ -17,6 +17,7 @@ export class Workspace {
   metadataTabButton!: Locator;
   navButtonSequences!: Locator;
   navButtonSequencesMenu!: Locator;
+  outputPanelCollapseButton!: Locator;
   pageLoadingLocatorWithData!: Locator;
   readOnlyCheckbox!: Locator;
   rightPanelCollapseButton!: Locator;
@@ -237,6 +238,17 @@ export class Workspace {
     await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
   }
 
+  async openOutputPanel(): Promise<void> {
+    const initialText = await this.outputPanelCollapseButton.textContent();
+    await this.outputPanelCollapseButton.click();
+
+    if (initialText?.includes('Collapse Editor')) {
+      await expect(this.outputPanelCollapseButton).toHaveText(/Expand Editor/);
+    } else if (initialText?.includes('Expand Editor')) {
+      await expect(this.outputPanelCollapseButton).toHaveText(/Collapse Editor/);
+    }
+  }
+
   async openWorkspaceContextMenu(): Promise<void> {
     await this.workspaceContextMenuButton.click();
     await this.workspaceHeaderMenu.waitFor({ state: 'attached' });
@@ -289,6 +301,7 @@ export class Workspace {
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');
     this.page = page;
+    this.outputPanelCollapseButton = page.getByRole('button', { name: /Collapse Editor|Expand Editor/ });
     this.pageLoadingLocatorWithData = page.getByText('Loading workspace').first();
     this.readOnlyCheckbox = page.locator('#read-only');
     this.rightPanelCollapseButton = page.getByRole('button', { name: /Collapse panel|Expand panel/ }).last();

@@ -123,8 +123,8 @@
 </script>
 
 <div class="h-full w-full overflow-auto">
-  {#if activeTab === 'command' && isSequenceFile && editorSequenceView && commandInfoMapper}
-    {#if phoenixContext.commandDictionary !== null}
+  {#if activeTab === 'command' && isSequenceFile && editorSequenceView}
+    {#if phoenixContext.commandDictionary !== null && commandInfoMapper}
       <div class="grid h-full grid-rows-[min-content_auto]">
         <Sidebar.Header className="p-0">
           <PanelHeader>
@@ -155,7 +155,13 @@
           <SectionTitle><span class="p-2">Selected Command</span></SectionTitle>
         </svelte:fragment>
         <svelte:fragment slot="body">
-          <div class="p-2 text-muted-foreground">Select a parcel to enable the Selected Command panel.</div>
+          <div class="p-2 text-muted-foreground">
+            {#if phoenixContext.commandDictionary == null}
+              Select a parcel with a command dictionary to enable the Selected Command panel.
+            {:else}
+              Select a parcel with an adaptation containing a command mapping to enable the Selected Command panel.
+            {/if}
+          </div>
         </svelte:fragment>
       </Panel>
     {/if}

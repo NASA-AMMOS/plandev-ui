@@ -17,14 +17,14 @@
 const minimalInputLanguage = {
   fileExtension: '.txt',
   name: 'Minimal Test Language',
-  extension: [],
+  getEditorExtension: () => {},
 };
 
 // Minimal output language
 const minimalOutputLanguage = {
   fileExtension: '.json',
   name: 'JSON Output',
-  extension: [],
+  getEditorExtension: () => {},
 
   // Convert output back to input format
   toInputFormat: function (output) {
@@ -37,7 +37,7 @@ const minimalOutputLanguage = {
   },
 
   // Convert input to output format
-  toOutputFormat: function (input, context, name) {
+  toOutputFormat: function (input, _context, name) {
     // Uncomment the line below to test runtime errors:
     // throw new Error('Intentional adaptation error for testing');
 
