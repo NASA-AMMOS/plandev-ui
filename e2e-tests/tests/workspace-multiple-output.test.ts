@@ -5,10 +5,11 @@ import { Parcels } from '../fixtures/Parcels.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
 import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
+import { generateRandomName } from '../utilities/helpers.js';
 
-// These values are hard-coded in the sequence adaptation file `sequence-adaptation-multiple-output.js`
-const language1Output = 'This is the output for language 1';
-const language2Output = 'This is the output for language 2';
+// Load the CommonJS module dynamically
+const adaptationModule = await import('../data/sequence-adaptation-multiple-output.cjs');
+const adaptation = adaptationModule.default.adaptation;
 
 // Main setup (uses default 'test' user)
 let setup: BrowserSetupResult;
@@ -34,7 +35,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   // Setup dependencies: dictionary and parcel
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
-  await dictionaries.createSequenceAdaptation(undefined, 'e2e-tests/data/sequence-adaptation-multiple-output.js');
+  await dictionaries.createSequenceAdaptation(undefined, 'e2e-tests/data/sequence-adaptation-multiple-output.cjs');
   await parcels.goto();
   await parcels.createParcel(dictionaries.commandDictionaryName, baseURL);
   await parcels.updateDictionarySelections({
@@ -50,6 +51,30 @@ test.beforeAll(async ({ baseURL, browser }) => {
   workspace = new Workspace(setup.page, workspaceId, workspaceName, baseURL);
   workspace.updatePage(setup.page);
   await workspace.goto();
+
+  // Setup workspace
+  sequence = await workspace.createSequence(undefined, `${generateRandomName()}${adaptation.input.fileExtension}`);
+  await workspace.searchForFileAndWait(sequence.sequenceName);
+  await workspace.clickFile(sequence.sequenceName);
+
+  await expect(setup.page).toHaveURL(
+    getWorkspacesUrl(
+      workspace.baseURL,
+      parseInt(workspace.workspaceId),
+      `${sequence.sequencePath}/${sequence.sequenceName}`,
+    ),
+  );
+
+  // Make changes
+  await workspace.fillSequenceContent('// New content');
+
+  // Verify save button is now enabled (unsaved changes detected)
+  await expect(workspace.saveSequenceButton).toBeEnabled();
+
+  // Save and verify button is disabled again
+  await workspace.saveSequence();
+
+  await workspace.openOutputPanel();
 });
 
 test.afterAll(async () => {
@@ -62,66 +87,28 @@ test.afterAll(async () => {
   await teardownTest(setup);
 });
 
-test.describe.serial('Workspace with sequence adaptation with multiple output languages', () => {
-  test('Convert input to first output language', async () => {
-    sequence = await workspace.createSequence(undefined, 'foo.seqN.txt');
-    await workspace.searchForFileAndWait(sequence.sequenceName);
-    await workspace.clickFile(sequence.sequenceName);
+for (let i = 0; i < adaptation.outputs.length; i++) {
+  const output = adaptation.outputs[i];
+  const languageOutput = output.toOutputFormat();
 
-    await expect(setup.page).toHaveURL(
-      getWorkspacesUrl(
-        workspace.baseURL,
-        parseInt(workspace.workspaceId),
-        `${sequence.sequencePath}/${sequence.sequenceName}`,
-      ),
-    );
+  test.describe.serial('Workspace with sequence adaptation with multiple output languages', () => {
+    test(`Convert input to ${output.name}`, async () => {
+      const outputEditor = workspace.page.getByTestId('output-editor');
 
-    // Make changes
-    await workspace.fillSequenceContent('// New content');
+      await workspace.page.getByRole('combobox', { name: 'Output Format' }).selectOption({ index: i });
+      // Validate that the output editor contains the correct output for the adaptation's first output language
+      await expect(outputEditor).toContainText(languageOutput);
+    });
 
-    // Verify save button is now enabled (unsaved changes detected)
-    await expect(workspace.saveSequenceButton).toBeEnabled();
+    test(`Copy the output for ${output.name}`, async () => {
+      // Grant clipboard permissions for this test
+      await setup.context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    // Save and verify button is disabled again
-    await workspace.saveSequence();
+      await workspace.page.getByRole('button', { name: 'Copy as' }).click();
 
-    await workspace.openOutputPanel();
-
-    const outputEditor = workspace.page.getByTestId('output-editor');
-
-    // Validate that the output editor contains the correct output for the adaptation's first output language
-    await expect(outputEditor).toContainText(language1Output);
+      // Read from clipboard and verify
+      const clipboardText = await setup.page.evaluate(() => navigator.clipboard.readText());
+      expect(clipboardText).toContain(languageOutput);
+    });
   });
-
-  test('Copy the output for the first language', async () => {
-    // Grant clipboard permissions for this test
-    await setup.context.grantPermissions(['clipboard-read', 'clipboard-write']);
-
-    await workspace.page.getByRole('button', { name: 'Copy as' }).click();
-
-    // Read from clipboard and verify
-    const clipboardText = await setup.page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain(language1Output);
-  });
-
-  test('Convert input to second output language', async () => {
-    // Change the outputted language
-    await workspace.page.getByRole('combobox', { name: 'Output Format' }).selectOption({ index: 1 });
-
-    const outputEditor = workspace.page.getByTestId('output-editor');
-
-    // Validate that the output editor contains the correct output for the adaptation's second output language
-    await expect(outputEditor).toContainText(language2Output);
-  });
-
-  test('Copy the output for the second language', async () => {
-    // Grant clipboard permissions for this test
-    await setup.context.grantPermissions(['clipboard-read', 'clipboard-write']);
-
-    await workspace.page.getByRole('button', { name: 'Copy as' }).click();
-
-    // Read from clipboard and verify
-    const clipboardText = await setup.page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain(language2Output);
-  });
-});
+}

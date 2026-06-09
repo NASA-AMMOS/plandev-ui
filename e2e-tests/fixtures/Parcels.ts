@@ -43,13 +43,13 @@ export class Parcels {
   }
 
   async updateDictionarySelections({
-    commandDictionaryName,
     channelDictionaryName,
+    commandDictionaryName,
     parameterDictionaryName,
     sequenceAdaptationName,
   }: {
-    commandDictionaryName?: string;
     channelDictionaryName?: string;
+    commandDictionaryName?: string;
     parameterDictionaryName?: string;
     sequenceAdaptationName?: string;
   }) {
