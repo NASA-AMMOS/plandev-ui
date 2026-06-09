@@ -285,9 +285,8 @@
 
   $: activeFileMetadata = ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]?.metadata) || null;
   $: activeFileIsSequence =
-    $activeDocumentPath !== null &&
-    $activeDocument.type !== null &&
-    $activeDocument.type === WorkspaceContentType.Sequence;
+    $activeDocumentPath === null ||
+    ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
   $: {
     activeFileIsInputSequence =
       activeFileIsSequence &&
