@@ -487,7 +487,7 @@
         </svelte:fragment>
 
         <svelte:fragment slot="body">
-          <div bind:this={editorOutputDiv} />
+          <div bind:this={editorOutputDiv} data-testid="output-editor" />
         </svelte:fragment>
       </Panel>
     {/if}

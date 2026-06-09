@@ -41,7 +41,7 @@
 <div class="flex items-center justify-end gap-1.5">
   {#if outputLanguages.length > 0}
     <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">Output Format</Label>
-    <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
+    <select bind:value={selectedOutputFormat} class="st-select w-full" id="outputFormat">
       {#each outputLanguages as outputFormatItem}
         <option value={outputFormatItem}>
           {outputFormatItem.name}
@@ -51,18 +51,29 @@
   {/if}
   <div class="flex items-center gap-1.5">
     <Tooltip content={copyTooltip}>
-      <Button variant="outline" size="icon" on:click={onCopy} disabled={outputDisabled}>
+      <Button variant="outline" aria-label={copyTooltip} size="icon" on:click={onCopy} disabled={outputDisabled}>
         <Clipboard size={16} />
       </Button>
     </Tooltip>
     <Tooltip content={downloadTooltip}>
-      <Button variant="outline" size="icon" on:click={onDownload} disabled={outputDisabled}>
+      <Button
+        variant="outline"
+        aria-label={downloadTooltip}
+        size="icon"
+        on:click={onDownload}
+        disabled={outputDisabled}
+      >
         <Download size={16} />
       </Button>
     </Tooltip>
 
     <Tooltip content={isPreviewOpen ? `Collapse Editor` : `Expand Editor`}>
-      <Button size="icon" variant="ghost" on:click={onTogglePreview}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={isPreviewOpen ? `Collapse Editor` : `Expand Editor`}
+        on:click={onTogglePreview}
+      >
         {#if isPreviewOpen}
           <PanelBottomClose size={16} />
         {:else}
