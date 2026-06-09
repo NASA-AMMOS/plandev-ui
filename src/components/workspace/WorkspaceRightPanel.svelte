@@ -156,7 +156,11 @@
         </svelte:fragment>
         <svelte:fragment slot="body">
           <div class="p-2 text-muted-foreground">
-            Select a parcel with an adaptation containing a command mapping to enable the Selected Command panel.
+            {#if phoenixContext.commandDictionary == null}
+              Select a parcel with a command dictionary to enable the Selected Command panel.
+            {:else}
+              Select a parcel with an adaptation containing a command mapping to enable the Selected Command panel.
+            {/if}
           </div>
         </svelte:fragment>
       </Panel>
