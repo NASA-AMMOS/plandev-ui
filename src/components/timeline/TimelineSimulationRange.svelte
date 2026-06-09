@@ -82,6 +82,7 @@
     pointer-events: none;
     position: absolute;
     width: 100%;
+    /* Persistent annotation: stays below the section header band (z-index 5), like vertical guides. */
     z-index: 4;
   }
 

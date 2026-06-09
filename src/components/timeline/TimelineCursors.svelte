@@ -183,7 +183,11 @@
       on:click={() => removeVerticalGuide(guide.id)}
     />
   {/each}
-  {#if cursorEnabled && cursorWithinView}
+</div>
+{#if cursorEnabled && cursorWithinView}
+  <!-- The transient hover cursor lives in its own layer so it can draw above section
+       bands, while persistent guides (above) stay below them. -->
+  <div class="timeline-cursor-container timeline-cursor-container--active">
     <TimelineCursor
       x={cursorX}
       label={cursorTimeLabel}
@@ -197,8 +201,8 @@
       }}
       activeCursor
     />
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
   .timeline-cursor-margin {
@@ -210,7 +214,13 @@
     pointer-events: none;
     position: absolute;
     width: 100%;
+    /* Below the section header band (z-index 5) so persistent guides respect the divider. */
     z-index: 4;
+  }
+
+  .timeline-cursor-container--active {
+    /* The transient hover cursor draws above the section header band (z-index 5). */
+    z-index: 6;
   }
 
   .timeline-cursor-header {

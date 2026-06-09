@@ -163,6 +163,7 @@ export type MouseOver = {
   origin?: MouseOverOrigin; //TODO perhaps remove this
   pointsByLayer?: Record<number, Point[]>;
   row?: Row;
+  section?: TimelineSection;
   selectedActivityDirectiveId?: ActivityDirectiveId | undefined;
   selectedExternalEventId?: ExternalEventId | undefined;
   selectedSpanId?: SpanId;
@@ -180,7 +181,7 @@ export type RowMouseOverEvent = Omit<
   spans?: Span[];
 };
 
-export type MouseOverOrigin = 'row-header' | 'layer-line' | 'layer-discrete' | 'layer-x-range';
+export type MouseOverOrigin = 'row-header' | 'section-header' | 'layer-line' | 'layer-discrete' | 'layer-x-range';
 
 export interface Point {
   id: number;
@@ -253,11 +254,23 @@ export type TimeRange = {
   start: number;
 };
 
+export type TimelineItemRef = { id: number; type: 'section' } | { id: number; type: 'row' };
+
+export type TimelineSection = {
+  collapsed: boolean;
+  color: string | null;
+  id: number;
+  name: string;
+  rowIds: number[];
+};
+
 export type Timeline = {
   id: number;
+  items: TimelineItemRef[];
   marginLeft: number;
   marginRight: number;
   rows: Row[];
+  sections: TimelineSection[];
   verticalGuides: VerticalGuide[];
 };
 

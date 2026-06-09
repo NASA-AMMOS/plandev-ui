@@ -3806,7 +3806,30 @@ const effects = {
     );
     if (confirm) {
       const filteredRows = rows.filter(r => r.id !== row.id);
-      viewUpdateTimeline('rows', filteredRows, timelineId);
+      viewStore.update(currentView => {
+        if (currentView !== null) {
+          return {
+            ...currentView,
+            definition: {
+              ...currentView.definition,
+              plan: {
+                ...currentView.definition.plan,
+                timelines: currentView.definition.plan.timelines.map(timeline => {
+                  if (timeline && timeline.id === timelineId) {
+                    return {
+                      ...timeline,
+                      items: timeline.items.filter(item => !(item.type === 'row' && item.id === row.id)),
+                      rows: filteredRows,
+                    };
+                  }
+                  return timeline;
+                }),
+              },
+            },
+          };
+        }
+        return currentView;
+      });
     }
   },
 
@@ -3818,7 +3841,31 @@ const effects = {
       true,
     );
     if (confirm) {
-      viewUpdateTimeline('rows', [], timelineId);
+      viewStore.update(currentView => {
+        if (currentView !== null) {
+          return {
+            ...currentView,
+            definition: {
+              ...currentView.definition,
+              plan: {
+                ...currentView.definition.plan,
+                timelines: currentView.definition.plan.timelines.map(timeline => {
+                  if (timeline && timeline.id === timelineId) {
+                    return {
+                      ...timeline,
+                      items: timeline.items.filter(item => item.type !== 'row'),
+                      rows: [],
+                      sections: timeline.sections.map(section => ({ ...section, rowIds: [] })),
+                    };
+                  }
+                  return timeline;
+                }),
+              },
+            },
+          };
+        }
+        return currentView;
+      });
     }
   },
 
