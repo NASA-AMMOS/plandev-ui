@@ -17,6 +17,7 @@ import {
   applyActivityLayerFilter,
   createHorizontalGuide,
   createRow,
+  createSection,
   createTimeline,
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
@@ -29,17 +30,22 @@ import {
   externalEventInView,
   generateDiscreteTreeUtil,
   getMatchingTypesForActivityLayerFilter,
+  getNextSectionID,
+  getOrderedRows,
   getResourceForLayer,
+  getRowSection,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
+  getVisibleRows,
   getYAxisBounds,
   isActivityLayer,
   isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
   matchesDynamicFilter,
+  migrateTimelineToSections,
   paginateNodes,
   spanInView,
 } from './timeline';
@@ -1656,4 +1662,104 @@ test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
   // @ts-expect-error forcing the case where an invalid operator is specified
   expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
+});
+
+describe('Timeline sections', () => {
+  function buildSectionedTimeline() {
+    // Rows r0..r3 with ids 0..3
+    const timeline = createTimeline([]);
+    const r0 = createRow([timeline]);
+    timeline.rows.push(r0);
+    const r1 = createRow([timeline]);
+    timeline.rows.push(r1);
+    const r2 = createRow([timeline]);
+    timeline.rows.push(r2);
+    const r3 = createRow([timeline]);
+    timeline.rows.push(r3);
+
+    // Section containing r1 and r2
+    const section = createSection([timeline], { rowIds: [r1.id, r2.id] });
+    timeline.sections.push(section);
+
+    // Ordered items: root row r0, then the section, then root row r3
+    timeline.items = [
+      { id: r0.id, type: 'row' },
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
+    ];
+
+    return { r0, r1, r2, r3, section, timeline };
+  }
+
+  test('getNextSectionID returns max + 1 across all timelines', () => {
+    const a = createTimeline([]);
+    const b = createTimeline([a]);
+    expect(getNextSectionID([a, b])).toBe(0);
+
+    a.sections.push(createSection([a], { id: 0 }));
+    b.sections.push(createSection([a, b], { id: 5 }));
+    expect(getNextSectionID([a, b])).toBe(6);
+  });
+
+  test('createSection returns sensible defaults and a unique id', () => {
+    const timeline = createTimeline([]);
+    const section = createSection([timeline]);
+    expect(section).toMatchObject({ collapsed: false, color: null, id: 0, name: 'Section', rowIds: [] });
+
+    timeline.sections.push(section);
+    const next = createSection([timeline]);
+    expect(next.id).toBe(1);
+  });
+
+  test('getRowSection finds the owning section, or null for root rows', () => {
+    const { r0, r1, section, timeline } = buildSectionedTimeline();
+    expect(getRowSection(timeline, r1.id)).toBe(section);
+    expect(getRowSection(timeline, r0.id)).toBeNull();
+    expect(getRowSection(timeline, 999)).toBeNull();
+  });
+
+  test('getOrderedRows flattens items + section rows in display order', () => {
+    const { r0, r1, r2, r3, timeline } = buildSectionedTimeline();
+    expect(getOrderedRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
+  });
+
+  test('getOrderedRows ignores collapsed state (returns all rows)', () => {
+    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+    section.collapsed = true;
+    expect(getOrderedRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
+  });
+
+  test('getVisibleRows hides rows inside collapsed sections', () => {
+    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+
+    // Expanded: all rows visible
+    expect(getVisibleRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
+
+    // Collapsed: section rows hidden, root rows remain
+    section.collapsed = true;
+    expect(getVisibleRows(timeline).map(r => r.id)).toEqual([r0.id, r3.id]);
+  });
+
+  test('migrateTimelineToSections converts legacy rows into root-level items', () => {
+    const timeline = createTimeline([]);
+    const r0 = createRow([timeline]);
+    timeline.rows.push(r0);
+    const r1 = createRow([timeline]);
+    timeline.rows.push(r1);
+
+    // Simulate a pre-sections timeline missing items/sections
+    const legacy = { id: timeline.id, marginLeft: 0, marginRight: 0, rows: timeline.rows, verticalGuides: [] };
+    const migrated = migrateTimelineToSections(legacy as unknown as Timeline);
+
+    expect(migrated.sections).toEqual([]);
+    expect(migrated.items).toEqual([
+      { id: r0.id, type: 'row' },
+      { id: r1.id, type: 'row' },
+    ]);
+  });
+
+  test('migrateTimelineToSections is a no-op for already-migrated timelines', () => {
+    const { timeline } = buildSectionedTimeline();
+    expect(migrateTimelineToSections(timeline)).toBe(timeline);
+  });
 });

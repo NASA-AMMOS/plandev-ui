@@ -1,11 +1,24 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import {
+    attachClosestEdge,
+    extractClosestEdge,
+    type Edge,
+  } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+  import {
+    draggable,
+    dropTargetForElements,
+    monitorForElements,
+  } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import { GripVertical } from 'lucide-svelte';
+  import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
+  import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
+  import { FolderOpen, FolderPlus, FolderX, GripVertical, ListPlus } from 'lucide-svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import {
     default as ExternalEventIcon,
@@ -21,19 +34,24 @@
   import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
   import SpanIcon from '../../../assets/timeline-span.svg?component';
   import ActivityModeWidthIcon from '../../../assets/width.svg?component';
-  import { ViewDefaultDiscreteOptions } from '../../../constants/view';
+  import { ViewDefaultDiscreteOptions, ViewDiscreteLayerColorPresets } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
   import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { plugins } from '../../../stores/plugins';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
+    selectedSectionId,
     selectedTimelineId,
     view,
+    viewAddSection,
     viewAddTimelineRow,
+    viewDeleteSection,
     viewSetSelectedRow,
+    viewSetSelectedSection,
     viewSetSelectedTimeline,
     viewUpdateRow,
+    viewUpdateSection,
     viewUpdateTimeline,
   } from '../../../stores/views';
   import type { RadioButtonId } from '../../../types/radio-buttons';
@@ -50,6 +68,8 @@
     LineLayer,
     Row,
     Timeline,
+    TimelineItemRef,
+    TimelineSection,
     VerticalGuide,
     XRangeLayer,
   } from '../../../types/timeline';
@@ -73,6 +93,7 @@
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
+  import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
   import Input from '../../form/Input.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
@@ -95,19 +116,42 @@
   let externalEventLayers: ExternalEventLayer[] = [];
   let timelines: Timeline[] = [];
   let rowHasNonActivityChartLayer: boolean = false;
+  let items: TimelineItemRef[] = [];
   let rows: Row[] = [];
+  let sections: TimelineSection[] = [];
   let selectedTimeline: Timeline | undefined;
   let selectedRow: Row | undefined;
+  let selectedSection: TimelineSection | undefined;
   let verticalGuides: VerticalGuide[] = [];
   let rowHasActivityLayer: boolean | ActivityLayer = false;
   let rowHasExternalEventLayer: boolean | ExternalEventLayer = false;
   let yAxes: Axis[] = [];
 
+  // DND state tracking
+  type DragData = {
+    itemId: number;
+    itemType: 'section' | 'row';
+    sourceSectionId: number | null; // null means root level
+  };
+
+  // Track which element is being dragged over and at which edge
+  let dragOverState: Map<string, { edge: Edge | null; isOver: boolean }> = new Map();
+
+  // Cleanup functions for DND
+  let cleanupFunctions: (() => void)[] = [];
+  let monitorCleanup: (() => void) | null = null;
+
   $: selectedTimeline = $view?.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
+  $: items = selectedTimeline?.items || [];
   $: rows = selectedTimeline?.rows || [];
+  $: sections = selectedTimeline?.sections || [];
+  $: rowsById = new Map(rows.map(row => [row.id, row]));
+  $: sectionsById = new Map(sections.map(section => [section.id, section]));
+
   $: timelines = $view?.definition.plan.timelines || [];
   $: verticalGuides = selectedTimeline?.verticalGuides || [];
   $: selectedRow = rows.find(row => row.id === $selectedRowId);
+  $: selectedSection = sections.find(section => section.id === $selectedSectionId);
   $: horizontalGuides = selectedRow?.horizontalGuides || [];
   $: yAxes = selectedRow?.yAxes || [];
   $: layers = selectedRow?.layers || [];
@@ -265,25 +309,357 @@
     viewAddTimelineRow();
   }
 
+  function addSection() {
+    viewAddSection();
+  }
+
+  function updateSectionEvent(event: Event) {
+    const { name, value } = getTarget(event);
+    viewUpdateSection(name as keyof TimelineSection, value);
+  }
+
   function removeAllTimelineRows() {
     if (!selectedTimeline) {
       return;
     }
-
     effects.deleteTimelineRows($selectedTimelineId);
   }
 
-  function handleDndConsiderRows(e: CustomEvent<DndEvent>) {
-    const { detail } = e;
-    rows = detail.items as Row[];
+  function removeAllSections() {
+    sections.forEach(section => {
+      viewDeleteSection(section.id, true);
+    });
   }
 
-  function handleDndFinalizeRows(e: CustomEvent<DndEvent>) {
-    const { detail } = e;
-    rows = detail.items as Row[];
-    viewUpdateTimeline('rows', rows, $selectedTimelineId);
+  // Pragmatic DND: Handle drop of a row or section
+  function handleDrop(
+    sourceData: DragData,
+    targetItemId: number,
+    targetItemType: 'section' | 'row',
+    targetSectionId: number | null,
+    edge: Edge | null,
+  ) {
+    const { itemId: sourceItemId, itemType: sourceItemType, sourceSectionId } = sourceData;
+
+    // Don't allow dropping a section into another section
+    if (sourceItemType === 'section' && targetItemType === 'row' && targetSectionId !== null) {
+      return;
+    }
+
+    // If dropping on itself, do nothing
+    if (sourceItemId === targetItemId && sourceItemType === targetItemType) {
+      return;
+    }
+
+    // If dropping a row that's already in the target section onto that section's drop zone, do nothing
+    if (targetItemType === 'section' && sourceItemType === 'row' && edge === null && sourceSectionId === targetItemId) {
+      return;
+    }
+
+    view.update(currentView => {
+      if (currentView === null) {
+        return currentView;
+      }
+
+      const timeline = currentView.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
+      if (!timeline) {
+        return currentView;
+      }
+
+      let newItems = [...timeline.items];
+      let newSections = timeline.sections.map(s => ({ ...s, rowIds: [...s.rowIds] }));
+
+      // Remove source from its current location
+      if (sourceItemType === 'row') {
+        if (sourceSectionId !== null) {
+          // Remove from section
+          const sourceSection = newSections.find(s => s.id === sourceSectionId);
+          if (sourceSection) {
+            sourceSection.rowIds = sourceSection.rowIds.filter(id => id !== sourceItemId);
+          }
+        } else {
+          // Remove from root level
+          newItems = newItems.filter(item => !(item.type === 'row' && item.id === sourceItemId));
+        }
+      } else {
+        // Remove section from root level
+        newItems = newItems.filter(item => !(item.type === 'section' && item.id === sourceItemId));
+      }
+
+      // Determine where to insert
+      if (targetItemType === 'section' && sourceItemType === 'row' && edge === null) {
+        // Dropping a row INTO a section (not at an edge)
+        const targetSection = newSections.find(s => s.id === targetItemId);
+        if (targetSection) {
+          // Only add if not already in the section (shouldn't happen due to early return above, but safety check)
+          if (!targetSection.rowIds.includes(sourceItemId)) {
+            targetSection.rowIds.push(sourceItemId);
+          }
+        }
+      } else if (targetSectionId !== null && sourceItemType === 'row') {
+        // Dropping row within a section (reordering or moving between sections)
+        const targetSection = newSections.find(s => s.id === targetSectionId);
+        if (targetSection) {
+          // Find where to insert - the target row index in the CURRENT state (after removal)
+          const targetIndex = targetSection.rowIds.findIndex(id => id === targetItemId);
+          if (targetIndex !== -1) {
+            const insertIndex = edge === 'bottom' ? targetIndex + 1 : targetIndex;
+            targetSection.rowIds.splice(insertIndex, 0, sourceItemId);
+          } else {
+            // Target row not found, append to end
+            targetSection.rowIds.push(sourceItemId);
+          }
+        }
+      } else {
+        // Dropping at root level
+        const targetIndex = newItems.findIndex(item => item.type === targetItemType && item.id === targetItemId);
+        const insertIndex = edge === 'bottom' ? targetIndex + 1 : targetIndex;
+        newItems.splice(insertIndex, 0, { id: sourceItemId, type: sourceItemType });
+      }
+
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(t => {
+              if (t.id === $selectedTimelineId) {
+                return { ...t, items: newItems, sections: newSections };
+              }
+              return t;
+            }),
+          },
+        },
+      };
+    });
   }
 
+  // Svelte action to make an element draggable
+  function makeDraggable(
+    node: HTMLElement,
+    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
+  ) {
+    const cleanup = draggable({
+      element: node,
+      getInitialData: () =>
+        ({
+          itemId: params.itemId,
+          itemType: params.itemType,
+          sourceSectionId: params.sectionId,
+        }) as DragData,
+      onDragStart: () => {
+        node.classList.add('dragging');
+      },
+      onDrop: () => {
+        node.classList.remove('dragging');
+      },
+    });
+
+    cleanupFunctions.push(cleanup);
+
+    return {
+      destroy() {
+        cleanup();
+      },
+      update(newParams: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null }) {
+        params = newParams;
+      },
+    };
+  }
+
+  // Svelte action to make an element a drop target
+  function makeDropTarget(
+    node: HTMLElement,
+    params: {
+      acceptSection?: boolean; // For section drop targets that accept rows being dropped INTO them
+      allowedEdges?: Edge[];
+      itemId: number;
+      itemType: 'section' | 'row';
+      sectionId: number | null;
+    },
+  ) {
+    const key = `${params.itemType}-${params.itemId}-${params.sectionId ?? 'root'}`;
+    dragOverState.set(key, { edge: null, isOver: false });
+
+    const cleanup = dropTargetForElements({
+      canDrop: ({ source }) => {
+        const sourceData = source.data as DragData;
+        // Only accept drags from our row/section draggables (not activity drags, etc.)
+        if (sourceData.itemType !== 'section' && sourceData.itemType !== 'row') {
+          return false;
+        }
+        // Don't allow dropping sections into sections
+        if (sourceData.itemType === 'section' && params.sectionId !== null) {
+          return false;
+        }
+        // Don't allow dropping on self
+        if (sourceData.itemId === params.itemId && sourceData.itemType === params.itemType) {
+          return false;
+        }
+        return true;
+      },
+      element: node,
+      getData: ({ element, input }) => {
+        const data = {
+          itemId: params.itemId,
+          itemType: params.itemType,
+          sectionId: params.sectionId,
+        };
+        // Attach closest edge for positioning
+        return attachClosestEdge(data, {
+          allowedEdges: params.allowedEdges ?? ['top', 'bottom'],
+          element,
+          input,
+        });
+      },
+      onDrag: ({ self }) => {
+        const edge = extractClosestEdge(self.data);
+        dragOverState.set(key, { edge, isOver: true });
+        dragOverState = new Map(dragOverState);
+        updateDropIndicator(node, edge);
+      },
+      onDragEnter: ({ self }) => {
+        const edge = extractClosestEdge(self.data);
+        dragOverState.set(key, { edge, isOver: true });
+        dragOverState = new Map(dragOverState);
+        node.classList.add('drop-target-active');
+        updateDropIndicator(node, edge);
+      },
+      onDragLeave: () => {
+        dragOverState.set(key, { edge: null, isOver: false });
+        dragOverState = new Map(dragOverState);
+        node.classList.remove('drop-target-active');
+        removeDropIndicator(node);
+      },
+      onDrop: ({ self, source }) => {
+        const sourceData = source.data as DragData;
+        const edge = extractClosestEdge(self.data);
+        dragOverState.set(key, { edge: null, isOver: false });
+        dragOverState = new Map(dragOverState);
+        node.classList.remove('drop-target-active');
+        removeDropIndicator(node);
+
+        handleDrop(sourceData, params.itemId, params.itemType, params.sectionId, edge);
+      },
+    });
+
+    cleanupFunctions.push(cleanup);
+
+    return {
+      destroy() {
+        cleanup();
+        dragOverState.delete(key);
+      },
+      update(newParams: typeof params) {
+        params = newParams;
+      },
+    };
+  }
+
+  // Svelte action for section header that can accept rows dropped onto it
+  // When a row is dropped on the section header, it gets added to the end of that section
+  function makeSectionHeaderDropTarget(node: HTMLElement, params: { sectionId: number }) {
+    const key = `section-header-${params.sectionId}`;
+    dragOverState.set(key, { edge: null, isOver: false });
+
+    const cleanup = dropTargetForElements({
+      canDrop: ({ source }) => {
+        const sourceData = source.data as DragData;
+        // Only accept rows, not sections
+        if (sourceData.itemType !== 'row') {
+          return false;
+        }
+        // Don't accept if the row is already in this section
+        if (sourceData.sourceSectionId === params.sectionId) {
+          return false;
+        }
+        return true;
+      },
+      element: node,
+      getData: ({ element, input }) => {
+        // For section headers, we want to support both reordering sections (top/bottom edge)
+        // and dropping rows INTO the section (when hovering more centrally)
+        return attachClosestEdge(
+          {
+            isSection: true,
+            sectionId: params.sectionId,
+          },
+          {
+            allowedEdges: ['top', 'bottom'],
+            element,
+            input,
+          },
+        );
+      },
+      onDragEnter: () => {
+        dragOverState.set(key, { edge: null, isOver: true });
+        dragOverState = new Map(dragOverState);
+        node.classList.add('section-accepting-row');
+      },
+      onDragLeave: () => {
+        dragOverState.set(key, { edge: null, isOver: false });
+        dragOverState = new Map(dragOverState);
+        node.classList.remove('section-accepting-row');
+      },
+      onDrop: ({ source }) => {
+        const sourceData = source.data as DragData;
+        dragOverState.set(key, { edge: null, isOver: false });
+        dragOverState = new Map(dragOverState);
+        node.classList.remove('section-accepting-row');
+
+        // Move row into this section at the end
+        handleDrop(sourceData, params.sectionId, 'section', null, null);
+      },
+    });
+
+    cleanupFunctions.push(cleanup);
+
+    return {
+      destroy() {
+        cleanup();
+        dragOverState.delete(key);
+      },
+      update(newParams: { sectionId: number }) {
+        params = newParams;
+      },
+    };
+  }
+
+  function updateDropIndicator(node: HTMLElement, edge: Edge | null) {
+    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
+    if (edge === 'top') {
+      node.classList.add('drop-indicator-top');
+    } else if (edge === 'bottom') {
+      node.classList.add('drop-indicator-bottom');
+    }
+  }
+
+  function removeDropIndicator(node: HTMLElement) {
+    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
+  }
+
+  // Setup global monitor on mount
+  onMount(() => {
+    monitorCleanup = monitorForElements({
+      onDrop: () => {
+        // Reset all drag over states
+        dragOverState = new Map();
+      },
+    });
+  });
+
+  // Cleanup on destroy
+  onDestroy(() => {
+    cleanupFunctions.forEach(fn => fn());
+    cleanupFunctions = [];
+    if (monitorCleanup) {
+      monitorCleanup();
+      monitorCleanup = null;
+    }
+  });
+
+  // Y-Axes DND handlers (still using svelte-dnd-action for simple reordering)
   function handleDndConsiderYAxes(e: CustomEvent<DndEvent>) {
     const { detail } = e;
     yAxes = detail.items as Axis[];
@@ -460,7 +836,100 @@
   </svelte:fragment>
 
   <div slot="body" bind:clientWidth={editorWidth} class="timeline-editor" class:compact={editorWidth < 360}>
-    {#if !selectedRow}
+    {#if selectedSection}
+      <!-- Section editing -->
+      <button
+        on:click={() => {
+          viewSetSelectedSection(null);
+        }}
+        class="st-button tertiary section-back-button"
+      >
+        <ArrowLeftIcon />
+        Back to Timeline {$selectedTimelineId}
+      </button>
+      <div class="timeline-select-container">
+        <select
+          class="st-select w-full"
+          data-type="number"
+          name="sections"
+          value={$selectedSectionId}
+          on:change={event => {
+            const { valueAsNumber: id } = getTarget(event);
+            viewSetSelectedSection(id);
+          }}
+        >
+          {#each sections as section (section.id)}
+            <option value={section.id}>
+              {section.name}
+            </option>
+          {/each}
+        </select>
+      </div>
+      <EditorSection item="Detail">
+        <div style="display: grid">
+          <Input>
+            <label for="name">Section Name</label>
+            <input
+              class="st-input w-full"
+              name="name"
+              autocomplete="off"
+              type="string"
+              value={selectedSection.name}
+              on:input|stopPropagation={updateSectionEvent}
+            />
+          </Input>
+        </div>
+        <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
+          <Input>
+            <label for="collapsed">Collapsed</label>
+            <select
+              class="st-select w-full"
+              data-type="bool"
+              name="collapsed"
+              value={selectedSection.collapsed}
+              on:change={event => {
+                const { value } = getTarget(event);
+                viewUpdateSection('collapsed', value === 'true');
+              }}
+            >
+              <option value={true}>Yes</option>
+              <option value={false}>No</option>
+            </select>
+          </Input>
+          <Input>
+            <label for="color">Color</label>
+            <div class="section-color-row">
+              <ColorPresetsPicker
+                value={selectedSection.color ?? ''}
+                presetColors={ViewDiscreteLayerColorPresets}
+                on:input={({ detail }) => viewUpdateSection('color', detail.value)}
+              />
+              {#if selectedSection.color}
+                <button
+                  use:tooltip={{ content: 'Remove Color', placement: 'top' }}
+                  class="st-button icon"
+                  on:click={() => viewUpdateSection('color', null)}
+                >
+                  <CloseIcon />
+                </button>
+              {/if}
+            </div>
+          </Input>
+        </CssGrid>
+      </EditorSection>
+      <EditorSection item="Section" itemPlural="Section">
+        <button
+          class="st-button secondary w-full"
+          on:click={() => {
+            if (selectedSection) {
+              viewDeleteSection(selectedSection.id, true);
+            }
+          }}
+        >
+          Delete Section (Keep Rows)
+        </button>
+      </EditorSection>
+    {:else if !selectedRow}
       <!-- Select Timeline. -->
       <div class="timeline-select-container">
         <select
@@ -585,73 +1054,218 @@
           {/if}
         </EditorSection>
 
-        <EditorSection
-          creatable
-          item="Row"
-          isDragContainer
-          itemCount={rows.length}
-          on:create={addTimelineRow}
-          on:removeAll={removeAllTimelineRows}
-        >
-          {#if rows.length}
-            <div
-              class="timeline-rows timeline-elements"
-              on:consider={handleDndConsiderRows}
-              on:finalize={handleDndFinalizeRows}
-              use:dndzone={{
-                items: rows,
-                transformDraggedElement,
-                type: 'rows',
-              }}
-            >
-              {#each rows as row (row.id)}
-                <div>
-                  <div class="st-typography-body timeline-row timeline-element">
-                    <span class="drag-icon">
-                      <GripVertical size={16} />
-                    </span>
-                    <span class="timeline-row-name">
-                      {row.name}
-                    </span>
-                    <div class="timeline-row-buttons">
-                      <button
-                        use:tooltip={{ content: 'Edit Row', placement: 'top' }}
-                        class="st-button icon"
-                        on:click={() => {
-                          viewSetSelectedRow(row.id);
-                        }}
+        <!-- Hierarchical Rows and Sections Editor -->
+        <fieldset class="editor-section editor-section-draggable" aria-label="rows-editor">
+          <div class="editor-section-header flex flex-row justify-between">
+            <div class="st-typography-medium">Rows</div>
+            <div class="flex gap-2">
+              {#if rows.length > 0}
+                <button
+                  aria-label="Delete All Rows"
+                  on:click|stopPropagation={removeAllTimelineRows}
+                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <RemoveAllIcon />
+                </button>
+              {/if}
+              {#if sections.length > 0}
+                <button
+                  aria-label="Delete All Sections"
+                  on:click|stopPropagation={removeAllSections}
+                  use:tooltip={{ content: 'Delete All Sections', placement: 'top' }}
+                  class="st-button icon"
+                >
+                  <FolderX size={16} />
+                </button>
+              {/if}
+              <button
+                aria-label="New Row"
+                on:click|stopPropagation={addTimelineRow}
+                use:tooltip={{ content: 'New Row', placement: 'top' }}
+                class="st-button icon"
+              >
+                <ListPlus size={16} />
+              </button>
+              <button
+                aria-label="New Section"
+                on:click|stopPropagation={addSection}
+                use:tooltip={{ content: 'New Section', placement: 'top' }}
+                class="st-button icon"
+              >
+                <FolderPlus size={16} />
+              </button>
+            </div>
+          </div>
+
+          {#if items.length > 0}
+            <div class="timeline-hierarchy timeline-elements">
+              {#each items as item (`${item.type}-${item.id}`)}
+                {#if item.type === 'section'}
+                  {@const section = sectionsById.get(item.id)}
+                  {#if section}
+                    <div class="timeline-section-container">
+                      <div
+                        class="st-typography-body timeline-section timeline-element"
+                        use:makeDraggable={{ itemId: section.id, itemType: 'section', sectionId: null }}
+                        use:makeDropTarget={{ itemId: section.id, itemType: 'section', sectionId: null }}
+                        use:makeSectionHeaderDropTarget={{ sectionId: section.id }}
                       >
-                        <PenIcon />
-                      </button>
-                      <button
-                        use:tooltip={{ content: 'Duplicate Row', placement: 'top' }}
-                        class="st-button icon"
-                        on:click={() => {
-                          if (selectedTimeline) {
-                            effects.duplicateTimelineRow(row, selectedTimeline, timelines);
-                          }
-                        }}
-                      >
-                        <DuplicateIcon />
-                      </button>
-                      <button
-                        use:tooltip={{ content: 'Delete Row', placement: 'top' }}
-                        class="st-button icon"
-                        on:click|stopPropagation={() => {
-                          effects.deleteTimelineRow(row, rows, $selectedTimelineId);
-                        }}
-                      >
-                        <CloseIcon />
-                      </button>
+                        <span class="drag-icon">
+                          <GripVertical size={16} />
+                        </span>
+                        {#if section.color}
+                          <span class="section-color-indicator" style:background-color={section.color} />
+                        {/if}
+                        <span class="flex flex-row gap-1">
+                          <FolderOpen size={16} />
+                          <span class="timeline-section-name">
+                            {section.name}
+                          </span>
+                        </span>
+                        <div class="timeline-section-buttons">
+                          <button
+                            aria-label="Add Row to Section"
+                            use:tooltip={{ content: 'Add Row to Section', placement: 'top' }}
+                            class="st-button icon"
+                            on:click|stopPropagation={() => {
+                              viewAddTimelineRow($selectedTimelineId, false, section.id);
+                            }}
+                          >
+                            <PlusIcon />
+                          </button>
+                          <button
+                            aria-label="Edit Section"
+                            use:tooltip={{ content: 'Edit Section', placement: 'top' }}
+                            class="st-button icon"
+                            on:click={() => {
+                              viewSetSelectedSection(section.id);
+                            }}
+                          >
+                            <PenIcon />
+                          </button>
+                          <button
+                            aria-label="Delete Section"
+                            use:tooltip={{ content: 'Delete Section', placement: 'top' }}
+                            class="st-button icon"
+                            on:click|stopPropagation={() => {
+                              viewDeleteSection(section.id, true);
+                            }}
+                          >
+                            <CloseIcon />
+                          </button>
+                        </div>
+                      </div>
+                      <!-- Section rows -->
+                      {#if section.rowIds.length > 0}
+                        <div class="section-rows timeline-elements">
+                          {#each section.rowIds as rowId (`section-${section.id}-row-${rowId}`)}
+                            {@const row = rowsById.get(rowId)}
+                            {#if row}
+                              <div
+                                class="st-typography-body timeline-row timeline-element timeline-row-in-section"
+                                use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
+                                use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
+                              >
+                                <span class="drag-icon">
+                                  <GripVertical size={16} />
+                                </span>
+                                <span class="timeline-row-name">
+                                  {row.name}
+                                </span>
+                                <div class="timeline-row-buttons">
+                                  <button
+                                    use:tooltip={{ content: 'Edit Row', placement: 'top' }}
+                                    class="st-button icon"
+                                    on:click={() => {
+                                      viewSetSelectedRow(row.id);
+                                    }}
+                                  >
+                                    <PenIcon />
+                                  </button>
+                                  <button
+                                    use:tooltip={{ content: 'Duplicate Row', placement: 'top' }}
+                                    class="st-button icon"
+                                    on:click={() => {
+                                      if (selectedTimeline) {
+                                        effects.duplicateTimelineRow(row, selectedTimeline, timelines);
+                                      }
+                                    }}
+                                  >
+                                    <DuplicateIcon />
+                                  </button>
+                                  <button
+                                    use:tooltip={{ content: 'Delete Row', placement: 'top' }}
+                                    class="st-button icon"
+                                    on:click|stopPropagation={() => {
+                                      effects.deleteTimelineRow(row, rows, $selectedTimelineId);
+                                    }}
+                                  >
+                                    <CloseIcon />
+                                  </button>
+                                </div>
+                              </div>
+                            {/if}
+                          {/each}
+                        </div>
+                      {/if}
                     </div>
-                  </div>
-                </div>
+                  {/if}
+                {:else}
+                  <!-- Root-level row -->
+                  {@const row = rowsById.get(item.id)}
+                  {#if row}
+                    <div
+                      class="st-typography-body timeline-row timeline-element"
+                      use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: null }}
+                      use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: null }}
+                    >
+                      <span class="drag-icon">
+                        <GripVertical size={16} />
+                      </span>
+                      <span class="timeline-row-name">
+                        {row.name}
+                      </span>
+                      <div class="timeline-row-buttons">
+                        <button
+                          use:tooltip={{ content: 'Edit Row', placement: 'top' }}
+                          class="st-button icon"
+                          on:click={() => {
+                            viewSetSelectedRow(row.id);
+                          }}
+                        >
+                          <PenIcon />
+                        </button>
+                        <button
+                          use:tooltip={{ content: 'Duplicate Row', placement: 'top' }}
+                          class="st-button icon"
+                          on:click={() => {
+                            if (selectedTimeline) {
+                              effects.duplicateTimelineRow(row, selectedTimeline, timelines);
+                            }
+                          }}
+                        >
+                          <DuplicateIcon />
+                        </button>
+                        <button
+                          use:tooltip={{ content: 'Delete Row', placement: 'top' }}
+                          class="st-button icon"
+                          on:click|stopPropagation={() => {
+                            effects.deleteTimelineRow(row, rows, $selectedTimelineId);
+                          }}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    </div>
+                  {/if}
+                {/if}
               {/each}
             </div>
           {:else}
-            <div />
+            <div class="empty-state st-typography-body">No rows or sections</div>
           {/if}
-        </EditorSection>
+        </fieldset>
       {/if}
     {:else}
       <!-- Row editing -->
@@ -1260,6 +1874,77 @@
     display: flex;
   }
 
+  .timeline-section {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    height: 40px;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  .timeline-section:hover,
+  .timeline-section:active {
+    background: var(--st-gray-10);
+  }
+
+  .timeline-section-name {
+    display: block;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: break-all;
+  }
+
+  .timeline-section-buttons {
+    display: flex;
+  }
+
+  .timeline-section-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-rows {
+    min-height: 8px;
+    outline: none !important;
+    padding-left: 16px;
+  }
+
+  .timeline-row-in-section {
+    border-left: 3px solid var(--st-gray-30);
+    padding-left: 8px;
+  }
+
+  .timeline-hierarchy {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .empty-state {
+    color: var(--st-gray-50);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .section-color-indicator {
+    border-radius: 2px;
+    flex-shrink: 0;
+    height: 16px;
+    width: 4px;
+  }
+
+  .section-color-row {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+
+  .timeline-section .st-button.icon {
+    color: var(--st-gray-50);
+  }
+
   .timeline-element:hover .drag-icon,
   :global(.timeline-element-dragging) .drag-icon {
     display: flex;
@@ -1321,5 +2006,31 @@
 
   .compact .timeline-editor-responsive-label {
     display: none;
+  }
+
+  /* Pragmatic DND styles - using :global because classes are added dynamically via JS */
+  :global(.timeline-row.dragging),
+  :global(.timeline-section.dragging) {
+    opacity: 0.5;
+  }
+
+  :global(.timeline-row.drop-indicator-top),
+  :global(.timeline-section.drop-indicator-top) {
+    box-shadow: inset 0 3px 0 0 var(--st-utility-blue);
+  }
+
+  :global(.timeline-row.drop-indicator-bottom),
+  :global(.timeline-section.drop-indicator-bottom) {
+    box-shadow: inset 0 -3px 0 0 var(--st-utility-blue);
+  }
+
+  :global(.timeline-row.drop-target-active),
+  :global(.timeline-section.drop-target-active) {
+    background: var(--st-gray-15);
+  }
+
+  :global(.timeline-section.section-accepting-row) {
+    background: var(--st-gray-15);
+    box-shadow: inset 0 0 0 2px var(--st-utility-blue);
   }
 </style>

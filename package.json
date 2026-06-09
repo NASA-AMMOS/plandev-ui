@@ -39,6 +39,8 @@
     "version": "node ./scripts/version.js"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
     "@codemirror/autocomplete": "^6.16.0",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/language": "^6.10.1",
@@ -84,6 +86,7 @@
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "lodash-es": "^4.17.21",
+    "lucide-svelte": "^0.561.0",
     "marked": "^18.0.5",
     "monaco-editor": "0.47.0",
     "postgres-interval": "^4.0.0",

@@ -46,6 +46,8 @@ import type {
   Row,
   TimeRange,
   Timeline,
+  TimelineItemRef,
+  TimelineSection,
   VerticalGuide,
   XRangeLayer,
   XRangeLayerColorScheme,
@@ -576,9 +578,11 @@ export function createTimeline(timelines: Timeline[], args: Partial<Timeline> = 
 
   return {
     id,
+    items: [],
     marginLeft: 0,
     marginRight: 0,
     rows: [],
+    sections: [],
     verticalGuides: [],
     ...args,
   };
@@ -1818,4 +1822,129 @@ export function matchesDynamicFilter(
     default:
       return false;
   }
+}
+
+/**
+ * Returns the next section ID based on all sections in all timelines
+ */
+export function getNextSectionID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    (timeline.sections || []).forEach(section => {
+      if (section.id > maxID) {
+        maxID = section.id;
+      }
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns a new timeline section
+ */
+export function createSection(timelines: Timeline[], args: Partial<TimelineSection> = {}): TimelineSection {
+  const id = getNextSectionID(timelines);
+
+  return {
+    collapsed: false,
+    color: null,
+    id,
+    name: 'Section',
+    rowIds: [],
+    ...args,
+  };
+}
+
+/**
+ * Migrates a timeline from the old format (without sections) to the new format.
+ * Existing rows become root-level items in the items array.
+ */
+export function migrateTimelineToSections(timeline: Timeline): Timeline {
+  // Already migrated
+  if (timeline.items !== undefined && timeline.sections !== undefined) {
+    return timeline;
+  }
+
+  // Convert existing rows to root-level items
+  const items: TimelineItemRef[] = timeline.rows.map(row => ({
+    id: row.id,
+    type: 'row' as const,
+  }));
+
+  return {
+    ...timeline,
+    items,
+    sections: [],
+  };
+}
+
+/**
+ * Gets the section that contains a given row, or null if the row is at root level
+ */
+export function getRowSection(timeline: Timeline, rowId: number): TimelineSection | null {
+  for (const section of timeline.sections || []) {
+    if (section.rowIds.includes(rowId)) {
+      return section;
+    }
+  }
+  return null;
+}
+
+/**
+ * Gets all rows in order, respecting section ordering and section row ordering.
+ * Returns rows in the order they should be displayed.
+ */
+export function getOrderedRows(timeline: Timeline): Row[] {
+  const rowsById = new Map(timeline.rows.map(row => [row.id, row]));
+  const orderedRows: Row[] = [];
+
+  for (const item of timeline.items || []) {
+    if (item.type === 'row') {
+      const row = rowsById.get(item.id);
+      if (row) {
+        orderedRows.push(row);
+      }
+    } else if (item.type === 'section') {
+      const section = (timeline.sections || []).find(s => s.id === item.id);
+      if (section) {
+        for (const rowId of section.rowIds) {
+          const row = rowsById.get(rowId);
+          if (row) {
+            orderedRows.push(row);
+          }
+        }
+      }
+    }
+  }
+
+  return orderedRows;
+}
+
+/**
+ * Gets all visible rows (respecting collapsed sections)
+ */
+export function getVisibleRows(timeline: Timeline): Row[] {
+  const rowsById = new Map(timeline.rows.map(row => [row.id, row]));
+  const visibleRows: Row[] = [];
+
+  for (const item of timeline.items || []) {
+    if (item.type === 'row') {
+      const row = rowsById.get(item.id);
+      if (row) {
+        visibleRows.push(row);
+      }
+    } else if (item.type === 'section') {
+      const section = (timeline.sections || []).find(s => s.id === item.id);
+      if (section && !section.collapsed) {
+        for (const rowId of section.rowIds) {
+          const row = rowsById.get(rowId);
+          if (row) {
+            visibleRows.push(row);
+          }
+        }
+      }
+    }
+  }
+
+  return visibleRows;
 }
