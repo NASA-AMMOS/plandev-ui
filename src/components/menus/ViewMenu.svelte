@@ -46,7 +46,7 @@
   let rightSplitPanelIsOn: boolean = false;
   let saveViewDisabled: boolean = true;
 
-  $: saveViewDisabled = $view?.name === '' || $view?.owner !== user?.id || !$viewIsModified;
+  $: saveViewDisabled = $view?.name === '' || !hasUpdatePermission || !$viewIsModified;
   $: if ($view?.definition.plan.grid) {
     leftPanelIsOn = !$view.definition.plan.grid.leftHidden && !$view.definition.plan.grid.leftSplit;
     leftSplitPanelIsOn = !$view.definition.plan.grid.leftHidden && $view.definition.plan.grid.leftSplit;
@@ -80,7 +80,7 @@
   }
 
   function saveView() {
-    if ($view && user && $view.owner === user.id && !saveViewDisabled) {
+    if ($view && user && !saveViewDisabled) {
       dispatch('saveView', { definition: $view.definition, id: $view.id, name: $view.name, owner: $view.owner });
     }
   }
