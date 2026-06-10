@@ -39,7 +39,7 @@
   export let maxListHeight: string = '300px';
   export let name: string | undefined = undefined;
   export let updatePermissionError: string = 'You do not have permission to update this';
-  export let placeholder: string = '';
+  export let placeholder: string | null = null;
   export let planReadOnly: boolean = false;
   export let selectedOptionLabel: string = '';
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
@@ -132,7 +132,7 @@
   $: {
     filteredOptions = !searchFilter
       ? [
-          ...(showPlaceholderOption && placeholder
+          ...(showPlaceholderOption && placeholder !== null
             ? [
                 {
                   display: placeholder,
@@ -156,7 +156,7 @@
 
   $: {
     if (selectedOptions.length < 1) {
-      label = placeholder;
+      label = placeholder ?? '';
     } else if (selectedOptionLabel) {
       label = selectedOptionLabel;
     } else if (selectedOptions.length === 1) {
