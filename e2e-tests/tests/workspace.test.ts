@@ -647,7 +647,7 @@ test.describe.serial('Workspace', () => {
 
   test('Edit and save user metadata', async () => {
     // Create a file
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
@@ -688,7 +688,7 @@ test.describe.serial('Workspace', () => {
 
   test('Cancel discards user metadata changes', async () => {
     // Create a file
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
@@ -714,7 +714,7 @@ test.describe.serial('Workspace', () => {
 
   test('Invalid JSON disables user metadata save button', async () => {
     // Create a file
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
@@ -745,8 +745,8 @@ test.describe.serial('Workspace', () => {
 
   test('Switching files discards unsaved user metadata edits', async () => {
     // Create two files
-    const { sequenceName: file1 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
-    const { sequenceName: file2 } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    const { sequenceName: file1 } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
+    const { sequenceName: file2 } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
 
     // Open first file and start editing metadata
     await workspace.searchForFileAndWait(file1);

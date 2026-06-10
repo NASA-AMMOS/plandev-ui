@@ -3,7 +3,7 @@
 <script lang="ts">
   import { standardKeymap } from '@codemirror/commands';
   import { syntaxTree } from '@codemirror/language';
-  import { lintGutter, openLintPanel } from '@codemirror/lint';
+  import { lintGutter, openLintPanel, setDiagnostics } from '@codemirror/lint';
   import { Compartment, EditorSelection, EditorState, Transaction, type Extension } from '@codemirror/state';
   import { keymap, type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
@@ -13,10 +13,9 @@
     PhoenixAdaptation,
     PhoenixContext,
   } from '@nasa-jpl/aerie-sequence-languages';
-  import { Button, Label } from '@nasa-jpl/stellar-svelte';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
-  import { FileBracesCorner, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
+  import { FileBracesCorner } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
@@ -26,22 +25,23 @@
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { replaceFileExtension } from '../../utilities/workspaces';
+  import { doesFilenameMatchExtension, replaceFileExtension } from '../../utilities/workspaces';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
-  import Tooltip from '../ui/Tooltip.svelte';
   import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import CommandPanel from './CommandPanel/CommandPanel.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
+  import OutputToolbar from './OutputToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
   export let fileMetadata: WorkspaceFileMetadata | null = null;
-  export let phoenixContext: PhoenixContext;
+  export let phoenixContext: PhoenixContext | undefined;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
   export let isLoading: boolean = false;
+  export let isInputFile: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let sequenceAdaptation: PhoenixAdaptation;
@@ -58,7 +58,7 @@
   const dispatch = createEventDispatcher<{
     adaptationError: { error: Error; filePath: string };
     downloadInput: { filePath: string };
-    downloadOutput: { content: string; filePath: string; filename: string; outputLanguage: OutputLanguage };
+    downloadOutput: { content: string; filePath: string; filename: string };
     editorViewChange: EditorView | null;
     lintChange: { diagnostics: LintDiagnostic[]; filePath: string };
     runAction: { action: ActionDefinition; parameter: string };
@@ -67,6 +67,7 @@
     sequenceOutputUpdate: { filePath: string; output?: string };
   }>();
 
+  let commandFormBuilderGrid: string;
   let compartmentAdaptation: Compartment;
   let compartmentOutputAdaptation: Compartment;
   let compartmentReadonly: Compartment;
@@ -93,12 +94,23 @@
 
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
-  $: if (phoenixContext && sequenceAdaptation.input.getEditorExtension) {
+  // Only use input extensions if the sequence file matches the input file extensions
+  $: if (phoenixContext && isInputFile && sequenceAdaptation.input.getEditorExtension) {
     inputEditorExtension = sequenceAdaptation.input.getEditorExtension(phoenixContext, phoenixResources);
+  } else if (phoenixContext && sequenceAdaptation.outputs.length > 0) {
+    const matchingOutputLanguage = sequenceAdaptation.outputs.find(output =>
+      doesFilenameMatchExtension(output.fileExtension, sequenceName),
+    );
+    inputEditorExtension = matchingOutputLanguage?.getEditorExtension?.(phoenixContext, phoenixResources) ?? [];
+  } else {
+    inputEditorExtension = [];
   }
 
-  $: if (sequenceAdaptation.outputs.length > 0) {
+  // Only use output extensions if the sequence file is an input file
+  $: if (isInputFile && sequenceAdaptation.outputs.length > 0) {
     selectedOutputFormat = sequenceAdaptation.outputs[0];
+  } else {
+    selectedOutputFormat = undefined;
   }
 
   $: if (phoenixContext && selectedOutputFormat?.getEditorExtension) {
@@ -137,6 +149,8 @@
       editorSequenceView.dispatch({
         effects: [compartmentAdaptation.reconfigure(inputEditorExtension)],
       });
+      // Clear any stale diagnostics
+      editorSequenceView.dispatch(setDiagnostics(editorSequenceView.state, []));
     }
   }
 
@@ -152,7 +166,7 @@
 
   $: {
     previousShowOutputs = showOutputs;
-    showOutputs = sequenceAdaptation.outputs.length > 0;
+    showOutputs = isInputFile && sequenceAdaptation.outputs.length > 0;
   }
   $: if (showOutputs) {
     editorHeights = toggleSeqJsonPreview ? '1fr 3px 1fr' : '1.88fr 3px 80px';
@@ -217,25 +231,28 @@
   }
 
   function updateOutputFormat(sequence: string): void {
-    let output: string | undefined;
+    if (phoenixContext) {
+      let output: string | undefined;
 
-    if (!preserveAdaptationLog) {
-      clearWorkspaceAdaptationMessages();
-    }
-    try {
-      output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
-    } catch (e) {
-      console.error('Adaptation toOutputFormat error:', e);
-      if (sequenceFilePath) {
-        dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
+      if (!preserveAdaptationLog) {
+        clearWorkspaceAdaptationMessages();
       }
-      output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
-    }
 
-    editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
+      try {
+        output = selectedOutputFormat?.toOutputFormat?.(sequence, phoenixContext, sequenceName);
+      } catch (e) {
+        console.error('Adaptation toOutputFormat error:', e);
+        if (sequenceFilePath) {
+          dispatch('adaptationError', { error: e as Error, filePath: sequenceFilePath });
+        }
+        output = `// Error in adaptation toOutputFormat:\n// ${(e as Error).message}`;
+      }
 
-    if (output !== undefined) {
-      dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
+      editorOutputView.dispatch({ changes: { from: 0, insert: output ?? '', to: editorOutputView.state.doc.length } });
+
+      if (output !== undefined) {
+        dispatch('sequenceOutputUpdate', { filePath: sequenceFilePath, output });
+      }
     }
   }
 
@@ -261,16 +278,22 @@
     }
   }, 300);
 
-  function downloadOutputFormat(outputLanguage: OutputLanguage): void {
+  function downloadOutputFormat(): void {
     const content = editorOutputView.state.doc.toString();
 
-    const filename = replaceFileExtension(
-      sequenceName,
-      sequenceAdaptation.input.fileExtension,
-      outputLanguage.fileExtension,
-    );
+    if (selectedOutputFormat) {
+      const filename = replaceFileExtension(
+        sequenceName,
+        sequenceAdaptation.input.fileExtension,
+        selectedOutputFormat.fileExtension,
+      );
 
-    dispatch('downloadOutput', { content, filePath: sequenceFilePath, filename, outputLanguage });
+      dispatch('downloadOutput', {
+        content,
+        filePath: sequenceFilePath,
+        filename,
+      });
+    }
   }
 
   function downloadInputFormat(): void {
@@ -305,7 +328,7 @@
 
   function formatDocument() {
     let format = sequenceAdaptation.input.format;
-    if (format !== undefined) {
+    if (format !== undefined && phoenixContext) {
       format(editorSequenceView, phoenixContext);
     }
   }
@@ -428,10 +451,6 @@
           downloadDisabled={disableCopyAndExport}
           downloadTooltip="Download sequence contents"
           onDownload={downloadInputFormat}
-          outputFormats={showOutputs ? sequenceAdaptation.outputs : []}
-          outputDisabled={disableCopyAndExport}
-          onCopyOutput={copyOutputFormatToClipboard}
-          onDownloadOutput={downloadOutputFormat}
           showSaveButton={!(readOnly || previewOnly || isLoading)}
           saveDisabled={!isSequenceDefinitionUpdated}
           saveHighlighted={isSequenceDefinitionUpdated}
@@ -455,35 +474,20 @@
           <SectionTitle>{selectedOutputFormat?.name} (Read-only)</SectionTitle>
 
           <div class="right">
-            <div class="flex items-center gap-2">
-              {#if sequenceAdaptation.outputs.length > 0}
-                <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">
-                  Output Format
-                </Label>
-                <select bind:value={selectedOutputFormat} class="st-select w-full" name="outputFormat">
-                  {#each sequenceAdaptation.outputs as outputFormatItem}
-                    <option value={outputFormatItem}>
-                      {outputFormatItem.name}
-                    </option>
-                  {/each}
-                </select>
-              {/if}
-
-              <Tooltip content={toggleSeqJsonPreview ? `Collapse Editor` : `Expand Editor`}>
-                <Button size="icon" variant="ghost" on:click={toggleSeqJsonEditor}>
-                  {#if toggleSeqJsonPreview}
-                    <PanelBottomClose size={16} />
-                  {:else}
-                    <PanelBottomOpen size={16} />
-                  {/if}
-                </Button>
-              </Tooltip>
-            </div>
+            <OutputToolbar
+              bind:selectedOutputFormat
+              isPreviewOpen={toggleSeqJsonPreview}
+              outputLanguages={sequenceAdaptation.outputs}
+              outputDisabled={disableCopyAndExport}
+              on:copyOutput={copyOutputFormatToClipboard}
+              on:downloadOutput={downloadOutputFormat}
+              on:togglePreview={toggleSeqJsonEditor}
+            />
           </div>
         </svelte:fragment>
 
         <svelte:fragment slot="body">
-          <div bind:this={editorOutputDiv} />
+          <div bind:this={editorOutputDiv} data-testid="output-editor" />
         </svelte:fragment>
       </Panel>
     {/if}
@@ -491,7 +495,7 @@
 
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
-    {#if phoenixContext.commandDictionary !== null}
+    {#if phoenixContext && phoenixContext.commandDictionary !== null}
       <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
     {:else}
       <Panel overflowYBody="hidden" padBody>

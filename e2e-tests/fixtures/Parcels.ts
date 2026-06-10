@@ -3,18 +3,18 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 import { filterAgGridTable } from '../utilities/helpers.js';
 
 export class Parcels {
-  closeButton: Locator;
-  confirmModal: Locator;
-  confirmModalDeleteButton: Locator;
-  createButton: Locator;
-  nameField: Locator;
-  newButton: Locator;
-  pageLoadingLocator: Locator;
+  closeButton!: Locator;
+  confirmModal!: Locator;
+  confirmModalDeleteButton!: Locator;
+  createButton!: Locator;
+  nameField!: Locator;
+  newButton!: Locator;
+  pageLoadingLocator!: Locator;
   parcelName: string;
-  table: Locator;
-  tableRow: (parcelName: string) => Locator;
-  tableRowDeleteButton: (parcelName: string) => Locator;
-  tableRowParcelId: (parcelName: string) => Locator;
+  table!: Locator;
+  tableRow!: (parcelName: string) => Locator;
+  tableRowDeleteButton!: (parcelName: string) => Locator;
+  tableRowParcelId!: (parcelName: string) => Locator;
 
   constructor(public page: Page) {
     this.parcelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
@@ -93,6 +93,94 @@ export class Parcels {
   async goto() {
     await this.page.goto('/parcels', { waitUntil: 'load' });
     await this.pageLoadingLocator.waitFor({ state: 'detached' });
+  }
+
+  async updateDictionarySelections({
+    channelDictionaryName,
+    commandDictionaryName,
+    parameterDictionaryName,
+    sequenceAdaptationName,
+  }: {
+    channelDictionaryName?: string;
+    commandDictionaryName?: string;
+    parameterDictionaryName?: string;
+    sequenceAdaptationName?: string;
+  }) {
+    const parcelTableRow = this.page.locator(`.ag-row:has-text("${this.parcelName}")`);
+    const parcelTableRowOpenButton = await this.page.locator(
+      `.ag-row:has-text("${this.parcelName}") >> button[aria-label="Open Parcel"]`,
+    );
+
+    parcelTableRow.hover();
+    await parcelTableRowOpenButton.waitFor({ state: 'attached' });
+    await parcelTableRowOpenButton.waitFor({ state: 'visible' });
+    await expect(parcelTableRowOpenButton).toBeVisible();
+    parcelTableRowOpenButton.click();
+
+    this.updatePage(this.page);
+    await expect(this.page.getByText('Edit Parcel')).toBeVisible();
+
+    // Select command dictionary if provided
+    if (commandDictionaryName) {
+      const commandDictionaryTable = await this.page
+        .getByRole('tabpanel')
+        .filter({ hasText: 'Command Dictionaries' })
+        .getByRole('treegrid');
+
+      await filterAgGridTable(this.page, commandDictionaryTable, commandDictionaryName);
+      await commandDictionaryTable
+        .getByRole('row')
+        .filter({ hasText: commandDictionaryName })
+        .getByRole('checkbox')
+        .click();
+    }
+
+    // Select channel dictionary if provided
+    if (channelDictionaryName) {
+      const channelDictionaryTable = await this.page
+        .getByRole('tabpanel')
+        .filter({ hasText: 'Channel Dictionaries' })
+        .getByRole('treegrid');
+
+      await filterAgGridTable(this.page, channelDictionaryTable, channelDictionaryName);
+      await channelDictionaryTable
+        .getByRole('row')
+        .filter({ hasText: channelDictionaryName })
+        .getByRole('checkbox')
+        .click();
+    }
+
+    // Select parameter dictionary if provided
+    if (parameterDictionaryName) {
+      const parameterDictionaryTable = await this.page
+        .getByRole('tabpanel')
+        .filter({ hasText: 'Parameter Dictionaries' })
+        .getByRole('treegrid');
+
+      await filterAgGridTable(this.page, parameterDictionaryTable, parameterDictionaryName);
+      await parameterDictionaryTable
+        .getByRole('row')
+        .filter({ hasText: parameterDictionaryName })
+        .getByRole('checkbox')
+        .click();
+    }
+
+    // Select sequence adaptation if provided
+    if (sequenceAdaptationName) {
+      const sequenceAdaptationTable = await this.page
+        .getByRole('tabpanel')
+        .filter({ hasText: 'Sequence Adaptations' })
+        .getByRole('treegrid');
+
+      await filterAgGridTable(this.page, sequenceAdaptationTable, sequenceAdaptationName);
+      await sequenceAdaptationTable
+        .getByRole('row')
+        .filter({ hasText: sequenceAdaptationName })
+        .getByRole('checkbox')
+        .click();
+    }
+
+    await this.page.getByRole('button', { name: 'Save' }).click();
   }
 
   updatePage(page: Page): void {
