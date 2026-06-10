@@ -113,7 +113,7 @@
   ];
 
   $: {
-    const activityTypeNames: string[] = [''];
+    const activityTypeNames: string[] = [];
     if (selectedModel) {
       activityTypeNames.push(...selectedModel.activity_types.map(type => type.name));
     } else {

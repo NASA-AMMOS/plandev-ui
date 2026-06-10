@@ -277,7 +277,7 @@
           {@const displayedOption = item}
           {@const selected =
             !!selectedOptions.find(o => o.value === displayedOption.value) ||
-            (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
+            (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0 && !displayedOption.value)}
           <MenuItem
             className="min-h-9 py-2"
             {selected}
