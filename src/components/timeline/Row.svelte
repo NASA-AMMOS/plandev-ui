@@ -8,6 +8,7 @@
   import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
+  import { selectedExternalEventsRaw } from '../../stores/external-event';
   import {
     derivationGroupVisibilityMap,
     externalSources,
@@ -149,6 +150,12 @@
     };
     zoom: D3ZoomEvent<HTMLCanvasElement, any>;
   }>();
+
+  // External events stream in via a single plan-wide subscription, so these loading
+  // and error flags are shared across all rows that render an external event layer
+  // (unlike resources, which subscribe per row).
+  const externalEventsLoading = selectedExternalEventsRaw.loading;
+  const externalEventsError = selectedExternalEventsRaw.error;
 
   let blur: FocusEvent;
   let contextmenu: MouseEvent;
@@ -921,7 +928,7 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap))}
+      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap)) || (hasExternalEventsLayer && $externalEventsLoading)}
         <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->
@@ -933,6 +940,10 @@
         <div class="layer-message error st-typography-label">
           Failed to load profiles for {resourceLoadingErrors.length} layer{pluralize(resourceLoadingErrors.length)}
         </div>
+      {/if}
+      <!-- External event error indicator -->
+      {#if hasExternalEventsLayer && $externalEventsError}
+        <div class="layer-message error st-typography-label">Failed to load external events</div>
       {/if}
       <!-- Layers of Canvas Visualizations. -->
       <div class="layers" style="width: {drawWidth}px">
