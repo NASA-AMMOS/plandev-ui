@@ -14,8 +14,8 @@
     externalSources,
     planDerivationGroupLinks,
   } from '../../stores/external-source';
-  import { planModelActivityTypes } from '../../stores/plan';
   import { createExternalResourceSubscription } from '../../stores/externalResource';
+  import { planModelActivityTypes } from '../../stores/plan';
   import { createProfileSubscription } from '../../stores/profile';
   import { resourceTypes, resourceTypesLoading } from '../../stores/simulation';
   import { selectedRow, viewAddFilterToRow } from '../../stores/views';
@@ -243,7 +243,7 @@
       }
     });
 
-    const startTimeYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
+    const simProfileStartYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
     resourceNames.forEach(name => {
       if (
         resourceRequestMap[name] &&
@@ -255,8 +255,8 @@
 
       const isExternal = !$resourceTypes.find(type => type.name === name);
       const subscription = isExternal
-        ? createExternalResourceSubscription(simulationDatasetId, name, startTimeYmd, user)
-        : createProfileSubscription(simulationDatasetId, name, startTimeYmd, user);
+        ? createExternalResourceSubscription(simulationDatasetId, name, plan.start_time, user)
+        : createProfileSubscription(simulationDatasetId, name, simProfileStartYmd, user);
       const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
       // Declared before .subscribe() so the closure in `unsubscribe` below
       // doesn't lean on TDZ-via-const initialization order.
