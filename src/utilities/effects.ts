@@ -3018,6 +3018,7 @@ const effects = {
           const data = await reqHasura<{
             returning: {
               derivation_group_name: string;
+              model_id: number;
             }[];
           }>(
             gql.DELETE_MODEL_DERIVATION_GROUP,
