@@ -12,8 +12,8 @@ export class Model {
   confirmModal: Locator;
   confirmModalDeleteButton: Locator;
   constraintRadioButton: Locator;
-  derivationGroupsRadioButton: Locator;
   deleteButton: Locator;
+  derivationGroupsRadioButton: Locator;
   descriptionInput: Locator;
   goalRadioButton: Locator;
   libraryRadioButton: Locator;
