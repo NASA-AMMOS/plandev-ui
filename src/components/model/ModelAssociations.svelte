@@ -343,11 +343,10 @@
   .associations-content {
     display: grid;
     grid-template-rows: min-content 1fr;
-    min-width: 300px;
-    overflow: hidden;
-
     height: 100%;
     min-height: 0;
+    min-width: 300px;
+    overflow: hidden;
   }
 
   .associations-view {

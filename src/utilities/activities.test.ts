@@ -303,6 +303,7 @@ function getTestPlan(): Plan {
       constraint_specification: [],
       created_at: '2006-07-11T00:00:00',
       default_view_id: 0,
+      derivation_group_specification: [],
       id: 1,
       jar_id: 123,
       mission: 'Test',
