@@ -6328,6 +6328,7 @@ const effects = {
           {
             source: {
               derivation_group_name: derivationGroupName,
+              model_id: model.id,
             },
           },
           user,
