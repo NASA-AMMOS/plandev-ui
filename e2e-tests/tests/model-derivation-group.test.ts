@@ -4,15 +4,12 @@ import { Model } from '../fixtures/Model.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
 
-// Main setup with model/plan (uses 'test' user for API operations)
+// Main setup with model (uses 'test' user for API operations)
 let setup: FullSetupResult;
 let externalSources: ExternalSources;
-
-// Plan fixtures for each user context
-// let planForUserA: Plan;
-// let planForUserB: Plan;
 let model: Model;
 
+// different plans depending on the model association
 let originalPlan: Plan;
 let originalPlanId: number;
 let newPlan: Plan;
@@ -20,7 +17,7 @@ let newPlanId: number;
 
 test.beforeAll(async ({ browser }) => {
   setup = await setupTest(browser);
-  setup.plans.endTime = '2022-011T00:00:00'; // Extend to cover the whole derivation group example
+  setup.plans.endTime = '2022-011T00:00:00';
   externalSources = new ExternalSources(setup.page);
 
   model = new Model(setup.page, setup.models, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
@@ -136,7 +133,7 @@ test.describe.serial('Model Derivation Group Linking', () => {
 
     // but when we go back to the old plan...
     await setup.page.pause();
-    // await originalPlan.goto(); // <- seems that originalPlan's link to setup resets it to refer to newPlan!
+    // Note that we do not do originalPlan.goto(); it seems that originalPlan's link to setup resets it to refer to newPlan!
     await setup.page.goto(`${baseURL}/plans/${originalPlanId}`, { timeout: 3000 });
     await setup.page.pause();
     await setup.page.waitForURL(`${baseURL}/plans/${originalPlanId}`, { timeout: 3000 });

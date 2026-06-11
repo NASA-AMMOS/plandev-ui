@@ -88,12 +88,12 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSearchResult,
-  ActivitySearchResponse,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
   ActivityPresetInsertInput,
   ActivityPresetSetInput,
+  ActivitySearchResponse,
   ActivityType,
   ActivityTypeExpansionRules,
   PlanSnapshotActivity,
@@ -301,9 +301,9 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
-import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
+import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
@@ -6341,7 +6341,7 @@ const effects = {
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
-        throw Error('Model is not defined.');
+        throw new Error('Model is not defined.');
       }
     } catch (e) {
       catchError('Derivation Group Linking Failed', e as Error);
