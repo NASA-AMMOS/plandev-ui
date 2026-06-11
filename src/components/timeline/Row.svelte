@@ -258,8 +258,10 @@
         ? createExternalResourceSubscription(simulationDatasetId, name, plan.start_time, user)
         : createProfileSubscription(simulationDatasetId, name, simProfileStartYmd, user);
       const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
-      // Declared before .subscribe() so the closure in `unsubscribe` below
-      // doesn't lean on TDZ-via-const initialization order.
+      // subscription.store.subscribe() runs its callback immediately,
+      // before it returns. That callback creates an unsubscribe function
+      // that references this variable — so it must already exist.
+      // Declaring it (= null) before subscribing avoids referencing it before it's assigned.
       let storeUnsubscribe: (() => void) | null = null;
       storeUnsubscribe = subscription.store.subscribe(({ error, loading, resource }) => {
         resourceRequestMap = {
