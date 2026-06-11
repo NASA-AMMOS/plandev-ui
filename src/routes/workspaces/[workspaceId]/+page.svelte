@@ -508,6 +508,21 @@
     $workspaceContentMode = WorkspaceContentMode.File;
     $selectedActionDefinitionId = null;
 
+    // If the target isn't in the tree (typo'd URL, deleted, etc.), replace the
+    // current entry directly. Going through confirmAndNavigate would pushUrl
+    // first and then replace on top — leaving a stale "non-existent file" entry
+    // on top of whatever the browser already added (e.g., a typed URL), which
+    // would intercept the next back-press and make it feel like history is lost.
+    if (!workspaceTreeMap[nextPath]) {
+      activeDocument.close();
+      showFailureToast('The selected file does not exist in the workspace.');
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
+      // Consume the popstate flag explicitly since we skipped confirmAndNavigate.
+      isHandlingPopstate = false;
+      return;
+    }
+
     const didNavigate = await confirmAndNavigate(nextPath);
     if (!didNavigate) {
       // user decided not to navigate away due to unsaved changes, set selected UI back to active file
@@ -522,23 +537,10 @@
 
     // successfully navigated, start loading the file contents
     selectedSequenceOutput = undefined;
-    if (nextPath && workspaceTreeMap[nextPath]) {
-      const { filename } = separateFilenameFromPath(nextPath);
-      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
-      activeDocument.startLoad(nextPath, filename ?? null, fileType);
-      await getSelectedFileContent(nextPath);
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      activeDocument.close();
-      if (nextPath && !workspaceTreeMap[nextPath]) {
-        showFailureToast('The selected file does not exist in the workspace.');
-        // Clear selectedFilePath and clean up the stale URL so the reactive
-        // doesn't re-fire (which would push a new history entry and clobber the
-        // browser's forward stack) and so a reload doesn't re-toast.
-        selectedFilePath = null;
-        replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
-      }
-    }
+    const { filename } = separateFilenameFromPath(nextPath);
+    const fileType = workspaceTreeMap[nextPath]?.type ?? null;
+    activeDocument.startLoad(nextPath, filename ?? null, fileType);
+    await getSelectedFileContent(nextPath);
   }
 
   function resetRefreshInterval() {
