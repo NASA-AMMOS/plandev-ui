@@ -136,9 +136,22 @@
     >
       <UploadIcon />
     </button>
-    <Button variant="ghost" size="icon-sm" aria-label="Add Activity" on:click={onShowDirectiveBuilder}>
-      <CirclePlus size={16} />
-    </Button>
+    <div
+      use:permissionHandler={{
+        hasPermission: hasUploadPermission,
+        permissionError: uploadPermissionError
+      }}
+    >
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Add Activity"
+        disabled={!hasUploadPermission}
+        on:click={onShowDirectiveBuilder}
+      >
+        <CirclePlus size={16} />
+      </Button>
+      </div>
   </svelte:fragment>
 </TimelineItemList>
 
