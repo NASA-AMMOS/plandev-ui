@@ -17,6 +17,7 @@
   export let phoenixContext: PhoenixContext;
   export let commandInfoMapper: CommandInfoMapper;
   export let editorSequenceView: EditorView;
+  export let readOnly: boolean = false;
 
   enum CommandPanelTabs {
     COMMAND = 'command',
@@ -126,6 +127,7 @@
         {commandDictionary}
         {commandInfoMapper}
         {editorSequenceView}
+        {readOnly}
         {timeTagNode}
         on:selectCommandDefinition={onSelectCommandDefinition}
       />

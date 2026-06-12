@@ -43,6 +43,7 @@
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/language": "^6.10.1",
     "@codemirror/lint": "^6.5.0",
+    "@codemirror/merge": "^6.12.2",
     "@codemirror/view": "^6.38.2",
     "@fontsource/jetbrains-mono": "^5.0.19",
     "@lezer/common": "^1.2.3",

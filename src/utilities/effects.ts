@@ -300,7 +300,14 @@ import {
   showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
+import {
+  CompoundError,
+  reqActionServer,
+  reqExtension,
+  reqGateway,
+  reqHasura,
+  WorkspaceSaveConflictError,
+} from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
@@ -5848,22 +5855,21 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
+  async getWorkspaceFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string | null; etag: string | null }> {
     try {
-      const fileContents = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
-
-      if (fileContents != null) {
-        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
-        return fileContents;
-      } else {
-        throw Error(`Workspace file contents not found`);
-      }
+      const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
+      logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
+      return { content, etag };
     } catch (e) {
       catchError('Unable to retrieve workspace file', e as Error);
       showFailureToast('Workspace File Retrieval Failed');
     }
 
-    return null;
+    return { content: null, etag: null };
   },
 
   async getWorkspaceFileContentBlob(workspace: Workspace, filePath: string, user: User | null): Promise<Blob | null> {
@@ -5933,7 +5939,7 @@ const effects = {
         chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
           let sequenceDefinition = '';
           if (getFileContents) {
-            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)) ?? '';
+            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)).content ?? '';
           }
           return {
             definition: sequenceDefinition,
@@ -7190,15 +7196,33 @@ const effects = {
     }
   },
 
-  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+  /**
+   * Saves a workspace file. Pass `ifMatch` (the `baseToken`) to run the concurrency check,
+   * or `'*'` to force. Returns `{ etag }` (the new token) on success. Re-throws a
+   * {@link WorkspaceSaveConflictError} on `412` so the caller can show the conflict modal;
+   * other errors become a failure toast and return `null`.
+   */
+  async saveWorkspaceFile(
+    workspaceId: number,
+    filePath: string,
+    fileContent: string,
+    user: User | null = null,
+    ifMatch?: string | '*',
+  ): Promise<{ etag: string | null } | null> {
     try {
-      await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user);
+      const etag = await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user, ifMatch);
 
       showSuccessToast('Workspace File Saved Successfully');
       logMessage(`Saved workspace file "${filePath}".`);
+      return { etag };
     } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        // Let the caller resolve the conflict (modal); don't swallow it in a toast.
+        throw e;
+      }
       catchError('Workspace file was unable to be saved', e as Error);
       showFailureToast('Workspace File Save Failed');
+      return null;
     }
   },
 

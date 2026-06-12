@@ -38,6 +38,9 @@ const mockNavigator = {
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
 const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
+const reqWorkspaceWithMetaMock = vi
+  .spyOn(requests, 'reqWorkspaceWithMeta')
+  .mockResolvedValue({ data: '', etag: null, status: 200 });
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -267,7 +270,14 @@ describe('Workspace utility function tests', () => {
 
     test('getFileContent', async () => {
       await WorkspaceApi.getFileContent(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
+      expect(reqWorkspaceWithMetaMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'GET',
+        null,
+        null,
+        undefined,
+        false,
+      );
     });
 
     test('deleteFileMetadata', async () => {
@@ -577,13 +587,14 @@ describe('Workspace utility function tests', () => {
       body.append('file', file, file.name);
 
       await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+      expect(reqWorkspaceWithMetaMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq?type=file&overwrite=true',
         'PUT',
         body,
         null,
         undefined,
         false,
+        {},
       );
     });
 
