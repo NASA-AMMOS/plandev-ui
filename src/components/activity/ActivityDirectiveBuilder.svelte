@@ -365,7 +365,6 @@
   }
 
   .body {
-    /* background: var(--st-gray-15); */
     background: #f7f7f8; /* TODO: color not in design system */
     display: flex;
     flex: 1;
