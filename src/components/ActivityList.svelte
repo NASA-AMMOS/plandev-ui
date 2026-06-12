@@ -70,7 +70,7 @@
 <ActivityDirectiveBuilder
   bind:this={directiveBuilder}
   directiveName={activeDirectiveName}
-  directiveWidth={200}
+  width={200}
   on:visibilityChange={visibility => {
     if (!visibility.detail.isShown) {
       activeDirectiveName = '';

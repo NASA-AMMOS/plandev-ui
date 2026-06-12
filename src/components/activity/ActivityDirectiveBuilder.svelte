@@ -25,8 +25,8 @@
   import Parameters from '../parameters/Parameters.svelte';
   import Draggable from '../timeline/form/TimelineEditor/Draggable.svelte';
 
-  export let directiveWidth: number = 1000;
-  export let directiveHeight: number = 500;
+  export let width: number = 1000;
+  export let height: number = 700;
   export let directiveName: string = '';
   export let currentActivityType: string = '';
   export let user: User | null;
@@ -187,24 +187,24 @@
     let defaultY = 0;
     const padding = 16;
 
-    if (x - directiveWidth > padding / 2) {
-      defaultX = x - directiveWidth - padding / 2;
-    } else if (x + width + directiveWidth < document.body.clientWidth - padding / 2) {
+    if (x - width > padding / 2) {
+      defaultX = x - width - padding / 2;
+    } else if (x + width + width < document.body.clientWidth - padding / 2) {
       defaultX = x + width + padding / 2;
     } else {
-      defaultX = Math.max(0, document.body.clientWidth / 2 - directiveWidth / 2);
+      defaultX = Math.max(0, document.body.clientWidth / 2 - width / 2);
     }
 
-    if (y - directiveHeight / 2 > padding && y + directiveHeight < document.body.clientHeight - padding) {
-      defaultY = y - directiveHeight / 2;
-    } else if (y + directiveHeight < document.body.clientHeight - padding) {
+    if (y - height / 2 > padding && y + height < document.body.clientHeight - padding) {
+      defaultY = y - height / 2;
+    } else if (y + height < document.body.clientHeight - padding) {
       // Show below
       defaultY = y;
-    } else if (y + height - directiveHeight > padding) {
+    } else if (y + height - height > padding) {
       // Show above
-      defaultY = y + height - directiveHeight;
+      defaultY = y + height - height;
     } else {
-      defaultY = Math.max(0, document.body.clientHeight / 2 - directiveHeight / 2);
+      defaultY = Math.max(0, document.body.clientHeight / 2 - height / 2);
     }
 
     return {
@@ -219,8 +219,8 @@
   {#if shown}
     <Draggable
       className="st-menu activity-directive-builder"
-      initialWidth={directiveWidth}
-      initialHeight={directiveHeight}
+      initialWidth={width}
+      initialHeight={height}
       dragOptions={{ defaultPosition: getDefaultPosition() }}
     >
       <div slot="handle">
