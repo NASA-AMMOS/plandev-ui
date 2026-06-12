@@ -244,7 +244,7 @@
                     value={directiveName}
                     class="st-input w-full"
                     aria-label="directive-name"
-                    placeholder="Enter a name for this directives..."
+                    placeholder="Enter a name for this directive..."
                     on:input={onDirectiveNameChange}
                   />
                 </Input>
