@@ -402,7 +402,6 @@
       }
       const activityDirectiveTags: ActivityDirectiveTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
         directive_id: activityDirective.id,
-
         plan_id: activityDirective.plan_id,
         tag_id,
       }));
