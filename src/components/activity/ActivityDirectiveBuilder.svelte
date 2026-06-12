@@ -337,7 +337,6 @@
                 {/if}
               </div>
             </div>
-            <!-- </CssGrid> -->
           </div>
           <slot name="footer" />
           <button
