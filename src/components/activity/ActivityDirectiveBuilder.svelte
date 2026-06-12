@@ -31,9 +31,9 @@
   export let currentActivityType: string = '';
   export let user: User | null;
 
-  let planMinDate: Date | undefined;
-  let planMaxDate: Date | undefined;
-
+  let currentActivityTypeFormParams: FormParameter[] = [];
+  let currentlySelectedActivityType: ActivityType | undefined;
+  let dirtyDirectiveErrorsMap: Record<string, string[]> = {};
   let dirtyDirective: ActivityDirectiveInsertInput = {
     anchor_id: null,
     anchored_to_start: true,
@@ -45,19 +45,16 @@
     type: '',
   };
   let manualInputOpen: boolean = false;
-  let manualMenu: Menu;
-  let rootRef: HTMLDivElement;
   let manualInputRef: HTMLInputElement;
   let manualInputWidth: number = 200;
+  let manualMenu: Menu;
+  let planMinDate: Date | undefined;
+  let planMaxDate: Date | undefined;
+  let rootRef: HTMLDivElement;
   let shown: boolean = false;
-
-  let dirtyDirectiveErrorsMap: Record<string, string[]> = {};
-
   let startTimeField: FieldStore<string>;
   let startTime: string = $plan?.start_time_doy ?? '';
 
-  let currentActivityTypeFormParams: FormParameter[] = [];
-  let currentlySelectedActivityType: ActivityType | undefined;
 
   const dispatch = createEventDispatcher<{
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
