@@ -22,6 +22,7 @@
   import type { LintDiagnostic } from '../../types/errors';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
+  import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -160,6 +161,9 @@
       effects: compartmentReadonly.reconfigure([
         EditorState.readOnly.of(!isEditable),
         EditorView.editable.of(isEditable),
+        // Block programmatic edits (lint fixes, command panel, sanitizer) that readOnly
+        // misses, but allow the editor's own 'file.open' content sync.
+        ...(isEditable ? [] : [readOnlyChangeGuard(['file.open'])]),
       ]),
     });
   }
@@ -385,7 +389,11 @@
         EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+        compartmentReadonly.of(
+          readOnly || previewOnly || isLoading
+            ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+            : [EditorState.readOnly.of(false)],
+        ),
         EditorView.updateListener.of(viewUpdate => {
           for (const tr of viewUpdate.transactions) {
             if (tr.annotation(Transaction.userEvent) === 'sanitize.smartQuotes') {
@@ -496,7 +504,12 @@
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
     {#if phoenixContext && phoenixContext.commandDictionary !== null}
-      <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
+      <CommandPanel
+        {phoenixContext}
+        {commandInfoMapper}
+        {editorSequenceView}
+        readOnly={readOnly || previewOnly || isLoading}
+      />
     {:else}
       <Panel overflowYBody="hidden" padBody>
         <svelte:fragment slot="header">

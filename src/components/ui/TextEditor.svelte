@@ -14,6 +14,7 @@
   import type { LintDiagnostic } from '../../types/errors';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
+  import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
@@ -62,6 +63,8 @@
       editorView.dispatch({
         annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
         changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
+        // Tagged so the read-only change guard lets this content sync through.
+        userEvent: 'file.open',
       });
     }
   }
@@ -71,6 +74,8 @@
       effects: compartmentReadonly.reconfigure([
         EditorState.readOnly.of(!isEditable),
         EditorView.editable.of(isEditable),
+        // Block programmatic edits readOnly misses (e.g. lint fixes), but allow 'file.open' sync.
+        ...(isEditable ? [] : [readOnlyChangeGuard(['file.open'])]),
       ]),
     });
   }
@@ -109,7 +114,11 @@
               textContentUpdateListener(viewUpdate);
             }
           }),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+          compartmentReadonly.of(
+            readOnly || previewOnly || isLoading
+              ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+              : [EditorState.readOnly.of(false)],
+          ),
         ],
         parent: editorDiv,
       });
@@ -130,7 +139,11 @@
               textContentUpdateListener(viewUpdate);
             }
           }),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+          compartmentReadonly.of(
+            readOnly || previewOnly || isLoading
+              ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+              : [EditorState.readOnly.of(false)],
+          ),
         ],
         parent: editorDiv,
       });

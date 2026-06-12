@@ -546,17 +546,31 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Toggle file read-only and verify editor is locked', async () => {
-    // Create a sequence file to test with
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    // Use the adaptation's input-sequence extension so the file opens as a sequence with the
+    // Selected Command panel (a plain `.seq` would open as generic text — no command panel).
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
     // Wait for the editor to load and the file metadata banner to appear
     await expect(workspace.readOnlyCheckbox).toBeVisible({ timeout: 10000 });
 
+    // Add a command so the Selected Command panel renders editable argument inputs.
+    await workspace.fillSequenceContent('C FSW_CMD_0 "ON" true 0.5');
+
+    // The Selected Command panel (right side) shows the command's argument editors;
+    // float_arg_0 renders as a numeric input (spinbutton) labeled by its arg name.
+    const commandArgInput = setup.page.getByRole('spinbutton', { name: 'float_arg_0' });
+    await expect(commandArgInput).toBeVisible({ timeout: 10000 });
+
     // Verify the file is initially editable — title should NOT contain "(Read only)"
     await expect(setup.page.getByText('(Read only)')).not.toBeVisible();
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive.
+    await expect(commandArgInput).toBeEnabled();
+
+    // Persist so the document is clean before toggling read-only / deleting later.
+    await workspace.saveSequence();
 
     // Toggle read-only ON
     await workspace.readOnlyCheckbox.click();
@@ -567,6 +581,10 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button is hidden (read-only files can't be saved)
     await expect(workspace.saveSequenceButton).not.toBeVisible();
+
+    // Verify the Selected Command panel argument inputs are disabled while read-only —
+    // `EditorState.readOnly` alone wouldn't stop the form-builder from editing the document.
+    await expect(commandArgInput).toBeDisabled();
 
     // Verify the editor rejects input — type something and confirm content didn't change
     await workspace.sequenceEditor.click();
@@ -582,6 +600,8 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button reappears
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive again.
+    await expect(commandArgInput).toBeEnabled();
 
     // Cleanup
     await workspace.searchForFileAndWait(sequenceName);

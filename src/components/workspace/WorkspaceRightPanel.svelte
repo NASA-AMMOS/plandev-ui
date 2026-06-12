@@ -144,6 +144,7 @@
             {commandDictionary}
             {commandInfoMapper}
             {editorSequenceView}
+            readOnly={!hasEditPermission || !!fileMetadata?.readOnly}
             {timeTagNode}
             on:selectCommandDefinition={onSelectCommandDefinition}
           />
