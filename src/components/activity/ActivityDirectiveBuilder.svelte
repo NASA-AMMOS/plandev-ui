@@ -4,6 +4,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { field } from '../../stores/form';
   import { plan, planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -152,6 +153,8 @@
       currentlySelectedActivityType.parameters,
       {},
       currentlySelectedActivityType.required_parameters,
+      undefined,
+      $activityArgumentDefaultsMap[currentlySelectedActivityType.name || ''] ?? {},
     );
   }
 
