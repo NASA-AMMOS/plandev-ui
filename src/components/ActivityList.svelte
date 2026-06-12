@@ -143,8 +143,7 @@
       }}
     >
       <Button
-        variant="ghost"
-        size="icon-sm"
+        variant="outline"
         aria-label="Add Activity"
         disabled={!hasUploadPermission}
         on:click={onShowDirectiveBuilder}
