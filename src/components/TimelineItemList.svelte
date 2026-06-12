@@ -338,7 +338,7 @@
                 }}
                 let:builders
               >
-                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add{capitalize(typeName)}-{item.name}">
+                <Button {builders} variant="ghost" size="icon-sm" aria-label="Filter{capitalize(typeName)}-{item.name}">
                   <Filter size={16} />
                 </Button>
               </LayerPicker>
