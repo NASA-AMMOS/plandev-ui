@@ -8967,7 +8967,7 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
-        if (activityId) {
+        if (activityId !== null) {
           logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
         } else {
           logMessage(`Validated activity arguments for pending directive of "${activityTypeName}"`);
