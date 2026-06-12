@@ -1140,9 +1140,11 @@ const effects = {
           selectedSpanIdStore.set(null);
 
           showSuccessToast('Activity Directive Created Successfully');
-          logMessage(`Created activity directive "${name}" (ID=${id}).`);
+          logMessage(`Created activity directive "${activityDirective.name || activityDirective.type}" (ID=${id}).`);
         } else {
-          throw Error(`Unable to create activity directive "${activityDirective.name}" on plan with ID ${plan.id}`);
+          throw Error(
+            `Unable to create activity directive "${activityDirective.name || activityDirective.type}" on plan with ID ${plan.id}`,
+          );
         }
       } else {
         throw Error('Plan is not defined.');
