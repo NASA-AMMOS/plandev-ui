@@ -254,8 +254,13 @@
       }
 
       const isExternal = !$resourceTypes.find(type => type.name === name);
+      // External datasets are matched by the simulation_dataset *id* (what
+      // plan_dataset.simulation_dataset_id references), whereas internal
+      // profiles are fetched by dataset_id. These are distinct id spaces;
+      // passing dataset_id to the external factory makes its sim-tied
+      // plan_dataset row preference silently never match.
       const subscription = isExternal
-        ? createExternalResourceSubscription(simulationDatasetId, name, plan.start_time, user)
+        ? createExternalResourceSubscription(simulationDataset.id, name, plan.start_time, user)
         : createProfileSubscription(simulationDatasetId, name, simProfileStartYmd, user);
       const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
       // subscription.store.subscribe() runs its callback immediately,

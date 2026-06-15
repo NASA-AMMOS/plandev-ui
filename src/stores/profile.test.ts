@@ -189,8 +189,9 @@ describe('createProfileSubscription', () => {
   });
 
   // Regression: terminal sim + null profile must clear loading (no ticks
-  // will fire to retry).
-  test('terminal sim with null profile resolves loading instead of getting stuck', async () => {
+  // will fire to retry) and surface a not-found error rather than silently
+  // rendering a blank row.
+  test('terminal sim with null profile surfaces a not-found error instead of getting stuck', async () => {
     getProfileSinceMock.mockResolvedValue(null);
     setSimComplete(1);
     const sub = makeSub(1, 'r', '2024-01-01T00:00:00', null);
@@ -201,7 +202,7 @@ describe('createProfileSubscription', () => {
     await flushPromises();
 
     expect(last.loading).toBe(false);
-    expect(last.error).toBe('');
+    expect(last.error).toBe('Resource not found in simulation dataset');
     expect(last.resource).toBeNull();
   });
 

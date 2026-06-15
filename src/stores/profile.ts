@@ -4,10 +4,10 @@ import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
 import { pickEffectiveDuration } from '../utilities/profile';
-import { sampleProfiles } from '../utilities/resources';
+import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
 import { pluralize } from '../utilities/text';
-import { logMessage } from './errors';
+import { catchError, logMessage } from './errors';
 import { simulationDataset } from './simulation';
 import {
   acquireTimelineResource,
@@ -24,11 +24,6 @@ export type ProfileSubscription = {
 };
 
 type ProfileHeader = Pick<Profile, 'dataset_id' | 'duration' | 'id' | 'name' | 'type'>;
-
-// First-fetch sentinel: smaller than any real start_offset, so the windowed
-// query returns every existing segment. Postgres interval syntax (HH:MM:SS) —
-// Hasura's interval scalar rejects ISO 8601.
-const INITIAL_SINCE = '-00:00:01';
 
 /**
  * Per-(datasetId, name) live view of a simulation resource. Driven by a
@@ -131,10 +126,12 @@ export function createProfileSubscription(
         resolved = true;
         lastError = '';
       } else if (!streamingActive) {
-        // No profile row + sim is terminal: settle so loading state clears.
-        // No more ticks will fire to retry.
+        // No profile row + sim is terminal: no more ticks will fire to retry,
+        // so surface a not-found error (parallel to the external path) instead
+        // of silently settling into a blank row.
         resolved = true;
-        lastError = '';
+        lastError = 'Resource not found in simulation dataset';
+        catchError(`Unable to load resource "${name}"`, new Error(lastError));
       }
       if (!streamingActive) {
         logFinalAggregate();

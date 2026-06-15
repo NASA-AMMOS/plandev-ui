@@ -23,7 +23,11 @@ export type TimelineResourceError = {
   name: string;
 };
 
-type StoredState = TimelineResourceState & { kind: TimelineResourceKind };
+// datasetId/name are carried on the entry (not parsed back out of the key)
+// so the key format stays an internal detail and the id space we keyed on
+// (dataset_id for sim, simulation_dataset id for external) is preserved
+// verbatim for error reporting.
+type StoredState = TimelineResourceState & { datasetId: number; kind: TimelineResourceKind; name: string };
 
 const resourceStates = writable<Map<string, StoredState>>(new Map());
 
@@ -47,14 +51,13 @@ export const timelineResourcesLoading: Readable<boolean> = derived(resourceState
 
 export const timelineResourcesErroring: Readable<TimelineResourceError[]> = derived(resourceStates, $resourceStates => {
   const errors: TimelineResourceError[] = [];
-  for (const [key, s] of $resourceStates.entries()) {
+  for (const s of $resourceStates.values()) {
     if (s.error) {
-      const colon = key.indexOf(':');
       errors.push({
-        datasetId: Number(key.slice(0, colon)),
+        datasetId: s.datasetId,
         error: s.error,
         kind: s.kind,
-        name: key.slice(colon + 1),
+        name: s.name,
       });
     }
   }
@@ -77,7 +80,7 @@ export function setTimelineResourceState(
   state: TimelineResourceState,
 ): void {
   const key = registryKey(datasetId, name);
-  resourceStates.update(m => new Map(m).set(key, { ...state, kind }));
+  resourceStates.update(m => new Map(m).set(key, { ...state, datasetId, kind, name }));
 }
 
 export function releaseTimelineResource(datasetId: number, name: string): void {

@@ -1,6 +1,12 @@
 import type { Profile, Resource, ResourceValue } from '../types/simulation';
 import { getIntervalInMs } from './time';
 
+// First-fetch sentinel for windowed profile pulls: smaller than any real
+// start_offset, so the windowed query returns every existing segment.
+// Postgres interval syntax (HH:MM:SS) — Hasura's interval scalar rejects
+// ISO 8601.
+export const INITIAL_SINCE = '-00:00:01';
+
 /**
  * Samples a list of profiles at their change points. Converts the sampled profiles to Resources.
  */

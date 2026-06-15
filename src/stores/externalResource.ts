@@ -2,7 +2,7 @@ import { derived, writable, type Readable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
-import { sampleProfiles } from '../utilities/resources';
+import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
 import { catchError } from './errors';
 import { planDatasets } from './plan';
 import {
@@ -16,11 +16,6 @@ export type ExternalResourceSubscription = {
   store: Readable<TimelineResourceState>;
   unsubscribe: () => void;
 };
-
-// First-fetch sentinel: smaller than any real start_offset, so the windowed
-// query returns every existing segment. Postgres interval syntax (HH:MM:SS) —
-// Hasura's interval scalar rejects ISO 8601.
-const INITIAL_SINCE = '-00:00:01';
 
 type ProfileMetadata = {
   datasetId: number;
