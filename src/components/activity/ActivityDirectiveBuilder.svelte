@@ -2,6 +2,8 @@
 
 <script lang="ts">
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
+  import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
+  import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
@@ -15,7 +17,7 @@
   import { validateArguments } from '../../utilities/activities';
   import { getTarget, lowercase } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
-  import { getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
+  import { convertDoyToYmd, formatDate, getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
   import { required } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
@@ -24,6 +26,7 @@
   import MenuItem from '../menus/MenuItem.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Draggable from '../timeline/form/TimelineEditor/Draggable.svelte';
+  import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
 
   export let width: number = 1000;
   export let height: number = 700;
@@ -136,6 +139,21 @@
       );
     }
     return [];
+  }
+
+  async function onPlanStartTimeClick() {
+    if ($plan) {
+      startTimeField.validateAndSet(formatDate(new Date($plan.start_time), $plugins.time.primary.format));
+    }
+  }
+
+  async function onPlanEndTimeClick() {
+    if ($plan) {
+      const endTimeYmd = convertDoyToYmd($plan.end_time_doy);
+      if (endTimeYmd) {
+        startTimeField.validateAndSet(formatDate(new Date(endTimeYmd), $plugins.time.primary.format));
+      }
+    }
   }
 
   $: if (manualInputOpen) {
@@ -326,7 +344,14 @@
                 maxDate={planMaxDate}
                 useFallback={!$plugins.time.enableDatePicker}
                 field={startTimeField}
-              />
+              >
+                <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
+                  <PlanLeftArrow />
+                </DatePickerActionButton>
+                <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
+                  <PlanRightArrow />
+                </DatePickerActionButton>
+              </DatePickerField>
             </div>
           </div>
           <div class="directive-section" aria-label="other-filters">
