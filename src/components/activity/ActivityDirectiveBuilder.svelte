@@ -11,7 +11,7 @@
   import type { ActivityDirectiveInsertInput, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
-  import type { FormParameter } from '../../types/parameter';
+  import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import { validateArguments } from '../../utilities/activities';
   import { getTarget, lowercase } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
@@ -122,6 +122,22 @@
     }
   }
 
+  function refreshFormParameters(
+    activityType: ActivityType | undefined,
+    activityArguments: ArgumentsMap,
+  ): FormParameter[] {
+    if (activityType) {
+      currentActivityTypeFormParams = getFormParameters(
+        activityType.parameters,
+        activityArguments,
+        activityType.required_parameters,
+        undefined,
+        $activityArgumentDefaultsMap[activityType.name || ''] ?? {},
+      );
+    }
+    return [];
+  }
+
   $: if (manualInputOpen) {
     manualMenu?.show();
   } else {
@@ -149,12 +165,9 @@
     planMaxDate = $plugins.time.primary.parse($plan.end_time_doy) ?? undefined;
   }
   $: if (currentlySelectedActivityType && currentlySelectedActivityType.parameters) {
-    currentActivityTypeFormParams = getFormParameters(
-      currentlySelectedActivityType.parameters,
-      dirtyDirective.arguments,
-      currentlySelectedActivityType.required_parameters,
-      undefined,
-      $activityArgumentDefaultsMap[currentlySelectedActivityType.name || ''] ?? {},
+    currentActivityTypeFormParams = refreshFormParameters(
+      currentlySelectedActivityType,
+      dirtyDirective.arguments
     );
   }
 
@@ -329,12 +342,9 @@
                     const { name, value } = event.detail;
                     dirtyDirective.arguments = { ...dirtyDirective.arguments, [name]: value };
                     if (currentlySelectedActivityType) {
-                      currentActivityTypeFormParams = getFormParameters(
-                        currentlySelectedActivityType.parameters,
-                        dirtyDirective.arguments,
-                        currentlySelectedActivityType.required_parameters,
-                        undefined,
-                        $activityArgumentDefaultsMap[currentlySelectedActivityType.name || ''] ?? {},
+                      currentActivityTypeFormParams = refreshFormParameters(
+                        currentlySelectedActivityType,
+                        dirtyDirective.arguments
                       );
                     }
                     getArgumentValidation();
