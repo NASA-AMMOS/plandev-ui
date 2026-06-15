@@ -16,7 +16,6 @@
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
-  /** Opt into the hand-merge UX (editable pane). Off by default → read-only take mine/theirs. */
   export let allowMerge: boolean = false;
   export let fileName: string;
   export let languageExtension: Extension | null = null;
@@ -38,11 +37,12 @@
   }>();
 
   let diffViewer: WorkspaceDiffViewer | undefined;
+  let editedByText: string = '';
+  let whenText: string = '';
   let isLoading: boolean = true;
   let loadError: boolean = false;
   let theirsContent: string | null = null;
   let theirsToken: string | null = null;
-  // Seed the variant from the 412 reason; the re-GET below is authoritative.
   let variant: WorkspaceSaveConflictReason = reason === 'deleted' ? 'deleted' : 'conflict';
 
   $: editedByText = lastEditedBy ?? 'another user';
@@ -51,7 +51,7 @@
   async function loadTheirs() {
     // Re-fetch the server's version for the diff. A 404 means it was deleted. Any other
     // failure is transient — the 412 proved the file exists, so don't assume deletion
-    // (Recreate would overwrite their change); show a retry and keep the doc dirty.
+    // (Recreate would overwrite their change) and just show a retry and keep the doc dirty.
     isLoading = true;
     loadError = false;
     try {
@@ -102,24 +102,24 @@
       {#if loadError}
         <span
           ><b>{fileName}</b> was changed by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}, but the latest version couldn't be loaded to compare.</span
-        >
+          {whenText ? ` ${whenText}` : ''}, but the latest version couldn't be loaded to compare.
+        </span>
       {:else if variant === 'deleted'}
-        <span
-          ><b>{fileName}</b> was deleted or moved by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}. Your unsaved changes are shown below.</span
-        >
+        <span>
+          <b>{fileName}</b> was deleted or moved by user @{editedByText}
+          {whenText ? ` ${whenText}` : ''}. Your unsaved changes are shown below.
+        </span>
       {:else if allowMerge}
-        <span
-          ><b>{fileName}</b> was changed by user @{editedByText}
+        <span>
+          <b>{fileName}</b> was changed by user @{editedByText}
           {whenText ? ` ${whenText}` : ''}. Edit your version on the right — use the arrows to pull in theirs — then
-          Save, or take theirs to discard your changes.</span
-        >
+          Save, or take theirs to discard your changes.
+        </span>
       {:else}
         <span
           ><b>{fileName}</b> was changed by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}. Review the differences, then choose how to resolve.</span
-        >
+          {whenText ? ` ${whenText}` : ''}. Review the differences, then choose how to resolve.
+        </span>
       {/if}
     </div>
 
