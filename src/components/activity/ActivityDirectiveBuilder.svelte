@@ -151,7 +151,7 @@
   $: if (currentlySelectedActivityType && currentlySelectedActivityType.parameters) {
     currentActivityTypeFormParams = getFormParameters(
       currentlySelectedActivityType.parameters,
-      {},
+      dirtyDirective.arguments,
       currentlySelectedActivityType.required_parameters,
       undefined,
       $activityArgumentDefaultsMap[currentlySelectedActivityType.name || ''] ?? {},
@@ -327,7 +327,16 @@
                   formParameters={currentActivityTypeFormParams}
                   on:change={event => {
                     const { name, value } = event.detail;
-                    dirtyDirective.arguments[name] = value;
+                    dirtyDirective.arguments = { ...dirtyDirective.arguments, [name]: value };
+                    if (currentlySelectedActivityType) {
+                      currentActivityTypeFormParams = getFormParameters(
+                        currentlySelectedActivityType.parameters,
+                        dirtyDirective.arguments,
+                        currentlySelectedActivityType.required_parameters,
+                        undefined,
+                        $activityArgumentDefaultsMap[currentlySelectedActivityType.name || ''] ?? {},
+                      );
+                    }
                     getArgumentValidation();
                   }}
                 />
