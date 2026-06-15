@@ -1682,17 +1682,12 @@ export async function showExpansionPanelModal(user: User | null): Promise<ModalE
  * The action a user chose in the workspace save-conflict modal. "Cancel" resolves
  * the modal with `confirm: false` and no value, so it is not represented here.
  */
-export type WorkspaceSaveConflictResolution =
+type WorkspaceSaveConflictResolution =
   | { action: 'take-mine'; content: string; token: string | null }
   | { action: 'take-theirs'; content: string; token: string | null }
   | { action: 'recreate' }
   | { action: 'discard' };
 
-/**
- * Shows the WorkspaceSaveConflictModal, which presents a read-only diff of the
- * user's edits ("Mine") against the current server content ("Theirs") after a save
- * was rejected by the optimistic-concurrency check, and lets the user resolve it.
- */
 export async function showWorkspaceSaveConflictModal(props: {
   allowMerge?: boolean;
   fileName: string;
@@ -1721,7 +1716,6 @@ export async function showWorkspaceSaveConflictModal(props: {
           conflictModal.$destroy();
         };
 
-        // Cancel / Escape / outside click — no resolution, leave the document dirty.
         conflictModal.$on('close', () => finish());
         conflictModal.$on('takeMine', (e: CustomEvent<{ content: string; token: string | null }>) =>
           finish({ action: 'take-mine', content: e.detail.content, token: e.detail.token }),

@@ -10,9 +10,9 @@
     HwCommand,
   } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
-  import { ArrowUpRight } from 'lucide-svelte';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { ArrowUpRight } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { addDefaultArgs, getMissingArgDefs } from '../../../utilities/sequence-editor/sequence-utils';
   import { tooltip } from '../../../utilities/tooltip';
@@ -118,8 +118,6 @@
     </fieldset>
   {/if}
   {#if !!commandNode}
-    <!-- fieldset[disabled] greys/locks every nested control when read-only, leaving labels
-         and values readable. The editor's change guard is the functional backstop. -->
     <fieldset class="m-0 min-w-0 border-0 p-0" disabled={readOnly}>
       {#if commandInfoMapper.nodeTypeHasArguments(commandNode)}
         {#if !!commandDef}

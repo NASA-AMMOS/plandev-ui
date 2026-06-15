@@ -26,12 +26,13 @@
   export let type: WorkspaceContentType | null = null;
 
   let container: HTMLDivElement;
+  let isSinglePane: boolean = true;
   let mergeView: MergeView | null = null;
   let singleView: EditorView | null = null;
 
   $: isSinglePane = theirs === null;
 
-  /** Current content of the editable "Mine" pane (for the merge flow). */
+  /** Get the current contents of the editable "Mine" pane (for the merge flow). */
   export function getMergedContent(): string {
     return mergeView?.b.state.doc.toString() ?? mine;
   }
@@ -46,9 +47,9 @@
     return [];
   }
 
-  // A truly read-only pane. The guard blocks programmatic edits that `readOnly` misses
-  // (lint quick-fixes, sanitizers), keeping the diff faithful to the bytes; the theme hides
-  // the now-dead lint quick-fix buttons.
+  // Blocks programmatic edits that `readOnly` codemirror flag misses
+  // (lint quick-fixes, sanitizers), keeping the diff faithful to the bytes.
+  // The theme hides the irrelevant lint quick-fix buttons.
   function readOnlyExtensions(): Extension[] {
     return [
       lineNumbers(),
@@ -89,7 +90,6 @@
       return;
     }
 
-    // Divider between the two panes (matches the header divider).
     const dividerTheme = EditorView.theme({ '&': { borderLeft: '1px solid hsl(var(--border))' } });
 
     // `a` = Theirs (read-only), `b` = Mine (editable in merge mode). revertControls are the
