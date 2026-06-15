@@ -1,5 +1,6 @@
 import type { UserId } from './app';
 import type { ConstraintModelSpecification } from './constraint';
+import type { ModelDerivationGroup } from './external-source';
 import type { ParametersMap } from './parameter';
 import type { SchedulingConditionModelSpecification, SchedulingGoalModelSpecification } from './scheduling';
 import type { View, ViewSlim } from './view';
@@ -38,6 +39,7 @@ export type ModelSchema = {
   constraint_specification: ConstraintModelSpecification[];
   created_at: string;
   default_view_id: number | null;
+  derivation_group_specification: ModelDerivationGroup[];
   description?: string;
   id: number;
   jar_id: number;

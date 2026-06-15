@@ -44,6 +44,7 @@ import {
   createExternalSourceError as createExternalSourceErrorStore,
   createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
+  derivationGroupModelLinkError as derivationGroupModelLinkErrorStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
 } from '../stores/external-source';
 import {
@@ -87,12 +88,12 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSearchResult,
-  ActivitySearchResponse,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
   ActivityPresetInsertInput,
   ActivityPresetSetInput,
+  ActivitySearchResponse,
   ActivityType,
   ActivityTypeExpansionRules,
   PlanSnapshotActivity,
@@ -137,6 +138,7 @@ import type {
   DerivationGroupInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
+  ModelDerivationGroup,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -299,9 +301,9 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
-import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
+import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
@@ -2998,6 +3000,52 @@ const effects = {
     } catch (e) {
       catchError('Derivation Group Deletion Failed', e as Error);
       showFailureToast('Derivation Group Deletion Failed');
+    }
+  },
+
+  async deleteDerivationGroupForModel(
+    derivation_group_name: string,
+    model: Model | null,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if ((model && !queryPermissions.DELETE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
+        throwPermissionError('delete a derivation group from a model');
+      }
+      if (model) {
+        derivationGroupModelLinkErrorStore.set(null);
+        if (plan !== null) {
+          const data = await reqHasura<{
+            returning: {
+              derivation_group_name: string;
+              model_id: number;
+            }[];
+          }>(
+            gql.DELETE_MODEL_DERIVATION_GROUP,
+            {
+              where: {
+                _and: {
+                  derivation_group_name: { _eq: derivation_group_name },
+                  model_id: { _eq: model.id },
+                },
+              },
+            },
+            user,
+          );
+          const sourceDissociation = data.modelDerivationGroupLink?.returning[0];
+          // If the return was null, do nothing - only act on success or non-null
+          if (sourceDissociation) {
+            logMessage(`Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
+            showSuccessToast('Derivation Group Disassociated Successfully');
+          }
+        } else {
+          throw Error('Plan is not defined.');
+        }
+      }
+    } catch (e) {
+      catchError('Derivation Group De-linking Failed', e as Error);
+      showFailureToast('Derivation Group De-linking Failed');
+      derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
   },
 
@@ -6261,6 +6309,44 @@ const effects = {
     } catch (e) {
       catchError('Unable to update simulation', e as Error);
       return false;
+    }
+  },
+
+  async insertDerivationGroupForModel(
+    derivationGroupName: string,
+    model: Model | null,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if ((model && !queryPermissions.CREATE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
+        throwPermissionError('add a derivation group to the model');
+      }
+
+      derivationGroupModelLinkErrorStore.set(null);
+      if (model !== null) {
+        const data = await reqHasura<ModelDerivationGroup>(
+          gql.CREATE_MODEL_DERIVATION_GROUP,
+          {
+            source: {
+              derivation_group_name: derivationGroupName,
+              model_id: model.id,
+            },
+          },
+          user,
+        );
+        const { modelExternalSourceLink: sourceAssociation } = data;
+        // If the return was null, do nothing - only act on success or non-null
+        if (sourceAssociation !== null) {
+          logMessage(`Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          showSuccessToast('Derivation Group Linked Successfully');
+        }
+      } else {
+        throw new Error('Model is not defined.');
+      }
+    } catch (e) {
+      catchError('Derivation Group Linking Failed', e as Error);
+      showFailureToast('Derivation Group Linking Failed');
+      derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
   },
 
