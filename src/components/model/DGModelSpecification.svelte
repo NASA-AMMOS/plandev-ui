@@ -113,35 +113,6 @@
       },
       width: 50,
     },
-    // {
-    //   cellClass: 'action-cell-container',
-    //   cellRenderer: (params: DerivationGroupCellRendererParams) => {
-    //     const actionsDiv = document.createElement('div');
-    //     actionsDiv.className = 'actions-cell';
-    //     new DataGridActions({
-    //       props: {
-    //         rowData: params.data,
-    //         viewCallback: params.viewDerivationGroup,
-    //         viewTooltip: {
-    //           content: 'View Derivation Group',
-    //           placement: 'bottom',
-    //         },
-    //       },
-    //       target: actionsDiv,
-    //     });
-
-    //     return actionsDiv;
-    //   },
-    //   cellRendererParams: {
-    //     viewDerivationGroup,
-    //   } as CellRendererParams,
-    //   headerName: '',
-    //   resizable: false,
-    //   sortable: false,
-    //   suppressAutoSize: true,
-    //   suppressSizeToFit: true,
-    //   width: 40,
-    // },
   ];
 
   $: if (selectedDerivationGroups) {

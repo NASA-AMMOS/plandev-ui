@@ -661,15 +661,9 @@
       for (const derivationGroup of derivationGroupsToDissociate) {
         await effects.deleteDerivationGroupForModel(derivationGroup, $model, $user);
       }
-      // derivationGroupsToDissociate.forEach(derivationGroup =>
-      //   effects.deleteDerivationGroupForModel(derivationGroup, $model, $user),
-      // );
       const derivationGroupsToAssociate = selectedDerivationGroups.filter(
         derivationGroup => !initialModelDerivationGroupAssociations.includes(derivationGroup),
       );
-      // derivationGroupsToAssociate.forEach(derivationGroup =>
-      //   effects.insertDerivationGroupForModel(derivationGroup, $model, $user),
-      // );
       for (const derivationGroup of derivationGroupsToAssociate) {
         await effects.insertDerivationGroupForModel(derivationGroup, $model, $user);
       }
