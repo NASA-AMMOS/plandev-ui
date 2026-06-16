@@ -27,6 +27,21 @@ export type Profile = {
   };
 };
 
+// External dataset types for api upload
+export interface ExternalDatasetInput {
+  datasetStart: string;
+  profileSet: Record<string, ExternalProfileInput>;
+}
+
+export interface ExternalProfileInput {
+  schema: object;
+  segments: Array<{
+    duration: number;
+    dynamics?: unknown;
+  }>;
+  type: 'discrete' | 'real';
+}
+
 export type ProfileSegment = {
   dataset_id: number;
   dynamics: any;
