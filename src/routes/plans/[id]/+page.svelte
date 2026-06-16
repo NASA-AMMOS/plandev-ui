@@ -19,6 +19,7 @@
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
+  import ActivityDirectiveBuilder from '../../../components/activity/ActivityDirectiveBuilder.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
@@ -59,6 +60,7 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
+  import { activeDirectiveName, directiveBuilderIsVisible } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -141,6 +143,7 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
+  import type { ActivityDirectiveInsertInput } from '../../../types/activity';
   import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
@@ -188,6 +191,7 @@
   };
   let compactNavMode = false;
   let constraintsStatusText: string | undefined;
+  let directiveBuilder: ActivityDirectiveBuilder;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
   let hasExpandPermission: boolean = false;
@@ -754,11 +758,34 @@
       }
     }
   }
+
+  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    if ($plan !== null && $plan.model) {
+      console.log(directive);
+      effects.createActivityDirectivePredefined(directive, $plan, $user);
+      $directiveBuilderIsVisible = false;
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={$plan?.name} title="Plans" />
+
+<ActivityDirectiveBuilder
+  bind:this={directiveBuilder}
+  width={200}
+  plan={$plan}
+  on:visibilityChange={visibility => {
+    if (!visibility.detail.isShown) {
+      $activeDirectiveName = '';
+    }
+  }}
+  on:createActivityDirective={directive => {
+    onCreateActivityDirective(directive.detail.directive);
+  }}
+  user={$user}
+/>
 
 <div class="plan-container">
   <Resizable.PaneGroup direction="vertical" autoSaveId="console">

@@ -5,8 +5,9 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { CirclePlus } from 'lucide-svelte';
+  import { directiveBuilderIsVisible } from '../stores/directiveBuilder';
   import { plan, planModelActivityTypes, subsystemTags } from '../stores/plan';
-  import type { ActivityDirectiveInsertInput, ActivityType } from '../types/activity';
+  import type { ActivityType } from '../types/activity';
   import type { User } from '../types/app';
   import type { TimelineItemType } from '../types/timeline';
   import effects from '../utilities/effects';
@@ -14,7 +15,6 @@
   import { featurePermissions } from '../utilities/permissions';
   import { tooltip } from '../utilities/tooltip';
   import TimelineItemList from './TimelineItemList.svelte';
-  import ActivityDirectiveBuilder from './activity/ActivityDirectiveBuilder.svelte';
   import Input from './form/Input.svelte';
 
   export let user: User | null;
@@ -25,8 +25,6 @@
   let isUploadVisible: boolean = false;
   let uploadFiles: FileList | undefined;
   let uploadFileInput: HTMLInputElement;
-  let directiveBuilder: ActivityDirectiveBuilder;
-  let activeDirectiveName: string = '';
 
   $: if (user !== null && $plan !== null) {
     hasUploadPermission = featurePermissions.activityDirective.canCreate(user, $plan);
@@ -54,34 +52,8 @@
       onHideUpload();
     }
   }
-
-  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
-    if ($plan !== null && $plan.model) {
-      effects.createActivityDirectivePredefined(directive, $plan, user);
-      directiveBuilder.toggle();
-    }
-  }
-
-  function onShowDirectiveBuilder() {
-    directiveBuilder.toggle();
-  }
 </script>
 
-<ActivityDirectiveBuilder
-  bind:this={directiveBuilder}
-  directiveName={activeDirectiveName}
-  width={200}
-  plan={$plan}
-  on:visibilityChange={visibility => {
-    if (!visibility.detail.isShown) {
-      activeDirectiveName = '';
-    }
-  }}
-  on:createActivityDirective={directive => {
-    onCreateActivityDirective(directive.detail.directive);
-  }}
-  {user}
-/>
 <TimelineItemList
   items={$planModelActivityTypes}
   chartType="activity"
@@ -90,7 +62,6 @@
   {getFilterValueFromItem}
   filterOptions={$subsystemTags.map(s => ({ color: s.color || '', label: s.name, value: s.id }))}
   filterName="Subsystem"
-  {user}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
     <button class="close-upload" type="button" on:click={onHideUpload}>
@@ -147,7 +118,7 @@
         variant="outline"
         aria-label="Add Activity"
         disabled={!hasUploadPermission}
-        on:click={onShowDirectiveBuilder}
+        on:click={() => $directiveBuilderIsVisible = true}
       >
         <CirclePlus size={16} />
       </Button>

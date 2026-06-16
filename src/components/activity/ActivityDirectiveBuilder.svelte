@@ -7,6 +7,7 @@
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
+  import { activeDirectiveName, activeDirectiveType, directiveBuilderIsVisible } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -32,7 +33,6 @@
   export let width: number = 1000;
   export let height: number = 700;
   export let directiveName: string = '';
-  export let currentActivityType: string = '';
   export let plan: Plan | null = null;
   export let user: User | null = null;
 
@@ -44,10 +44,10 @@
     anchored_to_start: true,
     arguments: {},
     metadata: {},
-    name: '',
+    name: $activeDirectiveName,
     plan_id: plan?.id ?? -1,
     start_offset: '',
-    type: '',
+    type: $activeDirectiveType,
   };
   let manualInputOpen: boolean = false;
   let manualInputRef: HTMLInputElement;
@@ -56,7 +56,6 @@
   let planMinDate: Date | undefined;
   let planMaxDate: Date | undefined;
   let rootRef: HTMLDivElement;
-  let shown: boolean = false;
   let startTimeField: FieldStore<string>;
   let startTime: string = plan?.start_time_doy ?? '';
 
@@ -65,12 +64,10 @@
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
     directiveChange: { directive: object };
     rename: { name: string };
-    visibilityChange: { isShown: boolean };
   }>();
 
   export function setCurrentActivityType(newType: string) {
-    currentActivityType = newType;
-    selectActivityType(currentActivityType);
+    $activeDirectiveType = newType;
   }
 
   export function setCurrentActivityStart(newStartTime: string) {
@@ -79,25 +76,6 @@
 
   export function setActiveDirective(newDirective: ActivityDirectiveInsertInput) {
     dirtyDirective = newDirective;
-  }
-
-  export function toggle() {
-    if (shown) {
-      hide();
-    } else {
-      show();
-    }
-    dispatch('visibilityChange', { isShown: shown });
-  }
-
-  export function show() {
-    shown = true;
-    dispatch('visibilityChange', { isShown: shown });
-  }
-
-  export function hide() {
-    shown = false;
-    dispatch('visibilityChange', { isShown: shown });
   }
 
   function selectActivityType(newType: string) {
@@ -159,17 +137,19 @@
     }
   }
 
+  $: selectActivityType($activeDirectiveType);
+
   $: if (manualInputOpen) {
     manualMenu?.show();
   } else {
     manualMenu?.hide();
   }
   $: filteredActivityTypes = $planModelActivityTypes.filter(type => {
-    if (!currentActivityType) {
+    if (!$activeDirectiveType) {
       return true;
     }
 
-    return lowercase(type.name).indexOf(lowercase(currentActivityType)) > -1;
+    return lowercase(type.name).indexOf(lowercase($activeDirectiveType)) > -1;
   });
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
   $: startTimeField.validateAndSet(startTime);
@@ -249,7 +229,7 @@
 
 <div bind:this={rootRef} class="w-full" style:display="grid">
   <slot name="trigger" />
-  {#if shown}
+  {#if $directiveBuilderIsVisible}
     <Draggable
       className="st-menu activity-directive-builder"
       initialWidth={width}
@@ -258,7 +238,7 @@
     >
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
-          <button on:click|stopPropagation={hide} class="st-button icon" aria-label="close">
+          <button on:click|stopPropagation={() => $directiveBuilderIsVisible = false} class="st-button icon" aria-label="close">
             <CloseIcon />
           </button>
         </MenuHeader>
@@ -298,7 +278,7 @@
                     name="manual-types-filter-input"
                     class="st-input manual-types-filter-input w-full"
                     placeholder="Select type"
-                    bind:value={currentActivityType}
+                    bind:value={$activeDirectiveType}
                     on:click={() => {
                       requestAnimationFrame(() => {
                         if (!manualInputOpen) {

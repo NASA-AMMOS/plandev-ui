@@ -5,10 +5,8 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
   import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
-  import { plan } from '../stores/plan';
+  import { activeDirectiveType, directiveBuilderIsVisible } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
-  import type { ActivityDirectiveInsertInput } from '../types/activity';
-  import type { User } from '../types/app';
   import type {
     ChartType,
     Layer,
@@ -17,9 +15,7 @@
     TimelineItemListFilterOption,
     TimelineItemType,
   } from '../types/timeline';
-  import effects from '../utilities/effects';
   import { tooltip } from '../utilities/tooltip';
-  import ActivityDirectiveBuilder from './activity/ActivityDirectiveBuilder.svelte';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
   import Loading from './Loading.svelte';
@@ -43,7 +39,6 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
-  export let user: User | null = null;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -54,8 +49,6 @@
   let layerPicker: LayerPicker;
   let layerPickerIndividual: LayerPicker;
   let timelines: Timeline[] = [];
-  let directiveBuilder: ActivityDirectiveBuilder;
-  let activeDirectiveName: string = '';
 
   $: filteredItems = filterItems(items, filterText ? textFilters.concat(filterText) : textFilters, selectedFilters);
   $: timelines = $view?.definition.plan.timelines || [];
@@ -154,34 +147,12 @@
     return undefined;
   }
 
-  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
-    if ($plan !== null && $plan.model) {
-      effects.createActivityDirectivePredefined(directive, $plan, user);
-      directiveBuilder.toggle();
-    }
-  }
-
-  function onShowDirectiveBuilder(activityType: string) {
-    directiveBuilder.setCurrentActivityType(activityType);
-    directiveBuilder.toggle();
+  function onAddNewDirective(activityType: string) {
+    $activeDirectiveType = activityType;
+    $directiveBuilderIsVisible = true;
   }
 </script>
 
-<ActivityDirectiveBuilder
-  bind:this={directiveBuilder}
-  directiveName={activeDirectiveName}
-  width={200}
-  plan={$plan}
-  on:visibilityChange={visibility => {
-    if (!visibility.detail.isShown) {
-      activeDirectiveName = '';
-    }
-  }}
-  on:createActivityDirective={directive => {
-    onCreateActivityDirective(directive.detail.directive);
-  }}
-  {user}
-/>
 <div class="timeline-item-list">
   <div class="timeline-item-list-filters">
     <input
@@ -349,7 +320,7 @@
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Add{capitalize(typeName)}-{item.name}"
-                on:click={() => onShowDirectiveBuilder(item.name)}
+                on:click={() => onAddNewDirective(item.name)}
               >
                 <CirclePlus size={16} />
               </Button>
