@@ -344,6 +344,7 @@
                 maxDate={planMaxDate}
                 useFallback={!$plugins.time.enableDatePicker}
                 field={startTimeField}
+                hideToday={true}
               >
                 <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
                   <PlanLeftArrow />
