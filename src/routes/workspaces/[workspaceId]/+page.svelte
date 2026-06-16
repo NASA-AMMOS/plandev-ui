@@ -34,8 +34,9 @@
   import WorkspaceRightPanel from '../../../components/workspace/WorkspaceRightPanel.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { Status } from '../../../enums/status';
   import { WorkspaceContentMode, WorkspaceContentType } from '../../../enums/workspace';
-  import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { actionDefinitionsByWorkspace, actionRuns, actionRunsByWorkspace } from '../../../stores/actions';
   import {
     activeDocument,
     activeDocumentIsDirty,
@@ -78,7 +79,7 @@
     workspaceId,
     workspaces,
   } from '../../../stores/workspaces';
-  import type { ActionDefinition } from '../../../types/actions';
+  import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
   import type { LintDiagnostic, LogLevel } from '../../../types/errors';
   import type { ArgumentsMap } from '../../../types/parameter';
@@ -102,6 +103,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
+  import { getStatusForActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
@@ -137,6 +139,7 @@
   const initialSidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
 
   const { initialWorkspace } = data;
+  const actionRunsLoading = actionRuns.loading;
   const user: UserStore = getContext('user');
   const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
   const PANEL_DEFAULT_SIZE = 25;
@@ -185,6 +188,7 @@
   let logLevelLabel: string = 'Default levels';
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
+  let previousTerminalActionRunCount: number = -1;
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
@@ -264,6 +268,11 @@
     $workspaceId = initialWorkspace.id;
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
   }
+
+  // Refresh the workspace file listing whenever any action run for this workspace finishes
+  // (regardless of which user started it), since actions can create or modify files. Gated on
+  // the subscription's first response so pre-existing completed runs don't trigger a refresh.
+  $: refreshWorkspaceOnActionCompletion($actionRunsLoading, $actionRunsByWorkspace[$workspaceId] ?? []);
 
   // Re-compute permissions when user, workspace, or active document changes
   $: if ($user && (initialWorkspace || $workspace)) {
@@ -505,6 +514,28 @@
 
   function refreshWorkspaceContents() {
     return getWorkspaceContents(initialWorkspace);
+  }
+
+  function isTerminalActionRunStatus(status: Status): boolean {
+    return status === Status.Complete || status === Status.Failed || status === Status.Canceled;
+  }
+
+  function refreshWorkspaceOnActionCompletion(loading: boolean, actionRuns: ActionRunSlim[]) {
+    if (loading) {
+      return;
+    }
+
+    const terminalActionRunCount = actionRuns.filter(actionRun =>
+      isTerminalActionRunStatus(getStatusForActionRun(actionRun)),
+    ).length;
+
+    // The count of finished runs only grows when a run completes, so an increase means at least
+    // one run finished since the last update. The first post-load value just sets the baseline.
+    if (previousTerminalActionRunCount >= 0 && terminalActionRunCount > previousTerminalActionRunCount) {
+      refreshWorkspaceContents();
+    }
+
+    previousTerminalActionRunCount = terminalActionRunCount;
   }
 
   /**

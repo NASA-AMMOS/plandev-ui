@@ -104,10 +104,10 @@ test.describe.serial('Actions', () => {
       stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
     });
 
-    // Switch to file browser and verify the written file appears
+    // Switch to the file browser and verify the written file appears WITHOUT a manual refresh:
+    // the workspace listing auto-refreshes when an action run completes.
     await workspace.workspaceFileBrowserButton.click();
     await workspace.workspaceFileGrid.waitFor({ state: 'visible' });
-    await workspace.workspaceRefreshButton.click();
     await workspace.searchForFileAndWait('action_output.txt');
 
     // Go back to the actions tab
