@@ -386,7 +386,7 @@
           </div>
           <slot name="footer" />
           <button
-            class="st-button primary min-h-6"
+            class="st-button primary min-h-6 mt-auto"
             on:click={() => {
               dispatch('createActivityDirective', { directive: dirtyDirective });
             }}>Create Activity Directive</button
