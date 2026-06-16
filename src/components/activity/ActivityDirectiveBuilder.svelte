@@ -139,6 +139,7 @@
         undefined,
         $activityArgumentDefaultsMap[activityType.name || ''] ?? {},
       );
+      return currentActivityTypeFormParams;
     }
     return [];
   }
