@@ -43,7 +43,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
-  export let user: User | null;
+  export let user: User | null = null;
 
   let activeItemIndex: number = -1;
   let menu: Menu;

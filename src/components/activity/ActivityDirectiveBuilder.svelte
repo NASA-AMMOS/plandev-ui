@@ -32,7 +32,7 @@
   export let height: number = 700;
   export let directiveName: string = '';
   export let currentActivityType: string = '';
-  export let user: User | null;
+  export let user: User | null = null;
 
   let currentActivityTypeFormParams: FormParameter[] = [];
   let currentlySelectedActivityType: ActivityType | undefined;
