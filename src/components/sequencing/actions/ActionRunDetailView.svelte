@@ -30,8 +30,10 @@
   import { formatMS } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
   import Parameters from '../../parameters/Parameters.svelte';
+  import SectionCard from '../../ui/SectionCard.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
   import ActionRunLogs from './ActionRunLogs.svelte';
+  import ActionRunReport from './ActionRunReport.svelte';
 
   const dispatch = createEventDispatcher<{
     back: void;
@@ -56,6 +58,7 @@
   let actionDefinition: ActionDefinition | null = null;
   let latestVersion: ActionDefinitionVersion | null = null;
   let isLatestVersion: boolean = false;
+  let report: string | null = null;
   let parsedLogs: ParsedActionLog[] = [];
   let status: Status | null = null;
 
@@ -74,6 +77,7 @@
   $: isLatestVersion = latestVersion != null && actionRun?.action_definition_revision === latestVersion.revision;
   $: status = actionRun ? getStatusForActionRun(actionRun) : null;
   $: parsedLogs = actionRun?.logs ? parseActionLogLines(actionRun.logs) : ([] as ParsedActionLog[]);
+  $: report = typeof actionRun?.results?.report === 'string' ? actionRun.results.report : null;
   $: errorEntry =
     actionRun?.error?.message != null
       ? ({
@@ -270,40 +274,42 @@
                 class="flex flex-col gap-3 rounded border border-destructive/30 bg-destructive/5 p-4"
                 data-testid="action-run-error-log"
               >
-                <h3 class="text-sm font-medium text-destructive">Error</h3>
+                <h3 class="text-xs font-medium uppercase tracking-wide text-destructive">Error</h3>
                 <ActionRunLogs logs={[errorEntry]} />
               </div>
             {/if}
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Results</h3>
+            {#if report}
+              <SectionCard title="Report">
+                <ActionRunReport markdown={report} />
+              </SectionCard>
+            {/if}
+            <SectionCard title="Results" flush>
               {#if actionRun.results?.data}
                 <pre
                   data-testid="action-run-results"
-                  class="max-h-[600px] overflow-auto whitespace-pre-wrap rounded bg-muted p-3 font-mono text-xs">{JSON.stringify(
+                  class="max-h-[600px] overflow-auto whitespace-pre-wrap bg-muted p-4 font-mono text-xs">{JSON.stringify(
                     actionRun.results.data,
                     undefined,
                     2,
                   )}</pre>
               {:else}
-                <p class="text-xs italic text-muted-foreground">No results data</p>
+                <p class="px-4 py-3 text-xs italic text-muted-foreground">No results data</p>
               {/if}
-            </div>
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Logs</h3>
+            </SectionCard>
+            <SectionCard title="Logs" flush>
               {#if parsedLogs.length}
-                <ActionRunLogs logs={parsedLogs} />
+                <ActionRunLogs logs={parsedLogs} className="rounded-none" />
               {:else}
-                <p class="text-xs italic text-muted-foreground">No logs</p>
+                <p class="px-4 py-3 text-xs italic text-muted-foreground">No logs</p>
               {/if}
-            </div>
+            </SectionCard>
           </div>
         </Tabs.Content>
 
         <!-- Parameters tab -->
         <Tabs.Content value="parameters" class="mt-0 flex-1 overflow-y-auto">
           <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Action Parameters</h3>
+            <SectionCard title="Action Parameters">
               {#if actionParameters.length > 0}
                 <Parameters
                   formParameters={actionParameters}
@@ -315,9 +321,8 @@
               {:else}
                 <p class="text-xs italic text-muted-foreground">No parameters</p>
               {/if}
-            </div>
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Action Settings</h3>
+            </SectionCard>
+            <SectionCard title="Action Settings">
               {#if actionSettings.length > 0}
                 <Parameters
                   formParameters={actionSettings}
@@ -329,7 +334,7 @@
               {:else}
                 <p class="text-xs italic text-muted-foreground">No settings</p>
               {/if}
-            </div>
+            </SectionCard>
           </div>
         </Tabs.Content>
       </Tabs.Root>

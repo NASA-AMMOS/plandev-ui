@@ -34,6 +34,7 @@
   import Parameters from '../../parameters/Parameters.svelte';
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
+  import SectionCard from '../../ui/SectionCard.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
 
   export let actionDefinitionId: number;
@@ -633,8 +634,7 @@
         <!-- Configure tab -->
         <Tabs.Content value="configure" class="mt-0 flex-1 overflow-y-auto">
           <div class="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <h3 class="text-sm font-medium">Action Metadata</h3>
+            <SectionCard title="Action Metadata">
               <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
                 {#if actionDefinition.owner}
                   <span>Owner: <span class="text-foreground">{actionDefinition.owner}</span></span>
@@ -684,16 +684,10 @@
                   }}
                 />
               </Input>
-            </div>
+            </SectionCard>
 
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-sm font-medium">Action Settings</h3>
-                  <p class="mt-1 text-xs text-muted-foreground">
-                    Persistent settings provided to every run of this action
-                  </p>
-                </div>
+            <SectionCard title="Action Settings">
+              <svelte:fragment slot="actions">
                 {#if Object.keys(argumentsMap).length > 0}
                   <Button
                     variant="outline"
@@ -704,7 +698,8 @@
                     Reset All
                   </Button>
                 {/if}
-              </div>
+              </svelte:fragment>
+              <p class="text-xs text-muted-foreground">Persistent settings provided to every run of this action</p>
               {#if Object.keys(actionDefinition.versions[0]?.settings_schema ?? {}).length < 1}
                 <p class="text-xs italic text-muted-foreground">No settings defined</p>
               {:else}
@@ -738,24 +733,21 @@
                   ]}
                 />
               {/if}
-            </div>
+            </SectionCard>
 
             <!-- Versions section -->
-            <div class="flex flex-col gap-3 rounded border border-border p-4">
-              <div class="flex items-center justify-between">
-                <h3 class="text-sm font-medium">Versions</h3>
-                <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
-                  Show archived
-                </label>
-              </div>
+            <SectionCard title="Versions" flush>
+              <label slot="actions" class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
+                Show archived
+              </label>
               {#if displayedVersions.length === 0}
-                <p class="text-xs italic text-muted-foreground">No versions</p>
+                <p class="px-4 py-3 text-xs italic text-muted-foreground">No versions</p>
               {:else}
-                <div class="divide-y divide-border rounded border border-border">
+                <div class="divide-y divide-border">
                   {#each displayedVersions as version, i (version.revision)}
                     <div
-                      class="flex items-center justify-between px-3 py-2 text-xs {version.archived ? 'opacity-50' : ''}"
+                      class="flex items-center justify-between px-4 py-2 text-xs {version.archived ? 'opacity-50' : ''}"
                     >
                       <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <span class="font-medium">
@@ -797,7 +789,7 @@
                   {/each}
                 </div>
               {/if}
-            </div>
+            </SectionCard>
           </div>
         </Tabs.Content>
 
