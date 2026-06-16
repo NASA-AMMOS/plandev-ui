@@ -8,12 +8,13 @@
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { field } from '../../stores/form';
-  import { plan, planModelActivityTypes } from '../../stores/plan';
+  import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import type { ActivityDirectiveInsertInput, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
+  import type { Plan } from '../../types/plan';
   import { validateArguments } from '../../utilities/activities';
   import { getTarget, lowercase } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
@@ -32,6 +33,7 @@
   export let height: number = 700;
   export let directiveName: string = '';
   export let currentActivityType: string = '';
+  export let plan: Plan | null = null;
   export let user: User | null = null;
 
   let currentActivityTypeFormParams: FormParameter[] = [];
@@ -43,7 +45,7 @@
     arguments: {},
     metadata: {},
     name: '',
-    plan_id: $plan?.id ?? -1,
+    plan_id: plan?.id ?? -1,
     start_offset: '',
     type: '',
   };
@@ -56,7 +58,7 @@
   let rootRef: HTMLDivElement;
   let shown: boolean = false;
   let startTimeField: FieldStore<string>;
-  let startTime: string = $plan?.start_time_doy ?? '';
+  let startTime: string = plan?.start_time_doy ?? '';
 
 
   const dispatch = createEventDispatcher<{
@@ -114,12 +116,12 @@
   }
 
   async function getArgumentValidation(): Promise<void> {
-    if ($plan && $plan.model_id && user) {
+    if (plan && plan.model_id && user) {
       dirtyDirectiveErrorsMap = await validateArguments(
         undefined,
         dirtyDirective.type,
         dirtyDirective.arguments,
-        $plan?.model_id,
+        plan?.model_id,
         user,
       );
     }
@@ -142,14 +144,14 @@
   }
 
   async function onPlanStartTimeClick() {
-    if ($plan) {
-      startTimeField.validateAndSet(formatDate(new Date($plan.start_time), $plugins.time.primary.format));
+    if (plan) {
+      startTimeField.validateAndSet(formatDate(new Date(plan.start_time), $plugins.time.primary.format));
     }
   }
 
   async function onPlanEndTimeClick() {
-    if ($plan) {
-      const endTimeYmd = convertDoyToYmd($plan.end_time_doy);
+    if (plan) {
+      const endTimeYmd = convertDoyToYmd(plan.end_time_doy);
       if (endTimeYmd) {
         startTimeField.validateAndSet(formatDate(new Date(endTimeYmd), $plugins.time.primary.format));
       }
@@ -170,17 +172,17 @@
   });
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
   $: startTimeField.validateAndSet(startTime);
-  $: if ($plan) {
+  $: if (plan) {
     const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
     if (startTimeDate) {
       const startTimeDoy = getDoyTime(startTimeDate);
-      const startOffset = getIntervalFromDoyRange($plan.start_time_doy, startTimeDoy);
+      const startOffset = getIntervalFromDoyRange(plan.start_time_doy, startTimeDoy);
       dirtyDirective.start_offset = startOffset;
     }
   }
-  $: if ($plan) {
-    planMinDate = $plugins.time.primary.parse($plan.start_time_doy) ?? undefined;
-    planMaxDate = $plugins.time.primary.parse($plan.end_time_doy) ?? undefined;
+  $: if (plan) {
+    planMinDate = $plugins.time.primary.parse(plan.start_time_doy) ?? undefined;
+    planMaxDate = $plugins.time.primary.parse(plan.end_time_doy) ?? undefined;
   }
   $: if (currentlySelectedActivityType && currentlySelectedActivityType.parameters) {
     currentActivityTypeFormParams = refreshFormParameters(

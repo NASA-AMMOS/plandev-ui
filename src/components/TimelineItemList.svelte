@@ -171,6 +171,7 @@
   bind:this={directiveBuilder}
   directiveName={activeDirectiveName}
   width={200}
+  plan={$plan}
   on:visibilityChange={visibility => {
     if (!visibility.detail.isShown) {
       activeDirectiveName = '';
