@@ -931,6 +931,18 @@ async function seed() {
   const largeWorkspaceId = await api.createWorkspace(largeWorkspaceLocation, parcel.id, largeWorkspaceName);
   console.log(`  - Created workspace: ${largeWorkspaceName} (ID: ${largeWorkspaceId})`);
 
+  // Create action definition in the large workspace (same demo action)
+  console.log('\nCreating large workspace action...');
+  const largeWorkspaceActionName = `Large Workspace Action ${seedNameSuffix}`;
+  const largeWorkspaceActionDescription = 'Demo action that fetches data from GitHub API';
+  const largeWorkspaceAction = await api.createActionDefinition(
+    largeWorkspaceId,
+    largeWorkspaceActionName,
+    largeWorkspaceActionDescription,
+    'e2e-tests/data/aerie-action-demo.js',
+  );
+  console.log(`  - Created action: ${largeWorkspaceActionName} (ID: ${largeWorkspaceAction.id})`);
+
   // Generate thousands of files with deep nesting
   const projects = ['alpha', 'beta', 'gamma', 'delta', 'epsilon'];
   const fileMap: Record<string, Uint8Array<ArrayBuffer> | string> = {
@@ -1041,6 +1053,7 @@ async function seed() {
   console.log(`    - ${workspaceName} (ID: ${workspaceId}, ${workspaceItems.length} items)`);
   console.log(`    - ${largeWorkspaceName} (ID: ${largeWorkspaceId}, ${largeWorkspaceItemCount} items)`);
   console.log(`  Action: ${actionName} (ID: ${action.id})`);
+  console.log(`  Large Workspace Action: ${largeWorkspaceActionName} (ID: ${largeWorkspaceAction.id})`);
   console.log(`  Extension: ${extensionName} (ID: ${extension.id})`);
   console.log('\nYou can now view these in the Aerie UI at http://localhost:3000');
 
