@@ -4,7 +4,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
-  import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';
+  import { ChevronDown } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { activeDirectiveName, activeDirectiveType, directiveBuilderIsVisible } from '../../stores/directiveBuilder';
@@ -13,22 +13,22 @@
   import { plugins } from '../../stores/plugins';
   import type { ActivityDirectiveInsertInput, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
+  import type { DropdownOption } from '../../types/dropdown';
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import type { Plan } from '../../types/plan';
   import { validateArguments } from '../../utilities/activities';
-  import { getTarget, lowercase } from '../../utilities/generic';
+  import { getTarget } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
   import { convertDoyToYmd, formatDate, getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
   import { required } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
-  import Menu from '../menus/Menu.svelte';
   import MenuHeader from '../menus/MenuHeader.svelte';
-  import MenuItem from '../menus/MenuItem.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Draggable from '../timeline/form/TimelineEditor/Draggable.svelte';
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
+  import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
   export let width: number = 1000;
   export let height: number = 700;
@@ -49,10 +49,8 @@
     start_offset: '',
     type: $activeDirectiveType,
   };
-  let manualInputOpen: boolean = false;
-  let manualInputRef: HTMLInputElement;
+  let activityTypesOptions: DropdownOption[] = [];
   let manualInputWidth: number = 200;
-  let manualMenu: Menu;
   let planMinDate: Date | undefined;
   let planMaxDate: Date | undefined;
   let rootRef: HTMLDivElement;
@@ -83,14 +81,6 @@
     currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
     dirtyDirective.type = newType;
     getArgumentValidation();
-  }
-
-  function onTypeSelected(newType: string) {
-    selectActivityType(newType);
-    if (manualMenu !== undefined) {
-      manualMenu.hide();
-    }
-    manualInputRef.value = newType;
   }
 
   async function getArgumentValidation(): Promise<void> {
@@ -138,18 +128,8 @@
   }
 
   $: selectActivityType($activeDirectiveType);
-
-  $: if (manualInputOpen) {
-    manualMenu?.show();
-  } else {
-    manualMenu?.hide();
-  }
-  $: filteredActivityTypes = $planModelActivityTypes.filter(type => {
-    if (!$activeDirectiveType) {
-      return true;
-    }
-
-    return lowercase(type.name).indexOf(lowercase($activeDirectiveType)) > -1;
+  $: activityTypesOptions = $planModelActivityTypes.map(activityType => {
+    return { display: activityType.name, value: activityType.name };
   });
   $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
   $: startTimeField.validateAndSet(startTime);
@@ -270,45 +250,18 @@
             </div>
             <div class="directive-section-content directive-section-content-bordered">
               <div bind:clientWidth={manualInputWidth}>
-                <Input>
-                  <div class="search-icon" slot="left"><SearchIcon /></div>
-                  <input
-                    autocomplete="off"
-                    bind:this={manualInputRef}
-                    name="manual-types-filter-input"
-                    class="st-input manual-types-filter-input w-full"
-                    placeholder="Select type"
-                    bind:value={$activeDirectiveType}
-                    on:click={() => {
-                      requestAnimationFrame(() => {
-                        if (!manualInputOpen) {
-                          manualInputOpen = true;
-                        }
-                      });
-                    }}
-                  />
-                </Input>
-              </div>
-              <div style:position="relative" style:width="0px">
-                <Menu
-                  width={manualInputWidth}
-                  hideAfterClick={true}
-                  placement="right-start"
-                  bind:this={manualMenu}
-                  on:hide={() => (manualInputOpen = false)}
+                <SearchableDropdown
+                  allowMultiple={false}
+                  options={activityTypesOptions}
+                  loading={false}
+                  on:change={e => {
+                    const v = e.detail[0];
+                    $activeDirectiveType = v
+                  }}
+                  selectedOptionValues={$activeDirectiveType === "" ? [] : [$activeDirectiveType]}
                 >
-                  <div class="manual-types-menu">
-                    {#if filteredActivityTypes.length > 0}
-                      {#each filteredActivityTypes as type}
-                        <MenuItem on:click={() => onTypeSelected(type.name)}>
-                          <div class="st-typography-body">{type.name}</div>
-                        </MenuItem>
-                      {/each}
-                    {:else}
-                      <MenuItem disabled>No activities matching your filter</MenuItem>
-                    {/if}
-                  </div>
-                </Menu>
+                  <ChevronDown slot="icon" />
+                </SearchableDropdown>
               </div>
             </div>
           </div>
@@ -441,20 +394,6 @@
     gap: 8px;
     overflow: auto;
     padding: 8px;
-  }
-
-  .manual-types-menu {
-    --aerie-menu-item-padding: 8px;
-    cursor: pointer;
-    max-height: 320px;
-    overflow: auto;
-    width: 100%;
-  }
-
-  .search-icon {
-    align-items: center;
-    color: var(--st-gray-50);
-    display: flex;
   }
 
   :global(.activity-directive-grid) {
