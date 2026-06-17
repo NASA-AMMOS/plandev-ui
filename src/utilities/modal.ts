@@ -5,6 +5,7 @@ import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterMo
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
 import ChangePlanBoundsModal from '../components/modals/ChangePlanBoundsModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
+import ConfirmExpansionModal from '../components/modals/ConfirmExpansionModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
 import CreatePlanSnapshotModal from '../components/modals/CreatePlanSnapshotModal.svelte';
@@ -45,6 +46,7 @@ import NewSequenceTemplateModal from '../components/sequence-templates/NewSequen
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
+import type { ConstraintInvocationMap, ConstraintPlanSpecification, ConstraintResponse } from '../types/constraint';
 import type { ExpansionSequence } from '../types/expansion';
 import type { DerivationGroup, ExternalSourcePkey, ExternalSourceSlim } from '../types/external-source';
 import type { ModalElement, ModalElementValue } from '../types/modal';
@@ -87,6 +89,50 @@ export async function showAboutModal(): Promise<ModalElementValue> {
           target.resolve = null;
           resolve({ confirm: true });
           aboutModal.$destroy(); // destroy the component since it was manually invoked
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+export async function showConfirmExpansionModal(
+  simulationOutOfDate: boolean,
+  allConstraintsHaveBeenChecked: boolean,
+  allConstraintsThatAreCheckedPass: boolean,
+  constraintPlanSpecsInPlan: ConstraintPlanSpecification[],
+  constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>,
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const confirmModal = new ConfirmExpansionModal({
+          props: {
+            allConstraintsHaveBeenChecked,
+            allConstraintsThatAreCheckedPass,
+            constraintPlanSpecsInPlan,
+            constraintToConstraintResponseMap,
+            simulationOutOfDate,
+          },
+          target,
+        });
+        target.resolve = resolve;
+
+        confirmModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          confirmModal.$destroy();
+        });
+
+        confirmModal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          confirmModal.$destroy();
         });
       }
     } else {
