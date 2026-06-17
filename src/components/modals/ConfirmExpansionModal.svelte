@@ -4,6 +4,7 @@
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../enums/status';
   import { checkConstraintsStatus } from '../../stores/constraints';
+  import { logMessage } from '../../stores/errors';
   import type {
     ConstraintInvocationMap,
     ConstraintPlanSpecification,
@@ -17,8 +18,10 @@
   export let simulationOutOfDate: boolean;
   export let allConstraintsHaveBeenChecked: boolean;
   export let allConstraintsThatAreCheckedPass: boolean;
+
   export let constraintPlanSpecsInPlan: ConstraintPlanSpecification[];
   export let constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>;
+  export let simulationDatasetId: number;
 
   // TODO: adjust dynamically?
   export let height: number =
@@ -57,19 +60,29 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: { addFilter: boolean };
+    confirm: void;
   }>();
 
   function onKeydown(event: KeyboardEvent) {
     const { key } = event;
     if (key === 'Enter') {
       event.preventDefault();
-      confirm(true);
+      confirm();
     }
   }
 
-  function confirm(addFilter: boolean = false) {
-    dispatch('confirm', { addFilter });
+  function confirm() {
+    const brief =
+      $checkConstraintsStatus === Status.Failed
+        ? ' (failed evaluation)'
+        : $checkConstraintsStatus === Status.Incomplete
+          ? ' (incomplete evaluation)'
+          : uncheckedConstraints.length > 0 || failingConstraints.length > 0
+            ? ` (${uncheckedConstraints.length > 0} unchecked, ${failingConstraints.length > 0} failed)`
+            : ``;
+    logMessage(`Constraint violations${brief} bypassed before expanding simulation ${simulationDatasetId}.`);
+
+    dispatch('confirm');
   }
 </script>
 
@@ -127,7 +140,7 @@
   </ModalContent>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={() => confirm(true)}> Expand</button>
+    <button class="st-button" on:click={() => confirm()}>Expand</button>
   </ModalFooter>
 </Modal>
 
