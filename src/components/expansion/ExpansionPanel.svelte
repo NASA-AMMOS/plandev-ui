@@ -15,7 +15,12 @@
   import { plugins } from '../../stores/plugins';
   import { expandedTemplates } from '../../stores/sequence-template';
   import { sequenceFilters } from '../../stores/sequencing';
-  import { simulationDatasetLatest, simulationDatasetsPlan, simulationStatus } from '../../stores/simulation';
+  import {
+    simulationDatasetId,
+    simulationDatasetLatest,
+    simulationDatasetsPlan,
+    simulationStatus,
+  } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type { ConstraintInvocationMap, ConstraintResponse } from '../../types/constraint';
   import type { ExpansionSequence, SequenceFilter } from '../../types/expansion';
@@ -98,7 +103,7 @@
       }
     } else {
       // Question for PlanDev team: should we include this? Or only in the modal.
-      isExpansionDisabled = true;
+      isExpansionDisabled = false;
       expansionDisabledMessage = 'Simulation is out of date.';
     }
   }
@@ -241,7 +246,7 @@
   }
 
   async function onExpandSequence(sequence: ExpansionSequence) {
-    var result = { confirm: false };
+    var result = { confirm: true };
     if (
       !(
         $checkConstraintsStatus !== Status.Failed &&
@@ -257,6 +262,7 @@
         allConstraintsThatAreCheckedPass,
         constraintPlanSpecsInPlan,
         constraintToConstraintResponseMap,
+        $simulationDatasetId,
       );
     }
     if (result.confirm) {
