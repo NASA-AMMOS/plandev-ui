@@ -108,7 +108,7 @@ export class Plan {
     this.updatePage(page);
   }
 
-  async addActivity(name: string = 'GrowBanana') {
+  async addActivityByDragAndDrop(name: string = 'GrowBanana') {
     // Ensure Activity Directives Table panel is visible for verification later
     if (!(await this.panelActivityDirectivesTable.isVisible())) {
       await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
@@ -132,6 +132,90 @@ export class Plan {
     await activityRow.scrollIntoViewIfNeeded();
     // Use dragTo for the drag operation
     await activityListItem.dragTo(activityRow, { timeout: 10000 });
+    // Directive builder should have appeared
+    const activityDirectiveBuilder = this.page.getByText('Activity Directive Builder');
+    await expect(activityDirectiveBuilder).toBeVisible();
+    // Select the proper activity type
+    await this.page.getByLabel('manual-types').getByText(name).click();
+    // Create the activity
+    await this.page.getByRole('button', { name: 'Create Activity Directive' }).click();
+    await this.waitForToast('Activity Directive Created Successfully');
+    // Verify at least one activity with this name exists in the table
+    await expect(this.panelActivityDirectivesTable.getByRole('row', { name }).first()).toBeVisible({ timeout: 10000 });
+  }
+
+  async addActivityByGenericButton(name: string = 'GrowBanana') {
+    // Ensure Activity Directives Table panel is visible for verification later
+    if (!(await this.panelActivityDirectivesTable.isVisible())) {
+      await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
+    }
+    await this.showPanel(PanelNames.TIMELINE_ITEMS);
+    const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
+    await expect(activityListItem).toBeVisible();
+    const activityRow = this.page
+      .locator('.timeline')
+      .getByRole('listitem')
+      .filter({ hasText: 'Activities by Type' })
+      .first()
+      .locator('.overlay');
+    await expect(activityRow).toBeVisible();
+    // Wait for timeline to finish loading before attempting drag
+    await this.waitForTimelineLoading();
+    // Click on activity item first to ensure Svelte drag listeners are initialized
+    await activityListItem.click();
+    // Scroll elements into view
+    await activityListItem.scrollIntoViewIfNeeded();
+    await activityRow.scrollIntoViewIfNeeded();
+    // Open builder
+    const addActivityButton = await this.page.getByRole('button', { name: 'Add Activity' });
+    await addActivityButton.scrollIntoViewIfNeeded();
+    await addActivityButton.click();
+    // Directive builder should have appeared
+    const activityDirectiveBuilder = this.page.getByText('Activity Directive Builder');
+    await expect(activityDirectiveBuilder).toBeVisible();
+    // Select the proper activity type
+    await this.page.getByLabel('manual-types').getByText(name).click();
+    // Create the activity
+    await this.page.getByRole('button', { name: 'Create Activity Directive' }).click();
+    await this.waitForToast('Activity Directive Created Successfully');
+    // Verify at least one activity with this name exists in the table
+    await expect(this.panelActivityDirectivesTable.getByRole('row', { name }).first()).toBeVisible({ timeout: 10000 });
+  }
+
+  async addActivityByTypeButton(name: string = 'GrowBanana') {
+    // Ensure Activity Directives Table panel is visible for verification later
+    if (!(await this.panelActivityDirectivesTable.isVisible())) {
+      await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
+    }
+    await this.showPanel(PanelNames.TIMELINE_ITEMS);
+    const activityListItem = this.page.locator(`.list-item :text-is("${name}")`);
+    await expect(activityListItem).toBeVisible();
+    const activityRow = this.page
+      .locator('.timeline')
+      .getByRole('listitem')
+      .filter({ hasText: 'Activities by Type' })
+      .first()
+      .locator('.overlay');
+    await expect(activityRow).toBeVisible();
+    // Wait for timeline to finish loading before attempting drag
+    await this.waitForTimelineLoading();
+    // Click on activity item first to ensure Svelte drag listeners are initialized
+    await activityListItem.click();
+    // Scroll elements into view
+    await activityListItem.scrollIntoViewIfNeeded();
+    await activityRow.scrollIntoViewIfNeeded();
+    // Open builder
+    await this.page.getByText(name).hover();
+    const addActivityButton = await this.page.getByRole('button', { name: `AddActivity-${name}` });
+    await addActivityButton.scrollIntoViewIfNeeded();
+    await addActivityButton.click();
+    // Directive builder should have appeared
+    const activityDirectiveBuilder = this.page.getByText('Activity Directive Builder');
+    await expect(activityDirectiveBuilder).toBeVisible();
+    // Select the proper activity type
+    await this.page.getByLabel('manual-types').getByText(name).click();
+    // Create the activity
+    await this.page.getByRole('button', { name: 'Create Activity Directive' }).click();
     await this.waitForToast('Activity Directive Created Successfully');
     // Verify at least one activity with this name exists in the table
     await expect(this.panelActivityDirectivesTable.getByRole('row', { name }).first()).toBeVisible({ timeout: 10000 });

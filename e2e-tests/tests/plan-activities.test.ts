@@ -19,10 +19,23 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Plan Activities', () => {
+  test('Creating an activity directive via. drag-and-drop', async () => {
+    await setup.plan.addActivityByDragAndDrop('ParameterTest');
+    // TODO: Check that timeline has the activity now?
+  });
+
+  test('Creating an activity directive via. generic button', async () => {
+    await setup.plan.addActivityByGenericButton('ParameterTest');
+  });
+
+  test('Creating an activity directive via. activity type button', async () => {
+    await setup.plan.addActivityByTypeButton('ParameterTest');
+  });
+
   test('Deleting an activity directive with another directive anchored to it should and selecting re-anchor to plan should re-anchor to plan', async () => {
-    await setup.plan.addActivity('GrowBanana');
-    await setup.plan.addActivity('PickBanana');
-    await setup.plan.addActivity('ThrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('PickBanana');
+    await setup.plan.addActivityByDragAndDrop('ThrowBanana');
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
     await setup.plan.panelActivityForm
       .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
@@ -48,9 +61,9 @@ test.describe.serial('Plan Activities', () => {
   });
 
   test('Deleting multiple activity directives but only 1 has a remaining anchored dependent should prompt for just the one with a remaining dependent', async () => {
-    await setup.plan.addActivity('GrowBanana');
-    await setup.plan.addActivity('PickBanana');
-    await setup.plan.addActivity('ThrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('PickBanana');
+    await setup.plan.addActivityByDragAndDrop('ThrowBanana');
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
     await setup.plan.panelActivityForm
       .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
@@ -77,7 +90,7 @@ test.describe.serial('Plan Activities', () => {
   });
 
   test('Setting an input path successfully uploads the corresponding file', async () => {
-    await setup.plan.addActivity('LineCount');
+    await setup.plan.addActivityByDragAndDrop('LineCount');
 
     await setFileInputByFilepath(
       setup.page,
@@ -94,13 +107,13 @@ test.describe.serial('Plan Activities', () => {
     await setup.plan.hoverMenu(setup.plan.navButtonActivityChecking);
     await expect(setup.plan.navButtonActivityCheckingMenu).toContainText('0/0 activities checked');
     await expect(setup.plan.navButtonActivityCheckingMenu).toContainText('No problems detected');
-    await setup.plan.addActivity('GrowBanana');
-    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
     await setup.plan.waitForActivityCheckingStatus(Status.Complete);
     await setup.plan.hoverMenu(setup.plan.navButtonActivityChecking);
     await expect(setup.plan.navButtonActivityCheckingMenu).toContainText('2/2 activities checked');
     await expect(setup.plan.navButtonActivityCheckingMenu).toContainText('No problems detected');
-    await setup.plan.addActivity('BakeBananaBread');
+    await setup.plan.addActivityByDragAndDrop('BakeBananaBread');
     await setup.plan.waitForActivityCheckingStatus(Status.Failed);
     await setup.plan.hoverMenu(setup.plan.navButtonActivityChecking);
     await expect(setup.plan.navButtonActivityCheckingMenu).toContainText('3/3 activities checked');
