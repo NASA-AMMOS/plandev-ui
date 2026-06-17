@@ -150,7 +150,6 @@ import type {
   DefaultEffectiveArguments,
   EffectiveArguments,
   ParametersMap,
-  ParameterValidationError,
   ParameterValidationResponse,
   SchedulingGoalEffectiveArguments,
 } from '../types/parameter';
@@ -8909,7 +8908,7 @@ const effects = {
     modelId: number,
     argumentsMap: ArgumentsMap,
     user: User | null,
-  ): Promise<ParameterValidationResponse> {
+  ): Promise<Record<string, string[]>> {
     try {
       const data = await reqHasura<ParameterValidationResponse>(
         gql.VALIDATE_ACTIVITY_ARGUMENTS,
@@ -8928,13 +8927,27 @@ const effects = {
         } else {
           logMessage(`Validated activity arguments for pending directive of "${activityTypeName}"`);
         }
-        return validateActivityArguments;
+
+        // If there were errors, create and return a map of them
+        if (!validateActivityArguments.success && validateActivityArguments.errors) {
+          const errorsMap = validateActivityArguments.errors.reduce((map: Record<string, string[]>, error) => {
+            error.subjects?.forEach(subject => {
+              if (!map[subject]) {
+                map[subject] = [];
+              }
+              map[subject].push(error.message);
+            });
+            return map;
+          }, {});
+          return errorsMap;
+        } else {
+          return {};
+        }
       } else {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      const { message } = e as Error;
-      return { errors: [{ message } as ParameterValidationError], success: false };
+      return { [(e as Error).name]: [(e as Error).message] };
     }
   },
 

@@ -31,7 +31,7 @@
   import type { FieldStore } from '../../types/form';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
-  import { getActivityMetadata, validateArguments } from '../../utilities/activities';
+  import { getActivityMetadata } from '../../utilities/activities';
   import effects from '../../utilities/effects';
   import { isInstantiationError } from '../../utilities/errors';
   import { classNames, keyByBoolean } from '../../utilities/generic';
@@ -420,11 +420,11 @@
 
   async function getArgumentValidation(newArguments: ArgumentsMap | null): Promise<void> {
     if (newArguments && user) {
-      parameterErrorMap = await validateArguments(
-        activityDirective.id,
+      parameterErrorMap = await effects.validateActivityArguments(
         activityDirective.type,
-        newArguments,
+        activityDirective.id,
         modelId,
+        newArguments,
         user,
       );
     }

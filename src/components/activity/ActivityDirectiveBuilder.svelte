@@ -17,7 +17,7 @@
   import type { FieldStore } from '../../types/form';
   import type { ArgumentsMap, FormParameter } from '../../types/parameter';
   import type { Plan } from '../../types/plan';
-  import { validateArguments } from '../../utilities/activities';
+  import effects from '../../utilities/effects';
   import { getTarget } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
   import { convertDoyToYmd, formatDate, getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
@@ -85,11 +85,11 @@
 
   async function getArgumentValidation(): Promise<void> {
     if (plan && plan.model_id && user) {
-      dirtyDirectiveErrorsMap = await validateArguments(
-        undefined,
+      dirtyDirectiveErrorsMap = await effects.validateActivityArguments(
         dirtyDirective.type,
-        dirtyDirective.arguments,
+        undefined,
         plan?.model_id,
+        dirtyDirective.arguments,
         user,
       );
     }
