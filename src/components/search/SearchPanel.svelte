@@ -100,11 +100,52 @@
 
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
 
-  $: modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
+  $: {
+    modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
 
-  $: tagOptions = $tagsStore.map(tag => ({ display: tag.name, value: tag.name }));
+    // If the selected model is no longer available, reset the selection
+    if (selectedModelId !== undefined) {
+      const availableModels = new Set(modelOptions.map(opt => opt.value));
+      if (!availableModels.has(selectedModelId)) {
+        selectedModelId = undefined;
+      }
+    }
+  }
 
-  $: userOptions = $users.filter((u): u is string => u !== null).map(u => ({ display: u, value: u }));
+  $: {
+    tagOptions = $tagsStore.map(tag => ({ display: tag.name, value: tag.name }));
+
+    // If the selected tag is no longer available, reset the selection
+    if (filters.tagValue) {
+      const availableTags = new Set(tagOptions.map(opt => opt.value));
+      if (!availableTags.has(filters.tagValue)) {
+        filters = { ...filters, planTag: '', tagValue: '' };
+      }
+    }
+  }
+
+  $: {
+    userOptions = $users.filter((u): u is string => u !== null).map(u => ({ display: u, value: u }));
+
+    // If the user is no longer available, reset the selections
+    if (filters.createdBy || filters.lastModifiedBy || filters.planOwner) {
+      let filtersUpdate: Partial<typeof DEFAULT_FILTERS> = {};
+      const availableUsers = new Set(userOptions.map(opt => opt.value));
+      if (!availableUsers.has(filters.createdBy)) {
+        filtersUpdate = { ...filtersUpdate, createdBy: '' };
+      }
+      if (!availableUsers.has(filters.lastModifiedBy)) {
+        filtersUpdate = { ...filtersUpdate, lastModifiedBy: '' };
+      }
+      if (!availableUsers.has(filters.planOwner)) {
+        filtersUpdate = { ...filtersUpdate, planOwner: '' };
+      }
+
+      if (Object.keys(filtersUpdate).length > 0) {
+        filters = { ...filters, ...filtersUpdate };
+      }
+    }
+  }
 
   $: {
     const activityTypeNames: string[] = [];
@@ -118,6 +159,15 @@
     typeOptions = activityTypeNames
       .map(type => ({ display: type, value: type }))
       .sort((a, b) => a.display.localeCompare(b.display));
+
+    // If a selected activity type is no longer available, remove the selection
+    if (filters.actType.length > 0) {
+      const availableTypes = new Set(typeOptions.map(opt => opt.value));
+      const validTypes = filters.actType.filter(type => availableTypes.has(type));
+      if (validTypes.length !== filters.actType.length) {
+        filters = { ...filters, actType: validTypes };
+      }
+    }
   }
 
   $: {
@@ -129,6 +179,14 @@
       ),
     ];
     presetOptions = presetNames.map(name => ({ display: name, value: name }));
+
+    // If the selected preset is no longer available, reset the selection
+    if (filters.preset) {
+      const availablePresets = new Set(presetOptions.map(opt => opt.value));
+      if (!availablePresets.has(filters.preset)) {
+        filters = { ...filters, preset: '' };
+      }
+    }
   }
 
   $: {
@@ -145,11 +203,29 @@
       }
     }
     argNameOptions = [...paramNames].sort((a, b) => a.localeCompare(b)).map(name => ({ display: name, value: name }));
+
+    // If the selected argument is no longer available, reset the selection
+    if (filters.argName) {
+      const availableArgNames = new Set(argNameOptions.map(opt => opt.value));
+      if (!availableArgNames.has(filters.argName)) {
+        filters = { ...filters, argName: '' };
+      }
+    }
   }
 
-  $: goalOptions = [...$schedulingGoalResponses]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() }));
+  $: {
+    goalOptions = [...$schedulingGoalResponses]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() }));
+
+    // If the selected goal is no longer available, reset the selection
+    if (filters.schedulingGoalId) {
+      const availableGoals = new Set(goalOptions.map(opt => opt.value));
+      if (!availableGoals.has(filters.schedulingGoalId)) {
+        filters = { ...filters, schedulingGoalId: '' };
+      }
+    }
+  }
 
   // Initialize from URL on first page load (browser only — SSR can't navigate)
   $: if (browser && $page.url) {
