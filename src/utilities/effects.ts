@@ -4283,6 +4283,8 @@ const effects = {
       }
     } catch (e) {
       catchError('Sequence Templating Failed', e as Error);
+
+      // TODO: show error more cleanly; e.extensions.internal.response.body
       sequenceTemplateExpansionStatus.set(Status.Failed);
       sequenceTemplateExpansionError.set(e as string);
       showFailureToast('Sequence Templating Failed');
