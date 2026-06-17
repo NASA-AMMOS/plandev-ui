@@ -1095,7 +1095,6 @@ const effects = {
 
           showSuccessToast('Activity Directive Created Successfully');
           logMessage(`Created activity directive "${name}" (ID=${id}).`);
-          throw Error('Testing');
           return id;
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
