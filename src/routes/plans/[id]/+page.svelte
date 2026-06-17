@@ -761,12 +761,12 @@
     }
   }
 
-  function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+  async function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
     if ($plan !== null && $plan.model) {
       // Convert offset to absolute start with plan as anchor
       const offsetAsMs = getUnixEpochTimeFromInterval($plan.start_time, directive.start_offset);
       const formattedStart = formatDate(new Date(offsetAsMs), $plugins.time.primary.format);
-      effects.createActivityDirective(
+      const newDirectiveId: number | null = await effects.createActivityDirective(
         directive.arguments,
         formattedStart,
         directive.type,
@@ -775,7 +775,9 @@
         $plan,
         $user
       );
-      $directiveBuilderIsVisible = false;
+      if (newDirectiveId !== null) {
+        $directiveBuilderIsVisible = false;
+      }
     }
   }
 </script>

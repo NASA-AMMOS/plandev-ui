@@ -1053,7 +1053,7 @@ const effects = {
     metadata: ActivityMetadata,
     plan: Plan | null,
     user: User | null,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       if ((plan && !queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) || !plan) {
         throwPermissionError('add a directive to the plan');
@@ -1095,6 +1095,8 @@ const effects = {
 
           showSuccessToast('Activity Directive Created Successfully');
           logMessage(`Created activity directive "${name}" (ID=${id}).`);
+          throw Error('Testing');
+          return id;
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -1105,6 +1107,7 @@ const effects = {
       catchError('Activity Directive Create Failed', e as Error);
       showFailureToast('Activity Directive Create Failed');
     }
+    return null;
   },
 
   async createActivityDirectiveTags(
