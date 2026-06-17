@@ -25,10 +25,16 @@
     simulationOutOfDate && (!allConstraintsHaveBeenChecked || !allConstraintsThatAreCheckedPass) ? 300 : 200;
   export let width: number = 380;
 
-  let failingConstraints: string[] = constraintPlanSpecsInPlan
+  let failingConstraints: { name: string; viols: number }[] = constraintPlanSpecsInPlan
     .filter(spec => constraintToConstraintResponseMap[spec.constraint_id])
-    .map(spec => spec.constraint_metadata?.name ?? '')
-    .filter(name => name.length > 0); // in case metadata is undefined.
+    .map(spec => {
+      return {
+        name: spec.constraint_metadata?.name ?? '',
+        viols:
+          constraintToConstraintResponseMap[spec.constraint_id]?.[spec.invocation_id].results.violations?.length ?? -1,
+      };
+    })
+    .filter(obj => obj.name.length > 0 && obj.viols > 0); // in case metadata is undefined.
 
   // NOTE: this includes disabled constraints, as running constraints when some are disabled marks them as unchecked.
   //        As such, we consider this an accurate reflection of the constraint status.
@@ -98,7 +104,7 @@
       <p>The following constraints were violated:</p>
       <div class="constraints-list">
         {#each failingConstraints as failing}
-          <p>{failing}</p>
+          <p>{failing.name} <b>({failing.viols} violations)</b></p>
         {/each}
       </div>
     {/if}
