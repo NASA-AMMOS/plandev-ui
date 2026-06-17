@@ -84,6 +84,20 @@
         The status of constraints is therefore undefined, and the plan have violations that the mission planner is not
         aware of.
       </p>
+      {#if uncheckedConstraints.length > 0 || failingConstraints.length > 0}
+        <br />
+        <p><i>For the most recent constraint run, the results were that:</i></p>
+      {/if}
+    {:else if $checkConstraintsStatus === Status.Incomplete}
+      <p>The most recent constraint evaluation is incomplete.</p>
+      <p>
+        The status of constraints is therefore ill-defined, and the plan have violations that the mission planner is not
+        aware of.
+      </p>
+      {#if uncheckedConstraints.length > 0 || failingConstraints.length > 0}
+        <br />
+        <p><i>For the most recent constraint run, the results were that:</i></p>
+      {/if}
     {:else if simulationOutOfDate}
       <!-- If expansion is disabled for an out of date simulation, this won't show. But if we remove that guard, this shows. -->
       <p>Simulation is out of date. This means the constraint results in the constraints tab are currently invalid.</p>

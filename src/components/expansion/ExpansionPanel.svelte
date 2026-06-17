@@ -243,8 +243,13 @@
   async function onExpandSequence(sequence: ExpansionSequence) {
     var result = { confirm: false };
     if (
-      !($checkConstraintsStatus !== Status.Failed,
-      !simulationOutOfDate && allConstraintsHaveBeenChecked && allConstraintsThatAreCheckedPass)
+      !(
+        $checkConstraintsStatus !== Status.Failed &&
+        $checkConstraintsStatus !== Status.Incomplete &&
+        !simulationOutOfDate &&
+        allConstraintsHaveBeenChecked &&
+        allConstraintsThatAreCheckedPass
+      )
     ) {
       result = await showConfirmExpansionModal(
         simulationOutOfDate,
