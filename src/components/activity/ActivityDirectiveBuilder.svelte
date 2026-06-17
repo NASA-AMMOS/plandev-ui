@@ -57,7 +57,6 @@
   let startTimeField: FieldStore<string>;
   let startTime: string = plan?.start_time_doy ?? '';
 
-
   const dispatch = createEventDispatcher<{
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
     directiveChange: { directive: object };
@@ -146,10 +145,7 @@
     planMaxDate = $plugins.time.primary.parse(plan.end_time_doy) ?? undefined;
   }
   $: if (currentlySelectedActivityType && currentlySelectedActivityType.parameters) {
-    currentActivityTypeFormParams = refreshFormParameters(
-      currentlySelectedActivityType,
-      dirtyDirective.arguments
-    );
+    currentActivityTypeFormParams = refreshFormParameters(currentlySelectedActivityType, dirtyDirective.arguments);
   }
 
   $: if (dirtyDirectiveErrorsMap) {
@@ -218,7 +214,11 @@
     >
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
-          <button on:click|stopPropagation={() => $directiveBuilderIsVisible = false} class="st-button icon" aria-label="close">
+          <button
+            on:click|stopPropagation={() => ($directiveBuilderIsVisible = false)}
+            class="st-button icon"
+            aria-label="close"
+          >
             <CloseIcon />
           </button>
         </MenuHeader>
@@ -256,9 +256,9 @@
                   loading={false}
                   on:change={e => {
                     const v = e.detail[0];
-                    $activeDirectiveType = v
+                    $activeDirectiveType = v;
                   }}
-                  selectedOptionValues={$activeDirectiveType === "" ? [] : [$activeDirectiveType]}
+                  selectedOptionValues={$activeDirectiveType === '' ? [] : [$activeDirectiveType]}
                 >
                   <ChevronDown slot="icon" />
                 </SearchableDropdown>
@@ -306,7 +306,7 @@
                     if (currentlySelectedActivityType) {
                       currentActivityTypeFormParams = refreshFormParameters(
                         currentlySelectedActivityType,
-                        dirtyDirective.arguments
+                        dirtyDirective.arguments,
                       );
                     }
                     getArgumentValidation();
@@ -320,7 +320,7 @@
           </div>
           <slot name="footer" />
           <button
-            class="st-button primary min-h-6 mt-auto"
+            class="st-button primary mt-auto min-h-6"
             on:click={() => {
               dispatch('createActivityDirective', { directive: dirtyDirective });
             }}>Create Activity Directive</button

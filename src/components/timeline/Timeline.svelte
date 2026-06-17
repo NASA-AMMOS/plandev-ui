@@ -7,7 +7,11 @@
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { InvalidDate } from '../../constants/time';
-  import { activeDirectiveStartTime, activeDirectiveType, directiveBuilderIsVisible } from '../../stores/directiveBuilder';
+  import {
+    activeDirectiveStartTime,
+    activeDirectiveType,
+    directiveBuilderIsVisible,
+  } from '../../stores/directiveBuilder';
   import { planDerivationGroupLinks } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
   import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';

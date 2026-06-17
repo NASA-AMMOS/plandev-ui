@@ -111,18 +111,18 @@
     <div
       use:permissionHandler={{
         hasPermission: hasUploadPermission,
-        permissionError: uploadPermissionError
+        permissionError: uploadPermissionError,
       }}
     >
       <Button
         variant="outline"
         aria-label="Add Activity"
         disabled={!hasUploadPermission}
-        on:click={() => $directiveBuilderIsVisible = true}
+        on:click={() => ($directiveBuilderIsVisible = true)}
       >
         <CirclePlus size={16} />
       </Button>
-      </div>
+    </div>
   </svelte:fragment>
 </TimelineItemList>
 
