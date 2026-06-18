@@ -61,18 +61,6 @@
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
   }>();
 
-  export function setCurrentActivityType(newType: string) {
-    $activeDirectiveType = newType;
-  }
-
-  export function setCurrentActivityStart(newStartTime: string) {
-    startTime = newStartTime;
-  }
-
-  export function setActiveDirective(newDirective: ActivityDirectiveInsertInput) {
-    dirtyDirective = newDirective;
-  }
-
   function selectActivityType(newType: string) {
     dirtyDirective.arguments = {};
     currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
