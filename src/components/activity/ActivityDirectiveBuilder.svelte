@@ -174,9 +174,9 @@
     } else if (y + height < document.body.clientHeight - padding) {
       // Show below
       defaultY = y;
-    } else if (y + height - height > padding) {
+    } else if (y > padding) {
       // Show above
-      defaultY = y + height - height;
+      defaultY = y;
     } else {
       defaultY = Math.max(0, document.body.clientHeight / 2 - height / 2);
     }
