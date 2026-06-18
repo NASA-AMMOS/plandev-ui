@@ -59,8 +59,6 @@
 
   const dispatch = createEventDispatcher<{
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
-    directiveChange: { directive: object };
-    rename: { name: string };
   }>();
 
   export function setCurrentActivityType(newType: string) {
@@ -164,7 +162,6 @@
   function onDirectiveNameChange(event: Event) {
     const { value } = getTarget(event);
     dirtyDirective.name = value as string;
-    dispatch('rename', { name: value as string });
   }
 
   function getDefaultPosition() {
