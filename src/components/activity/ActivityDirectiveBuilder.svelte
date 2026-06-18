@@ -7,7 +7,7 @@
   import { ChevronDown } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { activeDirectiveName, activeDirectiveType, directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../stores/directiveBuilder';
+  import { activeDirectiveName, activeDirectiveStartTime, activeDirectiveType, directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -55,7 +55,7 @@
   let planMaxDate: Date | undefined;
   let rootRef: HTMLDivElement;
   let startTimeField: FieldStore<string>;
-  let startTime: string = plan?.start_time_doy ?? '';
+  let startTime: string = $activeDirectiveStartTime ?? (plan?.start_time_doy ?? '');
 
   const dispatch = createEventDispatcher<{
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
@@ -116,8 +116,13 @@
   $: activityTypesOptions = $planModelActivityTypes.map(activityType => {
     return { display: activityType.name, value: activityType.name };
   });
-  $: startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
-  $: startTimeField.validateAndSet(startTime);
+  $: {
+    startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
+    startTimeField.validateAndSet(startTime);
+  }
+  $: if ($activeDirectiveStartTime !== '') {
+    startTime = $activeDirectiveStartTime;
+  }
   $: if (plan) {
     const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
     if (startTimeDate) {
