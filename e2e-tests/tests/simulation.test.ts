@@ -54,7 +54,7 @@ test.describe.serial('Simulation', async () => {
       setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' }),
     ).not.toBeVisible();
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
-    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
     await setup.plan.runSimulation();
     await setup.plan.showPanel(PanelNames.SIMULATED_ACTIVITIES_TABLE, true);
     await expect(setup.plan.panelSimulatedActivitiesTable.getByRole('gridcell', { name: 'GrowBanana' })).toBeVisible();
@@ -62,12 +62,12 @@ test.describe.serial('Simulation', async () => {
   });
 
   test(`Plans with an invalid activity should fail simulation`, async () => {
-    await setup.plan.addActivity('BakeBananaBread');
+    await setup.plan.addActivityByDragAndDrop('BakeBananaBread');
     await setup.plan.runSimulation(Status.Failed);
   });
 
   test(`Modified plans should indicate that simulation is out of date`, async () => {
-    await setup.plan.addActivity();
+    await setup.plan.addActivityByDragAndDrop();
     await setup.plan.waitForSimulationStatus(Status.Modified);
   });
 });
