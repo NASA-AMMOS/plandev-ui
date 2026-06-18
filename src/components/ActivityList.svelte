@@ -20,14 +20,15 @@
   export let user: User | null;
 
   const uploadPermissionError: string = 'You do not have permission to upload activities.';
+  const createPermissionError: string = 'You do not have permission to create activities.';
 
-  let hasUploadPermission: boolean = false;
+  let hasCreatePermission: boolean = false;
   let isUploadVisible: boolean = false;
   let uploadFiles: FileList | undefined;
   let uploadFileInput: HTMLInputElement;
 
   $: if (user !== null && $plan !== null) {
-    hasUploadPermission = featurePermissions.activityDirective.canCreate(user, $plan);
+    hasCreatePermission = featurePermissions.activityDirective.canCreate(user, $plan);
   }
 
   function getFilterValueFromItem(item: TimelineItemType) {
@@ -77,7 +78,7 @@
         bind:files={uploadFiles}
         bind:this={uploadFileInput}
         use:permissionHandler={{
-          hasPermission: hasUploadPermission,
+          hasPermission: hasCreatePermission,
           permissionError: uploadPermissionError,
         }}
       />
@@ -88,8 +89,8 @@
         disabled={!uploadFiles?.length}
         on:click={onUpload}
         use:permissionHandler={{
-          hasPermission: hasUploadPermission,
-          permissionError: uploadPermissionError,
+          hasPermission: hasCreatePermission,
+          permissionError: createPermissionError,
         }}
       >
         Upload
@@ -101,7 +102,7 @@
       class="st-button secondary"
       on:click={onShowUpload}
       use:permissionHandler={{
-        hasPermission: hasUploadPermission,
+        hasPermission: hasCreatePermission,
         permissionError: uploadPermissionError,
       }}
       use:tooltip={{ content: 'Upload Activities' }}
@@ -110,14 +111,14 @@
     </button>
     <div
       use:permissionHandler={{
-        hasPermission: hasUploadPermission,
+        hasPermission: hasCreatePermission,
         permissionError: uploadPermissionError,
       }}
     >
       <Button
         variant="outline"
         aria-label="Add Activity"
-        disabled={!hasUploadPermission}
+        disabled={!hasCreatePermission}
         on:click={() => ($directiveBuilderIsVisible = true)}
       >
         <CirclePlus size={16} />
