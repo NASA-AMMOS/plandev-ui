@@ -70,3 +70,5 @@ export type ParameterValidationResponse = {
 
 export type ParameterType = 'action' | 'activity' | 'constraint' | 'goal' | 'simulation';
 export type ValueSource = 'user on model' | 'user on preset' | 'preset' | 'mission' | 'none';
+
+export type ErrorMap = Record<string, string[]>;
