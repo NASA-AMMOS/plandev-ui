@@ -7,7 +7,7 @@
   import { ChevronDown } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { activeDirectiveName, activeDirectiveType, directiveBuilderIsVisible } from '../../stores/directiveBuilder';
+  import { activeDirectiveName, activeDirectiveType, directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -201,6 +201,11 @@
       y: defaultY,
     };
   }
+
+  function handleClose() {
+    $directiveBuilderIsVisible = false;
+    resetDirectiveBuilderStores();
+  }
 </script>
 
 <div bind:this={rootRef} class="w-full" style:display="grid">
@@ -215,7 +220,7 @@
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
           <button
-            on:click|stopPropagation={() => ($directiveBuilderIsVisible = false)}
+            on:click|stopPropagation={handleClose}
             class="st-button icon"
             aria-label="close"
           >

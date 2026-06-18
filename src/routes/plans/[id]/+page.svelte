@@ -60,7 +60,7 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
-  import { activeDirectiveName, directiveBuilderIsVisible } from '../../../stores/directiveBuilder';
+  import { directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -777,6 +777,7 @@
       );
       if (newDirectiveId !== null) {
         $directiveBuilderIsVisible = false;
+        resetDirectiveBuilderStores();
       }
     }
   }
@@ -790,11 +791,6 @@
   bind:this={directiveBuilder}
   width={200}
   plan={$plan}
-  on:visibilityChange={visibility => {
-    if (!visibility.detail.isShown) {
-      $activeDirectiveName = '';
-    }
-  }}
   on:createActivityDirective={event => {
     onCreateActivityDirective(event.detail.directive);
   }}
