@@ -39,6 +39,7 @@ import RunActionModal from '../components/modals/RunActionModal.svelte';
 import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
+import UnsavedChangesModal from '../components/modals/UnsavedChangesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
@@ -159,6 +160,56 @@ export async function showConfirmModal(
           target.resolve = null;
           resolve({ confirm: true });
           confirmModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an UnsavedChangesModal offering three outcomes: save and proceed, discard and
+ * proceed, or stay. Resolves with `confirm` (false = stay) and, when confirming, a
+ * `shouldSave` flag distinguishing the save button from the discard button.
+ */
+export async function showUnsavedChangesModal(
+  message: string,
+  title: string,
+  saveText: string,
+  discardText: string,
+  cancelText: string,
+): Promise<ModalElementValue<{ shouldSave: boolean }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const unsavedChangesModal = new UnsavedChangesModal({
+          props: { cancelText, discardText, message, saveText, title },
+          target,
+        });
+        target.resolve = resolve;
+
+        unsavedChangesModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          unsavedChangesModal.$destroy();
+        });
+
+        unsavedChangesModal.$on('discard', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { shouldSave: false } });
+          unsavedChangesModal.$destroy();
+        });
+
+        unsavedChangesModal.$on('save', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { shouldSave: true } });
+          unsavedChangesModal.$destroy();
         });
       }
     } else {
