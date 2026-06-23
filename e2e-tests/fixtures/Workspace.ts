@@ -6,6 +6,7 @@ import { getWorkspacesUrl } from '../../src/utilities/routes';
 import { generateRandomName, hoverRowAndWaitForButton, setFileInputByBuffer } from '../utilities/helpers';
 
 export class Workspace {
+  actionsTabButton!: Locator;
   editSequenceButton!: Locator;
   fileInput!: Locator;
   folderNameInput!: Locator;
@@ -24,6 +25,7 @@ export class Workspace {
   saveSequenceButton!: Locator;
   searchInput!: Locator;
   sequenceEditor!: Locator;
+  sequenceEditorContent!: Locator;
   sequenceNameInput!: Locator;
   textEditor!: Locator;
   userMetadataEditor!: Locator;
@@ -289,6 +291,7 @@ export class Workspace {
   }
 
   updatePage(page: Page): void {
+    this.actionsTabButton = page.getByRole('button', { exact: true, name: 'Actions' });
     this.editSequenceButton = page.getByRole('button', { name: 'Edit Sequence' });
     // File input is detected as a button in Chrome for Testing (Playwright 1.57+)
     // Use locator chain: find by aria-label within the modal
@@ -309,6 +312,7 @@ export class Workspace {
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.searchInput = page.getByPlaceholder('Search files and folders');
     this.sequenceEditor = page.locator('.cm-activeLine').first();
+    this.sequenceEditorContent = page.locator('.cm-content').first();
     this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
     this.userMetadataEditor = page.locator('.user-metadata-editor .cm-content').first();
