@@ -17,6 +17,11 @@
   export let hasUpdatePermission: boolean = false;
   export let permissionError: string = '';
 
+  let startTimeString: string = '';
+  let endTimeYmd: string | null = null;
+  let endTimeString: string = '';
+  let durationString: string = 'None';
+
   // Display values are read-only but selectable (the inputs are `readonly`, not `disabled`) so the
   // text remains copyable. Editing goes through ChangePlanBoundsModal, which edits both at once.
   $: startTimeString = formatDate(new Date(plan.start_time), $plugins.time.primary.format);

@@ -51,6 +51,15 @@
 
   let errorMessage: string | null = null;
   let inFlight: boolean = false;
+  let startTimeMs: number | undefined;
+  let endTimeMs: number | undefined;
+  let bothValid: boolean = false;
+  let durationString: string = 'None';
+  let planStartMs: number = 0;
+  let planEndYmd: string | null = null;
+  let planEndMs: number = NaN;
+  let changed: boolean = false;
+  let updateDisabled: boolean = true;
 
   $: startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
   $: endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
