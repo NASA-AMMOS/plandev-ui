@@ -190,6 +190,10 @@ export class Plan {
     await this.panelSimulation.getByRole('button', { name: bound === 'start' ? 'Plan Start' : 'Plan End' }).click();
   }
 
+  async closeSnapshotPreview() {
+    await this.page.getByRole('button', { name: 'Close Preview' }).click();
+  }
+
   async createBranch(
     baseURL?: string,
     name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
@@ -352,6 +356,14 @@ export class Plan {
     return (await this.panelActivityForm.locator('input[name="start-time"]').inputValue()).trim();
   }
 
+  /** Reads the read-only Start/End time values shown in the Plan Metadata panel. */
+  async getPlanMetadataBounds(): Promise<{ end: string; start: string }> {
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
+    const start = (await this.panelPlanMetadata.locator('input[name="planStartTime"]').inputValue()).trim();
+    const end = (await this.panelPlanMetadata.locator('input[name="planEndTime"]').inputValue()).trim();
+    return { end, start };
+  }
+
   async getSimulationHistoryListLength() {
     const elements = await this.simulationHistoryList.locator(`button:has-text("Simulation ID")`).all();
     return elements.length;
@@ -366,6 +378,12 @@ export class Plan {
   async goto(planId = this.plans.planId) {
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
     await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.waitForTimelineLoading();
+  }
+
+  /** Navigates to a plan in snapshot-preview mode via the `snapshotId` query parameter. */
+  async gotoSnapshotPreview(snapshotId: number, planId = this.plans.planId) {
+    await this.page.goto(`/plans/${planId}?snapshotId=${snapshotId}`, { waitUntil: 'load' });
     await this.waitForTimelineLoading();
   }
 

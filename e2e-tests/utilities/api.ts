@@ -94,6 +94,15 @@ export class AerieApi {
     return data.createPlan;
   }
 
+  async createPlanSnapshot(planId: number, name: string, description = ''): Promise<{ snapshot_id: number }> {
+    const data = await this.gqlQuery<{ createSnapshot: { snapshot_id: number } }>(gql.CREATE_PLAN_SNAPSHOT, {
+      description,
+      plan_id: planId,
+      snapshot_name: name,
+    });
+    return data.createSnapshot;
+  }
+
   async createSchedulingGoal(goal: SchedulingGoalInsertInput): Promise<{ id: number }> {
     const metadatadata = await this.gqlQuery<{ createSchedulingGoal: { id: number } }>(gql.CREATE_SCHEDULING_GOAL, {
       description: goal.description ?? '',
