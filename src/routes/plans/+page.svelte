@@ -190,6 +190,7 @@
 
   let canCreate: boolean = false;
   let canChangePlanModel: boolean = false;
+  let canUpdatePlan: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
