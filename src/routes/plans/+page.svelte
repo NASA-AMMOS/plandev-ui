@@ -7,7 +7,7 @@
   import { Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
-  import { ArrowLeftRight, FileUp, Import, X } from 'lucide-svelte';
+  import { FileUp, Import, Pencil, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -696,7 +696,7 @@
                     <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
                       <InputStellar
                         sizeVariant="xs"
-                        disabled
+                        readonly
                         class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
                         name="name"
                         value={selectedPlanModelName ?? 'Model not found'}
@@ -716,7 +716,7 @@
                         on:click={openChangePlanMissionModelModal}
                         aria-label="Change mission model"
                       >
-                        <ArrowLeftRight size={16} />
+                        <Pencil size={16} />
                       </Button>
                     </div>
                   </div>

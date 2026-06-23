@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { LoaderCircle } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
   import { field } from '../../stores/form';
   import { plugins } from '../../stores/plugins';
@@ -13,7 +14,6 @@
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
   import AlertError from '../ui/AlertError.svelte';
-  import ProgressRadial from '../ui/ProgressRadial.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -153,7 +153,7 @@
     <button class="st-button secondary" disabled={inFlight} on:click={close}>Cancel</button>
     <button class="st-button flex items-center gap-1" disabled={updateDisabled} on:click={confirm}>
       {#if inFlight}
-        <ProgressRadial strokeWidth={1} size={14} />
+        <LoaderCircle size={14} class="animate-spin" />
       {/if}
       Update Time Range
     </button>

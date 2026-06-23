@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, cn } from '@nasa-jpl/stellar-svelte';
-  import { ArrowLeftRight, FileUp } from 'lucide-svelte';
+  import { FileUp, Pencil } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
@@ -220,7 +220,7 @@
           <div class="flex gap-1">
             <input
               class={cn('st-input w-full', !plan.model?.name ? 'border-destructive' : '')}
-              disabled
+              readonly
               name="modelName"
               value={plan.model?.name ?? 'Model not found'}
               id="modelName"
@@ -241,7 +241,7 @@
                 on:click={openChangePlanMissionModelModal}
                 aria-label="Change mission model"
               >
-                <ArrowLeftRight size={16} />
+                <Pencil size={16} />
               </Button>
             </div>
           </div>
