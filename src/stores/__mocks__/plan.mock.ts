@@ -25,6 +25,8 @@ export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
 export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
+export const planBoundsPreviewOverride: Writable<{ duration: string; start_time: string } | null> = writable(null);
+
 /* "plan" store dependencies */
 export const initialPlan: Writable<Plan | null> = writable(null);
 

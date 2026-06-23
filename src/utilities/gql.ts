@@ -3272,6 +3272,8 @@ const gql = {
         snapshot_id
         model_id
         plan_id
+        plan_start_time
+        plan_duration
         revision
         snapshot_name
         description
