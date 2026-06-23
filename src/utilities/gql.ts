@@ -1557,6 +1557,7 @@ const gql = {
           }
           is_locked
           start_time
+          duration
         }
         revision
         scheduling_specification {

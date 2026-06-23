@@ -48,6 +48,10 @@ export const planModelId: Readable<number> = derived(initialPlan, $plan => $plan
 
 export const planModelRevision: Readable<number> = derived(initialPlan, $plan => $plan?.model?.revision ?? -1);
 
+export const planStartTimeYmd: Readable<string> = derived(plan, $plan => $plan?.start_time ?? '');
+
+export const planEndTimeDoy: Readable<string> = derived(plan, $plan => $plan?.end_time_doy ?? '');
+
 /* Subscriptions. */
 
 export const activityTypes = writable<ActivityType[]>([]);

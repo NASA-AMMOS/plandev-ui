@@ -14,7 +14,6 @@
     planSnapshotsWithSimulations,
   } from '../../stores/planSnapshots';
   import { plans } from '../../stores/plans';
-  import { plugins } from '../../stores/plugins';
   import { simulationDataset, simulationDatasetId } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
   import type { ActivityDirectivesMap } from '../../types/activity';
@@ -23,16 +22,14 @@
   import type { PlanSnapshot as PlanSnapshotType } from '../../types/plan-snapshot';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import effects from '../../utilities/effects';
-  import { showConfirmModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { computeDurationString, computePlanTimeUpdate, exportPlan } from '../../utilities/plan';
-  import { convertDoyToYmd, formatDate, getDoyTime, getShortISOForDate } from '../../utilities/time';
+  import { exportPlan } from '../../utilities/plan';
+  import { getShortISOForDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import { removeQueryParam, setQueryParam } from '../../utilities/url';
   import { required, unique } from '../../utilities/validators';
   import Collapse from '../Collapse.svelte';
-  import DatePickerField from '../form/DatePickerField.svelte';
   import Field from '../form/Field.svelte';
   import Input from '../form/Input.svelte';
   import AsyncContentState from '../ui/AsyncContentState.svelte';
@@ -42,6 +39,7 @@
   import PlanCollaboratorInput from '../ui/Tags/PlanCollaboratorInput.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import PlanSnapshot from './PlanSnapshot.svelte';
+  import PlanTimeBounds from './PlanTimeBounds.svelte';
 
   const planSnapshotsError = planSnapshots.error;
 
@@ -68,28 +66,10 @@
     ),
   ]);
   let planExporting: boolean = false;
-  let durationString: string = 'None';
-
-  $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
-  $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan && plan.model) {
     hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
-    // Initialize start time field from plan
-    const formattedStartTime = formatDate(new Date(plan.start_time), $plugins.time.primary.format);
-    if ($startTimeField.value !== formattedStartTime && !$startTimeField.dirty) {
-      startTimeField.validateAndSet(formattedStartTime);
-    }
-    // Initialize end time field from plan
-    const endTimeYmd = convertDoyToYmd(plan.end_time_doy);
-    if (endTimeYmd) {
-      const formattedEndTime = formatDate(new Date(endTimeYmd), $plugins.time.primary.format);
-      if ($endTimeField.value !== formattedEndTime && !$endTimeField.dirty) {
-        endTimeField.validateAndSet(formattedEndTime);
-      }
-    }
-    updateDurationString();
   }
   $: {
     if (plan && user) {
@@ -182,73 +162,6 @@
       // Optimistically update plan metadata
       planMetadata.updateValue(pm => (pm ? { ...pm, name: $planNameField.value } : null));
       effects.updatePlan(plan, { name: $planNameField.value }, user);
-    }
-  }
-
-  function updateDurationString() {
-    const startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
-    const endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
-    durationString = computeDurationString(startTimeMs, endTimeMs, $startTimeField.valid && $endTimeField.valid);
-  }
-
-  async function onStartTimeChanged() {
-    updateDurationString();
-    await updatePlanTimes();
-  }
-
-  async function onEndTimeChanged() {
-    updateDurationString();
-    await updatePlanTimes();
-  }
-
-  function revertTimeFields() {
-    if (!plan) {
-      return;
-    }
-    // Revert start time to original plan value
-    const originalStartTime = formatDate(new Date(plan.start_time), $plugins.time.primary.format);
-    startTimeField.validateAndSet(originalStartTime);
-
-    // Revert end time to original plan value
-    const endTimeYmd = convertDoyToYmd(plan.end_time_doy);
-    if (endTimeYmd) {
-      const originalEndTime = formatDate(new Date(endTimeYmd), $plugins.time.primary.format);
-      endTimeField.validateAndSet(originalEndTime);
-    }
-
-    updateDurationString();
-  }
-
-  async function updatePlanTimes() {
-    if (!plan || !$startTimeField.dirtyAndValid || !$endTimeField.dirtyAndValid) {
-      return;
-    }
-
-    const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
-    const endTimeDate = $plugins.time.primary.parse($endTimeField.value);
-    if (!startTimeDate || !endTimeDate) {
-      return;
-    }
-
-    const { confirm } = await showConfirmModal(
-      'Update',
-      'Are you sure you want to change the time range of this plan? This may affect previous simulations and plan snapshots.',
-      'Confirm Plan Time Change',
-      false,
-      'Cancel',
-    );
-
-    if (!confirm) {
-      revertTimeFields();
-      return;
-    }
-
-    const startTimeDoy = getDoyTime(startTimeDate);
-    const endTimeDoy = getDoyTime(endTimeDate);
-
-    const planTimeUpdate = computePlanTimeUpdate(startTimeDoy, endTimeDoy);
-    if (planTimeUpdate) {
-      await effects.updatePlan(plan, planTimeUpdate, user);
     }
   }
 
@@ -347,46 +260,7 @@
             id="modelVersion"
           />
         </Input>
-        <DatePickerField
-          disabled={!hasPlanUpdatePermission}
-          layout="inline"
-          useFallback={!$plugins.time.enableDatePicker}
-          field={startTimeField}
-          label={`Start Time (${$plugins.time.primary.label})`}
-          name="startTime"
-          on:change={onStartTimeChanged}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasPlanUpdatePermission,
-                permissionError,
-              },
-            ],
-          ]}
-        />
-        <DatePickerField
-          disabled={!hasPlanUpdatePermission}
-          layout="inline"
-          useFallback={!$plugins.time.enableDatePicker}
-          field={endTimeField}
-          label={`End Time (${$plugins.time.primary.label})`}
-          name="endTime"
-          on:change={onEndTimeChanged}
-          use={[
-            [
-              permissionHandler,
-              {
-                hasPermission: hasPlanUpdatePermission,
-                permissionError,
-              },
-            ],
-          ]}
-        />
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Plan Duration', placement: 'top' }} for="planDuration">Plan Duration</label>
-          <input class="st-input w-full" disabled name="planDuration" value={durationString} id="planDuration" />
-        </Input>
+        <PlanTimeBounds {plan} {user} hasUpdatePermission={hasPlanUpdatePermission} {permissionError} />
         <Input layout="inline">
           <label use:tooltip={{ content: 'Owner', placement: 'top' }} for="owner">Owner</label>
           <input class="st-input w-full" disabled name="owner" value={plan.owner} id="owner" />

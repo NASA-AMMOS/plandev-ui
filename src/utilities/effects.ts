@@ -73,6 +73,7 @@ import {
 } from '../stores/sequencing';
 import {
   selectedSpanId as selectedSpanIdStore,
+  simulation as simulationStore,
   simulationDatasetId as simulationDatasetIdStore,
   simulationDataset as simulationDatasetStore,
   spansMap,
@@ -7984,7 +7985,7 @@ const effects = {
     }
   },
 
-  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<void> {
+  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
@@ -7996,14 +7997,14 @@ const effects = {
       if (updatePlan.id != null) {
         showSuccessToast('Plan Updated Successfully');
         logMessage(`Updated plan "${plan.name}" (ID=${plan.id}).`);
-        return;
+        return true;
       } else {
         throw Error(`Unable to update plan with ID: "${plan.id}"`);
       }
     } catch (e) {
       catchError('Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
-      return;
+      return false;
     }
   },
 
@@ -8055,6 +8056,27 @@ const effects = {
       showFailureToast('Plan Snapshot Update Failed');
       return;
     }
+  },
+
+  /**
+   * Applies a plan time-bounds update (new `start_time` + `duration`) and returns whether it
+   * succeeded. The confirmation/warning UX and the start/end editing now live in
+   * ChangePlanBoundsModal, which calls this; callers compute `planTimeUpdate` with
+   * `computePlanTimeUpdate` (kept pure in utilities/plan.ts to avoid an effects <-> plan cycle).
+   */
+  async updatePlanTimeBounds(
+    plan: Plan | PlanSlim,
+    planTimeUpdate: { duration: string; start_time: string },
+    user: User | null,
+  ): Promise<boolean> {
+    const updated = await effects.updatePlan(plan as Plan, planTimeUpdate, user);
+    if (updated) {
+      // The backend trigger recomputes the simulation start/end times when the plan bounds change.
+      // Force the simulation subscription to re-pull so the UI reflects those values without a
+      // page refresh (the backend result is the source of truth).
+      simulationStore.refetch();
+    }
+    return updated;
   },
 
   async updateSchedulingConditionDefinitionTags(

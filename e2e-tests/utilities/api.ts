@@ -186,6 +186,15 @@ export class AerieApi {
     return data.plan;
   }
 
+  async getSimulation(
+    planId: number,
+  ): Promise<{ simulation_end_time: string | null; simulation_start_time: string | null }> {
+    const data = await this.gqlQuery<{
+      simulation: { simulation_end_time: string | null; simulation_start_time: string | null }[];
+    }>(convertToQuery(gql.SUB_SIMULATION), { planId });
+    return data.simulation[0];
+  }
+
   async getSimulationDataset(id: number): Promise<{ reason: string | null; status: string }> {
     const data = await this.gqlQuery<{
       simulation_dataset_by_pk: { reason: string | null; status: string };

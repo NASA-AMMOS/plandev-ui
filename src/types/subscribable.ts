@@ -7,6 +7,12 @@ export type GqlSubscribable<T> = {
   setVariables: (newVariables: QueryVariables) => void;
   subscribe: (next: Subscriber<T>) => Unsubscriber;
   filterValueById(id: number): void;
+  /**
+   * Force the active subscription to re-pull fresh data from the server (no-op if nothing is
+   * currently subscribed). Useful after a mutation whose effects are applied server-side (e.g. a
+   * Postgres trigger) and may not always be surfaced by the live subscription immediately.
+   */
+  refetch(): void;
   /** Readable store for the subscription's loading state */
   restartSocket(): void;
   updateValue(fn: Updater<T>): void;

@@ -78,7 +78,10 @@ export type PlanMergeRequest = PlanMergeRequestSchema & { pending: boolean; type
 
 export type PlanMergeRequestStatus = 'accepted' | 'in-progress' | 'pending' | 'rejected' | 'withdrawn';
 
-export type PlanForMerging = Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'model_id' | 'start_time'> & {
+export type PlanForMerging = Pick<
+  PlanSchema,
+  'id' | 'name' | 'owner' | 'collaborators' | 'model_id' | 'start_time' | 'duration'
+> & {
   model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
 };
 
@@ -109,7 +112,10 @@ export type PlanSchema = {
   name: string;
   owner: UserId;
   parent_plan:
-    | (Pick<PlanSchema, 'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id' | 'start_time'> & {
+    | (Pick<
+        PlanSchema,
+        'id' | 'name' | 'owner' | 'collaborators' | 'is_locked' | 'model_id' | 'start_time' | 'duration'
+      > & {
         model: Pick<Model, 'id' | 'name' | 'owner' | 'version'>;
       })
     | null;

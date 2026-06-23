@@ -16,6 +16,7 @@
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
+  import PlanTimeBounds from '../../components/plan/PlanTimeBounds.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
@@ -47,11 +48,9 @@
   import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
-    convertUsToDurationString,
     formatDate,
     getDoyTime,
     getDoyTimeFromInterval,
-    getIntervalInMs,
     getShortISOForDate,
   } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
@@ -204,8 +203,6 @@
   let selectedPlan: PlanSlim | undefined;
   let selectedPlanId: number | null = null;
   let selectedPlanModelName: string | null = null;
-  let selectedPlanStartTime: string | null = null;
-  let selectedPlanEndTime: string | null = null;
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -222,6 +219,8 @@
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel($user, selectedPlan);
+  $: canUpdatePlan =
+    selectedPlan !== undefined && $user ? featurePermissions.plan.canUpdate($user, selectedPlan) : false;
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -234,18 +233,6 @@
 
     selectedPlan = $plans.find(({ id }) => id === selectedPlanId);
     if (selectedPlan) {
-      try {
-        const parsedPlanStartTime = $plugins.time.primary.parse(selectedPlan?.start_time_doy);
-        const parsedPlanEndTime = $plugins.time.primary.parse(selectedPlan?.end_time_doy);
-        if (parsedPlanStartTime) {
-          selectedPlanStartTime = formatDate(parsedPlanStartTime, $plugins.time.primary.format);
-        }
-        if (parsedPlanEndTime) {
-          selectedPlanEndTime = formatDate(parsedPlanEndTime, $plugins.time.primary.format);
-        }
-      } catch (e) {
-        console.log(e);
-      }
       selectedPlanModelName = $models.find(model => model.id === selectedPlan?.model_id)?.name ?? null;
     }
   }
@@ -739,36 +726,12 @@
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
                 <InputStellar sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
               </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="start-time">
-                  Start Time - {$plugins.time.primary.label}
-                </Label>
-                <InputStellar
-                  sizeVariant="xs"
-                  disabled
-                  class="w-full"
-                  name="start-time"
-                  value={selectedPlanStartTime}
-                />
-              </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="end-time">
-                  End Time - {$plugins.time.primary.label}
-                </Label>
-                <InputStellar sizeVariant="xs" disabled class="w-full" name="end-time" value={selectedPlanEndTime} />
-              </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="duration">
-                  Plan Duration
-                </Label>
-                <InputStellar
-                  sizeVariant="xs"
-                  disabled
-                  class="w-full"
-                  name="duration"
-                  value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000)}
-                />
-              </Input>
+              <PlanTimeBounds
+                plan={selectedPlan}
+                user={$user}
+                hasUpdatePermission={canUpdatePlan}
+                permissionError="You do not have permission to edit this plan."
+              />
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
                 <TagsInput
