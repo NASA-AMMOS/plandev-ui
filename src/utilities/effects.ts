@@ -73,7 +73,6 @@ import {
 } from '../stores/sequencing';
 import {
   selectedSpanId as selectedSpanIdStore,
-  simulation as simulationStore,
   simulationDatasetId as simulationDatasetIdStore,
   simulationDataset as simulationDatasetStore,
   spansMap,
@@ -8069,14 +8068,7 @@ const effects = {
     planTimeUpdate: { duration: string; start_time: string },
     user: User | null,
   ): Promise<boolean> {
-    const updated = await effects.updatePlan(plan as Plan, planTimeUpdate, user);
-    if (updated) {
-      // The backend trigger recomputes the simulation start/end times when the plan bounds change.
-      // Force the simulation subscription to re-pull so the UI reflects those values without a
-      // page refresh (the backend result is the source of truth).
-      simulationStore.refetch();
-    }
-    return updated;
+    return effects.updatePlan(plan as Plan, planTimeUpdate, user);
   },
 
   async updateSchedulingConditionDefinitionTags(

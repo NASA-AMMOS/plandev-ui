@@ -170,14 +170,6 @@ export function gqlSubscribable<T>(
     debouncedClientSubscribe();
   }
 
-  // Re-pull fresh data for the active subscription. Guarded by subscriptionActive so we never spin
-  // up an orphan subscription when nothing is currently listening (those re-fetch on next mount).
-  function refetch() {
-    if (subscriptionActive) {
-      resubscribe();
-    }
-  }
-
   function restartSocket() {
     setLoading(true);
     setError(''); // Clear previous error on restart
@@ -287,7 +279,6 @@ export function gqlSubscribable<T>(
     error: errorStore,
     filterValueById,
     loading: loadingStore,
-    refetch,
     restartSocket,
     setVariables,
     subscribe,
