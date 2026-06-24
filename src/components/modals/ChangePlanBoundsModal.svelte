@@ -126,7 +126,7 @@
 <Modal closeOnEscape={!inFlight} closeOnOutsideClick={!inFlight} height="auto" width={480} on:close={close}>
   <ModalHeader showClose={!inFlight} on:close={close}>Change Plan Time Range</ModalHeader>
   <ModalContent>
-    <p class="warning">
+    <p class="mb-4 text-muted-foreground">
       Activity directives will remain fixed in absolute time — their start offsets are adjusted automatically. Plan
       snapshots and simulation results are also fixed and will not move.
     </p>
@@ -168,10 +168,3 @@
     </button>
   </ModalFooter>
 </Modal>
-
-<style>
-  .warning {
-    color: var(--st-gray-60);
-    margin-bottom: 1rem;
-  }
-</style>

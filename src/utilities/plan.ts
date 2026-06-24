@@ -12,7 +12,12 @@ import type {
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
 import { downloadJSON, unique } from './generic';
-import { convertDoyToYmd, convertUsToDurationString, getIntervalFromDoyRange, switchISOTimezoneRepresentation } from './time';
+import {
+  convertDoyToYmd,
+  convertUsToDurationString,
+  getIntervalFromDoyRange,
+  switchISOTimezoneRepresentation,
+} from './time';
 
 /**
  * Computes a human-readable duration string from start and end times.

@@ -103,9 +103,9 @@ test.describe.serial('Change Plan Time Bounds', () => {
     expect(await setup.plan.getActivityStartTime(NAMES.child)).toBe(beforeChild);
   });
 
-  // KNOWN BACKEND BUG: when only the plan start moves (end fixed), a plan-end-anchored activity is
-  // shifted by the start delta instead of staying fixed in absolute time (its start_offset is
-  // wrongly adjusted). Re-enable once the backend preserves end-anchored absolute times here.
+  // Regression for the backend plan-bounds trigger: moving only the plan start (end fixed) must keep
+  // a plan-end-anchored activity fixed in absolute time — its start_offset is adjusted by the
+  // plan-end delta (zero here), not the start delta.
   test('Moving the plan start keeps plan-end-anchored activities fixed in absolute time', async () => {
     await setup.plan.setPlanStartTime('2022-001T00:00:00');
     await expect.poll(() => setup.plan.getActivityStartTime(NAMES.end)).toBe(beforeEnd);

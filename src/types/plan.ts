@@ -152,7 +152,16 @@ export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation
 
 export type PlanMetadata = Pick<
   PlanSchema,
-  'id' | 'updated_at' | 'updated_by' | 'name' | 'owner' | 'created_at' | 'collaborators' | 'model' | 'start_time' | 'duration'
+  | 'id'
+  | 'updated_at'
+  | 'updated_by'
+  | 'name'
+  | 'owner'
+  | 'created_at'
+  | 'collaborators'
+  | 'model'
+  | 'start_time'
+  | 'duration'
 >;
 
 export type PlanSlim = Pick<
