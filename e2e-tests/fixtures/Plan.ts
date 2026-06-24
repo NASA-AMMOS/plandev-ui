@@ -309,9 +309,9 @@ export class Plan {
   }
 
   async fillPlanName(name: string) {
+    // Blur fires a single native `change` event, mirroring a real user editing the field and
+    // clicking away. Avoid also dispatching a synthetic `change`, which would double the update.
     await this.planNameInput.fill(name);
-    await this.planNameInput.evaluate(e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
-    await this.planNameInput.evaluate(e => e.dispatchEvent(new Event('change')));
     await this.planNameInput.blur();
   }
 
