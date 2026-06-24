@@ -36,6 +36,7 @@
   let offsetX: number = -1;
   let cursorX: number = 0;
   let cursorMaxWidth: number = 0;
+  let cursorMaxWidthFlipped: number = 0;
   let cursorTimeLabel: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
   let cursorWithinView = true;
@@ -158,7 +159,10 @@
         cursorTimeLabel = formatDate(date, $plugins.time.primary.format);
         cursorTimeLabel += ' ' + $plugins.time.primary.label;
       }
+      // Space available to the right (default) and to the left (when the label flips) of the
+      // cursor line, within the drawable area. `cursorX` is still in draw coordinates here.
       cursorMaxWidth = drawWidth - cursorX;
+      cursorMaxWidthFlipped = cursorX;
       cursorX = cursorX + marginLeft;
       cursorWithinView = true;
     } else {
@@ -184,6 +188,8 @@
       x={cursorX}
       label={cursorTimeLabel}
       maxWidth={cursorMaxWidth}
+      maxWidthFlipped={cursorMaxWidthFlipped}
+      flippable
       on:click={() => {
         if (xScaleView) {
           addVerticalGuide(getDoyTime(xScaleView.invert(offsetX)));
