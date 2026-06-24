@@ -29,7 +29,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem } from '../../../utilities/localStorage';
+  import { getLocalStorageItem } from '../../../utilities/localStorage';
   import { featurePermissions } from '../../../utilities/permissions';
   import {
     computeTreeFilter,
@@ -657,17 +657,12 @@
     actionsMenuFocused = event.detail;
   }
 
-  function saveColumnState() {
-    if (columnStates && columnStates.length > 0) {
-      setLocalStorageItem(WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY, columnStates);
-    }
-  }
-
   function updateColumnState(updatedColumnStates?: ColumnState[]) {
     const columnStatesToUpdate = updatedColumnStates ?? dataGrid?.getColumnState();
     if (columnStatesToUpdate) {
+      // DataGrid handles persistence via persistColumnStateKey + transformColumnState; this just keeps
+      // the local copy in sync for menu rendering and sort-state derivation.
       columnStates = processNameColumnState(columnStatesToUpdate);
-      saveColumnState();
     }
   }
 
@@ -731,7 +726,6 @@
 
   function onResetColumns() {
     nameColumnUserWidth = null;
-    removeLocalStorageItem(WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY);
     columnStates = [
       { colId: 'name', hide: false },
       ...metadataColumnDefs.map(col => ({
@@ -799,6 +793,8 @@
     class="workspace-file-browser"
     {columnDefs}
     {columnStates}
+    persistColumnStateKey={WORKSPACE_FILE_BROWSER_COLUMN_STATE_KEY}
+    transformColumnState={processNameColumnState}
     columnShiftResize
     getRowId={node => node.fullPath}
     {hasDeletePermission}

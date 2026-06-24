@@ -9,6 +9,7 @@ import {
   getLatestRunnableVersion,
   getRunnableVersions,
   getStatusForActionRun,
+  parseActionLogLines,
   truncateRunParameters,
   valueSchemaRecordToParametersMap,
 } from './actions';
@@ -249,5 +250,72 @@ describe('truncateRunParameters', () => {
     };
     const result = truncateRunParameters(params, schema);
     expect(result).toMatch(/^primary:/);
+  });
+});
+
+describe('parseActionLogLines', () => {
+  test('parses a single well-formed line', () => {
+    const result = parseActionLogLines('2026-05-18T12:34:56Z [INFO] starting action');
+    expect(result).toEqual([
+      {
+        level: 'info',
+        message: 'starting action',
+        timestamp: '2026-05-18T12:34:56Z',
+      },
+    ]);
+  });
+
+  test('merges continuation lines into the previous entry trace', () => {
+    const input = [
+      '2026-05-18T12:34:58Z [ERROR] failed to validate',
+      '  [ERROR]   at validatePlan (validator.ts:12)',
+      '  [ERROR]   at run (action.ts:5)',
+    ].join('\n');
+    const result = parseActionLogLines(input);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      level: 'error',
+      message: 'failed to validate',
+      timestamp: '2026-05-18T12:34:58Z',
+      trace: '  at validatePlan (validator.ts:12)\n  at run (action.ts:5)',
+    });
+  });
+
+  test('reassembles {-suffixed JSON continuation into data', () => {
+    const input = [
+      '2026-05-18T12:34:57Z [INFO] fetching plan {',
+      '  [INFO]   "planId": 42,',
+      '  [INFO]   "name": "Mars Mission"',
+      '  [INFO] }',
+    ].join('\n');
+    const result = parseActionLogLines(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].message).toBe('fetching plan');
+    expect(result[0].data).toEqual({ name: 'Mars Mission', planId: 42 });
+    expect(result[0].trace).toBeUndefined();
+  });
+
+  test('keeps trace when {-suffix continuation is not valid JSON', () => {
+    const input = ['2026-05-18T12:34:57Z [INFO] open brace {', '  [INFO] not actually json'].join('\n');
+    const result = parseActionLogLines(input);
+    expect(result[0].message).toBe('open brace {');
+    expect(result[0].data).toBeUndefined();
+    expect(result[0].trace).toBe('not actually json');
+  });
+
+  test('returns [] for empty or whitespace-only input', () => {
+    expect(parseActionLogLines('')).toEqual([]);
+    expect(parseActionLogLines('   \n\n\t  \n')).toEqual([]);
+  });
+
+  test('handles orphan continuation line with no preceding main entry', () => {
+    const result = parseActionLogLines('  [ERROR] orphan trace line');
+    expect(result).toEqual([
+      {
+        level: 'info',
+        message: 'orphan trace line',
+        timestamp: '',
+      },
+    ]);
   });
 });

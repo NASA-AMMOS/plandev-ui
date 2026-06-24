@@ -17,6 +17,7 @@ export class Workspace {
   metadataTabButton!: Locator;
   navButtonSequences!: Locator;
   navButtonSequencesMenu!: Locator;
+  outputPanelCollapseButton!: Locator;
   pageLoadingLocatorWithData!: Locator;
   readOnlyCheckbox!: Locator;
   rightPanelCollapseButton!: Locator;
@@ -49,8 +50,11 @@ export class Workspace {
     await this.searchInput.clear();
   }
 
-  async clickFile(name: string): Promise<void> {
-    await this.workspaceFileGrid.getByRole('row', { name }).click();
+  async clickFile(name: string, options?: { force?: boolean }): Promise<void> {
+    // `force: true` is for callers that expect the click to immediately summon a modal
+    // (e.g. unsaved-changes confirmation) — Playwright's hit-test would otherwise see the
+    // modal backdrop and retry until timeout, even though the original click registered.
+    await this.workspaceFileGrid.getByRole('row', { name }).click(options);
   }
 
   async createFolder(folderPath?: string): Promise<string> {
@@ -222,13 +226,27 @@ export class Workspace {
 
   /**
    * Open the right-side metadata panel by clicking the metadata tab icon.
-   * If the panel is already open on the metadata tab, this is a no-op.
+   * If the panel is already open on the metadata tab, this is a no-op — clicking again
+   * would toggle the panel closed.
    */
   async openMetadataPanel(): Promise<void> {
-    // Click the Metadata tab button in the right icon rail
-    await this.metadataTabButton.click();
-    // Wait for the metadata panel content to appear
+    // The icon rail button sets data-active="true" iff metadata tab is active AND panel is open.
+    const isAlreadyOpen = (await this.metadataTabButton.getAttribute('data-active')) === 'true';
+    if (!isAlreadyOpen) {
+      await this.metadataTabButton.click();
+    }
     await this.page.getByText('User metadata', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
+  }
+
+  async openOutputPanel(): Promise<void> {
+    const initialText = await this.outputPanelCollapseButton.textContent();
+    await this.outputPanelCollapseButton.click();
+
+    if (initialText?.includes('Collapse Editor')) {
+      await expect(this.outputPanelCollapseButton).toHaveText(/Expand Editor/);
+    } else if (initialText?.includes('Expand Editor')) {
+      await expect(this.outputPanelCollapseButton).toHaveText(/Collapse Editor/);
+    }
   }
 
   async openWorkspaceContextMenu(): Promise<void> {
@@ -279,10 +297,11 @@ export class Workspace {
     this.metadataCancelButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Cancel' });
     this.metadataPanel = page.locator('.user-metadata-editor').first();
     this.metadataSaveButton = page.locator('.user-metadata-editor + div').getByRole('button', { name: 'Save' });
-    this.metadataTabButton = page.getByRole('button', { name: 'Metadata' });
+    this.metadataTabButton = page.getByRole('button', { exact: true, name: 'Metadata' });
     this.navButtonSequences = page.locator('.nav-button:has-text("Sequences")');
     this.navButtonSequencesMenu = this.navButtonSequences.getByRole('menu');
     this.page = page;
+    this.outputPanelCollapseButton = page.getByRole('button', { name: /Collapse Editor|Expand Editor/ });
     this.pageLoadingLocatorWithData = page.getByText('Loading workspace').first();
     this.readOnlyCheckbox = page.locator('#read-only');
     this.rightPanelCollapseButton = page.getByRole('button', { name: /Collapse panel|Expand panel/ }).last();

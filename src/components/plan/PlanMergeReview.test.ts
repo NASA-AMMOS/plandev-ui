@@ -105,9 +105,11 @@ const mockInitialPlan: Plan = {
   id: 1,
   is_locked: true,
   model: {
+    activity_types: [],
     constraint_specification: [],
     created_at: '2023-02-16T00:00:00',
     default_view_id: 0,
+    derivation_group_specification: [],
     id: 1,
     jar_id: 1,
     mission: '',

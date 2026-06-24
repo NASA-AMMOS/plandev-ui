@@ -18,6 +18,7 @@ export const createExternalSourceError: Writable<string | null> = writable(null)
 export const createExternalSourceEventTypeError: Writable<string | null> = writable(null);
 export const createDerivationGroupError: Writable<string | null> = writable(null);
 export const derivationGroupPlanLinkError: Writable<string | null> = writable(null);
+export const derivationGroupModelLinkError: Writable<string | null> = writable(null);
 export const derivationGroupVisibilityMap: Writable<Record<DerivationGroup['name'], boolean>> = writable({});
 
 /* Subscriptions. */
@@ -42,6 +43,9 @@ export const sourcesUsingExternalEventTypes = gqlSubscribable<ExternalSourceWith
   [],
   transformSourcesUsingExternalEventTypes,
 );
+
+/* Loading. */
+export const derivationGroupsLoading = derivationGroups.loading;
 
 /* Derived. */
 export const externalSourceTypeAssociations: Readable<ExternalSourceTypeAssociations[]> = derived(
@@ -96,6 +100,7 @@ export function resetExternalSourceStores(): void {
   createDerivationGroupError.set(null);
   derivationGroupPlanLinkError.set(null);
   planDerivationGroupLinks.updateValue(() => []);
+  derivationGroupVisibilityMap.set({});
 }
 
 function transformDerivationGroups(

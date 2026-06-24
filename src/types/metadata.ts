@@ -39,7 +39,7 @@ export type BaseMetadataSlim<D extends BaseDefinition = BaseDefinition> = Omit<
   'models_using' | 'plans_using' | 'versions'
 >;
 
-export type Association = 'constraint' | 'condition' | 'goal';
+export type Association = 'constraint' | 'condition' | 'goal' | 'derivation_group';
 
 export type AssociationSpecificationEntry = {
   arguments?: ArgumentsMap;

@@ -280,7 +280,6 @@
     },
   ));
   $: hasCreateViewPermission = featurePermissions.view.canCreate($user);
-  $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
   $: if ($initialPlan && $initialPlan.model) {
     hasCheckConstraintsPermission =
       featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
@@ -390,6 +389,11 @@
   $: if (data.initialView) {
     initializeView({ ...data.initialView });
   }
+
+  // Ordered after `initializeView` so it runs once `$view` is populated: a `view.set()` inside the block
+  // above won't re-trigger an earlier reactive statement within the same update pass, so computing this
+  // before the view loads would read `$view === null` and stay false until the next view change.
+  $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
 
   $: if ($initialPlan && $planDatasets) {
     const datasetNames = [];

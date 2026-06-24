@@ -145,6 +145,81 @@ export function openActionRun(workspaceId: number, runId: number, eventOrNewTab?
   }
 }
 
+export type ParsedActionLogLevel = 'debug' | 'error' | 'info' | 'warn';
+
+export interface ParsedActionLog {
+  data?: Record<string, unknown>;
+  level: ParsedActionLogLevel;
+  message: string;
+  timestamp: string;
+  trace?: string;
+}
+
+/**
+ * Parses an action server log string into structured entries.
+ *
+ * Action server log format:
+ *   TIMESTAMP [LEVEL] message
+ * Continuation lines (multi-line errors / stack traces) appear as:
+ *   [LEVEL] text  (indented, no timestamp)
+ *
+ * Continuation lines are merged into the previous entry's `trace`. As a
+ * post-process, when a message ends with `{` and `trace` contains the rest
+ * of a JSON object, the JSON is reassembled into `data`.
+ */
+export function parseActionLogLines(logString: string): ParsedActionLog[] {
+  const serverLogPattern = /^(\S+)\s+\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
+  const continuationLevelPattern = /^\s*\[(INFO|WARN|ERROR|DEBUG)]\s(.*)$/;
+  const results: ParsedActionLog[] = [];
+
+  for (const line of logString.split('\n')) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    const mainMatch = line.match(serverLogPattern);
+    if (mainMatch) {
+      const [, timestamp, rawLevel, message] = mainMatch;
+      results.push({
+        level: rawLevel.toLowerCase() as ParsedActionLogLevel,
+        message,
+        timestamp,
+      });
+      continue;
+    }
+
+    const contMatch = line.match(continuationLevelPattern);
+    const cleanLine = contMatch ? contMatch[2] : line;
+
+    if (results.length > 0) {
+      const prev = results[results.length - 1];
+      prev.trace = prev.trace ? `${prev.trace}\n${cleanLine}` : cleanLine;
+    } else {
+      results.push({
+        level: 'info',
+        message: cleanLine,
+        timestamp: '',
+      });
+    }
+  }
+
+  for (const entry of results) {
+    if (entry.message.endsWith('{') && entry.trace) {
+      const jsonCandidate = '{\n' + entry.trace;
+      try {
+        const parsed = JSON.parse(jsonCandidate);
+        entry.message = entry.message.slice(0, -1).trimEnd();
+        entry.data = parsed;
+        entry.trace = undefined;
+      } catch {
+        // Not valid JSON, leave as-is
+      }
+    }
+  }
+
+  return results;
+}
+
 /**
  * Formats action run parameters as a truncated summary string.
  * Prioritizes parameters with `primary: true`, then by `order`.

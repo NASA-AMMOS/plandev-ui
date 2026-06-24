@@ -4,8 +4,9 @@ import type { PartialWith, UserId } from './app';
 import type { ActivityDirectiveValidationFailures } from './console';
 import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
+import type { PlanSchema } from './plan';
 import type { ValueSchema } from './schema';
-import type { Tag } from './tags';
+import type { Tag, TagsInsertInput } from './tags';
 
 export type ActivityType = {
   computed_attributes_value_schema: ValueSchema;
@@ -131,3 +132,28 @@ export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' 
 export type PlanSnapshotActivityDB = Omit<ActivityDirectiveDB, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
   snapshot_id: number;
 };
+
+// What SEARCH_ACTIVITIES returns per row. Extends the DB shape with the joined
+// `plan` / `source_scheduling_goal` selections and overrides fields whose
+// projected shape differs (`applied_preset` traverses through `preset_applied`,
+// `tags` only selects color/name).
+export type ActivityDirectiveSearchResult = Omit<
+  ActivityDirectiveDB,
+  'applied_preset' | 'last_modified_arguments_at' | 'source_scheduling_goal_invocation_id' | 'tags'
+> & {
+  applied_preset: { preset_applied: Pick<ActivityPreset, 'name'> } | null;
+  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
+    model: { id: number; name: string } | null;
+  };
+  source_scheduling_goal: { id: number; name: string } | null;
+  tags: { tag: TagsInsertInput }[];
+};
+
+export interface ActivitySearchResponse {
+  activity_directive: ActivityDirectiveSearchResult[];
+  activity_directive_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
+}

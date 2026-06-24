@@ -23,6 +23,13 @@
   import ListItem from './ui/ListItem.svelte';
   import Tag from './ui/Tags/Tag.svelte';
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface $$Slots {
+    button: Record<string, never>;
+    default: { prop: TimelineItemType };
+    header: Record<string, never>;
+  }
+
   export let chartType: ChartType = 'activity';
   export let typeName: 'activity' | 'resource' | 'externalEvent' = 'activity';
   export let typeNamePlural: 'Activities' | 'Resources' | 'External Events' = 'Activities';
@@ -269,8 +276,7 @@
       </div>
     {/if}
     {#if filteredItems.length && !loading}
-      <RowVirtualizerFixed count={filteredItems.length} overscan={100} let:index disabled={activeItemIndex > -1}>
-        {@const item = filteredItems[index]}
+      <RowVirtualizerFixed items={filteredItems} overscan={100} let:item let:index disabled={activeItemIndex > -1}>
         <ListItem
           class={activeItemIndex === index ? 'active' : ''}
           draggable

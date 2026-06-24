@@ -90,6 +90,10 @@ function isUserCollaborator(
   return false;
 }
 
+function isModelOwner(user: User | null, model: AssetWithOwner<ModelWithOwner> | undefined): boolean {
+  return isUserOwner(user, model);
+}
+
 function isPlanOwner(user: User | null, plan: AssetWithOwner<PlanWithOwners> | undefined): boolean {
   return isUserOwner(user, plan);
 }
@@ -459,6 +463,11 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
   },
+  CREATE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
+    return (
+      isUserAdmin(user) || (getPermission([Queries.INSERT_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
+    );
+  },
   CREATE_PARAMETER_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_PARAMETER_DICTIONARY], user);
   },
@@ -663,6 +672,11 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_MISSION_MODEL], user);
+  },
+  DELETE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
+    return (
+      isUserAdmin(user) || (getPermission([Queries.DELETE_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
+    );
   },
   DELETE_PARAMETER_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_PARAMETER_DICTIONARY], user);
@@ -949,6 +963,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.SCHEDULE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
+  SEARCH_ACTIVITIES: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.SEARCH_ACTIVITIES], user);
+  },
   SIMULATE: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.SIMULATE];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
@@ -968,6 +985,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_ACTIVITY_PRESETS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.ACTIVITY_PRESETS], user);
   },
+  SUB_ACTIVITY_PRESETS_ALL: () => true,
   SUB_ACTIVITY_TYPES: () => true,
   SUB_ANCHOR_VALIDATION_STATUS: () => true,
   SUB_CHANNEL_DICTIONARIES: () => true,
@@ -1591,6 +1609,7 @@ interface FeaturePermissions {
   constraintsPlanSpec: PlanSpecificationCRUDPermission;
   derivationGroup: CRUDPermission<DerivationGroup>;
   derivationGroupAcknowledgement: PlanSpecificationCRUDPermission;
+  derivationGroupModelLink: CRUDPermission<void>;
   derivationGroupPlanLink: CRUDPermission<void>;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
@@ -1693,6 +1712,12 @@ const featurePermissions: FeaturePermissions = {
   derivationGroupAcknowledgement: {
     canRead: user => queryPermissions.SUB_PLAN_DERIVATION_GROUP(user), // seen sources are derived from plan/derivation groups
     canUpdate: (user, plan) => queryPermissions.UPDATE_DERIVATION_GROUP_ACKNOWLEDGED(user, plan),
+  },
+  derivationGroupModelLink: {
+    canCreate: user => queryPermissions.CREATE_MODEL_DERIVATION_GROUP(user),
+    canDelete: user => queryPermissions.DELETE_MODEL_DERIVATION_GROUP(user),
+    canRead: () => false, // this is not a feature, though it would default to true
+    canUpdate: () => false, // this is not a feature
   },
   derivationGroupPlanLink: {
     canCreate: user => queryPermissions.CREATE_PLAN_DERIVATION_GROUP(user),
