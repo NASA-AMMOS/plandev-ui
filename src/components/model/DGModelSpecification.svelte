@@ -99,7 +99,7 @@
     {
       cellDataType: 'boolean',
       colId: 'selected',
-      editable: hasUpdateDerivationGroupLinkPermission,
+      editable: () => hasUpdateDerivationGroupLinkPermission,
       headerName: '',
       resizable: false,
       suppressAutoSize: true,

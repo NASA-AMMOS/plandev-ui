@@ -141,7 +141,7 @@
       },
       {
         cellDataType: 'boolean',
-        editable: hasEditSpecPermission,
+        editable: () => hasEditSpecPermission,
         headerName: '',
         resizable: false,
         suppressAutoSize: true,

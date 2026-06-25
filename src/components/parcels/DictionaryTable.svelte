@@ -87,7 +87,7 @@
   $: editingParcelColumnDefs = [
     {
       cellDataType: 'boolean',
-      editable: hasEditPermission,
+      editable: () => hasEditPermission,
       headerName: '',
       suppressAutoSize: true,
       suppressSizeToFit: true,
