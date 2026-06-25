@@ -137,4 +137,27 @@ describe('DatePicker DatePicker Component', () => {
 
     expect(getByRole('textbox').ariaInvalid).toBe('true');
   });
+
+  it('Should default the view to the middle of min/max range when current date is outside the range', async () => {
+    // Set min and max dates that don't include the current date (Feb 1, 2020)
+    const minDate = new Date(Date.UTC(2025, 0, 1)); // Jan 1, 2025
+    const maxDate = new Date(Date.UTC(2030, 11, 31)); // Dec 31, 2030
+
+    // Calculate the middle date: (minTimestamp + maxTimestamp) / 2
+    const middleTimestamp = (minDate.getTime() + maxDate.getTime()) / 2;
+    const middleDate = new Date(middleTimestamp);
+    const expectedYear = middleDate.getUTCFullYear(); // Should be 2028
+    const expectedMonth = middleDate.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }); // Should be July
+
+    const { getByRole, getByText } = render(DatePicker, {
+      maxDate,
+      minDate,
+    });
+
+    await fireEvent.click(getByRole('textbox'));
+
+    // The view should default to the exact middle of the range
+    expect(getByText(expectedMonth, { selector: 'span' })).toBeTruthy();
+    expect(getByText(expectedYear.toString(), { selector: 'span' })).toBeTruthy();
+  });
 });
