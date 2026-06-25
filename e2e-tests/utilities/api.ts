@@ -280,6 +280,14 @@ export class AerieApi {
     return this.user;
   }
 
+  async restorePlanSnapshot(planId: number, snapshotId: number): Promise<{ snapshot_id: number }> {
+    const data = await this.gqlQuery<{ restore_from_snapshot: { snapshot_id: number } }>(gql.RESTORE_PLAN_SNAPSHOT, {
+      plan_id: planId,
+      snapshot_id: snapshotId,
+    });
+    return data.restore_from_snapshot;
+  }
+
   /**
    * Set the user/token directly (e.g., from storage state).
    */
