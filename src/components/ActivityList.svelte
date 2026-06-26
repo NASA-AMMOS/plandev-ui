@@ -113,7 +113,7 @@
     <div
       use:permissionHandler={{
         hasPermission: hasCreatePermission,
-        permissionError: uploadPermissionError,
+        permissionError: createPermissionError,
       }}
     >
       <Button
