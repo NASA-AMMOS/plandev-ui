@@ -53,8 +53,6 @@
       onHideUpload();
     }
   }
-
-  console.log('HAS CREATE PERM', hasCreatePermission);
 </script>
 
 <TimelineItemList

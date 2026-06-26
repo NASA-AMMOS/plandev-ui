@@ -327,6 +327,7 @@
           <slot name="footer" />
           <button
             class="st-button primary mt-auto min-h-6"
+            disabled={!currentlySelectedActivityType}
             on:click={() => {
               dispatch('createActivityDirective', { directive: dirtyDirective });
             }}>Create Activity Directive</button
