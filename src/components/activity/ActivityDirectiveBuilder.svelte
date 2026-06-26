@@ -36,8 +36,8 @@
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
-  export let width: number = 1000;
-  export let height: number = 700;
+  export let builderWidth: number = 1000;
+  export let builderHeight: number = 700;
   export let directiveName: string = '';
   export let plan: Plan | null = null;
   export let user: User | null = null;
@@ -168,28 +168,30 @@
       return { x: 0, y: 0 };
     }
     const { x, y, width, height } = rootRef.getBoundingClientRect();
+    console.log('AFB', rootRef.getBoundingClientRect());
+
     let defaultX = 0;
     let defaultY = 0;
     const padding = 16;
 
-    if (x - width > padding / 2) {
-      defaultX = x - width - padding / 2;
-    } else if (x + width + width < document.body.clientWidth - padding / 2) {
+    if (x - builderWidth > padding / 2) {
+      defaultX = x - builderWidth - padding / 2;
+    } else if (x + width + builderWidth < document.body.clientWidth - padding / 2) {
       defaultX = x + width + padding / 2;
     } else {
-      defaultX = Math.max(0, document.body.clientWidth / 2 - width / 2);
+      defaultX = Math.max(0, document.body.clientWidth / 2 - builderWidth / 2);
     }
 
-    if (y - height / 2 > padding && y + height < document.body.clientHeight - padding) {
-      defaultY = y - height / 2;
-    } else if (y + height < document.body.clientHeight - padding) {
+    if (y - builderHeight / 2 > padding && y + builderHeight < document.body.clientHeight - padding) {
+      defaultY = y - builderHeight / 2;
+    } else if (y + builderHeight < document.body.clientHeight - padding) {
       // Show below
       defaultY = y;
-    } else if (y > padding) {
+    } else if (y + height - builderHeight > padding) {
       // Show above
-      defaultY = y;
+      defaultY = y + height - builderHeight;
     } else {
-      defaultY = Math.max(0, document.body.clientHeight / 2 - height / 2);
+      defaultY = Math.max(0, document.body.clientHeight / 2 - builderHeight / 2);
     }
 
     return {
@@ -217,8 +219,8 @@
   {#if $directiveBuilderIsVisible}
     <Draggable
       className="st-menu activity-directive-builder"
-      initialWidth={width}
-      initialHeight={height}
+      initialWidth={builderWidth}
+      initialHeight={builderHeight}
       dragOptions={{ defaultPosition: getDefaultPosition() }}
     >
       <div slot="handle">

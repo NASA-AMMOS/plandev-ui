@@ -27,9 +27,9 @@
   import MenuItem from '../../../menus/MenuItem.svelte';
   import CssGrid from '../../../ui/CssGrid.svelte';
   import CssGridGutter from '../../../ui/CssGridGutter.svelte';
-  import ActivityTypeResult from './FilterTypeResult.svelte';
   import Draggable from './Draggable.svelte';
   import DynamicFilter from './DynamicFilter.svelte';
+  import ActivityTypeResult from './FilterTypeResult.svelte';
 
   export let filter: ActivityLayerFilter | undefined = undefined;
   export const filterWidth = 1000;
@@ -320,6 +320,8 @@
       return { x: 0, y: 0 };
     }
     const { x, y, width, height } = rootRef.getBoundingClientRect();
+    console.log('AFB', rootRef.getBoundingClientRect());
+
     let defaultX = 0;
     let defaultY = 0;
     const padding = 16;

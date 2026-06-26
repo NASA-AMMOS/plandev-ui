@@ -4,8 +4,14 @@
   import ExternalEventIcon from '../../assets/external-event-box-with-arrow.svg?component';
   import DirectiveAndSpanIcon from '../../assets/timeline-directive-and-span.svg?component';
   import TimelineLineLayerIcon from '../../assets/timeline-line-layer.svg?component';
+  import { directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../stores/directiveBuilder';
+  import { plan } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
+  import type { ActivityDirectiveInsertInput } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { ViewGridSection } from '../../types/view';
+  import effects from '../../utilities/effects';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import ActivityList from '../ActivityList.svelte';
   import ExternalEventTypeList from '../ExternalEventTypeList.svelte';
   import GridMenu from '../menus/GridMenu.svelte';
@@ -14,9 +20,33 @@
   import Tab from '../ui/Tabs/Tab.svelte';
   import TabPanel from '../ui/Tabs/TabPanel.svelte';
   import Tabs from '../ui/Tabs/Tabs.svelte';
+  import ActivityDirectiveBuilder from './ActivityDirectiveBuilder.svelte';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
+
+  let directiveBuilder: ActivityDirectiveBuilder;
+
+  async function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    if ($plan !== null && $plan.model) {
+      // Convert offset to absolute start with plan as anchor
+      const offsetAsMs = getUnixEpochTimeFromInterval($plan.start_time, directive.start_offset);
+      const formattedStart = formatDate(new Date(offsetAsMs), $plugins.time.primary.format);
+      const newDirectiveId: number | null = await effects.createActivityDirective(
+        directive.arguments,
+        formattedStart,
+        directive.type,
+        directive.name,
+        directive.metadata,
+        $plan,
+        user,
+      );
+      if (newDirectiveId !== null) {
+        $directiveBuilderIsVisible = false;
+        resetDirectiveBuilderStores();
+      }
+    }
+  }
 </script>
 
 <Panel padBody={false}>
@@ -25,6 +55,15 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    <ActivityDirectiveBuilder
+      bind:this={directiveBuilder}
+      plan={$plan}
+      on:createActivityDirective={event => {
+        onCreateActivityDirective(event.detail.directive);
+      }}
+      {user}
+    />
+
     <Tabs class="timeline-items-tabs" tabListClassName="timeline-items-tabs-list">
       <svelte:fragment slot="tab-list">
         <Tab class="timeline-items-tab text-xs"><DirectiveAndSpanIcon /> Activities</Tab>
