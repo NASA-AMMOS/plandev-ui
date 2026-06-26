@@ -42,6 +42,10 @@
   export let plan: Plan | null = null;
   export let user: User | null = null;
 
+  const dispatch = createEventDispatcher<{
+    createActivityDirective: { directive: ActivityDirectiveInsertInput };
+  }>();
+
   let currentActivityTypeFormParams: FormParameter[] = [];
   let currentlySelectedActivityType: ActivityType | undefined;
   let dirtyDirectiveErrorsMap: Record<string, string[]> = {};
@@ -62,61 +66,6 @@
   let rootRef: HTMLDivElement;
   let startTimeField: FieldStore<string>;
   let startTime: string = $activeDirectiveStartTime ?? plan?.start_time_doy ?? '';
-
-  const dispatch = createEventDispatcher<{
-    createActivityDirective: { directive: ActivityDirectiveInsertInput };
-  }>();
-
-  function selectActivityType(newType: string) {
-    dirtyDirective.arguments = {};
-    currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
-    dirtyDirective.type = newType;
-    getArgumentValidation();
-  }
-
-  async function getArgumentValidation(): Promise<void> {
-    if (plan && plan.model_id && user) {
-      dirtyDirectiveErrorsMap = await effects.validateActivityArguments(
-        dirtyDirective.type,
-        undefined,
-        plan?.model_id,
-        dirtyDirective.arguments,
-        user,
-      );
-    }
-  }
-
-  function refreshFormParameters(
-    activityType: ActivityType | undefined,
-    activityArguments: ArgumentsMap,
-  ): FormParameter[] {
-    if (activityType) {
-      currentActivityTypeFormParams = getFormParameters(
-        activityType.parameters,
-        activityArguments,
-        activityType.required_parameters,
-        undefined,
-        $activityArgumentDefaultsMap[activityType.name || ''] ?? {},
-      );
-      return currentActivityTypeFormParams;
-    }
-    return [];
-  }
-
-  async function onPlanStartTimeClick() {
-    if (plan) {
-      startTimeField.validateAndSet(formatDate(new Date(plan.start_time), $plugins.time.primary.format));
-    }
-  }
-
-  async function onPlanEndTimeClick() {
-    if (plan) {
-      const endTimeYmd = convertDoyToYmd(plan.end_time_doy);
-      if (endTimeYmd) {
-        startTimeField.validateAndSet(formatDate(new Date(endTimeYmd), $plugins.time.primary.format));
-      }
-    }
-  }
 
   $: selectActivityType($activeDirectiveType);
   $: activityTypesOptions = $planModelActivityTypes.map(activityType => {
@@ -156,6 +105,30 @@
       }
       return { ...formParameter, errors: errors || null };
     });
+  }
+
+  function selectActivityType(newType: string) {
+    dirtyDirective.arguments = {};
+    currentlySelectedActivityType = $planModelActivityTypes.find(activityType => activityType.name === newType);
+    dirtyDirective.type = newType;
+    getArgumentValidation();
+  }
+
+  function refreshFormParameters(
+    activityType: ActivityType | undefined,
+    activityArguments: ArgumentsMap,
+  ): FormParameter[] {
+    if (activityType) {
+      currentActivityTypeFormParams = getFormParameters(
+        activityType.parameters,
+        activityArguments,
+        activityType.required_parameters,
+        undefined,
+        $activityArgumentDefaultsMap[activityType.name || ''] ?? {},
+      );
+      return currentActivityTypeFormParams;
+    }
+    return [];
   }
 
   function onDirectiveNameChange(event: Event) {
@@ -211,6 +184,33 @@
     dirtyDirective.arguments = updatedArgs;
 
     currentActivityTypeFormParams = refreshFormParameters(currentlySelectedActivityType, dirtyDirective.arguments);
+  }
+
+  async function getArgumentValidation(): Promise<void> {
+    if (plan && plan.model_id && user) {
+      dirtyDirectiveErrorsMap = await effects.validateActivityArguments(
+        dirtyDirective.type,
+        undefined,
+        plan?.model_id,
+        dirtyDirective.arguments,
+        user,
+      );
+    }
+  }
+
+  async function onPlanStartTimeClick() {
+    if (plan) {
+      startTimeField.validateAndSet(formatDate(new Date(plan.start_time), $plugins.time.primary.format));
+    }
+  }
+
+  async function onPlanEndTimeClick() {
+    if (plan) {
+      const endTimeYmd = convertDoyToYmd(plan.end_time_doy);
+      if (endTimeYmd) {
+        startTimeField.validateAndSet(formatDate(new Date(endTimeYmd), $plugins.time.primary.format));
+      }
+    }
   }
 </script>
 
