@@ -6,6 +6,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
+  import type { Extension } from '@codemirror/state';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
     CommandInfoMapper,
@@ -107,9 +108,15 @@
   import { ErrorTypes } from '../../../utilities/errors';
   import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import { showConfirmModal, showRunActionResultsModal } from '../../../utilities/modal';
+  import {
+    showConfirmModal,
+    showRunActionResultsModal,
+    showWorkspaceSaveConflictModal,
+  } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { WorkspaceSaveConflictError } from '../../../utilities/requests';
   import { getWorkspacesUrl } from '../../../utilities/routes';
+  import { phoenixResources } from '../../../utilities/sequence-editor/adaptation-resources';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
@@ -611,11 +618,14 @@
 
   async function getSelectedFileContent(filePath: string) {
     let content: string | null = '';
+    let etag: string | null = null;
 
     if ($user) {
       const node = workspaceTreeMap[filePath];
       if (node?.type !== WorkspaceContentType.Directory) {
-        content = await effects.getWorkspaceFileContent($workspaceId, filePath, $user);
+        const result = await effects.getWorkspaceFileContent($workspaceId, filePath, $user);
+        content = result.content;
+        etag = result.etag;
       }
     }
 
@@ -632,8 +642,8 @@
       return;
     }
 
-    // activeDocument.open handles the stale check internally (compares filePath with loadingPath)
-    activeDocument.open(filePath, content);
+    // open() does the stale check and stores the ETag as baseToken for the next save.
+    activeDocument.open(filePath, content, etag);
 
     // Fetch fresh metadata so readOnly/user fields are current when the user opens the file
     const fileNode = workspaceTreeMap[filePath];
@@ -768,9 +778,24 @@
     }
 
     // Save the file before the operation
-    await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath!, $activeDocument.currentContent, $user);
-    activeDocument.markClean($activeDocument.currentContent);
-    return true;
+    const path = $activeDocumentPath!;
+    const content = $activeDocument.currentContent;
+    const ifMatch = $activeDocument.baseToken ?? '*';
+    try {
+      const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      if (!result) {
+        // Save failed (a failure toast was already shown) — don't proceed.
+        return false;
+      }
+      activeDocument.markClean(content, result.etag);
+      return true;
+    } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        // Proceed with the operation only if the conflict resolution actually saved.
+        return await resolveSaveConflict(e, path, content);
+      }
+      return false;
+    }
   }
 
   async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
@@ -980,9 +1005,20 @@
 
   async function saveCurrentFile(content: string) {
     if ($activeDocumentPath) {
-      await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, $user);
-      activeDocument.markClean(content);
-      refreshWorkspaceContents();
+      const path = $activeDocumentPath;
+      // baseToken runs the concurrency check; '*' forces (when no token was captured).
+      const ifMatch = $activeDocument.baseToken ?? '*';
+      try {
+        const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+        if (result) {
+          activeDocument.markClean(content, result.etag);
+          refreshWorkspaceContents();
+        }
+      } catch (e) {
+        if (e instanceof WorkspaceSaveConflictError) {
+          await resolveSaveConflict(e, path, content);
+        }
+      }
     } else if ($workspace && workspaceTree && content) {
       const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, $user);
       if (newFilePath !== null) {
@@ -991,6 +1027,104 @@
         refreshWorkspaceContents();
       }
     }
+  }
+
+  /**
+   * Shows the conflict modal and applies the user's choice. Returns whether the file was
+   * saved (so save-before-an-operation callers know it's safe to proceed).
+   */
+  async function resolveSaveConflict(
+    error: WorkspaceSaveConflictError,
+    path: string,
+    content: string,
+  ): Promise<boolean> {
+    const node = workspaceTreeMap[path];
+    const { confirm, value } = await showWorkspaceSaveConflictModal({
+      fileName: separateFilenameFromPath(path).filename,
+      languageExtension: getActiveFileLanguageExtension(path),
+      lastEditedAt: error.lastEditedAt,
+      lastEditedBy: error.lastEditedBy,
+      mineContent: content,
+      path,
+      reason: error.reason,
+      type: $activeDocument.type ?? node?.type ?? null,
+      user: $user,
+      workspaceId: $workspaceId,
+    });
+
+    // Cancel: leave the doc dirty with its stale token so the next save re-checks.
+    if (!confirm || !value) {
+      return false;
+    }
+
+    if (value.action === 'take-theirs') {
+      activeDocument.replaceWithServer(path, value.content, value.token);
+      showSuccessToast('Loaded the latest version of the file');
+      return true;
+    }
+
+    if (value.action === 'take-mine') {
+      // Save against the version shown; '*' forces if no token. A re-conflict reopens the diff.
+      return persistMine(path, value.content, value.token ?? '*');
+    }
+
+    if (value.action === 'recreate') {
+      // File was deleted underneath — force-create it.
+      return persistMine(path, content, '*');
+    }
+
+    if (value.action === 'discard') {
+      if ($activeDocumentPath === path) {
+        activeDocument.close();
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Saves with the given `If-Match` and rebases the editor on success. If it still conflicts
+   * (file moved again), reopens the modal instead of overwriting. Returns whether it saved.
+   */
+  async function persistMine(path: string, content: string, ifMatch: string): Promise<boolean> {
+    try {
+      const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      if (result) {
+        // Rebase the editor on the saved content (no-ops if the user navigated away).
+        activeDocument.replaceWithServer(path, content, result.etag);
+        refreshWorkspaceContents();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        return resolveSaveConflict(e, path, content);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * The active file's language extension (same one the sequence editor uses) so the diff
+   * highlights consistently. Null when there's no adaptation or it isn't a sequence.
+   */
+  function getActiveFileLanguageExtension(path: string): Extension | null {
+    const adaptation = $sequenceAdaptation;
+    if (!phoenixContext || !adaptation || path !== $activeDocumentPath) {
+      return null;
+    }
+    const sequenceName = $activeDocument.fileName ?? '';
+    if (activeFileIsInputSequence && adaptation.input.getEditorExtension) {
+      return adaptation.input.getEditorExtension(phoenixContext, phoenixResources);
+    }
+    if (adaptation.outputs.length > 0) {
+      const matchingOutput = adaptation.outputs.find(output =>
+        doesFilenameMatchExtension(output.fileExtension, sequenceName),
+      );
+      return matchingOutput?.getEditorExtension?.(phoenixContext, phoenixResources) ?? null;
+    }
+    return null;
   }
 
   async function onReadOnlyChange(readOnly: boolean) {
@@ -1328,6 +1462,10 @@
   function onGlobalKeydown(event: KeyboardEvent) {
     if (isSaveEvent(event)) {
       event.preventDefault();
+      // Don't save while a modal is open — Ctrl/Cmd+S would stack another save under it.
+      if (browser && document.querySelector('#svelte-modal')?.childElementCount) {
+        return;
+      }
       if (hasEditFilePermission && $activeDocumentIsDirty) {
         saveCurrentFile($activeDocument.currentContent);
       }

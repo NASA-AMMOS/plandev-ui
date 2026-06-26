@@ -28,6 +28,7 @@
   export let setInEditor: (token: SyntaxNode, val: string) => void;
   export let addDefaultArgs: (commandNode: SyntaxNode, argDefs: FswCommandArgument[]) => void;
   export let commandInfoMapper: CommandInfoMapper;
+  export let disabled: boolean = false;
   export let variablesInScope: string[];
 
   let argDef: FswCommandArgument | undefined = undefined;
@@ -98,6 +99,7 @@
       <div class="st-typography-small-caps">Reference</div>
       <EnumEditor
         {argDef}
+        {disabled}
         initVal={argInfo.text ?? ''}
         setInEditor={val => {
           if (argInfo.node) {
@@ -110,6 +112,7 @@
         <EnumEditor
           {commandDictionary}
           {argDef}
+          {disabled}
           initVal={unquoteUnescape(argInfo.text ?? '')}
           setInEditor={val => {
             if (argInfo.node) {

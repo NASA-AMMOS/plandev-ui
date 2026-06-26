@@ -311,6 +311,125 @@ export async function reqWorkspace<T = any>(
   return (await response.text()) as T;
 }
 
+/** Why a workspace save was rejected: the file changed, or it was deleted/moved. */
+export type WorkspaceSaveConflictReason = 'conflict' | 'deleted';
+
+/**
+ * Thrown on a `412` save rejection (the file changed underneath since it was opened).
+ * Carries the who/when fields from the response body for the conflict modal.
+ */
+export class WorkspaceSaveConflictError extends Error {
+  currentETag: string | null;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+  name: string;
+  reason: WorkspaceSaveConflictReason;
+
+  constructor(
+    data: {
+      currentETag: string | null;
+      lastEditedAt?: string;
+      lastEditedBy?: string;
+      reason: WorkspaceSaveConflictReason;
+    },
+    message?: string,
+  ) {
+    super(message ?? 'The file was changed by someone else since you opened it.');
+    this.currentETag = data.currentETag;
+    this.lastEditedAt = data.lastEditedAt;
+    this.lastEditedBy = data.lastEditedBy;
+    this.name = 'WorkspaceSaveConflictError';
+    this.reason = data.reason;
+  }
+}
+
+/**
+ * Thrown for a failed (non-`2xx`, non-`412`) workspace request. Carries the HTTP `status`
+ * so callers can tell a real `404` (file gone) from a transient blip (network/`5xx`).
+ */
+export class WorkspaceRequestError extends Error {
+  name: string;
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'WorkspaceRequestError';
+    this.status = status;
+  }
+}
+
+/** A workspace response plus its `ETag` token and HTTP status. */
+export interface WorkspaceResponseWithMeta<T> {
+  data: T;
+  etag: string | null;
+  status: number;
+}
+
+/**
+ * Like {@link reqWorkspace}, but returns the response `ETag` + status and, on `412`,
+ * throws a typed {@link WorkspaceSaveConflictError}. Used for the editor's file GET/save
+ * so the save token can be threaded through; `reqWorkspace` is left unchanged.
+ */
+export async function reqWorkspaceWithMeta<T = any>(
+  url: string,
+  method: string,
+  body: any | null,
+  user: BaseUser | User | null,
+  signal?: AbortSignal,
+  asJson: boolean = false,
+  headerOverrides: HeadersInit = {},
+): Promise<WorkspaceResponseWithMeta<T>> {
+  const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
+    ...headerOverrides,
+  };
+  const options: RequestInit = {
+    headers,
+    method,
+    signal,
+  };
+
+  if (body !== null) {
+    options.body = body;
+  }
+
+  const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
+  // Null unless the server exposes ETag via CORS; protection degrades gracefully if so.
+  const etag = response.headers.get('ETag');
+
+  if (response.status === 412) {
+    let parsed: { data?: Record<string, any>; message?: string } | null = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      // Body wasn't valid JSON — fall back to the defaults below.
+    }
+    const conflictData = parsed?.data ?? {};
+    throw new WorkspaceSaveConflictError(
+      {
+        currentETag: conflictData.currentETag ?? null,
+        lastEditedAt: conflictData.lastEditedAt,
+        lastEditedBy: conflictData.lastEditedBy,
+        reason: conflictData.reason === 'deleted' ? 'deleted' : 'conflict',
+      },
+      parsed?.message,
+    );
+  }
+
+  if (!response.ok) {
+    // Surface the status so callers can tell a definite 404 from a transient failure.
+    throw new WorkspaceRequestError(response.status, response.statusText);
+  }
+
+  const data = (asJson ? await response.json() : await response.text()) as T;
+
+  return { data, etag, status: response.status };
+}
+
 /**
  * Function to make HTTP requests to the Workspace Service's file-versioning API (the `/revisions/*` routes).
  * Mirrors {@link reqWorkspace} but targets the `/revisions/` path prefix instead of `/ws/`.

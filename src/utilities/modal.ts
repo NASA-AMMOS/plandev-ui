@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import type { Extension } from '@codemirror/state';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterModal.svelte';
@@ -40,7 +41,9 @@ import TransformActivitiesModal from '../components/modals/TransformActivitiesMo
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
+import WorkspaceSaveConflictModal from '../components/modals/WorkspaceSaveConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
+import type { WorkspaceContentType } from '../enums/workspace';
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
@@ -55,6 +58,7 @@ import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import type { WorkspaceSaveConflictReason } from './requests';
 
 /**
  * Closes the active modal if found and resolve nothing
@@ -1667,6 +1671,60 @@ export async function showExpansionPanelModal(user: User | null): Promise<ModalE
           resolve({ confirm: true, value: e.detail });
           expansionPanelModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * The action a user chose in the workspace save-conflict modal. "Cancel" resolves
+ * the modal with `confirm: false` and no value, so it is not represented here.
+ */
+type WorkspaceSaveConflictResolution =
+  | { action: 'take-mine'; content: string; token: string | null }
+  | { action: 'take-theirs'; content: string; token: string | null }
+  | { action: 'recreate' }
+  | { action: 'discard' };
+
+export async function showWorkspaceSaveConflictModal(props: {
+  allowMerge?: boolean;
+  fileName: string;
+  languageExtension?: Extension | null;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+  mineContent: string;
+  path: string;
+  reason: WorkspaceSaveConflictReason;
+  type: WorkspaceContentType | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue<WorkspaceSaveConflictResolution>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const conflictModal = new WorkspaceSaveConflictModal({ props, target });
+        target.resolve = resolve;
+
+        const finish = (value?: WorkspaceSaveConflictResolution) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: value !== undefined, value });
+          conflictModal.$destroy();
+        };
+
+        conflictModal.$on('close', () => finish());
+        conflictModal.$on('takeMine', (e: CustomEvent<{ content: string; token: string | null }>) =>
+          finish({ action: 'take-mine', content: e.detail.content, token: e.detail.token }),
+        );
+        conflictModal.$on('takeTheirs', (e: CustomEvent<{ content: string; token: string | null }>) =>
+          finish({ action: 'take-theirs', content: e.detail.content, token: e.detail.token }),
+        );
+        conflictModal.$on('recreate', () => finish({ action: 'recreate' }));
+        conflictModal.$on('discard', () => finish({ action: 'discard' }));
       }
     } else {
       resolve({ confirm: false });
