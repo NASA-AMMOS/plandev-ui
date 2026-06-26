@@ -7,7 +7,13 @@
   import { ChevronDown } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { activeDirectiveName, activeDirectiveStartTime, activeDirectiveType, directiveBuilderIsVisible, resetDirectiveBuilderStores } from '../../stores/directiveBuilder';
+  import {
+    activeDirectiveName,
+    activeDirectiveStartTime,
+    activeDirectiveType,
+    directiveBuilderIsVisible,
+    resetDirectiveBuilderStores,
+  } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -55,7 +61,7 @@
   let planMaxDate: Date | undefined;
   let rootRef: HTMLDivElement;
   let startTimeField: FieldStore<string>;
-  let startTime: string = $activeDirectiveStartTime ?? (plan?.start_time_doy ?? '');
+  let startTime: string = $activeDirectiveStartTime ?? plan?.start_time_doy ?? '';
 
   const dispatch = createEventDispatcher<{
     createActivityDirective: { directive: ActivityDirectiveInsertInput };
@@ -196,6 +202,14 @@
     $directiveBuilderIsVisible = false;
     resetDirectiveBuilderStores();
   }
+
+  function onResetFormParameters(event: CustomEvent<FormParameter>) {
+    const { detail: formParameter } = event;
+    const { [formParameter.name]: _, ...updatedArgs } = dirtyDirective.arguments;
+    dirtyDirective.arguments = updatedArgs;
+
+    currentActivityTypeFormParams = refreshFormParameters(currentlySelectedActivityType, dirtyDirective.arguments);
+  }
 </script>
 
 <div bind:this={rootRef} class="w-full" style:display="grid">
@@ -209,11 +223,7 @@
     >
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
-          <button
-            on:click|stopPropagation={handleClose}
-            class="st-button icon"
-            aria-label="close"
-          >
+          <button on:click|stopPropagation={handleClose} class="st-button icon" aria-label="close">
             <CloseIcon />
           </button>
         </MenuHeader>
@@ -306,6 +316,7 @@
                     }
                     getArgumentValidation();
                   }}
+                  on:reset={onResetFormParameters}
                 />
                 {#if !currentActivityTypeFormParams || currentActivityTypeFormParams.length === 0}
                   <div class="st-typography-label">No Parameters Found</div>
