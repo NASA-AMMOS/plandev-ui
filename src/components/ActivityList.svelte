@@ -53,6 +53,8 @@
       onHideUpload();
     }
   }
+
+  console.log('HAS CREATE PERM', hasCreatePermission);
 </script>
 
 <TimelineItemList
@@ -63,6 +65,7 @@
   {getFilterValueFromItem}
   filterOptions={$subsystemTags.map(s => ({ color: s.color || '', label: s.name, value: s.id }))}
   filterName="Subsystem"
+  canClick={hasCreatePermission}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
     <button class="close-upload" type="button" on:click={onHideUpload}>

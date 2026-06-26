@@ -15,6 +15,7 @@
     TimelineItemListFilterOption,
     TimelineItemType,
   } from '../types/timeline';
+  import { permissionHandler } from '../utilities/permissionHandler';
   import { tooltip } from '../utilities/tooltip';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
@@ -39,6 +40,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let canClick: boolean = true;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -315,16 +317,25 @@
                 </Button>
               </LayerPicker>
             </div>
-            <div use:tooltip={{ content: 'Add New Directive', placement: 'top' }} class="flex items-center">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Add{capitalize(typeName)}-{item.name}"
-                on:click={() => onAddNewDirective(item.name)}
+            {#if typeName === 'activity'}
+              <div
+                use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
+                use:permissionHandler={{
+                  hasPermission: canClick,
+                  permissionError: 'You do not have permission to create activities.',
+                }}
+                class="flex items-center"
               >
-                <CirclePlus size={16} />
-              </Button>
-            </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Add{capitalize(typeName)}-{item.name}"
+                  on:click={() => onAddNewDirective(item.name)}
+                >
+                  <CirclePlus size={16} />
+                </Button>
+              </div>
+            {/if}
             <div class="drag">
               <GripVertical size={16} />
             </div>
