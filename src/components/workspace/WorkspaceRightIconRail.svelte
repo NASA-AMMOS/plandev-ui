@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
-  import { BookA, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
+  import { BookA, History, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
 
@@ -15,7 +15,7 @@
     return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
   }
 
-  function togglePanel(nextTab: 'metadata' | 'command' | 'dictionary') {
+  function togglePanel(nextTab: 'metadata' | 'command' | 'dictionary' | 'revisions') {
     if (activeTab === nextTab && panelOpen) {
       panelOpen = false;
     } else {
@@ -34,6 +34,14 @@
       on:click={() => togglePanel('metadata')}
     >
       <Info size={16} />
+    </Sidebar.MenuButton>
+    <Sidebar.MenuButton
+      className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+      isActive={activeTab === 'revisions' && panelOpen}
+      tooltipContent="Revisions"
+      on:click={() => togglePanel('revisions')}
+    >
+      <History size={16} />
     </Sidebar.MenuButton>
     {#if isSequenceFile}
       <Sidebar.MenuButton

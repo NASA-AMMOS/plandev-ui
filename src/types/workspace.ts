@@ -41,3 +41,23 @@ export type ActionParameterPair = { action: ActionDefinition; parameter: string 
 export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
   actionParameterPair: ActionParameterPair;
 };
+
+/** One immutable revision of a single workspace file (returned by the file-versioning API). */
+export type WorkspaceFileRevision = {
+  author: string;
+  commitSha: string;
+  contentHash: string;
+  createdAt: string;
+  fileId: string;
+  message: string;
+  name: string;
+  number: number;
+  path: string;
+};
+
+/** Result of restoring a file's working copy to a revision. */
+export type WorkspaceRevisionRestoreResult = {
+  etag: string;
+  name: string;
+  number: number;
+};

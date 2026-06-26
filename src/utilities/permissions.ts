@@ -1372,6 +1372,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   createFolder: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
+  createRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
   createWorkspace: (user: User | null): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['create_workspace'], user);
   },
@@ -1399,6 +1402,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['list_workspace_contents'], user, workspace);
   },
+  listRevisions: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   moveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
@@ -1418,6 +1424,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
       (getRoleWorkspacePermission(['read_file_directory'], user, workspaceSource) &&
         getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
     );
+  },
+  restoreRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);

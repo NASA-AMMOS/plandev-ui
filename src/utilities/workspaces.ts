@@ -5,7 +5,13 @@ import { SearchParameters } from '../enums/searchParameters';
 import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
-import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type {
+  ActionParameterPair,
+  Workspace,
+  WorkspaceFileRevision,
+  WorkspaceInsertInput,
+  WorkspaceRevisionRestoreResult,
+} from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
   WorkspaceTreeMap,
@@ -14,7 +20,7 @@ import type {
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace, reqWorkspaceMetadata } from './requests';
+import { reqWorkspace, reqWorkspaceMetadata, reqWorkspaceRevisions } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -456,6 +462,23 @@ export const WorkspaceApi = {
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
   },
+  async createRevision(
+    workspaceId: number,
+    filePath: string,
+    options: { message?: string; name?: string },
+    user: User | null,
+  ): Promise<WorkspaceFileRevision> {
+    return reqWorkspaceRevisions<WorkspaceFileRevision>(
+      `${workspaceId}/${filePath}`,
+      'POST',
+      JSON.stringify(options ?? {}),
+      user,
+      undefined,
+      true,
+      false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
   async createWorkspace(location: string, parcelId: number, user: User | null, name?: string | null): Promise<number> {
     const workspaceInsert: WorkspaceInsertInput | null = {
       parcelId: parcelId,
@@ -509,6 +532,9 @@ export const WorkspaceApi = {
   ): Promise<WorkspaceTreeNode[] | null> {
     const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
     return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
+  },
+  async listRevisions(workspaceId: number, filePath: string, user: User | null): Promise<WorkspaceFileRevision[]> {
+    return reqWorkspaceRevisions<WorkspaceFileRevision[]>(joinPath([workspaceId, filePath]), 'GET', null, user);
   },
   async moveFile(
     workspaceId: number,
@@ -602,6 +628,19 @@ export const WorkspaceApi = {
       true,
       false,
       { 'Content-Type': 'application/json' },
+    );
+  },
+  async restoreRevision(
+    workspaceId: number,
+    filePath: string,
+    revision: string,
+    user: User | null,
+  ): Promise<WorkspaceRevisionRestoreResult> {
+    return reqWorkspaceRevisions<WorkspaceRevisionRestoreResult>(
+      `restore/${joinPath([workspaceId, filePath])}?rev=${encodeURIComponent(revision)}`,
+      'POST',
+      null,
+      user,
     );
   },
   async saveFile(

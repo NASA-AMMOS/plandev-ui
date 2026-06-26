@@ -7,6 +7,7 @@
   import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef, CommandInfoMapper, PhoenixContext, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
   import { EditorView } from 'codemirror';
+  import type { User } from '../../types/app';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import CommandDictionaryComponent from '../sequencing/CommandPanel/CommandDictionary.svelte';
@@ -16,6 +17,7 @@
   import * as Sidebar from '../ui/Sidebar/index.js';
   import PanelHeader from './PanelHeader.svelte';
   import WorkspaceMetadataPanel from './WorkspaceMetadataPanel.svelte';
+  import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
   export let activeTab: string = 'metadata';
   export let commandNodeName: string | null = null;
@@ -26,6 +28,8 @@
   export let hasEditPermission: boolean = false;
   export let isSequenceFile: boolean = false;
   export let phoenixContext: PhoenixContext;
+  export let user: User | null = null;
+  export let workspaceId: number | null = null;
 
   const emptyCommandDictionary: CommandDictionary = {
     enumMap: {},
@@ -193,5 +197,7 @@
     {/if}
   {:else if activeTab === 'metadata'}
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
+  {:else if activeTab === 'revisions'}
+    <WorkspaceRevisionsPanel {workspaceId} {filePath} {user} {hasEditPermission} on:restored />
   {/if}
 </div>

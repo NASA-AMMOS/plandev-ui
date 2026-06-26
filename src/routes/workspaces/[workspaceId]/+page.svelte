@@ -597,6 +597,18 @@
     );
   }
 
+  function onRevisionRestored() {
+    const path = $activeDocumentPath;
+    if (!path) {
+      return;
+    }
+    // Restore overwrote the working copy on disk; reload it into the editor (same flow as opening a file).
+    const { filename } = separateFilenameFromPath(path);
+    const fileType = workspaceTreeMap[path]?.type ?? null;
+    activeDocument.startLoad(path, filename ?? null, fileType);
+    void getSelectedFileContent(path);
+  }
+
   async function getSelectedFileContent(filePath: string) {
     let content: string | null = '';
 
@@ -1625,9 +1637,12 @@
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
               isSequenceFile={activeFileIsInputSequence}
+              user={$user}
+              workspaceId={$workspaceId}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
+              on:restored={onRevisionRestored}
             />
           </Resizable.Pane>
         {/if}
