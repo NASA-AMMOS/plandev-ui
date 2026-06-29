@@ -195,7 +195,6 @@
 </script>
 
 <div bind:this={rootRef} class="w-full" style:display="grid">
-  <slot name="trigger" />
   {#if $directiveBuilderIsVisible}
     <Draggable
       className="st-menu activity-directive-builder"
