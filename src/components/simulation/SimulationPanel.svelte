@@ -331,12 +331,34 @@
   function onCancelSimulation(event: CustomEvent) {
     effects.cancelSimulation(event.detail.id, user);
   }
+
+  let simulationUploadInput: HTMLInputElement;
+
+  async function onUploadSimulationResults(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0 && $plan) {
+      await effects.uploadSimulationDataset($plan, target.files[0], user);
+      target.value = '';
+    }
+  }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Simulation" />
     <PanelHeaderActions>
+      <input
+        bind:this={simulationUploadInput}
+        class="hidden"
+        type="file"
+        accept=".json"
+        on:change={onUploadSimulationResults}
+      />
+      <PanelHeaderActionButton
+        title="Upload Simulation Results"
+        showLabel
+        on:click={() => simulationUploadInput.click()}
+      />
       {#if enableReSimulation}
         <PanelHeaderActionButton
           disabled={!enableReSimulation || $startTimeField.invalid || $endTimeField.invalid}
@@ -515,6 +537,10 @@
 </Panel>
 
 <style>
+  .hidden {
+    display: none;
+  }
+
   .simulation-history {
     display: flex;
     flex-direction: column;
