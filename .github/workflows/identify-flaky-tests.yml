@@ -1,0 +1,12 @@
+name: Identify Flaky Tests
+
+on:
+  # todo remove pull_request after testing
+  pull_request:
+    branches:
+      - develop
+  workflow_dispatch:
+
+run: node .github/workflows/scripts/identify-flaky-tests.mjs
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
