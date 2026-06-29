@@ -85,15 +85,15 @@
     initialPlan,
     maxTimeRange,
     plan,
+    planBoundsPreviewOverride,
     planDatasets,
-    planEndTimeMs,
     planId,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
-    planStartTimeMs,
+    planStartTimeYmd,
     planTags,
     resetPlanStores,
     viewTimeRange,
@@ -162,7 +162,6 @@
   } from '../../../utilities/simulation';
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
-  import { getUnixEpochTime } from '../../../utilities/time';
   import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
@@ -292,9 +291,6 @@
   }
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
-    $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
-    $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
-    $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $simulationDatasetId = -1;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
@@ -366,6 +362,9 @@
     $planSnapshotId = data.initialPlanSnapshotId;
     $planReadOnlySnapshot = true;
   }
+  // While previewing a snapshot, render against the snapshot's own plan bounds and snap the timeline
+  // viewport to them; revert to the live plan and the pre-preview viewport on exit.
+  $: applySnapshotPreviewBounds($planSnapshot);
   $: if ($planSnapshot !== null) {
     effects.getPlanSnapshotActivityDirectives($planSnapshot, $user).then(directives => {
       if (directives !== null) {
@@ -395,7 +394,7 @@
   // before the view loads would read `$view === null` and stay false until the next view change.
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
 
-  $: if ($initialPlan && $planDatasets) {
+  $: if ($planId > -1 && $planStartTimeYmd && $planDatasets) {
     const datasetNames = [];
 
     for (const dataset of $planDatasets) {
@@ -412,9 +411,9 @@
     $externalResources = [];
     effects
       .getResourcesExternal(
-        $initialPlan.id,
+        $planId,
         $simulationDatasetId > -1 ? $simulationDatasetId : null,
-        $initialPlan.start_time,
+        $planStartTimeYmd,
         get(user),
         resourcesExternalAbortController.signal,
       )
@@ -431,7 +430,11 @@
     selectActivity(null, null);
   }
 
-  $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
+  $: if (
+    $planStartTimeYmd &&
+    $simulationDataset !== null &&
+    getSimulationStatus($simulationDataset) === Status.Complete
+  ) {
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
@@ -439,7 +442,7 @@
     effects
       .getSpans(
         datasetId,
-        $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
+        $simulationDataset.simulation_start_time ?? $planStartTimeYmd,
         get(user),
         simulationDataAbortController.signal,
       )
@@ -536,6 +539,40 @@
     $planSnapshotId = null;
     $planReadOnlySnapshot = false;
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
+  }
+
+  // Tracks snapshot-preview transitions (enter/exit/switch) so we only snap the viewport on a real
+  // change — not on every snapshot subscription emission or while the user pans during preview.
+  let previewedSnapshotId: number | null = null;
+  let preSnapshotViewTimeRange: { end: number; start: number } | null = null;
+
+  function applySnapshotPreviewBounds(snapshot: PlanSnapshot | null) {
+    const newSnapshotId = snapshot?.snapshot_id ?? null;
+    if (newSnapshotId === previewedSnapshotId) {
+      return;
+    }
+
+    const snapshotBounds =
+      snapshot?.plan_start_time && snapshot?.plan_duration
+        ? { duration: snapshot.plan_duration, start_time: snapshot.plan_start_time }
+        : null;
+
+    // Remember the live viewport when first entering preview so it can be restored on exit.
+    if (previewedSnapshotId === null) {
+      preSnapshotViewTimeRange = get(viewTimeRange);
+    }
+    previewedSnapshotId = newSnapshotId;
+
+    // Setting the override updates the derived plan bounds synchronously, so maxTimeRange below
+    // already reflects the snapshot's bounds.
+    planBoundsPreviewOverride.set(snapshotBounds);
+
+    if (snapshotBounds) {
+      viewTimeRange.set(get(maxTimeRange));
+    } else if (newSnapshotId === null && preSnapshotViewTimeRange) {
+      viewTimeRange.set(preSnapshotViewTimeRange);
+      preSnapshotViewTimeRange = null;
+    }
   }
 
   function onClearConsole() {

@@ -54,8 +54,20 @@
   let startTimeText: string = '';
   let status: Status | null = null;
   let simulationLoadable: boolean = true;
+  let simulationOutOfBounds: boolean = false;
 
   $: simulationLoadable = planModelId === simulationDataset.model_id;
+  // True when the simulation's time range falls entirely outside the plan's current bounds.
+  $: {
+    const simStartMs = simulationDataset.simulation_start_time
+      ? new Date(simulationDataset.simulation_start_time).getTime()
+      : null;
+    const simEndMs = simulationDataset.simulation_end_time
+      ? new Date(simulationDataset.simulation_end_time).getTime()
+      : null;
+    simulationOutOfBounds =
+      simStartMs !== null && simEndMs !== null && (simEndMs < planStartTimeMs || simStartMs > planEndTimeMs);
+  }
   $: simulationBoundsVizRangeWidthStyle =
     simulationBoundsVizRangeWidth < 1 ? '4px' : `${simulationBoundsVizRangeWidth}%`;
   $: simulationExtentVizRangeWidthStyle =
@@ -221,6 +233,16 @@
         }}
       >
         <WarningIcon class="red-icon" />Model Differs
+      </div>
+    {/if}
+    {#if simulationOutOfBounds}
+      <div
+        class="st-typography-label message"
+        use:tooltip={{
+          content: 'This simulation falls entirely outside the current plan bounds and may not be relevant.',
+        }}
+      >
+        <WarningIcon class="red-icon" />Out of Bounds
       </div>
     {/if}
   </div>

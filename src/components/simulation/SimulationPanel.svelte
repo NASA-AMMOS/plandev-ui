@@ -317,14 +317,26 @@
   async function onPlanStartTimeClick() {
     if ($plan) {
       await startTimeField.validateAndSet(formatDate(new Date($planStartTimeMs), $plugins.time.primary.format));
-      updateStartEndTimes({ startString: $startTimeField.value });
+      // Re-validate the end field and send both bounds — updateStartEndTimes only persists when it
+      // receives a complete start/end pair.
+      await endTimeField.validateAndSet($endTimeField.value);
+      updateStartEndTimes({
+        ...($endTimeField.valid ? { endString: $endTimeField.value } : {}),
+        startString: $startTimeField.value,
+      });
     }
   }
 
   async function onPlanEndTimeClick() {
     if ($plan) {
       await endTimeField.validateAndSet(formatDate(new Date($planEndTimeMs), $plugins.time.primary.format));
-      updateStartEndTimes({ endString: $endTimeField.value });
+      // Re-validate the start field and send both bounds — updateStartEndTimes only persists when it
+      // receives a complete start/end pair.
+      await startTimeField.validateAndSet($startTimeField.value);
+      updateStartEndTimes({
+        endString: $endTimeField.value,
+        ...($startTimeField.valid ? { startString: $startTimeField.value } : {}),
+      });
     }
   }
 

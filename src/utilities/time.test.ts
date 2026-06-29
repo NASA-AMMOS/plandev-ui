@@ -15,6 +15,7 @@ import {
   getDoyTime,
   getDoyTimeComponents,
   getDurationTimeComponents,
+  getIntervalUnixEpochTime,
   getShortISOForDate,
   getTimeAgo,
   getUnixEpochTime,
@@ -758,4 +759,16 @@ test('usToOffset', () => {
   expect(usToOffset(2.84)).toBe('00:00:00.000003');
   expect(usToOffset(1 / 0)).toBe('INVALID');
   expect(usToOffset(NaN)).toBe('INVALID');
+});
+
+test('getIntervalUnixEpochTime', () => {
+  // Whole-millisecond differences format as HH:MM:SS.mmm.
+  expect(getIntervalUnixEpochTime(0, 41209216)).toBe('11:26:49.216');
+  expect(getIntervalUnixEpochTime(1000, 0)).toBe('-00:00:01.000');
+  expect(getIntervalUnixEpochTime(0, 0)).toBe('00:00:00.000');
+
+  // A fractional-millisecond difference (e.g. a base derived from a sub-ms offset) must still
+  // produce a valid single-decimal interval, not "11:26:49.216.0100..." with a second decimal point.
+  expect(getIntervalUnixEpochTime(0, 41209216.010009765625)).toBe('11:26:49.216');
+  expect(getIntervalUnixEpochTime(0.49, 41209216.51)).toBe('11:26:49.216');
 });

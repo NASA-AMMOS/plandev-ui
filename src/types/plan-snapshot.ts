@@ -5,7 +5,9 @@ import type { Tag } from './tags';
 export type PlanSnapshot = {
   description: string;
   model_id: number;
+  plan_duration: string;
   plan_id: number;
+  plan_start_time: string;
   revision: number;
   simulation: SimulationDataset | null;
   snapshot_id: number;

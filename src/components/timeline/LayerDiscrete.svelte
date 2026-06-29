@@ -31,13 +31,7 @@
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { isRightClick } from '../../utilities/generic';
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
-  import {
-    getActivityDirectiveStartTimeMs,
-    getDoyTime,
-    getIntervalUnixEpochTime,
-    getUnixEpochTime,
-    getUnixEpochTimeFromInterval,
-  } from '../../utilities/time';
+  import { getActivityDirectiveStartTimeMs, getIntervalInMs, getIntervalUnixEpochTime } from '../../utilities/time';
   import {
     directiveInView,
     externalEventInView,
@@ -117,8 +111,10 @@
   let dragPreviousX: number | null = null;
   let dragActivityDirectiveActive: ActivityDirective | null = null;
   let dragStartX: number | null = null;
+  // Absolute time the dragged directive's start_offset is measured from (plan start, plan end, or its
+  // anchor) — captured at drag start so the dragged position converts back to an offset in the right frame.
+  let dragBaseMs: number | null = null;
   let minRectSize: number = 4;
-  let planStartTimeMs: number;
   let quadtreeActivityDirectives: Quadtree<QuadtreeRect>;
   let quadtreeSpans: Quadtree<QuadtreeRect>;
   let quadtreeExternalEvents: Quadtree<QuadtreeRect>;
@@ -145,8 +141,8 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = discreteOptions.height;
+  $: planStartTimeMs = planStartTimeYmd ? new Date(planStartTimeYmd).getTime() : 0;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
-  $: planStartTimeMs = getUnixEpochTime(getDoyTime(new Date(planStartTimeYmd)));
 
   // the following are NOT mutually exclusive.
   $: canDrawActivities =
@@ -214,7 +210,11 @@
     if (activityDirectives.length) {
       const [activityDirective] = activityDirectives; // Select just the first one for now.
 
-      const x = getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset);
+      // Drag in absolute time using the directive's already-resolved start time (which respects
+      // plan-end and activity anchoring), and remember the base its offset is measured from so the
+      // dragged position can be converted back to an offset in the correct frame.
+      const x = activityDirective.start_time_ms;
+      dragBaseMs = activityDirective.start_time_ms - getIntervalInMs(activityDirective.start_offset);
       if (xScaleView !== null) {
         dragOffsetX = offsetX - xScaleView(x);
       }
@@ -231,7 +231,7 @@
       const xMs = xScaleView.invert(x).getTime();
       dragCurrentX = typeof dragActivityDirectiveActive.anchor_id === 'number' ? xMs : Math.max(xMs, planStartTimeMs);
       if (dragCurrentX !== dragPreviousX) {
-        const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
+        const start_offset = getIntervalUnixEpochTime(dragBaseMs ?? planStartTimeMs, dragCurrentX);
         dragActivityDirectiveActive.start_offset = start_offset; // Update activity in memory.
         dragActivityDirectiveActive.start_time_ms = getActivityDirectiveStartTimeMs(
           dragActivityDirectiveActive.id,
@@ -251,11 +251,12 @@
   function dragActivityEnd(): void {
     if (dragActivityDirectiveActive !== null && dragStartX !== null && dragCurrentX !== null) {
       if (dragStartX !== dragCurrentX && plan) {
-        const start_offset = getIntervalUnixEpochTime(planStartTimeMs, dragCurrentX);
+        const start_offset = getIntervalUnixEpochTime(dragBaseMs ?? planStartTimeMs, dragCurrentX);
         effects.updateActivityDirective(plan, dragActivityDirectiveActive.id, { start_offset }, null, user);
       }
 
       dragActivityDirectiveActive = null;
+      dragBaseMs = null;
       dragCurrentX = null;
       dragOffsetX = null;
       dragStartX = null;

@@ -1557,6 +1557,7 @@ const gql = {
           }
           is_locked
           start_time
+          duration
         }
         revision
         scheduling_specification {
@@ -3205,6 +3206,8 @@ const gql = {
     subscription SubPlanMetadata($planId: Int!) {
       plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        start_time
+        duration
         model: mission_model {
           id
           jar_id
@@ -3269,6 +3272,8 @@ const gql = {
         snapshot_id
         model_id
         plan_id
+        plan_start_time
+        plan_duration
         revision
         snapshot_name
         description

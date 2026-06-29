@@ -116,9 +116,9 @@
   }
 
   $: startYmd = simulationDataset?.simulation_start_time ?? planStartTimeYmd;
-  $: activityDirectiveStartDate = activityDirective
-    ? new Date(getUnixEpochTimeFromInterval(planStartTimeYmd, activityDirective.start_offset))
-    : null;
+  // Use the directive's already-computed absolute start time so that directives anchored to the plan
+  // end (or to other directives) resolve correctly instead of being recomputed from the plan start.
+  $: activityDirectiveStartDate = activityDirective ? new Date(activityDirective.start_time_ms) : null;
   // Explicitly keep track of offsetX because Firefox ends up zeroing it out on the original `contextmenu` MouseEvent
   $: offsetX = contextMenu?.e.offsetX;
 

@@ -178,6 +178,22 @@ export class Plan {
     );
   }
 
+  /**
+   * Opens the simulation start/end date picker and clicks its "Plan Start"/"Plan End" action button,
+   * which resets that bound to the plan's start/end.
+   */
+  async clickSimulationPlanBoundButton(bound: 'start' | 'end') {
+    await this.showPanel(PanelNames.SIMULATION, true);
+    const input = this.panelSimulation.locator(`input[name="${bound === 'start' ? 'start-time' : 'end-time'}"]`);
+    await input.scrollIntoViewIfNeeded();
+    await input.click(); // open the date picker dropdown that contains the action button
+    await this.panelSimulation.getByRole('button', { name: bound === 'start' ? 'Plan Start' : 'Plan End' }).click();
+  }
+
+  async closeSnapshotPreview() {
+    await this.page.getByRole('button', { name: 'Close Preview' }).click();
+  }
+
   async createBranch(
     baseURL?: string,
     name: string = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] }),
@@ -323,6 +339,31 @@ export class Plan {
     await this.panelSimulation.getByPlaceholder('Enter template name').blur();
   }
 
+  /**
+   * Selects the activity directive with the given name in the directives table and returns the
+   * absolute start time shown in the activity form (resolved from offsets/anchors).
+   */
+  async getActivityStartTime(activityName: string): Promise<string> {
+    if (!(await this.panelActivityDirectivesTable.isVisible())) {
+      await this.showPanel(PanelNames.ACTIVITY_DIRECTIVES_TABLE);
+    }
+    await this.panelActivityDirectivesTable.getByRole('row', { name: activityName }).first().click();
+    if (!(await this.panelActivityForm.isVisible())) {
+      await this.showPanel(PanelNames.SELECTED_ACTIVITY, true);
+    }
+    // The activity name is shown as a header label (not an input) until it is edited.
+    await expect(this.panelActivityForm.locator('.activity-header-title-value')).toHaveText(activityName);
+    return (await this.panelActivityForm.locator('input[name="start-time"]').inputValue()).trim();
+  }
+
+  /** Reads the read-only Start/End time values shown in the Plan Metadata panel. */
+  async getPlanMetadataBounds(): Promise<{ end: string; start: string }> {
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
+    const start = (await this.panelPlanMetadata.locator('input[name="planStartTime"]').inputValue()).trim();
+    const end = (await this.panelPlanMetadata.locator('input[name="planEndTime"]').inputValue()).trim();
+    return { end, start };
+  }
+
   async getSimulationHistoryListLength() {
     const elements = await this.simulationHistoryList.locator(`button:has-text("Simulation ID")`).all();
     return elements.length;
@@ -337,6 +378,12 @@ export class Plan {
   async goto(planId = this.plans.planId) {
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
     await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.waitForTimelineLoading();
+  }
+
+  /** Navigates to a plan in snapshot-preview mode via the `snapshotId` query parameter. */
+  async gotoSnapshotPreview(snapshotId: number, planId = this.plans.planId) {
+    await this.page.goto(`/plans/${planId}?snapshotId=${snapshotId}`, { waitUntil: 'load' });
     await this.waitForTimelineLoading();
   }
 
@@ -481,6 +528,60 @@ export class Plan {
       templateName,
     );
     await expect(this.panelSimulation.getByRole('combobox', { name: templateName })).toBeVisible();
+  }
+
+  /**
+   * Sets the plan's end time via the "Change Plan Time Range" modal.
+   */
+  async setPlanEndTime(value: string) {
+    await this.setPlanTimeBound('boundsEndTime', value);
+  }
+
+  /**
+   * Sets the plan's start time via the "Change Plan Time Range" modal.
+   */
+  async setPlanStartTime(value: string) {
+    await this.setPlanTimeBound('boundsStartTime', value);
+  }
+
+  /**
+   * Opens the "Change Plan Time Range" modal from the Plan Metadata panel, sets one bound
+   * (committing with Enter), and submits. If the bound did not actually change the Update button
+   * stays disabled, so the modal is dismissed instead and the caller never hangs on a no-op.
+   */
+  async setPlanTimeBound(fieldName: 'boundsStartTime' | 'boundsEndTime', value: string) {
+    await this.showPanel(PanelNames.PLAN_METADATA, true);
+    const editButton = this.panelPlanMetadata.getByRole('button', { name: 'Change plan time range' });
+    await editButton.scrollIntoViewIfNeeded();
+    await editButton.click();
+
+    const modal = this.page.locator('#modal-container');
+    await expect(modal).toContainText('Change Plan Time Range');
+
+    const input = modal.locator(`input[name="${fieldName}"]`);
+    await input.fill(value);
+    await input.press('Enter');
+
+    const updateButton = modal.getByRole('button', { name: 'Update Time Range' });
+    try {
+      await expect(updateButton).toBeEnabled({ timeout: 1000 });
+    } catch {
+      await modal.getByRole('button', { exact: true, name: 'Cancel' }).click();
+      return;
+    }
+    await updateButton.click();
+    await this.waitForToast('Plan Updated Successfully');
+  }
+
+  /**
+   * Types a value into the simulation start/end field (committing with Enter) in the Simulation panel.
+   */
+  async setSimulationBound(bound: 'start' | 'end', value: string) {
+    await this.showPanel(PanelNames.SIMULATION, true);
+    const input = this.panelSimulation.locator(`input[name="${bound === 'start' ? 'start-time' : 'end-time'}"]`);
+    await input.scrollIntoViewIfNeeded();
+    await input.fill(value);
+    await input.press('Enter');
   }
 
   async showChangeModelModal() {
