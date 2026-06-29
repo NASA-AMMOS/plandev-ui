@@ -8841,6 +8841,28 @@ const effects = {
     }
   },
 
+  async uploadSimulationDataset(plan: Plan, file: File, user: User | null): Promise<number | null> {
+    try {
+      const body = new FormData();
+      body.append('plan_id', `${plan.id}`);
+      body.append('simulation_results_file', file, file.name);
+
+      const simulationDatasetId = await reqGateway<number | null>('/uploadSimulationDataset', 'POST', body, user, true);
+
+      if (simulationDatasetId != null) {
+        showSuccessToast('Simulation Dataset Uploaded Successfully');
+        logMessage(`Uploaded simulation dataset ID=${simulationDatasetId}.`);
+        return simulationDatasetId;
+      }
+
+      throw Error('Uploaded simulation dataset not found');
+    } catch (e) {
+      catchError('Unable to upload simulation dataset', e as Error);
+      showFailureToast('Simulation Dataset Upload Failed');
+      return null;
+    }
+  },
+
   async uploadExternalDataset(
     plan: Plan,
     files: FileList,
