@@ -382,18 +382,13 @@
     }
     // Cancel navigation first, then show async modal and navigate if confirmed
     cancel();
-    showUnsavedChangesModal(
+    resolveUnsavedChanges(
       'There are unsaved changes. What would you like to do before leaving this page?',
-      'Unsaved Changes',
       'Save and Leave',
       'Discard and Leave',
       'Stay on Page',
-    ).then(async ({ confirm, value }) => {
-      if (!confirm || !to?.url) {
-        return;
-      }
-      if (value?.shouldSave && !(await saveActiveDocument())) {
-        // Save failed or was cancelled — stay on the page so edits aren't lost.
+    ).then(decision => {
+      if (decision === 'stay' || !to?.url) {
         return;
       }
       // Reset content to allow navigation without re-triggering the modal
@@ -420,22 +415,19 @@
     if (!$activeDocumentIsDirty) {
       return true;
     }
-    const { confirm, value } = await showUnsavedChangesModal(
+    const decision = await resolveUnsavedChanges(
       'There are unsaved changes. What would you like to do before navigating away from the current file?',
-      'Unsaved Changes',
       'Save and Navigate',
       'Discard and Navigate',
       'Keep Editing',
     );
-    if (!confirm) {
+    if (decision === 'stay') {
       return false;
     }
-    if (value?.shouldSave) {
-      // Only proceed if the save actually persisted; otherwise stay so edits aren't lost.
-      return await saveActiveDocument();
+    if (decision === 'proceed-discarded') {
+      // Discard: mark clean so navigation proceeds without re-prompting.
+      activeDocument.markClean();
     }
-    // Discard: mark clean so navigation proceeds without re-prompting.
-    activeDocument.markClean();
     return true;
   }
 
@@ -803,6 +795,38 @@
       }
     }
     return false;
+  }
+
+  /**
+   * Prompts the user about unsaved changes and resolves the save/discard decision so callers
+   * don't have to reimplement the modal + save-attempt dance. Returns:
+   * - 'stay': user cancelled, or chose Save but the save failed/was cancelled — do not navigate.
+   * - 'proceed-saved': document was saved (and marked clean); safe to navigate.
+   * - 'proceed-discarded': user chose to discard; caller decides whether to revert content.
+   * Callers own the post-decision action (goto / replaceState / content-mode switch) and any
+   * discard-time content revert, since those differ per call site.
+   */
+  async function resolveUnsavedChanges(
+    message: string,
+    confirmSaveLabel: string,
+    confirmDiscardLabel: string,
+    cancelLabel: string,
+  ): Promise<'stay' | 'proceed-saved' | 'proceed-discarded'> {
+    const { confirm, value } = await showUnsavedChangesModal(
+      message,
+      'Unsaved Changes',
+      confirmSaveLabel,
+      confirmDiscardLabel,
+      cancelLabel,
+    );
+    if (!confirm) {
+      return 'stay';
+    }
+    if (value?.shouldSave) {
+      // Save failed or was cancelled — stay so edits aren't lost.
+      return (await saveActiveDocument()) ? 'proceed-saved' : 'stay';
+    }
+    return 'proceed-discarded';
   }
 
   async function confirmAndNavigate(filePath: string | null) {
@@ -1280,22 +1304,16 @@
   ) {
     // Guard against switching away from dirty file
     if ($workspaceContentMode === WorkspaceContentMode.File && $activeDocumentIsDirty) {
-      const { confirm, value } = await showUnsavedChangesModal(
+      const decision = await resolveUnsavedChanges(
         'There are unsaved changes. What would you like to do before navigating away from the current file?',
-        'Unsaved Changes',
         'Save and Navigate',
         'Discard and Navigate',
         'Keep Editing',
       );
-      if (!confirm) {
+      if (decision === 'stay') {
         return;
       }
-      if (value?.shouldSave) {
-        if (!(await saveActiveDocument())) {
-          // Save failed or was cancelled — stay on the current file so edits aren't lost.
-          return;
-        }
-      } else {
+      if (decision === 'proceed-discarded') {
         // Discard: revert content to last-saved state and mark clean
         activeDocument.updateContent($activeDocument.originalContent);
         activeDocument.markClean();
