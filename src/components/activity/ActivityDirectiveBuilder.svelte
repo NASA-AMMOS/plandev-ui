@@ -36,7 +36,7 @@
   import DatePickerActionButton from '../ui/DatePicker/DatePickerActionButton.svelte';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
-  export let builderWidth: number = 1000;
+  export let builderWidth: number = 400;
   export let builderHeight: number = 700;
   export let directiveName: string = '';
   export let plan: Plan | null = null;
@@ -137,39 +137,19 @@
   }
 
   function getDefaultPosition() {
-    if (!rootRef) {
+    if (typeof document === 'undefined') {
       return { x: 0, y: 0 };
     }
-    const { x, y, width, height } = rootRef.getBoundingClientRect();
-    console.log('AFB', rootRef.getBoundingClientRect());
-
-    let defaultX = 0;
-    let defaultY = 0;
     const padding = 16;
-
-    if (x - builderWidth > padding / 2) {
-      defaultX = x - builderWidth - padding / 2;
-    } else if (x + width + builderWidth < document.body.clientWidth - padding / 2) {
-      defaultX = x + width + padding / 2;
-    } else {
-      defaultX = Math.max(0, document.body.clientWidth / 2 - builderWidth / 2);
-    }
-
-    if (y - builderHeight / 2 > padding && y + builderHeight < document.body.clientHeight - padding) {
-      defaultY = y - builderHeight / 2;
-    } else if (y + builderHeight < document.body.clientHeight - padding) {
-      // Show below
-      defaultY = y;
-    } else if (y + height - builderHeight > padding) {
-      // Show above
-      defaultY = y + height - builderHeight;
-    } else {
-      defaultY = Math.max(0, document.body.clientHeight / 2 - builderHeight / 2);
-    }
-
+    const viewW = document.body.clientWidth;
+    const viewH = document.body.clientHeight;
+    const effW = Math.min(builderWidth, viewW - padding * 2);
+    const effH = Math.min(builderHeight, viewH - padding * 2);
+    console.log(builderWidth, effW, viewW, viewW / 2, viewW / 2 - effW, (viewW - effW) / 2);
+    console.log(builderHeight, effH, viewH, viewH / 2, viewH / 2 - effH, (viewH - effH) / 2);
     return {
-      x: defaultX,
-      y: defaultY,
+      x: Math.max(padding, (viewW - effW) / 2),
+      y: Math.max(padding, (viewH - effH) / 2),
     };
   }
 

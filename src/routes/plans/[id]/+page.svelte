@@ -789,7 +789,6 @@
 
 <ActivityDirectiveBuilder
   bind:this={directiveBuilder}
-  builderWidth={200}
   plan={$plan}
   on:createActivityDirective={event => {
     onCreateActivityDirective(event.detail.directive);
