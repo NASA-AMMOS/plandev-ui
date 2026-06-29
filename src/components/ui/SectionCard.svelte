@@ -1,9 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  // When true, the body is full-bleed (no padding/gap) so a divide-y list or
-  // table can align to the card's edges instead of sitting in a nested box.
-  export let flush: boolean = false;
+  export let padBody: boolean = true;
   export let title: string;
 </script>
 
@@ -16,7 +14,7 @@
       </div>
     {/if}
   </header>
-  <div class={flush ? '' : 'flex flex-col gap-3 p-4'}>
+  <div class={padBody ? 'flex flex-col gap-3 p-4' : ''}>
     <slot />
   </div>
 </section>

@@ -283,7 +283,7 @@
                 <ActionRunReport markdown={report} />
               </SectionCard>
             {/if}
-            <SectionCard title="Results" flush>
+            <SectionCard title="Results" padBody={false}>
               {#if actionRun.results?.data}
                 <pre
                   data-testid="action-run-results"
@@ -296,7 +296,7 @@
                 <p class="px-4 py-3 text-xs italic text-muted-foreground">No results data</p>
               {/if}
             </SectionCard>
-            <SectionCard title="Logs" flush>
+            <SectionCard title="Logs" padBody={false}>
               {#if parsedLogs.length}
                 <ActionRunLogs logs={parsedLogs} className="rounded-none" />
               {:else}

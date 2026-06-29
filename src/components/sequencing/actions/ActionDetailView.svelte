@@ -736,7 +736,7 @@
             </SectionCard>
 
             <!-- Versions section -->
-            <SectionCard title="Versions" flush>
+            <SectionCard title="Versions" padBody={false}>
               <label slot="actions" class="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <input type="checkbox" bind:checked={showArchivedVersions} class="h-3.5 w-3.5" />
                 Show archived
