@@ -40,7 +40,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
-  export let canClick: boolean = true;
+  export let hasCreatePermission: boolean = true;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -321,7 +321,7 @@
               <div
                 use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
                 use:permissionHandler={{
-                  hasPermission: canClick,
+                  hasPermission: hasCreatePermission,
                   permissionError: 'You do not have permission to create activities.',
                 }}
                 class="flex items-center"
