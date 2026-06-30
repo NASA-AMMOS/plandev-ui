@@ -20,8 +20,12 @@
   export let languageExtension: Extension | null = null;
   /** The editor buffer ("Mine"); always shown. */
   export let mine: string;
+  /** Header label for the "Mine" pane; defaults to the conflict-flow wording when null. */
+  export let mineLabel: string | null = null;
   /** Current server content ("Theirs"). When null the file was deleted — "Mine" shows alone. */
   export let theirs: string | null;
+  /** Header label for the "Theirs" pane; defaults to the conflict-flow wording. */
+  export let theirsLabel: string = 'Theirs (server)';
   /** File type, used to pick the fallback language extension. */
   export let type: WorkspaceContentType | null = null;
 
@@ -121,9 +125,11 @@
     class:grid-cols-2={!isSinglePane}
   >
     {#if !isSinglePane}
-      <div class="border-r px-3 py-1.5 text-muted-foreground">Theirs (server)</div>
+      <div class="border-r px-3 py-1.5 text-muted-foreground">{theirsLabel}</div>
     {/if}
-    <div class="px-3 py-1.5 text-muted-foreground">{editable ? 'Mine (editable)' : 'Mine (your edits)'}</div>
+    <div class="px-3 py-1.5 text-muted-foreground">
+      {mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
+    </div>
   </div>
   <!-- Scroll the whole diff here so both panes stay aligned (MergeView's recommended setup). -->
   <div class="min-h-0 flex-auto overflow-auto" bind:this={container} />

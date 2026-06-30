@@ -8,9 +8,12 @@ import type { User } from '../types/app';
 import type {
   ActionParameterPair,
   Workspace,
+  WorkspaceCheckpoint,
+  WorkspaceCheckpointRestoreResult,
   WorkspaceFileRevision,
   WorkspaceInsertInput,
   WorkspaceRevisionRestoreResult,
+  WorkspaceSnapshotResult,
 } from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
@@ -546,6 +549,9 @@ export const WorkspaceApi = {
     const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
     return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
   },
+  async listCheckpoints(workspaceId: number, user: User | null): Promise<WorkspaceCheckpoint[]> {
+    return reqWorkspaceRevisions<WorkspaceCheckpoint[]>(`ws/${workspaceId}`, 'GET', null, user);
+  },
   async listRevisions(workspaceId: number, filePath: string, user: User | null): Promise<WorkspaceFileRevision[]> {
     return reqWorkspaceRevisions<WorkspaceFileRevision[]>(joinPath([workspaceId, filePath]), 'GET', null, user);
   },
@@ -643,6 +649,16 @@ export const WorkspaceApi = {
       { 'Content-Type': 'application/json' },
     );
   },
+  async readRevision(workspaceId: number, filePath: string, revision: string, user: User | null): Promise<string> {
+    return reqWorkspaceRevisions<string>(
+      `${joinPath([workspaceId, filePath])}?rev=${encodeURIComponent(revision)}`,
+      'GET',
+      null,
+      user,
+      undefined,
+      false, // asJson=false → return the revision's bytes as text
+    );
+  },
   async restoreRevision(
     workspaceId: number,
     filePath: string,
@@ -651,6 +667,18 @@ export const WorkspaceApi = {
   ): Promise<WorkspaceRevisionRestoreResult> {
     return reqWorkspaceRevisions<WorkspaceRevisionRestoreResult>(
       `restore/${joinPath([workspaceId, filePath])}?rev=${encodeURIComponent(revision)}`,
+      'POST',
+      null,
+      user,
+    );
+  },
+  async restoreToCheckpoint(
+    workspaceId: number,
+    checkpoint: string,
+    user: User | null,
+  ): Promise<WorkspaceCheckpointRestoreResult> {
+    return reqWorkspaceRevisions<WorkspaceCheckpointRestoreResult>(
+      `ws/restore/${workspaceId}?checkpoint=${encodeURIComponent(checkpoint)}`,
       'POST',
       null,
       user,
@@ -694,6 +722,22 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
+    );
+  },
+  async snapshotWorkspace(
+    workspaceId: number,
+    options: { message?: string; name?: string },
+    user: User | null,
+  ): Promise<WorkspaceSnapshotResult> {
+    return reqWorkspaceRevisions<WorkspaceSnapshotResult>(
+      `ws/${workspaceId}`,
+      'POST',
+      JSON.stringify(options ?? {}),
+      user,
+      undefined,
+      true,
+      false,
+      { 'Content-Type': 'application/json' },
     );
   },
   async unsetFileMetadataKeys(workspaceId: number, filePath: string, keys: string[], user: User | null): Promise<void> {

@@ -61,3 +61,26 @@ export type WorkspaceRevisionRestoreResult = {
   name: string;
   number: number;
 };
+
+/** A workspace-level checkpoint: one commit snapshotting the whole workspace, named ws "a", "b", … */
+export type WorkspaceCheckpoint = {
+  author: string;
+  commitSha: string;
+  createdAt: string;
+  fileCount: number;
+  message: string;
+  name: string;
+  number: number;
+};
+
+/** Result of taking a workspace checkpoint: the checkpoint plus the per-file revisions it created. */
+export type WorkspaceSnapshotResult = {
+  checkpoint: WorkspaceCheckpoint;
+  fileRevisions: WorkspaceFileRevision[];
+};
+
+/** Result of restoring the workspace to a checkpoint (files created since are kept, surfaced for review). */
+export type WorkspaceCheckpointRestoreResult = {
+  filesCreatedSince: string[];
+  restored: string[];
+};

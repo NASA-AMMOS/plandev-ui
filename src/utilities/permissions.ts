@@ -1402,6 +1402,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['list_workspace_contents'], user, workspace);
   },
+  listCheckpoints: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   listRevisions: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
@@ -1425,13 +1428,22 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
         getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
     );
   },
+  readRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   restoreRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  restoreToCheckpoint: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   setFileMetadata: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
+  snapshotWorkspace: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   unsetFileMetadataKeys: (user: User | null, workspace: Workspace): boolean => {

@@ -616,6 +616,12 @@
     void getSelectedFileContent(path);
   }
 
+  // A workspace-checkpoint restore can change many files at once: refresh the tree and reload the open file.
+  function onCheckpointRestored() {
+    refreshWorkspaceContents();
+    onRevisionRestored();
+  }
+
   async function getSelectedFileContent(filePath: string) {
     let content: string | null = '';
     let etag: string | null = null;
@@ -1781,6 +1787,7 @@
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
               on:restored={onRevisionRestored}
+              on:checkpointRestored={onCheckpointRestored}
             />
           </Resizable.Pane>
         {/if}
