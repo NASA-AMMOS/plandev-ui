@@ -346,10 +346,10 @@ function renderMarkdownReport(leaderboard, config, stats) {
     '',
   ];
 
-  if (stats.runsWithoutMatchingArtifact || stats.runsWithoutJsonResults) {
+  if (stats.runsWithoutMatchingArtifact || stats.runsWithoutJsonResults || stats.runsWithArtifactDownloadErrors) {
     lines.push(
       '',
-      `**Skipped ${stats.runsWithoutMatchingArtifact} runs without a matching artifact and ${stats.runsWithoutJsonResults} runs without \`json-results.json\`.**`,
+      `**Skipped ${stats.runsWithoutMatchingArtifact} runs without a matching artifact, ${stats.runsWithoutJsonResults} runs without \`json-results.json\`, and ${stats.runsWithArtifactDownloadErrors} runs with artifact download errors.**`,
     );
   }
 
@@ -443,6 +443,7 @@ try {
   let runsAnalyzed = 0;
   let runsWithoutMatchingArtifact = 0;
   let runsWithoutJsonResults = 0;
+  let runsWithArtifactDownloadErrors = 0;
 
   for (const workflow of config.workflows) {
     const runs = await listRunsForWorkflow(octokit, config, workflow);
@@ -460,9 +461,19 @@ try {
         continue;
       }
 
-      const zipData = await getArtifactZipData(octokit, config, run, matchingArtifacts[0]);
+      let zipData;
+      try {
+        zipData = await getArtifactZipData(octokit, config, run, matchingArtifacts[0]);
+      } catch (error) {
+        console.warn(
+          `Unable to download artifact for run ${run.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        runsWithArtifactDownloadErrors += 1;
+        continue;
+      }
       const jsonResults = await readJsonResultsFromArtifactZip(zipData);
-
 
       if (jsonResults) {
         console.log(
@@ -500,6 +511,7 @@ try {
     runsAnalyzed,
     runsWithoutMatchingArtifact,
     runsWithoutJsonResults,
+    runsWithArtifactDownloadErrors,
     problemTestRuns: allProblemTests.length,
     uniqueProblemTests: leaderboard.length,
   };

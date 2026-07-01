@@ -14,7 +14,7 @@ on:
       max-runs:
         description: 'Maximum completed runs to analyze per workflow'
         required: true
-        default: '50'
+        default: '35'
       artifact-name:
         description: 'E2E results artifact name'
         required: true
