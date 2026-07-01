@@ -11,8 +11,8 @@
     activeDirectiveName,
     activeDirectiveStartTime,
     activeDirectiveType,
+    closeDirectiveBuilder,
     directiveBuilderIsVisible,
-    resetDirectiveBuilderStores,
   } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
@@ -153,11 +153,6 @@
     };
   }
 
-  function handleClose() {
-    $directiveBuilderIsVisible = false;
-    resetDirectiveBuilderStores();
-  }
-
   function onResetFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     const { [formParameter.name]: _, ...updatedArgs } = dirtyDirective.arguments;
@@ -204,7 +199,7 @@
     >
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
-          <button on:click|stopPropagation={handleClose} class="st-button icon" aria-label="close">
+          <button on:click|stopPropagation={closeDirectiveBuilder} class="st-button icon" aria-label="close">
             <CloseIcon />
           </button>
         </MenuHeader>

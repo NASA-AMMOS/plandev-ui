@@ -6,8 +6,9 @@ export const activeDirectiveType: Writable<string> = writable('');
 export const activeDirectiveStartTime: Writable<string> = writable('');
 export const directiveBuilderIsVisible: Writable<boolean> = writable(false);
 
-export function resetDirectiveBuilderStores(): void {
+export function closeDirectiveBuilder(): void {
   activeDirectiveName.set('');
   activeDirectiveType.set('');
   activeDirectiveStartTime.set('');
+  directiveBuilderIsVisible.set(false);
 }
