@@ -5,7 +5,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
   import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
-  import { activeDirectiveType, directiveBuilderIsVisible } from '../stores/directiveBuilder';
+  import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
     ChartType,
@@ -150,7 +150,8 @@
   }
 
   function onAddNewDirective(activityType: string) {
-    $activeDirectiveType = activityType;
+    // $activeDirectiveType = activityType;
+    updateDirectiveBuilder({ type: activityType });
     $directiveBuilderIsVisible = true;
   }
 </script>

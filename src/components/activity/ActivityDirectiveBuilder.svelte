@@ -8,11 +8,10 @@
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import {
-    activeDirectiveName,
-    activeDirectiveStartTime,
-    activeDirectiveType,
     closeDirectiveBuilder,
     directiveBuilderIsVisible,
+    directiveBuilderWIP,
+    updateDirectiveBuilder,
   } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
@@ -38,7 +37,6 @@
 
   export let builderWidth: number = 400;
   export let builderHeight: number = 700;
-  export let directiveName: string = '';
   export let plan: Plan | null = null;
   export let user: User | null = null;
 
@@ -54,10 +52,10 @@
     anchored_to_start: true,
     arguments: {},
     metadata: {},
-    name: $activeDirectiveName,
+    name: $directiveBuilderWIP.name,
     plan_id: plan?.id ?? -1,
     start_offset: '',
-    type: $activeDirectiveType,
+    type: $directiveBuilderWIP.type,
   };
   let activityTypesOptions: DropdownOption[] = [];
   let manualInputWidth: number = 200;
@@ -65,9 +63,9 @@
   let planMaxDate: Date | undefined;
   let rootRef: HTMLDivElement;
   let startTimeField: FieldStore<string>;
-  let startTime: string = $activeDirectiveStartTime ?? plan?.start_time_doy ?? '';
+  let startTime: string = $directiveBuilderWIP.startTime ?? plan?.start_time_doy ?? '';
 
-  $: selectActivityType($activeDirectiveType);
+  $: selectActivityType($directiveBuilderWIP.type);
   $: activityTypesOptions = $planModelActivityTypes.map(activityType => {
     return { display: activityType.name, value: activityType.name };
   });
@@ -75,8 +73,8 @@
     startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
     startTimeField.validateAndSet(startTime);
   }
-  $: if ($activeDirectiveStartTime !== '') {
-    startTime = $activeDirectiveStartTime;
+  $: if ($directiveBuilderWIP.startTime !== '') {
+    startTime = $directiveBuilderWIP.startTime;
   }
   $: if (plan) {
     const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
@@ -134,6 +132,7 @@
   function onDirectiveNameChange(event: Event) {
     const { value } = getTarget(event);
     dirtyDirective.name = value as string;
+    updateDirectiveBuilder({ name: value as string });
   }
 
   function getDefaultPosition() {
@@ -145,8 +144,6 @@
     const viewH = document.body.clientHeight;
     const effW = Math.min(builderWidth, viewW - padding * 2);
     const effH = Math.min(builderHeight, viewH - padding * 2);
-    console.log(builderWidth, effW, viewW, viewW / 2, viewW / 2 - effW, (viewW - effW) / 2);
-    console.log(builderHeight, effH, viewH, viewH / 2, viewH / 2 - effH, (viewH - effH) / 2);
     return {
       x: Math.max(padding, (viewW - effW) / 2),
       y: Math.max(padding, (viewH - effH) / 2),
@@ -215,7 +212,7 @@
                 <Input>
                   <input
                     name="manual-types-filter-input"
-                    value={directiveName}
+                    value={$directiveBuilderWIP.name}
                     class="st-input w-full"
                     aria-label="directive-name"
                     placeholder="Enter a name for this directive..."
@@ -237,9 +234,10 @@
                   loading={false}
                   on:change={e => {
                     const v = e.detail[0];
-                    $activeDirectiveType = v;
+                    // $activeDirectiveType = v;
+                    updateDirectiveBuilder({ type: v });
                   }}
-                  selectedOptionValues={$activeDirectiveType === '' ? [] : [$activeDirectiveType]}
+                  selectedOptionValues={$directiveBuilderWIP.type === '' ? [] : [$directiveBuilderWIP.type]}
                 >
                   <ChevronDown slot="icon" />
                 </SearchableDropdown>
