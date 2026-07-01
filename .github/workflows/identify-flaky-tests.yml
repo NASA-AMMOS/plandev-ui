@@ -63,7 +63,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           INPUT_WORKFLOWS: ${{ inputs.workflows || 'test.yml,canary.yml' }}
           INPUT_BRANCH: ${{ inputs.branch || 'develop' }}
-          INPUT_MAX_RUNS: ${{ inputs.max-runs || '50' }}
+          INPUT_MAX_RUNS: ${{ inputs.max-runs || '35' }}
           INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name || 'E2E Test Results' }}
           INPUT_OUTPUT_LIMIT: ${{ inputs.output-limit || '25' }}
 

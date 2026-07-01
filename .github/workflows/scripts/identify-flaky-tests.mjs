@@ -10,7 +10,6 @@ import * as github from '@actions/github';
 //   --branch develop \
 //   --max-runs 25
 
-
 function getArg(name) {
   const prefix = `--${name}=`;
   const inline = process.argv.find(arg => arg.startsWith(prefix));
@@ -132,7 +131,6 @@ async function readJsonResultsFromArtifactZip(zipData) {
 
   return JSON.parse(await file.async('string'));
 }
-
 
 /**
  * collect flaky and unexpectedly failing tests from playwright json results.
@@ -306,7 +304,9 @@ function getDisplayTitle(row) {
  * Format an ISO timestamp for compact report display.
  */
 function formatDate(value) {
-  if (!value) { return ''; }
+  if (!value) {
+    return '';
+  }
   return new Date(value).toISOString().slice(0, 10);
 }
 
@@ -364,10 +364,7 @@ function renderMarkdownReport(leaderboard, config, stats) {
   );
 
   for (const [index, row] of topRows.entries()) {
-    const testCell = [
-      `\`${escapeMarkdown(row.file)}\``,
-      escapeMarkdown(getDisplayTitle(row)),
-    ].join('<br>');
+    const testCell = [`\`${escapeMarkdown(row.file)}\``, escapeMarkdown(getDisplayTitle(row))].join('<br>');
 
     const lastSeenCell = row.exampleRunUrl
       ? `[${escapeMarkdown(formatDate(row.lastSeenAt))}](${row.exampleRunUrl})`
@@ -402,10 +399,7 @@ function renderMarkdownReport(leaderboard, config, stats) {
 async function writeReportFiles(config, markdownReport, leaderboard, stats) {
   await fs.mkdir(config.outputDir, { recursive: true });
 
-  await fs.writeFile(
-    path.join(config.outputDir, 'flaky-test-leaderboard.md'),
-    markdownReport,
-  );
+  await fs.writeFile(path.join(config.outputDir, 'flaky-test-leaderboard.md'), markdownReport);
 
   await fs.writeFile(
     path.join(config.outputDir, 'flaky-test-leaderboard.json'),
@@ -435,7 +429,9 @@ try {
   console.log('running with config:');
   console.log(JSON.stringify({ ...config, token: config.token ? '<set>' : '<missing>' }, null, 2));
 
-  if (!config.token) { throw new Error('GITHUB_TOKEN is required.'); }
+  if (!config.token) {
+    throw new Error('GITHUB_TOKEN is required.');
+  }
   const octokit = github.getOctokit(config.token);
 
   // collection of all problematic test runs from past N workflow runs
@@ -466,9 +462,7 @@ try {
         zipData = await getArtifactZipData(octokit, config, run, matchingArtifacts[0]);
       } catch (error) {
         console.warn(
-          `Unable to download artifact for run ${run.id}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          `Unable to download artifact for run ${run.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
         runsWithArtifactDownloadErrors += 1;
         continue;
@@ -527,7 +521,7 @@ try {
   // If running in a GH actions context, write the markdown report to the action run summary
   if (process.env.GITHUB_ACTIONS === 'true') {
     await core.summary.addRaw(markdownReport).write();
-    console.log("Wrote Github run report summary");
+    console.log('Wrote Github run report summary');
   }
 } catch (error) {
   core.setFailed(error instanceof Error ? error.message : String(error));
