@@ -44,7 +44,6 @@
 
   const dispatch = createEventDispatcher<{
     close: void;
-    dirty: boolean;
     runAction: ActionDefinition;
     viewRun: { runId: number };
   }>();
@@ -167,7 +166,6 @@
       (name !== actionDefinition.name ||
         description !== actionDefinition.description ||
         JSON.stringify(argumentsMap) !== JSON.stringify(actionDefinition.settings));
-    dispatch('dirty', isDirty);
   }
 
   async function save() {
@@ -178,7 +176,6 @@
     await effects.updateActionDefinition(actionDefinition.id, { description, name, settings: argumentsMap }, user);
     saving = false;
     isDirty = false;
-    dispatch('dirty', false);
   }
 
   async function toggleArchive() {
