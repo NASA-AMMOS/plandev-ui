@@ -8,7 +8,6 @@
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import {
-    closeDirectiveBuilder,
     directiveBuilderIsVisible,
     directiveBuilderWIP,
     updateDirectiveBuilder,
@@ -196,7 +195,11 @@
     >
       <div slot="handle">
         <MenuHeader title="Activity Directive Builder">
-          <button on:click|stopPropagation={closeDirectiveBuilder} class="st-button icon" aria-label="close">
+          <button
+            on:click|stopPropagation={() => ($directiveBuilderIsVisible = false)}
+            class="st-button icon"
+            aria-label="close"
+          >
             <CloseIcon />
           </button>
         </MenuHeader>

@@ -60,7 +60,7 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
-  import { closeDirectiveBuilder } from '../../../stores/directiveBuilder';
+  import { resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -776,7 +776,7 @@
         $user,
       );
       if (newDirectiveId !== null) {
-        closeDirectiveBuilder();
+        resetDirectiveBuilder();
       }
     }
   }
