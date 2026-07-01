@@ -28,7 +28,7 @@ export function updateDirectiveBuilder(input: { name?: string; startTime?: strin
   });
 }
 
-export function closeDirectiveBuilder(): void {
+export function resetDirectiveBuilder(): void {
   directiveBuilderWIP.set({ name: '', startTime: '', type: '' });
   directiveBuilderIsVisible.set(false);
 }
