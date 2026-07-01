@@ -363,12 +363,15 @@
     if (!$activeDocumentIsDirty) {
       return;
     }
+    // Skip for external navigation (tab close, refresh) - handled by beforeunload
     if (to === null) {
       return;
     }
+    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
     if (to.route.id === $page.route.id) {
       return;
     }
+    // Cancel navigation first, then show async modal and navigate if confirmed
     cancel();
     showConfirmModal(
       'Leave Page',
@@ -378,6 +381,7 @@
       'Stay on Page',
     ).then(({ confirm }) => {
       if (confirm && to?.url) {
+        // Reset content to allow navigation without re-triggering the modal
         activeDocument.markClean();
         goto(to.url);
       }
