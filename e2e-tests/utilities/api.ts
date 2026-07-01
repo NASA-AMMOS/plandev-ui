@@ -114,6 +114,15 @@ export class AerieApi {
     return { id: goalId };
   }
 
+  async createSnapshot(planId: number, name: string, description: string = ''): Promise<{ snapshotId: number }> {
+    const data = await this.gqlQuery<{ createSnapshot: { snapshot_id: number } }>(gql.CREATE_PLAN_SNAPSHOT, {
+      description,
+      plan_id: planId,
+      snapshot_name: name,
+    });
+    return { snapshotId: data.createSnapshot.snapshot_id };
+  }
+
   async createTag(name: string, color: string = '#000000'): Promise<{ id: number }> {
     // CREATE_TAG returns directly from INSERT_TAG without an alias
     const data = await this.gqlQuery<{ insert_tags_one: { id: number } }>(gql.CREATE_TAG, {

@@ -1,5 +1,17 @@
 import test, { expect, type BrowserContext, type Page } from '@playwright/test';
+import { decode } from 'jsonwebtoken';
+import nodePath from 'path';
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
+import url from 'url';
+import type { HasuraToken } from '../../src/lib/types/oidc';
+import { getIntervalFromDoyRange } from '../../src/utilities/time.js';
+import { Action } from '../fixtures/Action.js';
+import { Dictionaries } from '../fixtures/Dictionaries.js';
 import { OIDC } from '../fixtures/OIDC';
+import { Parcels } from '../fixtures/Parcels.js';
+import { Workspace } from '../fixtures/Workspace.js';
+import { Workspaces } from '../fixtures/Workspaces.js';
+import { AerieApi } from '../utilities/api.js';
 
 let context: BrowserContext;
 let page: Page;
@@ -271,5 +283,164 @@ test.describe('Role Switching', () => {
     await expect.poll(() => newWebSockets.length, { timeout: 5000 }).toBeGreaterThan(wsCountBefore);
 
     expect(pageErrors).toEqual([]);
+  });
+});
+
+test.describe.serial('Backend Service Smoke Tests', () => {
+  // Exercises the OIDC/JWKS-verified path to each backend service, logged in as a real Keycloak
+  // user — the integration coverage the JWKS work needed (the rest of this suite is auth-only and
+  // never touched these endpoints):
+  //   1. Hasura action   (simulate)           — API call, token verified by Hasura via JWKS
+  //   2. Hasura function (take snapshot)       — API call, token verified by Hasura via JWKS
+  //   3. Workspace server (create/file/delete) — UI → workspace-server, verified via JWKS
+  //   4. Action server   (upload + run)        — UI → action-server, verified via JWKS
+  //
+  // setupTest()/AerieApi.login() can't be used here: the gateway's password login is disabled
+  // under OIDC. Instead we seed AerieApi with the access-token cookie the Keycloak login minted —
+  // Hasura/the gateway verify it via JWKS exactly as for a browser request. The two Hasura smokes
+  // run as API calls (no need to render the heavy /plans route, which Vite cold-compiles under the
+  // OIDC project's `npm run dev`); workspace/action stay UI since those endpoints are browser-only.
+
+  const { password, username } = users[0]; // AerieAdmin — has all roles.
+
+  let api: AerieApi;
+  let baseUrl: string | undefined;
+  let dictionaries: Dictionaries;
+  let modelId: number;
+  let parcels: Parcels;
+  let planId: number;
+
+  // The workspace/action tests drive real UI in dev mode (cold route compile + an action run),
+  // which can exceed Playwright's 30s default — give each test headroom.
+  test.beforeEach(() => {
+    test.setTimeout(120000);
+  });
+
+  test.beforeAll(async ({ baseURL, browser }) => {
+    // Generous budget: under the OIDC project's `npm run dev` server, Vite cold-compiles the
+    // /dictionaries and /parcels routes on first navigation here, plus the model JAR is processed.
+    test.setTimeout(180000);
+    baseUrl = baseURL;
+
+    context = await browser.newContext();
+    page = await context.newPage();
+
+    // Real OIDC login, then seed an AerieApi with the access token Keycloak just minted.
+    const oidc = new OIDC(page, username, password);
+    await oidc.login();
+    await page.waitForURL('**/plans');
+    const { accessToken } = await oidc.extractTokens();
+    const claims = (decode(accessToken as string) as HasuraToken)['https://hasura.io/jwt/claims'];
+    api = new AerieApi();
+    api.setUser({ id: claims['x-hasura-user-id'], token: accessToken as string });
+
+    // Model + plan for the Hasura smokes (simulate/snapshot call the API directly in their tests).
+    const jarPath = nodePath.join(
+      nodePath.dirname(url.fileURLToPath(import.meta.url)),
+      '../data/banananation-develop.jar',
+    );
+    const jarId = await api.uploadFile(jarPath);
+    const modelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    const model = await api.createModel({ jar_id: jarId, mission: 'test', name: modelName, version: '1.0.0' });
+    modelId = model.id;
+
+    const planName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+    const planStartTime = '2022-001T00:00:00';
+    const planEndTime = '2022-002T00:00:00';
+    const planResult = await api.createPlan({
+      duration: getIntervalFromDoyRange(planStartTime, planEndTime),
+      model_id: modelId,
+      name: planName,
+      start_time: planStartTime,
+    });
+    planId = planResult.id;
+
+    // Command dictionary + parcel are prerequisites for creating a workspace (both via UI).
+    dictionaries = new Dictionaries(page);
+    parcels = new Parcels(page);
+    await dictionaries.goto();
+    await dictionaries.createCommandDictionary();
+    await parcels.goto();
+    await parcels.createParcel(dictionaries.commandDictionaryName, baseURL);
+  });
+
+  test.afterAll(async () => {
+    // Plan/model were created via API, so clean them up the same way. Workspaces created by the
+    // tests below are deleted in-test (test 3) or intentionally left (test 4, like actions.test.ts).
+    try {
+      await api.deletePlan(planId);
+    } catch {
+      // ignore cleanup errors
+    }
+    try {
+      await api.deleteModel(modelId);
+    } catch {
+      // ignore cleanup errors
+    }
+    await page.close();
+    await context.close();
+  });
+
+  test('Hasura action: a simulation runs to completion', async () => {
+    // simulate is a Hasura action; calling it with the OIDC token exercises Hasura's JWKS
+    // verification (and the merlin round-trip) without rendering the heavy /plans route.
+    const { simulationDatasetId } = await api.simulate(planId);
+    await api.waitForSimulation(simulationDatasetId);
+    const dataset = await api.getSimulationDataset(simulationDatasetId);
+    expect(dataset.status).toBe('success');
+  });
+
+  test('Hasura function: taking a plan snapshot succeeds', async () => {
+    // create_snapshot is a Hasura function; calling it with the OIDC token exercises Hasura's
+    // JWKS verification. A returned snapshot id means the function ran end to end.
+    const { snapshotId } = await api.createSnapshot(planId, `oidc-smoke-${username}`);
+    expect(snapshotId).toBeGreaterThanOrEqual(0);
+  });
+
+  test('Workspace server: create a workspace, add a file, then delete it', async () => {
+    const workspaces = new Workspaces(page, parcels, baseUrl);
+    await workspaces.goto();
+    const workspaceId = await workspaces.createWorkspace(); // POST /ws/create
+
+    const workspace = new Workspace(page, workspaceId, workspaces.workspaceName, baseUrl);
+    workspace.updatePage(page);
+    await workspace.goto();
+    // createSequence waits for the "Workspace File Created Successfully" toast, which only
+    // fires once the workspace server accepts the file write.
+    await workspace.createSequence(undefined, 'oidc-smoke.seq'); // PUT file
+
+    await workspaces.goto();
+    await workspaces.deleteWorkspace(workspaces.workspaceName); // DELETE /ws/:id
+  });
+
+  test('Action server: upload and run an action', async () => {
+    const workspaces = new Workspaces(page, parcels, baseUrl);
+    await workspaces.goto();
+    const workspaceId = await workspaces.createWorkspace();
+
+    const workspace = new Workspace(page, workspaceId, workspaces.workspaceName, baseUrl);
+    workspace.updatePage(page);
+    await workspace.goto();
+
+    const action = new Action(page, workspaceId);
+    await action.switchToActionsTab();
+    await action.createAction(); // uploads e2e-tests/data/aerie-action-demo.js
+    await action.inspectAction(); // open the action's detail view (Runs/Configure/Code tabs)
+    await action.configureAction(); // the demo action has a required *setting*; save it
+
+    // A "latest" run reads settings from the saved action definition via a live (graphql-ws)
+    // subscription — RunActionModal doesn't surface a settings form for latest runs — and that
+    // store lags the save with no DOM signal to await. Reload to re-initialize the subscription so
+    // the store is guaranteed to hold the just-saved setting on reconnect. After reload the
+    // workspace auto-opens the single action's detail, so just confirm it's showing rather than
+    // re-clicking the sidebar entry (which the detail pane now overlaps).
+    await page.reload();
+    await action.switchToActionsTab();
+    await expect(page.getByRole('heading', { name: action.actionName })).toBeVisible();
+    await action.runAction({
+      actionTimeout: 60000, // first cold action run (worker spin-up) can exceed the 30s default
+      expectedStatus: 'Complete',
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
   });
 });

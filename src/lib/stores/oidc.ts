@@ -137,7 +137,7 @@ export async function refresh(): Promise<void> {
     // 401 means the refresh token is expired/invalid at the IdP.
     // No point retrying — log out immediately.
     console.error('Token refresh returned 401 — refresh token is expired. Logging out.');
-    logout('Session expired - please log in again');
+    logout('Session expired – please log in again');
     return;
   } else {
     consecutiveFailures++;
@@ -163,7 +163,7 @@ function reschedule(fn: () => Promise<void>, delay: number, previousTimeout: num
       // After MAX_REFRESH_FAILURES consecutive failures, assume refresh token is expired
       if (consecutiveFailures >= MAX_REFRESH_FAILURES) {
         console.error(`Token refresh failed ${consecutiveFailures} times, refresh token likely expired. Logging out.`);
-        logout('Session expired - please log in again');
+        logout('Session expired – please log in again');
         return;
       }
 

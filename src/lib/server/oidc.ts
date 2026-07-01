@@ -16,11 +16,21 @@ export function generateNonce(): string {
   return crypto.randomBytes(16).toString('base64url');
 }
 
-// Lazily initialized JWKS client - created on first use to allow runtime env var configuration
+// Lazily initialized JWKS client (created on first use for runtime env config). Cache signing keys
+// and rate-limit fetches so unknown-`kid` floods can't hammer the IdP; bounds mirror the action and
+// workspace servers. (jwks-rsa defaults to no rate limiting + a small cache.)
 let _jwksClient: JwksClient | undefined;
 function getJwksClient(): JwksClient | undefined {
   if (!_jwksClient && env.OIDC_JWKS_URL) {
-    _jwksClient = new JwksClient({ jwksUri: env.OIDC_JWKS_URL });
+    _jwksClient = new JwksClient({
+      cache: true,
+      cacheMaxAge: 24 * 60 * 60 * 1000, // 24h
+      cacheMaxEntries: 100,
+      jwksRequestsPerMinute: 10,
+      jwksUri: env.OIDC_JWKS_URL,
+      rateLimit: true,
+      timeout: 30000,
+    });
   }
   return _jwksClient;
 }
