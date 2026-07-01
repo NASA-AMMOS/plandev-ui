@@ -565,21 +565,6 @@
                   placement: 'top',
                 }}
               >
-                <!-- <button
-                  disabled={!(
-                    $simulationDatasetLatest &&
-                    $simulationStatus === Status.Complete &&
-                    $constraintsStatus === Status.Complete &&
-                    numConstraintsViolated === 0
-                  )}
-                  aria-label={`Apply '${sequenceOrFilter.name}'`}
-                  class="st-button icon"
-                  on:click|stopPropagation={() => {
-                    if (!isExpansionSequence(sequenceOrFilter)) {
-                      onApplyFilter(sequenceOrFilter);
-                    }
-                  }}
-                > -->
                 <button
                   disabled={!$simulationDatasetLatest}
                   aria-label={`Apply '${sequenceOrFilter.name}'`}
