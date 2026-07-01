@@ -322,7 +322,7 @@ function renderProblemRunsCell(row) {
 
   return [
     '<details>',
-    `<summary>${row.problemRuns.length} run${row.problemRuns.length === 1 ? '' : 's'}</summary>`,
+    `<summary>**${row.problemRuns.length}&nbsp;run${row.problemRuns.length === 1 ? '' : 's'}**</summary>`,
     links.join('<br>'),
     '</details>',
   ].join('');
@@ -359,8 +359,8 @@ function renderMarkdownReport(leaderboard, config, stats) {
   }
 
   lines.push(
-    '| Rank | Score | Test | Runs | Problem Runs | Unexpected Runs | Flaky Runs | Timeout Attempts | Failed Attempts | Last Seen |',
-    '|---:|---:|---|---|---:|---:|---:|---:|---:|---|',
+    '| Rank | Score | Test | Problem Runs | Unexpected Runs | Flaky Runs | Timeout Attempts | Failed Attempts | Last Seen |',
+    '|---:|---:|---|---:|---:|---:|---:|---:|---|',
   );
 
   for (const [index, row] of topRows.entries()) {
@@ -376,7 +376,6 @@ function renderMarkdownReport(leaderboard, config, stats) {
         row.score,
         testCell,
         renderProblemRunsCell(row),
-        row.problemTestRuns,
         row.unexpectedRuns,
         row.flakyRuns,
         row.timedOutAttempts,
