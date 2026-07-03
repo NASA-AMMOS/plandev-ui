@@ -10,6 +10,7 @@
     ConstraintPlanSpecification,
     ConstraintResponse,
   } from '../../types/constraint';
+  import { pluralize } from '../../utilities/text';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -129,7 +130,7 @@
       <p>The following constraints were violated:</p>
       <div class="constraints-list">
         {#each failingConstraints as failing}
-          <p>{failing.name} <b>({failing.viols} violations)</b></p>
+          <p>{failing.name} <b>({failing.viols} violation{pluralize(failing.viols)})</b></p>
         {/each}
       </div>
     {/if}
