@@ -67,6 +67,14 @@
   let hasCreatePermissionSequence: boolean = false;
   let hasCreatePermissionSequenceFilter: boolean = false;
 
+  let allConstraintsHaveBeenChecked = true;
+  let allConstraintsThatAreCheckedPass = true;
+  let simulationOutOfDate = false;
+
+  // copied from ConstraintsPanel. Unable to move this into a store, as ConstraintsPanel directly modifies startTime, though we do not need to here.
+  let startTime: string;
+  let endTime: string;
+
   $: if (user !== null && $plan !== null && $plan.model) {
     hasDeletePermissionSequence = featurePermissions.expansionSequences.canDelete(user, $plan);
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
@@ -108,9 +116,7 @@
     }
   }
 
-  // copied from ConstraintsPanel. Unable to move this into a store, as ConstraintsPanel directly modifies startTime, though we do not need to here.
-  let startTime: string;
-  let endTime: string;
+  // copied from ConstraintsPanel
   $: if ($plan) {
     startTime = formatDate(new Date($plan.start_time), $plugins.time.primary.format);
     const endTimeYmd = convertDoyToYmd($plan.end_time_doy);
@@ -155,9 +161,6 @@
     });
   }
 
-  let allConstraintsHaveBeenChecked = true;
-  let allConstraintsThatAreCheckedPass = true;
-  let simulationOutOfDate = false;
   $: constraintPlanSpecsInPlan = $allowedConstraintPlanSpecs.filter(spec => $plan && spec.plan_id === $plan.id);
   $: {
     simulationOutOfDate = $simulationStatus === Status.Modified;
