@@ -23,9 +23,7 @@
   export let constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse>;
   export let simulationDatasetId: number;
 
-  // TODO: adjust dynamically?
-  export let height: number =
-    simulationOutOfDate && (!allConstraintsHaveBeenChecked || !allConstraintsThatAreCheckedPass) ? 300 : 200;
+  export let height: number = 400;
   export let width: number = 380;
 
   let failingConstraints: { name: string; viols: number }[] = constraintPlanSpecsInPlan
