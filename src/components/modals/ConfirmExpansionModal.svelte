@@ -77,7 +77,7 @@
         : $checkConstraintsStatus === Status.Incomplete
           ? ' (incomplete evaluation)'
           : uncheckedConstraints.length > 0 || failingConstraints.length > 0
-            ? ` (${uncheckedConstraints.length > 0} unchecked, ${failingConstraints.length > 0} failed)`
+            ? ` (${uncheckedConstraints.length} unchecked, ${failingConstraints.length > 0} failed)`
             : ``;
     logMessage(`Constraint violations${brief} bypassed before expanding simulation ${simulationDatasetId}.`);
 
