@@ -544,11 +544,12 @@ test.describe.serial('Workspace', () => {
     await api.createWorkspaceItem(workspaceIdNum, folder1);
     await api.createWorkspaceItem(workspaceIdNum, folder2);
 
-    // Reload so the file browser reflects the API-seeded items, then filter to just this test's tag.
-    // searchForFile only fills the box (a tag search matches many rows, so we can't waitFor it); the
-    // subsequent getFileRow calls wait for their specific row in the now-small grid.
-    await workspace.goto();
+    // Open the Files tab and refresh the listing so it reflects the API-seeded items. (A full page
+    // goto would reset the resizable-pane layout and briefly overlay the grid, intercepting clicks.)
+    // Then filter to this test's tag: searchForFile only fills the box (a tag matches many rows, so
+    // we can't waitFor it); the getFileRow calls below wait for their specific row in the small grid.
     await workspace.workspaceFileBrowserButton.click();
+    await workspace.workspaceRefreshButton.click();
     await workspace.searchForFile(tag);
     const sidebar = workspace.workspaceFileGrid;
 
