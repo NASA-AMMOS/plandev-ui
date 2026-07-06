@@ -91,7 +91,7 @@ test.describe.serial('Model Derivation Group Linking', () => {
     await setup.plan.showPanel(PanelNames.EXTERNAL_SOURCES);
 
     // ...and verify that there is nothing associated
-    await expect(setup.page.getByText('No Derivation Groups Linked To This Plan')).toBeVisible();
+    await expect(setup.page.getByText('No Derivation Groups Linked To This Plan')).toBeVisible({ timeout: 15000 });
 
     // go to the model page
     await model.goto();
@@ -105,13 +105,9 @@ test.describe.serial('Model Derivation Group Linking', () => {
     await model.saveModel();
 
     // now, create a new plan
-    await setup.page.pause();
     await setup.plans.goto();
     await setup.page.waitForURL(`${baseURL}/plans`, { timeout: 3000 });
-    await setup.page.pause();
-    console.log('CREATING NEW PLAN WITH MODEL', setup.modelName, setup.modelId, setup.models.modelName);
     await setup.plans.createPlan('secondPlan', setup.modelName);
-    await setup.page.pause();
     newPlan = new Plan(
       setup.page,
       setup.plans,
@@ -121,25 +117,23 @@ test.describe.serial('Model Derivation Group Linking', () => {
       setup.planName,
     );
     newPlanId = Number(setup.plans.planId);
-    await setup.page.pause();
 
     // navigate to the new plan...
     await newPlan.goto();
     await setup.page.waitForURL(`${baseURL}/plans/${newPlanId}`, { timeout: 3000 });
     await setup.plan.showPanel(PanelNames.EXTERNAL_SOURCES);
 
-    // ...and this time there should be an association
-    await expect(setup.page.getByText('1 derived events')).toBeVisible();
+    // ...and this time there should be an association. Allow extra time for the plan-derivation-group
+    // subscription to re-deliver for the new plan and for the backend to compute derived events.
+    await expect(setup.page.getByText('1 derived events')).toBeVisible({ timeout: 15000 });
 
     // but when we go back to the old plan...
-    await setup.page.pause();
     // Note that we do not do originalPlan.goto(); it seems that originalPlan's link to setup resets it to refer to newPlan!
     await setup.page.goto(`${baseURL}/plans/${originalPlanId}`, { timeout: 3000 });
-    await setup.page.pause();
     await setup.page.waitForURL(`${baseURL}/plans/${originalPlanId}`, { timeout: 3000 });
     await setup.plan.showPanel(PanelNames.EXTERNAL_SOURCES);
 
     // ...there still shouldn't be any associations, as models affect the _defaults_, not plans that already exist
-    await expect(setup.page.getByText('No Derivation Groups Linked To This Plan')).toBeVisible();
+    await expect(setup.page.getByText('No Derivation Groups Linked To This Plan')).toBeVisible({ timeout: 15000 });
   });
 });

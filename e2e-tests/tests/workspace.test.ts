@@ -519,6 +519,10 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Bulk workspace file operations', async () => {
+    // This test creates 5 files + 2 folders (each a ~toast-gated backend round-trip) and then does
+    // bulk move/copy/delete. The 60s set in beforeAll only applies to that hook, so the test body
+    // otherwise runs at the 30s default and can't finish under CI load. Give it its own budget.
+    test.setTimeout(90000);
     await workspace.workspaceFileBrowserButton.click();
 
     // Create test files and folders

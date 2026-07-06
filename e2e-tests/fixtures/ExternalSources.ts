@@ -244,13 +244,22 @@ export class ExternalSources {
   }
 
   async goto() {
-    await this.page.goto('/external-sources', { waitUntil: 'networkidle' });
-    await this.page.waitForLoadState('domcontentloaded');
+    // Use 'domcontentloaded' + an explicit anchor instead of 'networkidle': this page holds live
+    // Hasura subscriptions/polling, so the network never goes idle and 'networkidle' can hang to
+    // the test timeout. Either the sources table (sources exist) or the upload input (empty state)
+    // is present once the page is ready.
+    await this.page.goto('/external-sources', { waitUntil: 'domcontentloaded' });
+    // Resolve as soon as either anchor becomes visible. Callers that need a specific element
+    // (table for selectSource, upload input for uploadExternalSource) wait for it explicitly after.
+    await Promise.race([
+      this.externalSourcesTable.waitFor({ state: 'visible', timeout: 15000 }),
+      this.inputFile.waitFor({ state: 'visible', timeout: 15000 }),
+    ]).catch(() => {});
   }
 
   async gotoTypeManager() {
-    await this.page.goto('/external-sources/types', { waitUntil: 'networkidle' });
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.goto('/external-sources/types', { waitUntil: 'domcontentloaded' });
+    await this.page.locator('.external-source-type-table').waitFor({ state: 'visible', timeout: 15000 });
   }
 
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
@@ -271,7 +280,9 @@ export class ExternalSources {
   async selectEvent(eventName: string, sourceName: string = 'example-external-source.json') {
     await this.goto();
     await this.selectSource(sourceName);
-    await this.page.getByRole('gridcell', { name: eventName }).click();
+    const eventCell = this.page.getByRole('gridcell', { name: eventName });
+    await eventCell.waitFor({ state: 'visible', timeout: 10000 });
+    await eventCell.click();
   }
 
   async selectSource(sourceName: string = 'example-external-source.json') {
@@ -280,8 +291,8 @@ export class ExternalSources {
     await this.externalSourcesTable.waitFor({ state: 'visible', timeout: 10000 });
     const sourceRow = this.page.getByRole('gridcell', { name: sourceName });
     await sourceRow.waitFor({ state: 'visible', timeout: 10000 });
-    // Small delay to ensure table rendering is complete (prevents click during re-render)
-    await this.page.waitForLoadState('networkidle');
+    // Playwright's click auto-waits for the row to be stable/actionable, so no networkidle wait
+    // is needed here (and networkidle can hang on this page's live subscriptions).
     await sourceRow.click();
     // Use exact match to avoid matching "No external sources matching the selected external..."
     await expect(this.page.getByText('Selected External Source', { exact: true })).toBeVisible({ timeout: 10000 });
@@ -321,19 +332,16 @@ export class ExternalSources {
     handleUniquenessViolation: boolean = true,
   ) {
     await this.goto();
-    // Wait for the page to stabilize - this appears to be necessary in order to eliminate flakiness with
-    // svelte's handling of the file input
-    await this.page.waitForTimeout(500);
+    // goto() now waits for a concrete anchor element, so the page (and the file input) is settled
+    // before we interact — no fixed sleep needed.
     await this.fillInputFile(inputFilePath);
 
     // Wait for upload button to be enabled
     await expect(this.uploadButton).toBeEnabled({ timeout: 10000 });
     await this.uploadButton.click();
 
-    // Wait a moment for the response to come back
-    await this.page.waitForTimeout(500);
-
-    // Check if a uniqueness violation occurred (source already exists)
+    // Check if a uniqueness violation occurred (source already exists). The waitFor below already
+    // polls for the response, so no fixed sleep is needed here.
     const uniquenessViolation = this.page.getByLabel('Uniqueness violation.');
     const hasUniquenessViolation = await uniquenessViolation
       .waitFor({ state: 'visible', timeout: 3000 })

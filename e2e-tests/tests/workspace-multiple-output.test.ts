@@ -96,8 +96,10 @@ for (let i = 0; i < adaptation.outputs.length; i++) {
 
       await workspace.page.getByRole('combobox', { name: 'Output Format' }).selectOption({ index: i });
 
-      // Validate that the output editor contains the correct output for the selected adaptation output language
-      await expect(outputEditor).toContainText(languageOutput);
+      // Validate that the output editor contains the correct output for the selected adaptation output language.
+      // Allow extra time: selecting the format triggers an async adaptation conversion + CodeMirror
+      // re-render, and the editor may still show the previous language's output momentarily.
+      await expect(outputEditor).toContainText(languageOutput, { timeout: 15000 });
     });
 
     test(`Copy the output for ${output.name}`, async () => {

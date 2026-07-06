@@ -61,9 +61,10 @@ export class Workspace {
     const path = folderPath || generateRandomName();
 
     await this.openWorkspaceContextMenu();
-    const workspaceMenuItem = await this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New Folder' });
+    const workspaceMenuItem = this.workspaceHeaderMenu.getByRole('menuitem', { name: 'New Folder' });
     await workspaceMenuItem.waitFor({ state: 'visible' });
-    await this.page.waitForTimeout(500); // Wait for dropdown menu animation to complete
+    // click() auto-waits for the menu item to be stable/actionable, so no fixed animation sleep is
+    // needed (createSequence clicks its 'New File' item the same way without one).
     await workspaceMenuItem.click();
     const workspaceModalMenuItem = this.page
       .locator('#modal-container')
