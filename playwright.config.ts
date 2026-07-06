@@ -113,10 +113,18 @@ const config: PlaywrightTestConfig = {
       // a stale preview server would silently reintroduce the secure-cookie bug.
       reuseExistingServer: isOidcRun ? false : !process.env.CI,
     },
-    {
-      command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
-      port: 3001,
-    },
+    // The command-expansion "templating" variant runs a second preview server. OIDC
+    // tests don't use it, and the OIDC CI job intentionally skips `npm run build` — so
+    // starting a preview (which needs the build output) would abort the whole run.
+    // Only stand it up for non-OIDC runs.
+    ...(isOidcRun
+      ? []
+      : [
+          {
+            command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
+            port: 3001,
+          },
+        ]),
   ],
 };
 
