@@ -394,7 +394,10 @@ export class Plan {
   }
 
   async fillActivityPresetName(presetName: string) {
-    await this.panelActivityForm.getByRole('combobox', { name: 'None' }).click();
+    // Open the preset control by its stable name attribute rather than the current display value
+    // ('None'), so creating a preset works whether or not one is already applied (e.g. creating a
+    // second preset after the first is applied). This mirrors how selectActivityPresetByName opens it.
+    await this.panelActivityForm.locator('div[name="Set Preset"]').click();
     await this.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'attached' });
     await this.panelActivityForm.getByPlaceholder('Enter preset name').click();
     await this.panelActivityForm.getByPlaceholder('Enter preset name').fill(presetName);
