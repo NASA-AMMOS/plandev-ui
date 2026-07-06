@@ -523,28 +523,33 @@ test.describe.serial('Workspace', () => {
   test('Bulk workspace file operations', async () => {
     test.setTimeout(60000);
 
-    // Seed the files and folders via the workspace API rather than the UI. The UI creation path is
-    // already covered by dedicated tests ("Create workspace sequence", "Create and delete workspace
-    // folder"), and seeding here is much faster — the slow per-file modal flow was what made this
-    // test overrun its budget, time out mid-way, and leave residue that crowded the grid on retry.
+    // Seed the files and folders via the workspace API rather than the UI (the UI creation path is
+    // covered by "Create workspace sequence" / "Create and delete workspace folder"). Every item
+    // shares a unique tag so the file browser can be filtered to just this test's items: the
+    // workspace is shared across the suite, and the ~10 files left by earlier tests otherwise make
+    // the grid large enough to virtualize, leaving target rows unstable/off-screen and hanging the
+    // selections. Filtering to the tag keeps the grid small regardless of what else exists.
     const workspaceIdNum = Number(workspace.workspaceId);
-    const file1 = `${generateRandomName()}.seq`;
-    const file2 = `${generateRandomName()}.seq`;
-    const file3 = `${generateRandomName()}.seq`;
-    const file4 = `${generateRandomName()}.seq`;
-    const file5 = `${generateRandomName()}.seq`;
-    const folder1 = generateRandomName();
-    const folder2 = generateRandomName();
+    const tag = generateRandomName();
+    const file1 = `${tag}-file1.seq`;
+    const file2 = `${tag}-file2.seq`;
+    const file3 = `${tag}-file3.seq`;
+    const file4 = `${tag}-file4.seq`;
+    const file5 = `${tag}-file5.seq`;
+    const folder1 = `${tag}-folderA`;
+    const folder2 = `${tag}-folderB`;
     for (const file of [file1, file2, file3, file4, file5]) {
       await api.createWorkspaceItem(workspaceIdNum, file, '// seeded');
     }
     await api.createWorkspaceItem(workspaceIdNum, folder1);
     await api.createWorkspaceItem(workspaceIdNum, folder2);
 
-    // Reload so the file browser reflects the API-seeded items
+    // Reload so the file browser reflects the API-seeded items, then filter to just this test's tag.
+    // searchForFile only fills the box (a tag search matches many rows, so we can't waitFor it); the
+    // subsequent getFileRow calls wait for their specific row in the now-small grid.
     await workspace.goto();
     await workspace.workspaceFileBrowserButton.click();
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     const sidebar = workspace.workspaceFileGrid;
 
     // Bulk move: select file1 + file2 (Ctrl+click) and move them into folder1
@@ -557,7 +562,7 @@ test.describe.serial('Workspace', () => {
     await setup.page.getByRole('button', { name: 'Move Files' }).click();
 
     // Both files should have left root and now live under folder1
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(`${folder1}/${file1}`, { exact: true })).toBeVisible();
@@ -573,7 +578,7 @@ test.describe.serial('Workspace', () => {
     await setup.page.getByRole('button', { name: 'Copy Files' }).click();
 
     // Both files should remain in root AND now also exist under folder2
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file3, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(file4, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(`${folder2}/${file3}`, { exact: true })).toBeVisible();
@@ -592,7 +597,7 @@ test.describe.serial('Workspace', () => {
     await setup.page.getByRole('button', { name: 'Delete' }).click();
 
     // Both should be gone from root
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file3, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file5, { exact: true })).not.toBeVisible();
 
@@ -601,7 +606,7 @@ test.describe.serial('Workspace', () => {
     await workspace.deleteFolder(folder1);
     await workspace.searchForFileAndWait(folder2);
     await workspace.deleteFolder(folder2);
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     await expect(workspace.getFileRow(folder2)).not.toBeVisible();
     await workspace.searchForFileAndWait(file4);
     await workspace.deleteFile(file4);
