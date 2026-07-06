@@ -24,13 +24,10 @@ on:
         required: true
         default: '25'
 
-  # temporary while developing; remove later if we only want manual runs
   pull_request:
     paths:
       - '.github/workflows/identify-flaky-tests.yml'
       - '.github/workflows/scripts/identify-flaky-tests.mjs'
-      - 'package.json'
-      - 'package-lock.json'
 
 permissions:
   contents: read
