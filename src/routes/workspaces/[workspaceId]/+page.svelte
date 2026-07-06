@@ -1283,8 +1283,9 @@
     const tab = event.detail;
     if (tab === 'actions') {
       await switchToContentMode(WorkspaceContentMode.ActionRunsList);
-    } else if (tab === 'settings') {
-      leftPanelActiveTab = 'settings'; // settings doesn't have a content mode, so just update the active tab
+    } else if (tab === 'settings' || tab === 'snapshots') {
+      // Workspace-level panels with no content mode of their own — just switch the sidebar tab.
+      leftPanelActiveTab = tab;
     } else {
       await switchToContentMode(WorkspaceContentMode.File);
     }
@@ -1617,6 +1618,7 @@
             on:selectAction={onSelectAction}
             on:selectAllRuns={onSelectAllRuns}
             on:openInNewTab={onOpenInNewTab}
+            on:snapshotRestored={onCheckpointRestored}
           />
         </Resizable.Pane>
 
@@ -1787,7 +1789,6 @@
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
               on:restored={onRevisionRestored}
-              on:checkpointRestored={onCheckpointRestored}
             />
           </Resizable.Pane>
         {/if}

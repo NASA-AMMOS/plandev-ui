@@ -48,7 +48,6 @@ export type WorkspaceFileRevision = {
   commitSha: string;
   contentHash: string;
   createdAt: string;
-  fileId: string;
   message: string;
   name: string;
   number: number;
@@ -79,8 +78,8 @@ export type WorkspaceSnapshotResult = {
   fileRevisions: WorkspaceFileRevision[];
 };
 
-/** Result of restoring the workspace to a checkpoint (files created since are kept, surfaced for review). */
+/** Result of restoring the workspace to a snapshot: files reset, plus files removed (created since the snapshot). */
 export type WorkspaceCheckpointRestoreResult = {
-  filesCreatedSince: string[];
+  removed: string[];
   restored: string[];
 };

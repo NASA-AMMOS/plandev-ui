@@ -199,6 +199,6 @@
   {:else if activeTab === 'metadata'}
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
   {:else if activeTab === 'revisions'}
-    <WorkspaceRevisionsPanel {workspaceId} {filePath} {user} {hasEditPermission} on:restored on:checkpointRestored />
+    <WorkspaceRevisionsPanel {workspaceId} {filePath} {user} {hasEditPermission} on:restored />
   {/if}
 </div>

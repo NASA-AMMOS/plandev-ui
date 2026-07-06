@@ -23,6 +23,7 @@
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
   import PanelHeader from './PanelHeader.svelte';
   import WorkspaceFileBrowser from './WorkspaceFileBrowser/WorkspaceFileBrowser.svelte';
+  import WorkspaceSnapshotsPanel from './WorkspaceSnapshotsPanel.svelte';
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
 
   const dispatch = createEventDispatcher<{
@@ -196,6 +197,13 @@
         on:selectAction
         on:selectAllRuns
         on:runAction={onRunActionFromSidebar}
+      />
+    {:else if activeTab === 'snapshots'}
+      <WorkspaceSnapshotsPanel
+        workspaceId={workspace?.id ?? null}
+        {user}
+        hasEditPermission={hasEditWorkspacePermission}
+        on:snapshotRestored
       />
     {:else if activeTab === 'settings'}
       <div class="grid h-full grid-rows-[min-content_auto]">

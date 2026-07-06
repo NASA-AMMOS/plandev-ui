@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
-  import { Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
+  import { Camera, Clapperboard, Files, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
 
@@ -40,6 +40,14 @@
       on:click={() => handleTabClick('actions')}
     >
       <Clapperboard size={16} />
+    </Sidebar.MenuButton>
+    <Sidebar.MenuButton
+      className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+      isActive={activeTab === 'snapshots' && panelOpen}
+      tooltipContent="Snapshots"
+      on:click={() => handleTabClick('snapshots')}
+    >
+      <Camera size={16} />
     </Sidebar.MenuButton>
     <Sidebar.MenuButton
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
