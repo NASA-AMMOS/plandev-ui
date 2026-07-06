@@ -4,6 +4,9 @@ import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.
 let setup: FullSetupResult;
 
 test.beforeAll(async ({ browser }) => {
+  // Heavy setup (add activity, set params, create two presets) can exceed the 30s hook default on a
+  // cold backend, which fails the whole serial group before any test runs. Give it more room.
+  test.setTimeout(60000);
   setup = await setupTest(browser);
   await setup.plan.goto();
 
