@@ -93,6 +93,7 @@
   import SectionTitle from '../../../components/ui/SectionTitle.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
   import { constraints, constraintsMap, initialConstraintsLoading } from '../../../stores/constraints';
+  import { derivationGroupsLoading } from '../../../stores/external-source';
   import { initialModel, model, resetModelStores } from '../../../stores/model';
   import {
     schedulingConditionResponses,
@@ -111,6 +112,7 @@
     ConstraintModelSpecInsertInput,
     ConstraintModelSpecSetInput,
   } from '../../../types/constraint';
+  import type { ModelDerivationGroup } from '../../../types/external-source';
   import type {
     Association,
     AssociationSpecification,
@@ -160,18 +162,21 @@
     owner: UserId;
     version: string;
   } | null = null;
+
   let selectedConstraintSpecificationMap: UpdatedAssociationSpecificationMap;
   let selectedConditionSpecificationMap: UpdatedAssociationSpecificationMap;
   let selectedGoalSpecificationMap: UpdatedAssociationSpecificationMap;
   let initialSelectedVisibleConstraintSpecificationsList: AssociationSpecification[] = [];
   let initialSelectedVisibleConditionSpecificationsList: AssociationSpecification[] = [];
   let initialSelectedVisibleGoalSpecificationsList: AssociationSpecification[] = [];
+  let initialModelDerivationGroupAssociations: string[] = [];
   let selectedConstraintMetadataMap: AssociationSpecificationMap;
   let selectedConditionMetadataMap: AssociationSpecificationMap;
   let selectedGoalMetadataMap: AssociationSpecificationMap;
   let selectedVisibleConstraintSpecificationsList: AssociationSpecification[] = [];
   let selectedVisibleConditionSpecificationsList: AssociationSpecification[] = [];
   let selectedVisibleGoalSpecificationsList: AssociationSpecification[] = [];
+  let selectedDerivationGroups: string[] = [];
   let selectedMetadata: AssociationSpecificationMap = {};
   let selectedSpecificationsList: AssociationSpecification[] = [];
   let selectedAssociation: Association = 'constraint';
@@ -268,11 +273,23 @@
       {},
     );
 
+    initialModelDerivationGroupAssociations = $model.derivation_group_specification.reduce(
+      (prevAssociations: string[], modelDerivationGroup: ModelDerivationGroup) => {
+        if (modelDerivationGroup.model_id === $model.id) {
+          return [...prevAssociations, modelDerivationGroup.derivation_group_name];
+        } else {
+          return prevAssociations;
+        }
+      },
+      [],
+    );
+
     modelMetadata = { ...initialModelMetadata };
 
     selectedVisibleConditionSpecificationsList = [...initialSelectedVisibleConditionSpecificationsList];
     selectedVisibleConstraintSpecificationsList = [...initialSelectedVisibleConstraintSpecificationsList];
     selectedVisibleGoalSpecificationsList = [...initialSelectedVisibleGoalSpecificationsList];
+    selectedDerivationGroups = [...initialModelDerivationGroupAssociations];
   }
 
   $: switch (selectedAssociation) {
@@ -301,6 +318,17 @@
       selectedSpecificationsList = selectedVisibleConditionSpecificationsList;
       selectedNumberOfPrivateAssociations = numPrivateConditions;
       break;
+    case 'derivation_group':
+      loading = $derivationGroupsLoading;
+      hasCreatePermission = featurePermissions.derivationGroup.canCreate($user);
+      hasEditSpecPermission =
+        featurePermissions.derivationGroupModelLink.canCreate($user) &&
+        featurePermissions.derivationGroupModelLink.canDelete($user);
+
+      // do not need to update or even nullify the metadata/specifications/private associations,
+      //    as they are not used by derivation groups.
+
+      break;
     case 'constraint':
     default: {
       loading = $initialConstraintsLoading;
@@ -313,7 +341,6 @@
       selectedNumberOfPrivateAssociations = numPrivateConstraints;
     }
   }
-
   $: {
     let lastPriority = -1;
     selectedVisibleGoalSpecificationsList = selectedVisibleGoalSpecificationsList
@@ -387,7 +414,8 @@
     JSON.stringify(initialSelectedVisibleConstraintSpecificationsList) !==
       JSON.stringify(selectedVisibleConstraintSpecificationsList) ||
     JSON.stringify(initialSelectedVisibleGoalSpecificationsList) !==
-      JSON.stringify(selectedVisibleGoalSpecificationsList);
+      JSON.stringify(selectedVisibleGoalSpecificationsList) ||
+    JSON.stringify(initialModelDerivationGroupAssociations) !== JSON.stringify(selectedDerivationGroups);
 
   onDestroy(() => {
     resetModelStores();
@@ -626,6 +654,19 @@
         const goalSpecUpdate = goalModelSpecUpdates.goalModelSpecsToUpdate[i];
         await effects.updateSchedulingGoalModelSpecification(goalSpecUpdate, $user);
       }
+
+      const derivationGroupsToDissociate = initialModelDerivationGroupAssociations.filter(
+        derivationGroup => !selectedDerivationGroups.includes(derivationGroup),
+      );
+      for (const derivationGroup of derivationGroupsToDissociate) {
+        await effects.deleteDerivationGroupForModel(derivationGroup, $model, $user);
+      }
+      const derivationGroupsToAssociate = selectedDerivationGroups.filter(
+        derivationGroup => !initialModelDerivationGroupAssociations.includes(derivationGroup),
+      );
+      for (const derivationGroup of derivationGroupsToAssociate) {
+        await effects.insertDerivationGroupForModel(derivationGroup, $model, $user);
+      }
     }
   }
 
@@ -826,8 +867,9 @@
     } = event;
 
     switch (selectedAssociation) {
+      case 'derivation_group':
       case 'condition': {
-        // do nothing because condition specifications cannot be duplicated
+        // do nothing because condition specifications cannot be duplicated, and invocations don't apply to derivation groups
         break;
       }
       case 'goal': {
@@ -873,8 +915,9 @@
     } = event;
 
     switch (selectedAssociation) {
+      case 'derivation_group':
       case 'condition': {
-        // do nothing because condition specifications cannot be duplicated
+        // do nothing because condition specifications cannot be duplicated, and invocations don't apply to derivation groups
         break;
       }
       case 'goal': {
@@ -952,8 +995,10 @@
     model={$model}
     numOfPrivateAssociations={selectedNumberOfPrivateAssociations}
     {selectedAssociation}
+    bind:selectedDerivationGroups
     selectedSpecifications={selectedMetadata}
     {selectedSpecificationsList}
+    user={$user}
     on:close={onClose}
     on:newMetadata={onNewMetadata}
     on:save={onSave}

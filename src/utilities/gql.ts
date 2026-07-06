@@ -338,6 +338,19 @@ const gql = {
     }
   `,
 
+  CREATE_MODEL_DERIVATION_GROUP: `#graphql
+    mutation CreateModelDerivationGroup($source: model_derivation_group_insert_input!) {
+      modelExternalSourceLink: ${Queries.INSERT_MODEL_DERIVATION_GROUP}(
+        object: $source,
+        on_conflict: {
+          constraint: model_derivation_group_pkey
+        }
+      ) {
+        derivation_group_name
+      }
+    }
+  `,
+
   CREATE_PARAMETER_DICTIONARY: `#graphql
     mutation CreateParameterDictionary($parameterDictionary: parameter_dictionary_insert_input!) {
       createParameterDictionary: ${Queries.INSERT_PARAMETER_DICTIONARY}(object: $parameterDictionary) {
@@ -880,6 +893,16 @@ const gql = {
       deleteSchedulingGoalModelSpec: ${Queries.DELETE_SCHEDULING_GOAL_MODEL_SPECIFICATIONS}(where: { model_id: { _eq: $id } }) {
         returning {
           model_id
+        }
+      }
+    }
+  `,
+
+  DELETE_MODEL_DERIVATION_GROUP: `#graphql
+    mutation DeleteModelDerivationGroup($where: model_derivation_group_bool_exp!) {
+      modelDerivationGroupLink: ${Queries.DELETE_MODEL_DERIVATION_GROUP}(where: $where) {
+        returning {
+          derivation_group_name
         }
       }
     }
@@ -1534,6 +1557,7 @@ const gql = {
           }
           is_locked
           start_time
+          duration
         }
         revision
         scheduling_specification {
@@ -2709,6 +2733,10 @@ const gql = {
   SUB_MODEL: `#graphql
     subscription SubModel($id: Int!) {
       model: ${Queries.MISSION_MODEL}(id: $id) {
+        derivation_group_specification {
+          model_id
+          derivation_group_name
+        }
         constraint_specification(order_by: { order: asc }) {
           arguments
           constraint_id
@@ -3178,6 +3206,8 @@ const gql = {
     subscription SubPlanMetadata($planId: Int!) {
       plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        start_time
+        duration
         model: mission_model {
           id
           jar_id
@@ -3242,6 +3272,8 @@ const gql = {
         snapshot_id
         model_id
         plan_id
+        plan_start_time
+        plan_duration
         revision
         snapshot_name
         description

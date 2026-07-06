@@ -104,14 +104,24 @@ test.describe.serial('Actions', () => {
       stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
     });
 
-    // Switch to file browser and verify the written file appears
+    // Switch to the file browser and verify the written file appears WITHOUT a manual refresh:
+    // the workspace listing auto-refreshes when an action run completes.
     await workspace.workspaceFileBrowserButton.click();
     await workspace.workspaceFileGrid.waitFor({ state: 'visible' });
-    await workspace.workspaceRefreshButton.click();
     await workspace.searchForFileAndWait('action_output.txt');
 
     // Go back to the actions tab
     await action.switchToActionsTab();
+  });
+
+  test('Action report renders sanitized Markdown with an openable link', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      mode: 'report',
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
+    await action.verifyReport();
   });
 
   test('Archive an action prevents running', async () => {

@@ -90,6 +90,10 @@ function isUserCollaborator(
   return false;
 }
 
+function isModelOwner(user: User | null, model: AssetWithOwner<ModelWithOwner> | undefined): boolean {
+  return isUserOwner(user, model);
+}
+
 function isPlanOwner(user: User | null, plan: AssetWithOwner<PlanWithOwners> | undefined): boolean {
   return isUserOwner(user, plan);
 }
@@ -459,6 +463,11 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
   },
+  CREATE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
+    return (
+      isUserAdmin(user) || (getPermission([Queries.INSERT_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
+    );
+  },
   CREATE_PARAMETER_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_PARAMETER_DICTIONARY], user);
   },
@@ -663,6 +672,11 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DELETE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_MISSION_MODEL], user);
+  },
+  DELETE_MODEL_DERIVATION_GROUP: (user: User | null, model: ModelWithOwner): boolean => {
+    return (
+      isUserAdmin(user) || (getPermission([Queries.DELETE_MODEL_DERIVATION_GROUP], user) && isModelOwner(user, model))
+    );
   },
   DELETE_PARAMETER_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_PARAMETER_DICTIONARY], user);
@@ -1595,6 +1609,7 @@ interface FeaturePermissions {
   constraintsPlanSpec: PlanSpecificationCRUDPermission;
   derivationGroup: CRUDPermission<DerivationGroup>;
   derivationGroupAcknowledgement: PlanSpecificationCRUDPermission;
+  derivationGroupModelLink: CRUDPermission<void>;
   derivationGroupPlanLink: CRUDPermission<void>;
   expansionRules: CRUDPermission<AssetWithOwner>;
   expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
@@ -1697,6 +1712,12 @@ const featurePermissions: FeaturePermissions = {
   derivationGroupAcknowledgement: {
     canRead: user => queryPermissions.SUB_PLAN_DERIVATION_GROUP(user), // seen sources are derived from plan/derivation groups
     canUpdate: (user, plan) => queryPermissions.UPDATE_DERIVATION_GROUP_ACKNOWLEDGED(user, plan),
+  },
+  derivationGroupModelLink: {
+    canCreate: user => queryPermissions.CREATE_MODEL_DERIVATION_GROUP(user),
+    canDelete: user => queryPermissions.DELETE_MODEL_DERIVATION_GROUP(user),
+    canRead: () => false, // this is not a feature, though it would default to true
+    canUpdate: () => false, // this is not a feature
   },
   derivationGroupPlanLink: {
     canCreate: user => queryPermissions.CREATE_PLAN_DERIVATION_GROUP(user),

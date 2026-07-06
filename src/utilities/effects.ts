@@ -44,6 +44,7 @@ import {
   createExternalSourceError as createExternalSourceErrorStore,
   createExternalSourceEventTypeError as createExternalSourceEventTypeErrorStore,
   creatingExternalSource as creatingExternalSourceStore,
+  derivationGroupModelLinkError as derivationGroupModelLinkErrorStore,
   derivationGroupPlanLinkError as derivationGroupPlanLinkErrorStore,
 } from '../stores/external-source';
 import {
@@ -87,12 +88,12 @@ import type {
   ActivityDirectiveInsertInput,
   ActivityDirectiveRevision,
   ActivityDirectiveSearchResult,
-  ActivitySearchResponse,
   ActivityDirectiveSetInput,
   ActivityPreset,
   ActivityPresetId,
   ActivityPresetInsertInput,
   ActivityPresetSetInput,
+  ActivitySearchResponse,
   ActivityType,
   ActivityTypeExpansionRules,
   PlanSnapshotActivity,
@@ -137,6 +138,7 @@ import type {
   DerivationGroupInsertInput,
   ExternalSourcePkey,
   ExternalSourceSlim,
+  ModelDerivationGroup,
   PlanDerivationGroup,
 } from '../types/external-source';
 import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
@@ -299,9 +301,9 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
-import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
+import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';
 import { pluralize } from './text';
 import {
@@ -2998,6 +3000,52 @@ const effects = {
     } catch (e) {
       catchError('Derivation Group Deletion Failed', e as Error);
       showFailureToast('Derivation Group Deletion Failed');
+    }
+  },
+
+  async deleteDerivationGroupForModel(
+    derivation_group_name: string,
+    model: Model | null,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if ((model && !queryPermissions.DELETE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
+        throwPermissionError('delete a derivation group from a model');
+      }
+      if (model) {
+        derivationGroupModelLinkErrorStore.set(null);
+        if (plan !== null) {
+          const data = await reqHasura<{
+            returning: {
+              derivation_group_name: string;
+              model_id: number;
+            }[];
+          }>(
+            gql.DELETE_MODEL_DERIVATION_GROUP,
+            {
+              where: {
+                _and: {
+                  derivation_group_name: { _eq: derivation_group_name },
+                  model_id: { _eq: model.id },
+                },
+              },
+            },
+            user,
+          );
+          const sourceDissociation = data.modelDerivationGroupLink?.returning[0];
+          // If the return was null, do nothing - only act on success or non-null
+          if (sourceDissociation) {
+            logMessage(`Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
+            showSuccessToast('Derivation Group Disassociated Successfully');
+          }
+        } else {
+          throw Error('Plan is not defined.');
+        }
+      }
+    } catch (e) {
+      catchError('Derivation Group De-linking Failed', e as Error);
+      showFailureToast('Derivation Group De-linking Failed');
+      derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
   },
 
@@ -6266,6 +6314,44 @@ const effects = {
     }
   },
 
+  async insertDerivationGroupForModel(
+    derivationGroupName: string,
+    model: Model | null,
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if ((model && !queryPermissions.CREATE_MODEL_DERIVATION_GROUP(user, model)) || !model) {
+        throwPermissionError('add a derivation group to the model');
+      }
+
+      derivationGroupModelLinkErrorStore.set(null);
+      if (model !== null) {
+        const data = await reqHasura<ModelDerivationGroup>(
+          gql.CREATE_MODEL_DERIVATION_GROUP,
+          {
+            source: {
+              derivation_group_name: derivationGroupName,
+              model_id: model.id,
+            },
+          },
+          user,
+        );
+        const { modelExternalSourceLink: sourceAssociation } = data;
+        // If the return was null, do nothing - only act on success or non-null
+        if (sourceAssociation !== null) {
+          logMessage(`Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          showSuccessToast('Derivation Group Linked Successfully');
+        }
+      } else {
+        throw new Error('Model is not defined.');
+      }
+    } catch (e) {
+      catchError('Derivation Group Linking Failed', e as Error);
+      showFailureToast('Derivation Group Linking Failed');
+      derivationGroupModelLinkErrorStore.set((e as Error).message);
+    }
+  },
+
   async insertDerivationGroupForPlan(derivationGroupName: string, plan: Plan | null, user: User | null): Promise<void> {
     try {
       if ((plan && !queryPermissions.CREATE_PLAN_DERIVATION_GROUP(user, plan)) || !plan) {
@@ -7900,7 +7986,7 @@ const effects = {
     }
   },
 
-  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<void> {
+  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
@@ -7912,14 +7998,14 @@ const effects = {
       if (updatePlan.id != null) {
         showSuccessToast('Plan Updated Successfully');
         logMessage(`Updated plan "${plan.name}" (ID=${plan.id}).`);
-        return;
+        return true;
       } else {
         throw Error(`Unable to update plan with ID: "${plan.id}"`);
       }
     } catch (e) {
       catchError('Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
-      return;
+      return false;
     }
   },
 
@@ -7971,6 +8057,20 @@ const effects = {
       showFailureToast('Plan Snapshot Update Failed');
       return;
     }
+  },
+
+  /**
+   * Applies a plan time-bounds update (new `start_time` + `duration`) and returns whether it
+   * succeeded. The confirmation/warning UX and the start/end editing now live in
+   * ChangePlanBoundsModal, which calls this; callers compute `planTimeUpdate` with
+   * `computePlanTimeUpdate` (kept pure in utilities/plan.ts to avoid an effects <-> plan cycle).
+   */
+  async updatePlanTimeBounds(
+    plan: Plan | PlanSlim,
+    planTimeUpdate: { duration: string; start_time: string },
+    user: User | null,
+  ): Promise<boolean> {
+    return effects.updatePlan(plan as Plan, planTimeUpdate, user);
   },
 
   async updateSchedulingConditionDefinitionTags(

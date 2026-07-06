@@ -13,6 +13,7 @@ export class Model {
   confirmModalDeleteButton: Locator;
   constraintRadioButton: Locator;
   deleteButton: Locator;
+  derivationGroupsRadioButton: Locator;
   descriptionInput: Locator;
   goalRadioButton: Locator;
   libraryRadioButton: Locator;
@@ -82,6 +83,12 @@ export class Model {
     await expect(this.page.getByText('Constraint - Definition')).toBeVisible();
   }
 
+  async switchToDerivationGroups() {
+    await this.derivationGroupsRadioButton.click();
+    this.updatePage(this.page);
+    await expect(this.page.getByText('No Derivation Group Selected')).toBeVisible();
+  }
+
   async switchToGoals() {
     await this.goalRadioButton.click();
     this.updatePage(this.page);
@@ -128,6 +135,7 @@ export class Model {
     this.conditionRadioButton = page.getByRole('radio', { name: 'Conditions' });
     this.constraintRadioButton = page.getByRole('radio', { name: 'Constraints' });
     this.deleteButton = page.getByRole('button', { name: 'Delete model' });
+    this.derivationGroupsRadioButton = page.getByRole('radio', { name: 'Derivation Groups' });
     this.descriptionInput = page.locator('textarea[name="description"]');
     this.goalRadioButton = page.getByRole('radio', { name: 'Goals' });
     this.libraryRadioButton = page.getByRole('radio', { name: 'Library' });

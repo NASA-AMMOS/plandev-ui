@@ -2,14 +2,14 @@
 
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { beforeNavigate, goto, replaceState } from '$app/navigation';
+  import { beforeNavigate, goto, pushState, replaceState } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
+    CommandInfoMapper,
     LibrarySequenceSignature,
-    OutputLanguage,
     PhoenixContext,
     UserSequence,
   } from '@nasa-jpl/aerie-sequence-languages';
@@ -34,8 +34,9 @@
   import WorkspaceRightPanel from '../../../components/workspace/WorkspaceRightPanel.svelte';
   import WorkspaceSidebar from '../../../components/workspace/WorkspaceSidebar.svelte';
   import { SearchParameters } from '../../../enums/searchParameters';
+  import { Status } from '../../../enums/status';
   import { WorkspaceContentMode, WorkspaceContentType } from '../../../enums/workspace';
-  import { actionDefinitionsByWorkspace } from '../../../stores/actions';
+  import { actionDefinitionsByWorkspace, actionRuns, actionRunsByWorkspace } from '../../../stores/actions';
   import {
     activeDocument,
     activeDocumentIsDirty,
@@ -78,7 +79,7 @@
     workspaceId,
     workspaces,
   } from '../../../stores/workspaces';
-  import type { ActionDefinition } from '../../../types/actions';
+  import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
   import type { LintDiagnostic, LogLevel } from '../../../types/errors';
   import type { ArgumentsMap } from '../../../types/parameter';
@@ -97,10 +98,12 @@
     WorkspaceNodesEvent,
   } from '../../../types/workspace';
   import type {
+    WorkspaceFileMetadata,
     WorkspaceTreeMap,
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
+  import { getStatusForActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
@@ -114,11 +117,14 @@
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
   import {
     computeMovedFilePath,
+    doesFilenameMatchExtension,
     downloadWorkspaceNodesAsZip,
     findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    isPathInBreadcrumb,
     mapWorkspaceTreePaths,
+    parseUrlState,
     removeRedundantNodes,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -129,12 +135,14 @@
 
   type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
 
-  // Initialize sidebar tab and content mode from URL params before first render to avoid flash
-  const initialActionRunIdParam = $page.url.searchParams.get(SearchParameters.ACTION_RUN_ID);
-  const initialActionIdParam = $page.url.searchParams.get(SearchParameters.ACTION_ID);
-  const initialSidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+  // Initialize state from URL before first render to avoid flash
+  const initialUrlState = parseUrlState($page.url);
+  $workspaceContentMode = initialUrlState.mode;
+  $selectedActionRunId = initialUrlState.actionRunId;
+  $selectedActionDefinitionId = initialUrlState.actionId;
 
   const { initialWorkspace } = data;
+  const actionRunsLoading = actionRuns.loading;
   const user: UserStore = getContext('user');
   const defaultLogLevels: LogLevel[] = ['error', 'warn', 'info'];
   const PANEL_DEFAULT_SIZE = 25;
@@ -142,17 +150,18 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
+  let activeFileIsInputSequence: boolean = false;
+  let activeFileMetadata: WorkspaceFileMetadata | null = null;
   let activeFileIsSequence: boolean = false;
-  let actionDetailIsDirty: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
   let panelsReady: boolean = false;
   let allActionsForWorkspace: ActionDefinition[] = [];
   let channelDictionary: ChannelDictionary | null = null;
   let commandDictionary: CommandDictionary | null = null;
+  let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let leftPaneApi: PaneAPI;
-  let leftPanelActiveTab: string =
-    initialActionRunIdParam || initialActionIdParam || initialSidebarTab === 'actions' ? 'actions' : 'files';
+  let leftPanelActiveTab: string = initialUrlState.sidebarTab;
   let rightPaneApi: PaneAPI;
   let rightPanelActiveTab: string = 'metadata';
   let rightPanelCommandNodeName: string | null = null;
@@ -161,6 +170,7 @@
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
+  let isFileReadOnly: boolean = false;
   let parameterDictionaries: ParameterDictionary[] = [];
   let phoenixContext: PhoenixContext;
   let isWorkspaceLoading: boolean = false;
@@ -176,34 +186,16 @@
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
+  let logLevelLabel: string = 'Default levels';
   let logLevels: LogLevel[] = defaultLogLevels;
   let preserveAdaptationLog: boolean = false;
+  let previousTerminalActionRunCount: number = -1;
   let workspaceSequences: UserSequence[] = [];
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
-
-  if (initialActionRunIdParam) {
-    const runId = parseInt(initialActionRunIdParam, 10);
-    if (!isNaN(runId)) {
-      $selectedActionRunId = runId;
-      $workspaceContentMode = WorkspaceContentMode.ActionRunDetail;
-      if (initialActionIdParam) {
-        const actionId = parseInt(initialActionIdParam, 10);
-        if (!isNaN(actionId)) {
-          $selectedActionDefinitionId = actionId;
-        }
-      }
-    }
-  } else if (initialActionIdParam) {
-    const actionId = parseInt(initialActionIdParam, 10);
-    if (!isNaN(actionId)) {
-      $selectedActionDefinitionId = actionId;
-      $workspaceContentMode = WorkspaceContentMode.ActionDetail;
-    }
-  } else if (initialSidebarTab === 'actions') {
-    $workspaceContentMode = WorkspaceContentMode.ActionRunsList;
-  }
+  let isHandlingPopstate: boolean = false;
+  let lastKnownUrl: string = '';
 
   // Programmatic collapse/expand of left sidebar content pane
   $: if (leftPaneApi) {
@@ -258,6 +250,11 @@
     allActionsForWorkspace = Object.values($actionDefinitionsByWorkspace[$workspaceId] || {});
   }
 
+  // Refresh the workspace file listing whenever any action run for this workspace finishes
+  // (regardless of which user started it), since actions can create or modify files. Gated on
+  // the subscription's first response so pre-existing completed runs don't trigger a refresh.
+  $: refreshWorkspaceOnActionCompletion($actionRunsLoading, $actionRunsByWorkspace[$workspaceId] ?? []);
+
   // Re-compute permissions when user, workspace, or active document changes
   $: if ($user && (initialWorkspace || $workspace)) {
     const ws: Workspace = $workspace ?? (initialWorkspace as Workspace);
@@ -280,16 +277,23 @@
   $: activeFileIsSequence =
     $activeDocumentPath === null ||
     ($activeDocument.type !== null && $activeDocument.type === WorkspaceContentType.Sequence);
+  $: {
+    activeFileIsInputSequence =
+      activeFileIsSequence &&
+      (!$activeDocument.fileName ||
+        (!!$activeDocument.fileName &&
+          doesFilenameMatchExtension($sequenceAdaptation.input.fileExtension, $activeDocument.fileName)));
+  }
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
 
   // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
   // non-sequence mode. Switching between two sequence files (or between blank and a sequence
   // file) preserves whatever tab the user last chose.
-  let previousActiveFileIsSequence: boolean = activeFileIsSequence;
-  $: if (activeFileIsSequence !== previousActiveFileIsSequence) {
-    previousActiveFileIsSequence = activeFileIsSequence;
-    if (!activeFileIsSequence) {
+  let previousActiveFileIsInputSequence: boolean = activeFileIsInputSequence;
+  $: if (activeFileIsInputSequence !== previousActiveFileIsInputSequence) {
+    previousActiveFileIsInputSequence = activeFileIsInputSequence;
+    if (!activeFileIsInputSequence) {
       rightPanelActiveTab = 'metadata';
     } else {
       rightPanelActiveTab = 'command';
@@ -350,17 +354,21 @@
     parameterDictionaries = [];
   }
 
-  // Prevent in-app navigation to other routes when there are unsaved changes
+  // Prevent in-app navigation to other routes when there are unsaved changes.
+  // Browser back/forward inside the workspace is handled by the window popstate
+  // listener in onMount; this hook only fires for cross-route navigations and
+  // intra-route shallow pushState (which is initiated by our own click handlers
+  // that already prompt themselves).
   beforeNavigate(({ cancel, to }) => {
     if (!$activeDocumentIsDirty) {
       return;
     }
-    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
-    if (to?.route.id === $page.route.id) {
-      return;
-    }
     // Skip for external navigation (tab close, refresh) - handled by beforeunload
     if (to === null) {
+      return;
+    }
+    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
+    if (to.route.id === $page.route.id) {
       return;
     }
     // Cancel navigation first, then show async modal and navigate if confirmed
@@ -380,17 +388,115 @@
     });
   });
 
+  // Centralize URL mutation so the lastKnownUrl bookkeeping (used by the popstate
+  // rollback path) can't get out of sync with the pushed URL.
+  function pushUrl(url: string): void {
+    pushState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+  function replaceUrl(url: string): void {
+    replaceState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+
+  // Prompts the user about discarding unsaved file changes. Resolves true if the
+  // user confirmed (and the doc was marked clean); false if they kept editing.
+  async function confirmNavigateAway(): Promise<boolean> {
+    if (!$activeDocumentIsDirty) {
+      return true;
+    }
+    const { confirm } = await showConfirmModal(
+      'Navigate Away',
+      'There are unsaved changes. Are you sure you want to navigate away?',
+      'Navigate Away',
+      true,
+      'Keep Editing',
+    );
+    if (confirm) {
+      activeDocument.markClean();
+    }
+    return confirm;
+  }
+
+  function syncStateFromUrl(url: URL) {
+    const { actionId, actionRunId, filePath, mode, sidebarTab } = parseUrlState(url);
+
+    // Reset the flag defensively in case the previous popstate set it but the
+    // selectedFilePath reactive never fired to consume it (e.g., the workspace
+    // was reloading at that moment, or the file path already matched). Without
+    // this, a stale flag would suppress the next user-initiated pushUrl.
+    isHandlingPopstate = false;
+
+    $workspaceContentMode = mode;
+    $selectedActionRunId = actionRunId;
+    $selectedActionDefinitionId = actionId;
+    leftPanelActiveTab = sidebarTab;
+
+    // Only touch the active file when we're in File mode. Other modes preserve the
+    // previously-loaded file so switching back to File mode shows it again.
+    if (mode === WorkspaceContentMode.File && filePath !== selectedFilePath) {
+      if (filePath === null) {
+        // URL no longer references a file; unload directly to avoid maybeNavigate's
+        // null-path revert behavior.
+        activeDocument.close();
+        selectedFilePath = null;
+      } else {
+        // Flag tells confirmAndNavigate to skip its pushState (URL is already correct).
+        isHandlingPopstate = true;
+        selectedFilePath = filePath;
+
+        // If the new path lives above or outside the current breadcrumb view,
+        // the file browser would filter it out (it only renders descendants of
+        // currentBreadcrumbPath). Pull the breadcrumb up to the file's parent
+        // so the row is visible. Paths *below* the current view are fine — the
+        // tree auto-expands to them via expandToPath in the file browser.
+        if (!isPathInBreadcrumb(filePath, sidebarBreadcrumbPath)) {
+          sidebarBreadcrumbPath = separateFilenameFromPath(filePath).path ?? '';
+        }
+      }
+    }
+  }
+
   onMount(() => {
+    lastKnownUrl = window.location.href;
+
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if ($activeDocumentIsDirty) {
         event.preventDefault(); // Triggers the native browser confirmation
         event.returnValue = ''; // Required for some older browser compatibility
       }
     };
+
+    // Browser back/forward inside the workspace. SvelteKit's lifecycle hooks don't
+    // fire reliably for shallow pushState entries, so we handle these directly.
+    // Cross-route popstates (back/forward out of this workspace) are handled by
+    // beforeNavigate above — we early-return here to avoid stacking two modals.
+    const handlePopstate = () => {
+      const newUrl = window.location.href;
+      const expectedPathname = `${base}/workspaces/${$workspaceId}`;
+      if (new URL(newUrl).pathname !== expectedPathname) {
+        return;
+      }
+      const previousUrl = lastKnownUrl;
+
+      confirmNavigateAway().then(confirmed => {
+        if (confirmed) {
+          syncStateFromUrl(new URL(newUrl));
+          lastKnownUrl = newUrl;
+        } else {
+          // Roll back the URL change so the user stays on the dirty page.
+          window.history.pushState({}, '', previousUrl);
+          lastKnownUrl = previousUrl;
+        }
+      });
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopstate);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopstate);
     };
   });
 
@@ -402,24 +508,24 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
-    // If we're in a non-file mode, guard against dirty action detail before switching
-    if ($workspaceContentMode !== WorkspaceContentMode.File && actionDetailIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        'There are unsaved action changes. Are you sure you want to navigate away?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-      if (!confirm) {
-        selectedFilePath = $activeDocumentPath;
-        return;
-      }
-      actionDetailIsDirty = false;
-    }
     // Switch back to file mode
     $workspaceContentMode = WorkspaceContentMode.File;
     $selectedActionDefinitionId = null;
+
+    // If the target isn't in the tree (typo'd URL, deleted, etc.), replace the
+    // current entry directly. Going through confirmAndNavigate would pushUrl
+    // first and then replace on top — leaving a stale "non-existent file" entry
+    // on top of whatever the browser already added (e.g., a typed URL), which
+    // would intercept the next back-press and make it feel like history is lost.
+    if (!workspaceTreeMap[nextPath]) {
+      activeDocument.close();
+      showFailureToast('The selected file does not exist in the workspace.');
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
+      // Consume the popstate flag explicitly since we skipped confirmAndNavigate.
+      isHandlingPopstate = false;
+      return;
+    }
 
     const didNavigate = await confirmAndNavigate(nextPath);
     if (!didNavigate) {
@@ -435,18 +541,10 @@
 
     // successfully navigated, start loading the file contents
     selectedSequenceOutput = undefined;
-    if (nextPath && workspaceTreeMap[nextPath]) {
-      const { filename } = separateFilenameFromPath(nextPath);
-      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
-      activeDocument.startLoad(nextPath, filename ?? null, fileType);
-      await getSelectedFileContent(nextPath);
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      activeDocument.close();
-      if (nextPath && !workspaceTreeMap[nextPath]) {
-        showFailureToast('The selected file does not exist in the workspace.');
-      }
-    }
+    const { filename } = separateFilenameFromPath(nextPath);
+    const fileType = workspaceTreeMap[nextPath]?.type ?? null;
+    activeDocument.startLoad(nextPath, filename ?? null, fileType);
+    await getSelectedFileContent(nextPath);
   }
 
   function resetRefreshInterval() {
@@ -493,6 +591,28 @@
     return getWorkspaceContents(initialWorkspace);
   }
 
+  function isTerminalActionRunStatus(status: Status): boolean {
+    return status === Status.Complete || status === Status.Failed || status === Status.Canceled;
+  }
+
+  function refreshWorkspaceOnActionCompletion(loading: boolean, actionRuns: ActionRunSlim[]) {
+    if (loading) {
+      return;
+    }
+
+    const terminalActionRunCount = actionRuns.filter(actionRun =>
+      isTerminalActionRunStatus(getStatusForActionRun(actionRun)),
+    ).length;
+
+    // The count of finished runs only grows when a run completes, so an increase means at least
+    // one run finished since the last update. The first post-load value just sets the baseline.
+    if (previousTerminalActionRunCount >= 0 && terminalActionRunCount > previousTerminalActionRunCount) {
+      refreshWorkspaceContents();
+    }
+
+    previousTerminalActionRunCount = terminalActionRunCount;
+  }
+
   /**
    * Force Svelte reactivity for the workspace tree by creating a new contents array reference.
    */
@@ -523,8 +643,14 @@
     }
 
     if (content === null) {
-      // File may have been deleted or renamed — refresh tree so the UI self-corrects
+      // File may have been deleted or renamed — refresh tree so the UI self-corrects.
+      // Also clear selectedFilePath + the stale URL inline (same reason as the
+      // "doesn't exist in tree" branch in maybeNavigate): otherwise the
+      // selectedFilePath reactive re-fires after close() sets $activeDocumentPath
+      // to null, which would push a duplicate entry and clobber the forward stack.
       activeDocument.close();
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
       refreshWorkspaceContents();
       return;
     }
@@ -616,22 +742,15 @@
   }
 
   async function confirmAndNavigate(filePath: string | null) {
-    if ($activeDocumentIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        `There are unsaved changes. Are you sure you want navigate away from the current file?`,
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-
-      if (!confirm) {
-        return false;
-      }
+    if (!(await confirmNavigateAway())) {
+      return false;
     }
-    // Use replaceState to update URL immediately without triggering SvelteKit navigation
-    replaceState(getWorkspacesUrl(base, $workspaceId, filePath), {});
-
+    if (isHandlingPopstate) {
+      // URL was already updated by browser back/forward; don't push a duplicate entry
+      isHandlingPopstate = false;
+    } else {
+      pushUrl(getWorkspacesUrl(base, $workspaceId, filePath));
+    }
     return true;
   }
 
@@ -645,7 +764,7 @@
     activeDocument.updatePath(newFilePath, filename ?? undefined, newType);
     selectedFilePath = newFilePath;
     // Manually update URL since reactive statement won't trigger (selectedFilePath === $activeDocumentPath)
-    replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
+    replaceUrl(getWorkspacesUrl(base, $workspaceId, newFilePath));
   }
 
   async function saveBeforeOperation(
@@ -988,11 +1107,6 @@
       activeDocument.markClean();
     }
 
-    // Silently reset dirty action detail state on navigate away
-    if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
-      actionDetailIsDirty = false;
-    }
-
     $workspaceContentMode = mode;
     if (options?.actionId !== undefined) {
       $selectedActionDefinitionId = options.actionId ?? null;
@@ -1030,10 +1144,14 @@
       params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
     } else if (mode === WorkspaceContentMode.ActionRunsList) {
       params.set(SearchParameters.SIDEBAR_TAB, 'actions');
+    } else if (mode === WorkspaceContentMode.File && $activeDocumentPath) {
+      // Preserve the currently-open file in the URL so a reload (or browser
+      // back to this entry) still shows it.
+      params.set(SearchParameters.SEQUENCE_ID, $activeDocumentPath);
     }
 
     const query = params.toString();
-    replaceState(query ? `${baseUrl}?${query}` : baseUrl, {});
+    pushUrl(query ? `${baseUrl}?${query}` : baseUrl);
   }
 
   function onSelectAction(event: CustomEvent<{ id: number }>) {
@@ -1057,16 +1175,17 @@
     sidebarPanelOpen = true;
   }
 
-  function onActionDetailDirty(event: CustomEvent<boolean>) {
-    actionDetailIsDirty = event.detail;
-  }
-
   function onViewActionRun(event: CustomEvent<{ runId: number }>) {
     switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: event.detail.runId });
   }
 
   function onActionRunBack() {
-    // Navigate back to the previous action view
+    // Navigate back to the previous action view. We intentionally use
+    // switchToContentMode (which pushes a forward history entry) rather than
+    // history.back(). The action-run-detail → action-detail transition is a
+    // forward action conceptually, not a reversal of a browser navigation, so
+    // pushing keeps the back stack consistent across users who arrived here
+    // via a deep link vs. a click.
     if ($selectedActionDefinitionId !== null) {
       switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: $selectedActionDefinitionId });
     } else {
@@ -1215,9 +1334,7 @@
     onDownloadFile(filePath);
   }
 
-  async function onDownloadOutput(
-    event: CustomEvent<{ content: string; filePath: string; filename: string; outputLanguage: OutputLanguage }>,
-  ) {
+  async function onDownloadOutput(event: CustomEvent<{ content: string; filePath: string; filename: string }>) {
     const { content, filePath, filename } = event.detail;
 
     // Check if downloading output for the active file with unsaved changes
@@ -1290,7 +1407,7 @@
   onMount(async () => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
-      selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+      selectedFilePath = initialUrlState.filePath;
       getWorkspaceContents(initialWorkspace);
     }
     // Wait a tick for paneforge to restore saved sizes from localStorage before showing panels
@@ -1393,7 +1510,6 @@
               workspace={$workspace}
               workspaceFiles={workspaceFileList}
               on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
-              on:dirty={onActionDetailDirty}
               on:runAction={onRunActionFromDetailView}
               on:viewRun={onViewActionRun}
             />
@@ -1429,6 +1545,7 @@
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
                     isLoading={$activeDocumentIsLoading}
+                    isInputFile={activeFileIsInputSequence}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     {preserveAdaptationLog}
                     previewOnly={!hasEditFilePermission}
@@ -1542,7 +1659,7 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
-              isSequenceFile={activeFileIsSequence}
+              isSequenceFile={activeFileIsInputSequence}
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
@@ -1557,7 +1674,7 @@
           bind:activeTab={rightPanelActiveTab}
           bind:panelOpen={rightPanelOpen}
           commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsSequence}
+          isSequenceFile={activeFileIsInputSequence}
         />
       {/if}
     </div>

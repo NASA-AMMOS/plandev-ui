@@ -94,6 +94,15 @@ export class AerieApi {
     return data.createPlan;
   }
 
+  async createPlanSnapshot(planId: number, name: string, description = ''): Promise<{ snapshot_id: number }> {
+    const data = await this.gqlQuery<{ createSnapshot: { snapshot_id: number } }>(gql.CREATE_PLAN_SNAPSHOT, {
+      description,
+      plan_id: planId,
+      snapshot_name: name,
+    });
+    return data.createSnapshot;
+  }
+
   async createSchedulingGoal(goal: SchedulingGoalInsertInput): Promise<{ id: number }> {
     const metadatadata = await this.gqlQuery<{ createSchedulingGoal: { id: number } }>(gql.CREATE_SCHEDULING_GOAL, {
       description: goal.description ?? '',
@@ -195,6 +204,15 @@ export class AerieApi {
     return data.plan;
   }
 
+  async getSimulation(
+    planId: number,
+  ): Promise<{ simulation_end_time: string | null; simulation_start_time: string | null }> {
+    const data = await this.gqlQuery<{
+      simulation: { simulation_end_time: string | null; simulation_start_time: string | null }[];
+    }>(convertToQuery(gql.SUB_SIMULATION), { planId });
+    return data.simulation[0];
+  }
+
   async getSimulationDataset(id: number): Promise<{ reason: string | null; status: string }> {
     const data = await this.gqlQuery<{
       simulation_dataset_by_pk: { reason: string | null; status: string };
@@ -269,6 +287,14 @@ export class AerieApi {
 
     this.user = { id: username, token: data.token };
     return this.user;
+  }
+
+  async restorePlanSnapshot(planId: number, snapshotId: number): Promise<{ snapshot_id: number }> {
+    const data = await this.gqlQuery<{ restore_from_snapshot: { snapshot_id: number } }>(gql.RESTORE_PLAN_SNAPSHOT, {
+      plan_id: planId,
+      snapshot_id: snapshotId,
+    });
+    return data.restore_from_snapshot;
   }
 
   /**

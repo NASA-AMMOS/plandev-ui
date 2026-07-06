@@ -221,6 +221,10 @@
 
     if (key === 'Enter') {
       event.preventDefault();
+      // Stop the Enter from bubbling to window-level listeners. Committing a value here can open a
+      // confirmation modal (which confirms on Enter); without this, that same Enter keystroke would
+      // immediately auto-confirm the modal before the user can read it.
+      event.stopPropagation();
 
       attemptAutoCompleteDate(event);
       closeDatePicker();

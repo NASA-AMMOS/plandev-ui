@@ -67,6 +67,7 @@ const mockMergeRequest: PlanMergeRequestSchema = {
   id: 1,
   plan_receiving_changes: {
     collaborators: [],
+    duration: '168:00:00',
     id: 1,
     model: {
       owner: 'unknown',
@@ -79,6 +80,7 @@ const mockMergeRequest: PlanMergeRequestSchema = {
   plan_snapshot_supplying_changes: {
     plan: {
       collaborators: [],
+      duration: '168:00:00',
       id: 2,
       model: {
         owner: 'unknown',
@@ -109,6 +111,7 @@ const mockInitialPlan: Plan = {
     constraint_specification: [],
     created_at: '2023-02-16T00:00:00',
     default_view_id: 0,
+    derivation_group_specification: [],
     id: 1,
     jar_id: 1,
     mission: '',

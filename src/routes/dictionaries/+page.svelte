@@ -42,7 +42,9 @@
     if (files && files.length > 0) {
       file = files[0];
 
-      isSequenceAdaptation = file.name.substring(file.name.lastIndexOf('.')) === '.js';
+      isSequenceAdaptation =
+        file.name.substring(file.name.lastIndexOf('.')) === '.js' ||
+        file.name.substring(file.name.lastIndexOf('.')) === '.cjs';
       sequenceAdaptationName = '';
     }
   }
@@ -103,7 +105,7 @@
           <fieldset>
             <label for="file">AMPCS XML File or Sequence Adaptation</label>
             <input
-              accept=".xml,.js,.json"
+              accept=".xml,.js,.cjs,.json"
               class="st-typography-body w-full"
               name="file"
               id="file"

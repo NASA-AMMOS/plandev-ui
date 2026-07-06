@@ -3,6 +3,7 @@ import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
+import ChangePlanBoundsModal from '../components/modals/ChangePlanBoundsModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
@@ -1603,6 +1604,42 @@ export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSeq
           target.resolve = null;
           resolve({ confirm: true, value: e.detail });
           newSequenceModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a ChangePlanBoundsModal for editing a plan's start/end. The modal owns the warning,
+ * the mutation, and the in-flight/retry UX, so it resolves { confirm: true } only once the
+ * update has succeeded (or { confirm: false } if the user cancels).
+ */
+export async function showChangePlanBoundsModal(plan: Plan | PlanSlim, user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const modal = new ChangePlanBoundsModal({
+          props: { plan, user },
+          target,
+        });
+        target.resolve = resolve;
+
+        modal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modal.$destroy();
+        });
+
+        modal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          modal.$destroy();
         });
       }
     } else {

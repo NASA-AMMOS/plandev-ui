@@ -12,7 +12,50 @@ import type {
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
 import { downloadJSON, unique } from './generic';
-import { convertDoyToYmd, switchISOTimezoneRepresentation } from './time';
+import {
+  convertDoyToYmd,
+  convertUsToDurationString,
+  getIntervalFromDoyRange,
+  switchISOTimezoneRepresentation,
+} from './time';
+
+/**
+ * Computes a human-readable duration string from start and end times.
+ * Returns 'None' if fields are invalid or times can't be parsed, 'Invalid' if parsing fails.
+ */
+export function computeDurationString(
+  startTimeMs: number | null | undefined,
+  endTimeMs: number | null | undefined,
+  areFieldsValid: boolean,
+): string {
+  if (!areFieldsValid) {
+    return 'None';
+  }
+  if (typeof startTimeMs === 'number' && typeof endTimeMs === 'number') {
+    const duration = convertUsToDurationString((endTimeMs - startTimeMs) * 1000);
+    return duration || 'None';
+  }
+  return 'Invalid';
+}
+
+/**
+ * Computes the plan update payload for a time change.
+ * Returns the start_time (as ISO string) and duration (as Postgres interval).
+ */
+export function computePlanTimeUpdate(
+  startTimeDoy: string,
+  endTimeDoy: string,
+): { duration: string; start_time: string } | null {
+  const startTimeYmd = convertDoyToYmd(startTimeDoy);
+  if (!startTimeYmd) {
+    return null;
+  }
+  const duration = getIntervalFromDoyRange(startTimeDoy, endTimeDoy);
+  return {
+    duration,
+    start_time: startTimeYmd,
+  };
+}
 
 export async function getPlanForTransfer(
   plan: Plan | PlanSlim,
