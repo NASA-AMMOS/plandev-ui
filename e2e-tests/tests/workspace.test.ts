@@ -518,103 +518,104 @@ test.describe.serial('Workspace', () => {
     await workspace.waitForToast('Workspace Collaborators Updated');
   });
 
-  test('Bulk workspace file operations', async () => {
-    // This test creates 5 files + 2 folders (each a ~toast-gated backend round-trip) and then does
-    // bulk move/copy/delete. The 60s set in beforeAll only applies to that hook, so the test body
-    // otherwise runs at the 30s default and can't finish under CI load. Give it its own budget.
-    test.setTimeout(90000);
+  // These bulk-operation tests are intentionally split (move / copy / delete) and each creates only
+  // the files it needs, then cleans them up. Keeping ≤3 items in the grid at a time avoids AG Grid
+  // virtualization pushing target rows off-screen and prevents state accumulating across a retry —
+  // both of which made the previous single "bulk file operations" mega-test flaky under CI load.
+  test('Bulk move files to a folder', async () => {
+    test.setTimeout(60000);
     await workspace.workspaceFileBrowserButton.click();
 
-    // Create test files and folders
     const { sequenceName: file1 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
     const { sequenceName: file2 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file3 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file4 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file5 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const folder1 = await workspace.createFolder(generateRandomName());
-    const folder2 = await workspace.createFolder(generateRandomName());
-
-    // Clear search to see all files
+    const folder = await workspace.createFolder(generateRandomName());
     await workspace.clearSearch();
 
-    // Select 2 files for moving using Ctrl+click. force:true lands the click even while the grid is
-    // still re-positioning rows under CI contention (see the deletion block below for details).
-    await workspace.getFileRow(file1).click({ force: true });
-    await workspace.getFileRow(file2).click({ force: true, modifiers: ['ControlOrMeta'] });
-
-    // Open context menu and move files
+    // Select both files (Ctrl+click) and move them into the folder in one operation
+    await workspace.getFileRow(file1).click();
+    await workspace.getFileRow(file2).click({ modifiers: ['ControlOrMeta'] });
     await workspace.openFileContextMenu(file1);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
-    await setup.page.getByRole('menuitem', { name: folder1 }).click();
+    await setup.page.getByRole('menuitem', { name: folder }).click();
     await setup.page.getByRole('button', { name: 'Move Files' }).click();
 
-    // Verify files were moved (no longer in root, now in folder1)
+    // Both files should have left root and now live under the folder
     await workspace.clearSearch();
     const sidebar = workspace.workspaceFileGrid;
-    // Files should NOT be at root path (just filename)
     await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
-    // Files SHOULD be at folder1 path
-    await expect(sidebar.getByTitle(`${folder1}/${file1}`, { exact: true })).toBeVisible();
-    await expect(sidebar.getByTitle(`${folder1}/${file2}`, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder}/${file1}`, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder}/${file2}`, { exact: true })).toBeVisible();
 
-    // Select 2 other files for copying
-    await workspace.getFileRow(file3).click({ force: true });
-    await workspace.getFileRow(file4).click({ force: true, modifiers: ['ControlOrMeta'] });
+    // Cleanup: deleting the folder removes its contents
+    await workspace.searchForFileAndWait(folder);
+    await workspace.deleteFolder(folder);
+  });
 
-    // Open context menu and copy files
-    await workspace.openFileContextMenu(file3);
+  test('Bulk copy files to a folder', async () => {
+    test.setTimeout(60000);
+    await workspace.workspaceFileBrowserButton.click();
+
+    const { sequenceName: file1 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file2 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const folder = await workspace.createFolder(generateRandomName());
+    await workspace.clearSearch();
+
+    // Select both files (Ctrl+click) and copy them into the folder in one operation
+    await workspace.getFileRow(file1).click();
+    await workspace.getFileRow(file2).click({ modifiers: ['ControlOrMeta'] });
+    await workspace.openFileContextMenu(file1);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
-    await setup.page.getByRole('menuitem', { name: folder2 }).click();
+    await setup.page.getByRole('menuitem', { name: folder }).click();
     await setup.page.getByRole('button', { name: 'Copy Files' }).click();
 
-    // Verify files still exist in root (copy, not move)
+    // Both files should remain in root AND now also exist under the folder
     await workspace.clearSearch();
-    // Files SHOULD still be at root path (just filename)
-    await expect(sidebar.getByTitle(file3, { exact: true })).toBeVisible();
-    await expect(sidebar.getByTitle(file4, { exact: true })).toBeVisible();
-    // Copies SHOULD also exist at folder2 path
-    await expect(sidebar.getByTitle(`${folder2}/${file3}`, { exact: true })).toBeVisible();
-    await expect(sidebar.getByTitle(`${folder2}/${file4}`, { exact: true })).toBeVisible();
+    const sidebar = workspace.workspaceFileGrid;
+    await expect(sidebar.getByTitle(file1, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(file2, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder}/${file1}`, { exact: true })).toBeVisible();
+    await expect(sidebar.getByTitle(`${folder}/${file2}`, { exact: true })).toBeVisible();
 
-    // Select 2 files for deletion (use row-id to select specifically the root files, not the copies).
-    // After the preceding operations the grid re-filters/re-positions rows, and under CI CPU
-    // contention a row's transform can keep shifting long enough that Playwright's actionability
-    // "stable" check never passes, hanging the click to the test timeout. toHaveCount(1) guards
-    // against a transient duplicate row-id; force:true lands the click without waiting for the row
-    // to stop moving (we still target the correct row via its unique row-id).
-    const file3Row = workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`);
-    const file5Row = workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`);
-    await expect(file3Row).toHaveCount(1);
-    await file3Row.click({ force: true });
-    await expect(file5Row).toHaveCount(1);
-    await file5Row.click({ force: true, modifiers: ['ControlOrMeta'] });
+    // Cleanup: delete the folder (removes the copies), then the two root files. Wait for the folder
+    // row to disappear first so the copies don't shadow the root files during deletion.
+    await workspace.searchForFileAndWait(folder);
+    await workspace.deleteFolder(folder);
+    await workspace.clearSearch();
+    await expect(workspace.getFileRow(folder)).not.toBeVisible();
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
 
-    // Open context menu and delete files
-    await expect(file3Row).toHaveCount(1);
-    await file3Row.click({ button: 'right', force: true });
+  test('Bulk delete files', async () => {
+    test.setTimeout(60000);
+    await workspace.workspaceFileBrowserButton.click();
+
+    const { sequenceName: file1 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    const { sequenceName: file2 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
+    await workspace.clearSearch();
+
+    // Select both files (Ctrl+click) and delete them in one operation. toHaveCount(1) guards against
+    // a transient duplicate row-id during a grid refresh.
+    const file1Row = workspace.workspaceFileGrid.locator(`[row-id="${file1}"]`);
+    const file2Row = workspace.workspaceFileGrid.locator(`[row-id="${file2}"]`);
+    await expect(file1Row).toHaveCount(1);
+    await file1Row.click();
+    await expect(file2Row).toHaveCount(1);
+    await file2Row.click({ modifiers: ['ControlOrMeta'] });
+    await file1Row.click({ button: 'right' });
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await setup.page.getByRole('button', { name: 'Delete' }).click();
 
-    // Verify files were deleted from root
+    // Both files should be gone from root
     await workspace.clearSearch();
-    await expect(sidebar.getByTitle(file3, { exact: true })).not.toBeVisible();
-    await expect(sidebar.getByTitle(file5, { exact: true })).not.toBeVisible();
-
-    // Cleanup remaining files and folders
-    // Delete folders first (which deletes their contents including copied files)
-    await workspace.searchForFileAndWait(folder1);
-    await workspace.deleteFolder(folder1);
-    await workspace.searchForFileAndWait(folder2);
-    await workspace.deleteFolder(folder2);
-    // Wait for the folder2 row to fully disappear from the grid before searching for file4,
-    // otherwise the grid may still show the copy (folder2/file4) alongside the root file4
-    await workspace.clearSearch();
-    await expect(workspace.getFileRow(folder2)).not.toBeVisible();
-    await workspace.searchForFileAndWait(file4);
-    await workspace.deleteFile(file4);
+    const sidebar = workspace.workspaceFileGrid;
+    await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
+    await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
   });
 
   test('Toggle file read-only and verify editor is locked', async () => {
