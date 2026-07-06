@@ -166,7 +166,7 @@
   } from '../../../utilities/simulation';
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
-  import { formatDate } from '../../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../../utilities/time';
   import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
