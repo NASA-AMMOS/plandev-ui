@@ -578,12 +578,21 @@ test.describe.serial('Workspace', () => {
     await expect(sidebar.getByTitle(`${folder2}/${file3}`, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(`${folder2}/${file4}`, { exact: true })).toBeVisible();
 
-    // Select 2 files for deletion (use row-id to select specifically the root files, not the copies)
-    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click();
-    await workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`).click({ modifiers: ['ControlOrMeta'] });
+    // Select 2 files for deletion (use row-id to select specifically the root files, not the copies).
+    // The file-list auto-refresh (triggered by the copy above) causes an AG Grid row animation that
+    // can briefly double-render a row: the stale node animates out (ag-row-position-absolute) while
+    // the new node animates in, both with the same row-id. Wait for each row to settle to a single
+    // node before clicking so the click isn't ambiguous or aimed at the node being removed.
+    const file3Row = workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`);
+    const file5Row = workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`);
+    await expect(file3Row).toHaveCount(1);
+    await file3Row.click();
+    await expect(file5Row).toHaveCount(1);
+    await file5Row.click({ modifiers: ['ControlOrMeta'] });
 
     // Open context menu and delete files
-    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click({ button: 'right' });
+    await expect(file3Row).toHaveCount(1);
+    await file3Row.click({ button: 'right' });
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await setup.page.getByRole('button', { name: 'Delete' }).click();
 
