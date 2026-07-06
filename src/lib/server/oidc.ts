@@ -38,7 +38,13 @@ function getJwksClient(): JwksClient | undefined {
 // Supported JWT signing algorithms. RS256 is the most common for OIDC.
 // Can be overridden via OIDC_ALGORITHMS env var (space-separated, e.g., "RS256 RS384 RS512")
 function getSupportedAlgorithms(): jwt.Algorithm[] {
-  return (env.OIDC_ALGORITHMS?.split(' ') || ['RS256']) as jwt.Algorithm[];
+  // Split on whitespace and drop empties. Guarding against empty/whitespace values matters:
+  // `''.split(' ')` returns `['']` (a truthy array), so a naive `|| ['RS256']` fallback would
+  // never fire for OIDC_ALGORITHMS='' and every token would fail with "invalid algorithm".
+  const parsed = env.OIDC_ALGORITHMS?.split(' ')
+    .map(alg => alg.trim())
+    .filter(Boolean);
+  return (parsed && parsed.length > 0 ? parsed : ['RS256']) as jwt.Algorithm[];
 }
 
 /**
