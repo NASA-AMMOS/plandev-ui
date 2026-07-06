@@ -4,6 +4,17 @@ import { Model } from '../fixtures/Model.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
 
+// This test uses its own uniquely-named external-source artifacts (not the shared "Example External
+// Source" fixtures) so it never collides with external-sources.test.ts, which creates AND deletes
+// those shared artifacts mid-run. Both files run in parallel against one backend, so shared names
+// race — one uploads while the other deletes — which made this test's beforeAll upload flaky.
+const MDG_TYPE_SCHEMA = 'e2e-tests/data/Schema_MDG_Source.json';
+const MDG_SOURCE_FILE = 'e2e-tests/data/mdg-external-source.json';
+const MDG_SOURCE_TYPE = 'MDG External Source';
+const MDG_EVENT_TYPE = 'MDGEvent';
+const MDG_DERIVATION_GROUP = 'MDG External Source Default';
+const MDG_SOURCE_KEY = 'MDGExternalSource:mdg-external-source.json';
+
 // Main setup with model (uses 'test' user for API operations)
 let setup: FullSetupResult;
 let externalSources: ExternalSources;
@@ -32,12 +43,8 @@ test.beforeAll(async ({ browser }) => {
   originalPlanId = setup.planId;
 
   await externalSources.goto();
-  await externalSources.createTypes(
-    externalSources.exampleTypeSchema,
-    externalSources.exampleTypeSchemaExpectedSourceTypes,
-    externalSources.exampleTypeSchemaExpectedEventTypes,
-  );
-  await externalSources.uploadExternalSource();
+  await externalSources.createTypes(MDG_TYPE_SCHEMA, [MDG_SOURCE_TYPE], [MDG_EVENT_TYPE]);
+  await externalSources.uploadExternalSource(MDG_SOURCE_FILE);
 });
 
 test.afterAll(async () => {
@@ -52,35 +59,14 @@ test.afterAll(async () => {
     await setup.api.deletePlan(newPlanId);
   }
 
-  // Use API for faster cleanup of external sources artifacts
-  // Order matters: sources -> derivation groups -> source types -> event types
+  // Use API for faster cleanup of this test's own external-source artifacts. Delete ONLY the MDG
+  // artifacts — deleting the shared "Example" ones here would clobber external-sources.test.ts if it
+  // runs concurrently. Order matters: sources -> derivation groups -> source types -> event types.
   try {
-    // Delete sources (grouped by derivation group)
-    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
-    await setup.api.deleteExternalSources(externalSources.derivationTestGroupName, [
-      externalSources.derivationTestFileKey1,
-      externalSources.derivationTestFileKey2,
-      externalSources.derivationTestFileKey3,
-      externalSources.derivationTestFileKey4,
-    ]);
-    // Delete derivation groups
-    await setup.api.deleteDerivationGroups([
-      externalSources.exampleDerivationGroup,
-      externalSources.derivationTestGroupName,
-    ]);
-    // Delete source types
-    await setup.api.deleteExternalSourceTypes([
-      externalSources.exampleSourceType,
-      externalSources.derivationTestSourceTypeName,
-    ]);
-    // Delete event types
-    await setup.api.deleteExternalEventTypes([
-      externalSources.exampleEventType,
-      externalSources.derivationATypeName,
-      externalSources.derivationBTypeName,
-      externalSources.derivationCTypeName,
-      externalSources.derivationDTypeName,
-    ]);
+    await setup.api.deleteExternalSources(MDG_DERIVATION_GROUP, [MDG_SOURCE_KEY]);
+    await setup.api.deleteDerivationGroups([MDG_DERIVATION_GROUP]);
+    await setup.api.deleteExternalSourceTypes([MDG_SOURCE_TYPE]);
+    await setup.api.deleteExternalEventTypes([MDG_EVENT_TYPE]);
   } catch {
     // Ignore cleanup errors - resources may not exist or have dependencies
   }
@@ -101,12 +87,12 @@ test.describe.serial('Model Derivation Group Linking', () => {
     await model.goto();
     await setup.page.waitForURL(`${baseURL}/models/${setup.models.modelId}`, { timeout: 3000 });
 
-    // Link this test's derivation group. Scope the checkbox to that specific row: other suites
-    // (e.g. external-sources) can leave additional derivation groups in the shared backend, so an
-    // unscoped "Press SPACE to toggle cell" checkbox matches multiple rows (strict-mode violation).
+    // Link this test's own derivation group. Scope the checkbox to that specific row: other suites
+    // leave additional derivation groups in the shared backend, so an unscoped "Press SPACE to
+    // toggle cell" checkbox matches multiple rows (strict-mode violation).
     await model.switchToDerivationGroups();
     const derivationGroupCheckbox = setup.page
-      .getByRole('row', { name: externalSources.exampleDerivationGroup })
+      .getByRole('row', { name: MDG_DERIVATION_GROUP })
       .getByRole('checkbox');
     await derivationGroupCheckbox.click({ force: true });
     await expect(derivationGroupCheckbox).toBeChecked();

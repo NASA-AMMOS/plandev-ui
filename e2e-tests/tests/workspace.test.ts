@@ -537,9 +537,10 @@ test.describe.serial('Workspace', () => {
     // Clear search to see all files
     await workspace.clearSearch();
 
-    // Select 2 files for moving using Ctrl+click
-    await workspace.getFileRow(file1).click();
-    await workspace.getFileRow(file2).click({ modifiers: ['ControlOrMeta'] });
+    // Select 2 files for moving using Ctrl+click. force:true lands the click even while the grid is
+    // still re-positioning rows under CI contention (see the deletion block below for details).
+    await workspace.getFileRow(file1).click({ force: true });
+    await workspace.getFileRow(file2).click({ force: true, modifiers: ['ControlOrMeta'] });
 
     // Open context menu and move files
     await workspace.openFileContextMenu(file1);
@@ -559,8 +560,8 @@ test.describe.serial('Workspace', () => {
     await expect(sidebar.getByTitle(`${folder1}/${file2}`, { exact: true })).toBeVisible();
 
     // Select 2 other files for copying
-    await workspace.getFileRow(file3).click();
-    await workspace.getFileRow(file4).click({ modifiers: ['ControlOrMeta'] });
+    await workspace.getFileRow(file3).click({ force: true });
+    await workspace.getFileRow(file4).click({ force: true, modifiers: ['ControlOrMeta'] });
 
     // Open context menu and copy files
     await workspace.openFileContextMenu(file3);
@@ -579,20 +580,21 @@ test.describe.serial('Workspace', () => {
     await expect(sidebar.getByTitle(`${folder2}/${file4}`, { exact: true })).toBeVisible();
 
     // Select 2 files for deletion (use row-id to select specifically the root files, not the copies).
-    // The file-list auto-refresh (triggered by the copy above) causes an AG Grid row animation that
-    // can briefly double-render a row: the stale node animates out (ag-row-position-absolute) while
-    // the new node animates in, both with the same row-id. Wait for each row to settle to a single
-    // node before clicking so the click isn't ambiguous or aimed at the node being removed.
+    // After the preceding operations the grid re-filters/re-positions rows, and under CI CPU
+    // contention a row's transform can keep shifting long enough that Playwright's actionability
+    // "stable" check never passes, hanging the click to the test timeout. toHaveCount(1) guards
+    // against a transient duplicate row-id; force:true lands the click without waiting for the row
+    // to stop moving (we still target the correct row via its unique row-id).
     const file3Row = workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`);
     const file5Row = workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`);
     await expect(file3Row).toHaveCount(1);
-    await file3Row.click();
+    await file3Row.click({ force: true });
     await expect(file5Row).toHaveCount(1);
-    await file5Row.click({ modifiers: ['ControlOrMeta'] });
+    await file5Row.click({ force: true, modifiers: ['ControlOrMeta'] });
 
     // Open context menu and delete files
     await expect(file3Row).toHaveCount(1);
-    await file3Row.click({ button: 'right' });
+    await file3Row.click({ button: 'right', force: true });
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await setup.page.getByRole('button', { name: 'Delete' }).click();
 
