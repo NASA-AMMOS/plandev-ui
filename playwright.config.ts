@@ -71,6 +71,15 @@ const regularProjects: PlaywrightTestConfig['projects'] = [
 
 const oidcProjects: PlaywrightTestConfig['projects'] = [
   {
+    // Primes the Vite dev server so the first real test doesn't eat the lazy-compile cold start.
+    name: 'setup-oidc-warmup',
+    testMatch: /global\.setup\.oidc-warmup\.ts/,
+    use: {
+      baseURL: MAIN_TEST_SUITE_BASE_URL,
+    },
+  },
+  {
+    dependencies: ['setup-oidc-warmup'],
     name: 'oidc tests',
     testDir: './e2e-tests',
     testMatch: /.*\/oidc\.test\.ts/,
