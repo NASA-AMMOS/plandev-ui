@@ -34,6 +34,7 @@ import { View } from '../fixtures/View.js';
 // Default URLs from environment variables, with fallbacks for local development
 const DEFAULT_HASURA_URL = process.env.PUBLIC_HASURA_CLIENT_URL ?? 'http://localhost:8080/v1/graphql';
 const DEFAULT_GATEWAY_URL = process.env.PUBLIC_GATEWAY_CLIENT_URL ?? 'http://localhost:9000';
+const DEFAULT_WORKSPACE_URL = process.env.PUBLIC_WORKSPACE_CLIENT_URL ?? 'http://localhost:28000';
 
 export interface ApiUser {
   id: string;
@@ -55,10 +56,16 @@ export class AerieApi {
   private gatewayUrl: string;
   private hasuraUrl: string;
   private user: ApiUser | null = null;
+  private workspaceUrl: string;
 
-  constructor(hasuraUrl: string = DEFAULT_HASURA_URL, gatewayUrl: string = DEFAULT_GATEWAY_URL) {
+  constructor(
+    hasuraUrl: string = DEFAULT_HASURA_URL,
+    gatewayUrl: string = DEFAULT_GATEWAY_URL,
+    workspaceUrl: string = DEFAULT_WORKSPACE_URL,
+  ) {
     this.hasuraUrl = hasuraUrl;
     this.gatewayUrl = gatewayUrl;
+    this.workspaceUrl = workspaceUrl;
   }
 
   async createActivityDirective(activityDirective: ActivityDirectiveInsertInput): Promise<{ id: number }> {
@@ -129,6 +136,39 @@ export class AerieApi {
       tag: { color, name },
     });
     return data.insert_tags_one;
+  }
+
+  /**
+   * Create a file (with content) or folder (omit content) in a workspace via the Workspace Service,
+   * bypassing the UI. The UI creation path is covered by dedicated tests; this is for fast seeding.
+   */
+  async createWorkspaceItem(workspaceId: number, path: string, content?: string): Promise<void> {
+    if (!this.user) {
+      throw new Error('Must login before creating workspace items');
+    }
+    const isFolder = content === undefined;
+    const type = isFolder ? 'directory' : 'file';
+
+    let body: FormData | undefined;
+    if (!isFolder) {
+      const fileName = path.split('/').at(-1) ?? path;
+      body = new FormData();
+      body.append('file', new Blob([content]), fileName);
+    }
+
+    const response = await fetch(`${this.workspaceUrl}/ws/${workspaceId}/${path}?type=${type}`, {
+      body,
+      headers: {
+        Authorization: `Bearer ${this.user.token}`,
+        'x-hasura-role': 'aerie_admin',
+        'x-hasura-user-id': this.user.id,
+      },
+      method: 'PUT',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Workspace ${type} creation failed: ${response.statusText} - ${await response.text()}`);
+    }
   }
 
   async deleteActivityDirectives(planId: number, activityIds: number[]): Promise<void> {
