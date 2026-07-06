@@ -393,8 +393,8 @@ test.describe.serial('Backend Service Smoke Tests', () => {
   test('Hasura function: taking a plan snapshot succeeds', async () => {
     // create_snapshot is a Hasura function; calling it with the OIDC token exercises Hasura's
     // JWKS verification. A returned snapshot id means the function ran end to end.
-    const { snapshotId } = await api.createSnapshot(planId, `oidc-smoke-${username}`);
-    expect(snapshotId).toBeGreaterThanOrEqual(0);
+    const { snapshot_id } = await api.createPlanSnapshot(planId, `oidc-smoke-${username}`);
+    expect(snapshot_id).toBeGreaterThanOrEqual(0);
   });
 
   test('Workspace server: create a workspace, add a file, then delete it', async () => {
