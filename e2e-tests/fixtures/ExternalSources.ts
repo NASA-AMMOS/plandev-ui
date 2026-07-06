@@ -371,8 +371,9 @@ export class ExternalSources {
     }
 
     if (validateUpload) {
-      // Wait for the source to be selected by checking for the source header div
-      await expect(this.page.locator('.external-source-header')).toBeVisible({ timeout: 10000 });
+      // Wait for the source to be selected by checking for the source header div. Allow generous
+      // time: on a loaded CI backend the create + selection round-trip can exceed 10s.
+      await expect(this.page.locator('.external-source-header')).toBeVisible({ timeout: 20000 });
     }
   }
 

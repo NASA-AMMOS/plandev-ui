@@ -45,8 +45,12 @@ test.afterAll(async () => {
   await cleanupApiResources(setup);
 
   // manually delete the new plan, since setup's planId field doesn't get updated
-  //    to reference the new one when creating the new plan
-  await setup.api.deletePlan(newPlanId);
+  //    to reference the new one when creating the new plan. Guard against undefined: if the test
+  //    failed before creating the second plan, deletePlan(undefined) throws a GraphQL error that
+  //    masks the real failure.
+  if (newPlanId) {
+    await setup.api.deletePlan(newPlanId);
+  }
 
   // Use API for faster cleanup of external sources artifacts
   // Order matters: sources -> derivation groups -> source types -> event types
@@ -97,9 +101,15 @@ test.describe.serial('Model Derivation Group Linking', () => {
     await model.goto();
     await setup.page.waitForURL(`${baseURL}/models/${setup.models.modelId}`, { timeout: 3000 });
 
-    // select all derivation groups (only 1 will be uploaded and therefore only 1 associated)
+    // Link this test's derivation group. Scope the checkbox to that specific row: other suites
+    // (e.g. external-sources) can leave additional derivation groups in the shared backend, so an
+    // unscoped "Press SPACE to toggle cell" checkbox matches multiple rows (strict-mode violation).
     await model.switchToDerivationGroups();
-    await setup.page.getByRole('checkbox', { name: 'Press SPACE to toggle cell' }).click();
+    const derivationGroupCheckbox = setup.page
+      .getByRole('row', { name: externalSources.exampleDerivationGroup })
+      .getByRole('checkbox');
+    await derivationGroupCheckbox.click({ force: true });
+    await expect(derivationGroupCheckbox).toBeChecked();
 
     // save the association
     await model.saveModel();
