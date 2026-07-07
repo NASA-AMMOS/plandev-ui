@@ -6,7 +6,13 @@ import { Parcels } from '../fixtures/Parcels.js';
 import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
-import { createAuthenticatedApi, setupTest, teardownTest, type AerieApi, type BrowserSetupResult } from '../utilities/api.js';
+import {
+  createAuthenticatedApi,
+  setupTest,
+  teardownTest,
+  type AerieApi,
+  type BrowserSetupResult,
+} from '../utilities/api.js';
 import { generateRandomName } from '../utilities/helpers.js';
 
 // Main setup (uses default 'test' user)

@@ -55,7 +55,10 @@ test.beforeAll(async ({ browser }) => {
     source_types: Record<string, object>;
   };
   await setup.api.createExternalSourceEventTypes(mdgSchema.source_types, mdgSchema.event_types);
-  await setup.api.uploadExternalSource(MDG_DERIVATION_GROUP, JSON.parse(readFileSync(MDG_SOURCE_FILE, 'utf-8')) as object);
+  await setup.api.uploadExternalSource(
+    MDG_DERIVATION_GROUP,
+    JSON.parse(readFileSync(MDG_SOURCE_FILE, 'utf-8')) as object,
+  );
 });
 
 test.afterAll(async () => {
@@ -102,9 +105,7 @@ test.describe.serial('Model Derivation Group Linking', () => {
     // leave additional derivation groups in the shared backend, so an unscoped "Press SPACE to
     // toggle cell" checkbox matches multiple rows (strict-mode violation).
     await model.switchToDerivationGroups();
-    const derivationGroupCheckbox = setup.page
-      .getByRole('row', { name: MDG_DERIVATION_GROUP })
-      .getByRole('checkbox');
+    const derivationGroupCheckbox = setup.page.getByRole('row', { name: MDG_DERIVATION_GROUP }).getByRole('checkbox');
     await derivationGroupCheckbox.click({ force: true });
     await expect(derivationGroupCheckbox).toBeChecked();
 
