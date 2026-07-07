@@ -1,13 +1,13 @@
 import test, { expect } from '@playwright/test';
-import { ExternalSources } from '../fixtures/ExternalSources.js';
+import { readFileSync } from 'fs';
 import { Model } from '../fixtures/Model.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
 import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
 
-// This test uses its own uniquely-named external-source artifacts (not the shared "Example External
-// Source" fixtures) so it never collides with external-sources.test.ts, which creates AND deletes
-// those shared artifacts mid-run. Both files run in parallel against one backend, so shared names
-// race — one uploads while the other deletes — which made this test's beforeAll upload flaky.
+// This test seeds its own uniquely-named external-source artifacts via the API. Unique names keep it
+// isolated from external-sources.test.ts (which creates and deletes the shared "Example" artifacts
+// mid-run, in parallel), and API seeding keeps setup deterministic rather than depending on the
+// flaky UI upload — the UI upload path itself is covered by external-sources.test.ts.
 const MDG_TYPE_SCHEMA = 'e2e-tests/data/Schema_MDG_Source.json';
 const MDG_SOURCE_FILE = 'e2e-tests/data/mdg-external-source.json';
 const MDG_SOURCE_TYPE = 'MDG External Source';
@@ -17,7 +17,6 @@ const MDG_SOURCE_KEY = 'MDGExternalSource:mdg-external-source.json';
 
 // Main setup with model (uses 'test' user for API operations)
 let setup: FullSetupResult;
-let externalSources: ExternalSources;
 let model: Model;
 
 // different plans depending on the model association
@@ -29,7 +28,6 @@ let newPlanId: number;
 test.beforeAll(async ({ browser }) => {
   setup = await setupTest(browser);
   setup.plans.endTime = '2022-011T00:00:00';
-  externalSources = new ExternalSources(setup.page);
 
   model = new Model(setup.page, setup.models, setup.constraints, setup.schedulingGoals, setup.schedulingConditions);
   originalPlan = new Plan(
@@ -42,9 +40,22 @@ test.beforeAll(async ({ browser }) => {
   );
   originalPlanId = setup.planId;
 
-  await externalSources.goto();
-  await externalSources.createTypes(MDG_TYPE_SCHEMA, [MDG_SOURCE_TYPE], [MDG_EVENT_TYPE]);
-  await externalSources.uploadExternalSource(MDG_SOURCE_FILE);
+  // Seed the external source (types + derivation group + source) via the API for a deterministic
+  // setup. Clean any residue from a prior run first so the create calls start fresh.
+  try {
+    await setup.api.deleteExternalSources(MDG_DERIVATION_GROUP, [MDG_SOURCE_KEY]);
+    await setup.api.deleteDerivationGroups([MDG_DERIVATION_GROUP]);
+    await setup.api.deleteExternalSourceTypes([MDG_SOURCE_TYPE]);
+    await setup.api.deleteExternalEventTypes([MDG_EVENT_TYPE]);
+  } catch {
+    // Nothing to clean
+  }
+  const mdgSchema = JSON.parse(readFileSync(MDG_TYPE_SCHEMA, 'utf-8')) as {
+    event_types: Record<string, object>;
+    source_types: Record<string, object>;
+  };
+  await setup.api.createExternalSourceEventTypes(mdgSchema.source_types, mdgSchema.event_types);
+  await setup.api.uploadExternalSource(MDG_DERIVATION_GROUP, JSON.parse(readFileSync(MDG_SOURCE_FILE, 'utf-8')) as object);
 });
 
 test.afterAll(async () => {

@@ -91,6 +91,33 @@ export class AerieApi {
     return { id: constraintId };
   }
 
+  /**
+   * Create external source & event types via the Gateway, bypassing the UI schema-upload flow.
+   * `sourceTypes` / `eventTypes` are the JSON Schema objects keyed by type name (as in the
+   * Schema_*.json fixtures' `source_types` / `event_types`).
+   */
+  async createExternalSourceEventTypes(
+    sourceTypes: Record<string, object>,
+    eventTypes: Record<string, object>,
+  ): Promise<void> {
+    if (!this.user) {
+      throw new Error('Must login before creating external source/event types');
+    }
+    const response = await fetch(`${this.gatewayUrl}/uploadExternalSourceEventTypes`, {
+      body: JSON.stringify({ event_types: JSON.stringify(eventTypes), source_types: JSON.stringify(sourceTypes) }),
+      headers: {
+        Authorization: `Bearer ${this.user.token}`,
+        'Content-Type': 'application/json',
+        'x-hasura-role': 'aerie_admin',
+        'x-hasura-user-id': this.user.id,
+      },
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`External source/event type creation failed: ${response.statusText} - ${await response.text()}`);
+    }
+  }
+
   async createModel(model: ModelInsertInput): Promise<{ id: number }> {
     const data = await this.gqlQuery<{ createModel: { id: number } }>(gql.CREATE_MODEL, { model });
     return data.createModel;
@@ -341,6 +368,36 @@ export class AerieApi {
       planId,
     });
     return data.simulate;
+  }
+
+  /**
+   * Upload an external source via the Gateway, bypassing the UI. The referenced source/event types
+   * must already exist (see createExternalSourceEventTypes); the derivation group is created if
+   * needed. `sourceJson` is the parsed contents of an external-source fixture file.
+   */
+  async uploadExternalSource(derivationGroupName: string, sourceJson: object): Promise<void> {
+    if (!this.user) {
+      throw new Error('Must login before uploading external sources');
+    }
+    const formData = new FormData();
+    formData.append('derivation_group_name', derivationGroupName);
+    formData.append(
+      'external_source_file',
+      new Blob([JSON.stringify(sourceJson)], { type: 'application/json' }),
+      'external_source.json',
+    );
+    const response = await fetch(`${this.gatewayUrl}/uploadExternalSource`, {
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${this.user.token}`,
+        'x-hasura-role': 'aerie_admin',
+        'x-hasura-user-id': this.user.id,
+      },
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`External source upload failed: ${response.statusText} - ${await response.text()}`);
+    }
   }
 
   /**
