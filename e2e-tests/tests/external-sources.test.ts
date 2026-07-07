@@ -171,10 +171,9 @@ test.describe.serial('External Sources', () => {
     await externalSources.deleteSource(externalSources.externalSourceFileName);
     await externalSources.deleteSource(externalSources.externalSourceNoAttributeKey);
     await externalSources.deleteSource(externalSources.externalSourceEmptyAttributeKey);
-    // Three deletes above each fire a "Deleted Successfully" toast; they stack, so getByText(...)
-    // matches multiple elements (strict-mode violation). waitForToast uses waitForSelector, which
-    // is satisfied by any one match.
-    await externalSources.waitForToast('External Source Deleted Successfully');
+    // deleteSource waits for each source's row to disappear, so deletion is already confirmed. Don't
+    // assert the "Deleted Successfully" toast here — it's fired per-delete and auto-dismisses, so by
+    // this point (after three deletes) it's gone. The state assertions below verify the empty state.
     await expect(externalSources.inputFile).toBeVisible();
     await expect(externalSources.externalEventSelectedForm).not.toBeVisible();
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();
