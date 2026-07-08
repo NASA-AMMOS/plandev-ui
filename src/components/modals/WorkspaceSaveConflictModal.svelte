@@ -124,8 +124,7 @@
         </span>
       {:else if variant === 'deleted'}
         <span>
-          <b>{fileName}</b> was deleted or moved by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}. Your unsaved changes are shown below.
+          <b>{fileName}</b> was deleted or moved{whenText ? ` ${whenText}` : ''}. Your unsaved changes are shown below.
         </span>
       {:else if allowMerge}
         <span>
