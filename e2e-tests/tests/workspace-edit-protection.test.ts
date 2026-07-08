@@ -122,7 +122,7 @@ test.describe.serial('Workspace simultaneous-edit protection', () => {
     await expect(workspace.saveSequenceButton).toBeDisabled();
   });
 
-  test('"Take theirs" rebases the editor and the next save succeeds', async () => {
+  test('"Keep theirs" rebases the editor and the next save succeeds', async () => {
     const sequenceName = await createAndOpenSequence();
     await otherEditorSaves(sequenceName, '// their change');
 
@@ -137,7 +137,27 @@ test.describe.serial('Workspace simultaneous-edit protection', () => {
     await expect(workspace.saveSequenceButton).toBeDisabled();
   });
 
-  test('"Take mine (overwrite)" saves the local version and the next save succeeds', async () => {
+  test('"Keep theirs" is undoable — Ctrl/Cmd+Z restores the discarded edits', async () => {
+    const sequenceName = await createAndOpenSequence();
+    await otherEditorSaves(sequenceName, '// their change');
+
+    await editAndSaveExpectingConflict('// my change');
+    await conflict.waitForConflict();
+    await conflict.takeTheirs();
+
+    // Right after taking theirs the editor shows the server version.
+    const editor = setup.page.locator('.cm-content').first();
+    await expect(editor).toContainText('// their change');
+
+    // The rebase is recorded in the undo history, so a single undo restores the discarded edits
+    // and the document goes dirty again (restored content differs from the new server baseline).
+    await editor.click();
+    await setup.page.keyboard.press('ControlOrMeta+z');
+    await expect(editor).toContainText('// my change');
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+  });
+
+  test('"Keep mine" saves the local version and the next save succeeds', async () => {
     const sequenceName = await createAndOpenSequence();
     await otherEditorSaves(sequenceName, '// their change');
 

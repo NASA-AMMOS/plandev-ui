@@ -358,8 +358,8 @@ export class WorkspaceRequestError extends Error {
   }
 }
 
-/** A workspace response plus its `ETag` token and HTTP status. */
-export interface WorkspaceResponseWithMeta<T> {
+/** A workspace response plus its `ETag` and HTTP status. */
+export interface WorkspaceResponseWithEtag<T> {
   data: T;
   etag: string | null;
   status: number;
@@ -368,9 +368,9 @@ export interface WorkspaceResponseWithMeta<T> {
 /**
  * Like {@link reqWorkspace}, but returns the response `ETag` + status and, on `412`,
  * throws a typed {@link WorkspaceSaveConflictError}. Used for the editor's file GET/save
- * so the save token can be threaded through; `reqWorkspace` is left unchanged.
+ * so the save etag can be threaded through; `reqWorkspace` is left unchanged.
  */
-export async function reqWorkspaceWithMeta<T = any>(
+export async function reqWorkspaceWithEtag<T = any>(
   url: string,
   method: string,
   body: any | null,
@@ -378,7 +378,7 @@ export async function reqWorkspaceWithMeta<T = any>(
   signal?: AbortSignal,
   asJson: boolean = false,
   headerOverrides: HeadersInit = {},
-): Promise<WorkspaceResponseWithMeta<T>> {
+): Promise<WorkspaceResponseWithEtag<T>> {
   const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
 
   const headers: HeadersInit = {

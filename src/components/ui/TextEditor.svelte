@@ -166,6 +166,20 @@
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
+  /**
+   * Replace the editor content and DO record it in the undo history — unlike the file-open sync,
+   * which is excluded from history. Used by "take theirs" so the user can Cmd-Z back to the edits
+   * they discarded (the full-doc replace and its inverse are exact, so undo/redo stay clean).
+   */
+  export function rebaseContent(content: string): void {
+    if (editorView && editorView.state.doc.toString() !== content) {
+      editorView.dispatch({
+        changes: { from: 0, insert: content, to: editorView.state.doc.length },
+        userEvent: 'file.rebase',
+      });
+    }
+  }
+
   function downloadInputFormat(): void {
     dispatch('download', { filePath: textFilePath });
   }

@@ -1720,8 +1720,8 @@ export async function showExpansionPanelModal(user: User | null): Promise<ModalE
  * the modal with `confirm: false` and no value, so it is not represented here.
  */
 type WorkspaceSaveConflictResolution =
-  | { action: 'take-mine'; content: string; token: string | null }
-  | { action: 'take-theirs'; content: string; token: string | null }
+  | { action: 'take-mine'; content: string; etag: string | null }
+  | { action: 'take-theirs'; content: string; etag: string | null }
   | { action: 'recreate' }
   | { action: 'discard' };
 
@@ -1754,11 +1754,11 @@ export async function showWorkspaceSaveConflictModal(props: {
         };
 
         conflictModal.$on('close', () => finish());
-        conflictModal.$on('takeMine', (e: CustomEvent<{ content: string; token: string | null }>) =>
-          finish({ action: 'take-mine', content: e.detail.content, token: e.detail.token }),
+        conflictModal.$on('takeMine', (e: CustomEvent<{ content: string; etag: string | null }>) =>
+          finish({ action: 'take-mine', content: e.detail.content, etag: e.detail.etag }),
         );
-        conflictModal.$on('takeTheirs', (e: CustomEvent<{ content: string; token: string | null }>) =>
-          finish({ action: 'take-theirs', content: e.detail.content, token: e.detail.token }),
+        conflictModal.$on('takeTheirs', (e: CustomEvent<{ content: string; etag: string | null }>) =>
+          finish({ action: 'take-theirs', content: e.detail.content, etag: e.detail.etag }),
         );
         conflictModal.$on('recreate', () => finish({ action: 'recreate' }));
         conflictModal.$on('discard', () => finish({ action: 'discard' }));

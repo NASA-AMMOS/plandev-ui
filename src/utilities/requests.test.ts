@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { reqWorkspaceWithMeta, WorkspaceRequestError, WorkspaceSaveConflictError } from './requests';
+import { reqWorkspaceWithEtag, WorkspaceRequestError, WorkspaceSaveConflictError } from './requests';
 
 vi.mock('$env/dynamic/public', () => ({
   env: { PUBLIC_WORKSPACE_CLIENT_URL: 'http://workspace' },
@@ -22,7 +22,7 @@ function mockResponse(opts: {
   } as unknown as Response;
 }
 
-describe('reqWorkspaceWithMeta', () => {
+describe('reqWorkspaceWithEtag', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -33,7 +33,7 @@ describe('reqWorkspaceWithMeta', () => {
       vi.fn().mockResolvedValue(mockResponse({ headers: { ETag: '"tok-1"' }, status: 200, textBody: 'file contents' })),
     );
 
-    const result = await reqWorkspaceWithMeta<string>('1/foo.seq', 'GET', null, null);
+    const result = await reqWorkspaceWithEtag<string>('1/foo.seq', 'GET', null, null);
 
     expect(result).toEqual({ data: 'file contents', etag: '"tok-1"', status: 200 });
   });
@@ -41,7 +41,7 @@ describe('reqWorkspaceWithMeta', () => {
   test('returns a null etag when the ETag header is absent (CORS not exposed)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ status: 200, textBody: 'x' })));
 
-    const result = await reqWorkspaceWithMeta<string>('1/foo.seq', 'GET', null, null);
+    const result = await reqWorkspaceWithEtag<string>('1/foo.seq', 'GET', null, null);
 
     expect(result.etag).toBeNull();
   });
@@ -66,7 +66,7 @@ describe('reqWorkspaceWithMeta', () => {
       ),
     );
 
-    await expect(reqWorkspaceWithMeta('1/foo.seq', 'PUT', null, null)).rejects.toMatchObject({
+    await expect(reqWorkspaceWithEtag('1/foo.seq', 'PUT', null, null)).rejects.toMatchObject({
       currentETag: '"server-tok"',
       lastEditedAt: '2026-06-11T12:00:00Z',
       lastEditedBy: 'alice@example.com',
@@ -85,7 +85,7 @@ describe('reqWorkspaceWithMeta', () => {
 
     let error: unknown;
     try {
-      await reqWorkspaceWithMeta('1/foo.seq', 'PUT', null, null);
+      await reqWorkspaceWithEtag('1/foo.seq', 'PUT', null, null);
     } catch (e) {
       error = e;
     }
@@ -111,7 +111,7 @@ describe('reqWorkspaceWithMeta', () => {
 
     let error: unknown;
     try {
-      await reqWorkspaceWithMeta('1/foo.seq', 'PUT', null, null);
+      await reqWorkspaceWithEtag('1/foo.seq', 'PUT', null, null);
     } catch (e) {
       error = e;
     }
@@ -127,7 +127,7 @@ describe('reqWorkspaceWithMeta', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ status: 404 })));
     let notFound: unknown;
     try {
-      await reqWorkspaceWithMeta('1/foo.seq', 'GET', null, null);
+      await reqWorkspaceWithEtag('1/foo.seq', 'GET', null, null);
     } catch (e) {
       notFound = e;
     }
@@ -138,7 +138,7 @@ describe('reqWorkspaceWithMeta', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ status: 500 })));
     let serverError: unknown;
     try {
-      await reqWorkspaceWithMeta('1/foo.seq', 'GET', null, null);
+      await reqWorkspaceWithEtag('1/foo.seq', 'GET', null, null);
     } catch (e) {
       serverError = e;
     }

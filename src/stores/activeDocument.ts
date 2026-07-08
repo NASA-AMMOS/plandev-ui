@@ -8,7 +8,7 @@ export interface ActiveDocumentState {
    * The server's ETag for the version the editor is based on. Sent back on save so the
    * server can reject it if the file changed underneath. Opaque — only stored and echoed.
    */
-  baseToken: string | null;
+  baseEtag: string | null;
   currentContent: string;
   fileName: string | null;
   isLoading: boolean;
@@ -26,22 +26,22 @@ export interface ActiveDocumentStore {
   close: () => void;
 
   /**
-   * Mark the document clean after save (syncs originalContent). Pass `newToken` to also
-   * advance `baseToken`.
+   * Mark the document clean after save (syncs originalContent). Pass `newEtag` to also
+   * advance `baseEtag`.
    */
-  markClean: (savedContent?: string, newToken?: string | null) => void;
+  markClean: (savedContent?: string, newEtag?: string | null) => void;
 
   /**
-   * Open a loaded document and store its `etag` as `baseToken`. Skips stale loads (only
+   * Open a loaded document and store its `etag` as `baseEtag`. Skips stale loads (only
    * applies when `path` matches `loadingPath`). Returns false if stale.
    */
   open: (path: string, content: string, etag: string | null) => boolean;
 
   /**
-   * Rebase the document onto `content` + `token` and mark it clean (e.g. "take theirs", or
+   * Rebase the document onto `content` + `etag` and mark it clean (e.g. "take theirs", or
    * after a merged save). Only applies if `path` is still active. Returns false otherwise.
    */
-  replaceWithServer: (path: string, content: string, token: string | null) => boolean;
+  replaceWithServer: (path: string, content: string, etag: string | null) => boolean;
 
   /** Reset the store to initial state. */
   reset: () => void;
@@ -65,7 +65,7 @@ export interface ActiveDocumentStore {
 /* Constants */
 
 const initialState: ActiveDocumentState = {
-  baseToken: null,
+  baseEtag: null,
   currentContent: '',
   fileName: null,
   isLoading: false,
@@ -97,10 +97,10 @@ function createActiveDocumentStore(): ActiveDocumentStore {
       set(initialState);
     },
 
-    markClean(savedContent?: string, newToken?: string | null): void {
+    markClean(savedContent?: string, newEtag?: string | null): void {
       update(state => ({
         ...state,
-        baseToken: newToken !== undefined ? newToken : state.baseToken,
+        baseEtag: newEtag !== undefined ? newEtag : state.baseEtag,
         originalContent: savedContent ?? state.currentContent,
       }));
     },
@@ -115,7 +115,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
 
       update(state => ({
         ...state,
-        baseToken: etag,
+        baseEtag: etag,
         currentContent: content,
         isLoading: false,
         loadingPath: null,
@@ -125,7 +125,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
       return true;
     },
 
-    replaceWithServer(path: string, content: string, token: string | null): boolean {
+    replaceWithServer(path: string, content: string, etag: string | null): boolean {
       const currentState = get(internalStore);
 
       // Only replace if this is still the active document (no in-flight load to guard on).
@@ -135,7 +135,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
 
       update(state => ({
         ...state,
-        baseToken: token,
+        baseEtag: etag,
         currentContent: content,
         isLoading: false,
         loadingPath: null,
@@ -151,7 +151,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
 
     startLoad(path: string, fileName: string | null, type: WorkspaceContentType | null): void {
       set({
-        baseToken: null,
+        baseEtag: null,
         currentContent: '',
         fileName,
         isLoading: true,

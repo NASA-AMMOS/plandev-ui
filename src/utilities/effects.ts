@@ -7197,8 +7197,8 @@ const effects = {
   },
 
   /**
-   * Saves a workspace file. Pass `ifMatch` (the `baseToken`) to run the concurrency check,
-   * or `'*'` to force. Returns `{ etag }` (the new token) on success. Re-throws a
+   * Saves a workspace file. Pass `ifMatch` (the `baseEtag`) to run the concurrency check,
+   * or `'*'` to force. Returns `{ etag }` (the new etag) on success. Re-throws a
    * {@link WorkspaceSaveConflictError} on `412` so the caller can show the conflict modal;
    * other errors become a failure toast and return `null`.
    */

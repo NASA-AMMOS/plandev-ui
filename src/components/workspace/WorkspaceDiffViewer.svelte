@@ -7,7 +7,7 @@
   import { EditorState, type Extension } from '@codemirror/state';
   import { EditorView, lineNumbers } from '@codemirror/view';
   import { basicSetup } from 'codemirror';
-  import { onDestroy, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
 
@@ -24,6 +24,8 @@
   export let theirs: string | null;
   /** File type, used to pick the fallback language extension. */
   export let type: WorkspaceContentType | null = null;
+
+  const dispatch = createEventDispatcher<{ stats: { changedLines: number } }>();
 
   let container: HTMLDivElement;
   let isSinglePane: boolean = true;
@@ -75,6 +77,19 @@
     singleView = null;
   }
 
+  /** Total lines involved in changes (larger side of each chunk), for the header summary. */
+  function countChangedLines(view: MergeView): number {
+    const aDoc = view.a.state.doc;
+    const bDoc = view.b.state.doc;
+    let total = 0;
+    for (const chunk of view.chunks) {
+      const aLines = chunk.toA > chunk.fromA ? aDoc.lineAt(chunk.endA).number - aDoc.lineAt(chunk.fromA).number + 1 : 0;
+      const bLines = chunk.toB > chunk.fromB ? bDoc.lineAt(chunk.endB).number - bDoc.lineAt(chunk.fromB).number + 1 : 0;
+      total += Math.max(aLines, bLines);
+    }
+    return total;
+  }
+
   function buildViews() {
     destroyViews();
     if (!container) {
@@ -103,6 +118,8 @@
       parent: container,
       revertControls: editable ? 'a-to-b' : undefined,
     });
+
+    dispatch('stats', { changedLines: countChangedLines(mergeView) });
   }
 
   onMount(() => {

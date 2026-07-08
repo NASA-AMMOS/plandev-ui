@@ -351,6 +351,20 @@
     return true;
   }
 
+  /**
+   * Replace the editor content and DO record it in the undo history — unlike the file-open sync,
+   * which is excluded from history. Used by "take theirs" so the user can Cmd-Z back to the edits
+   * they discarded (the full-doc replace and its inverse are exact, so undo/redo stay clean).
+   */
+  export function rebaseContent(content: string): void {
+    if (editorSequenceView && editorSequenceView.state.doc.toString() !== content) {
+      editorSequenceView.dispatch({
+        changes: { from: 0, insert: content, to: editorSequenceView.state.doc.length },
+        userEvent: 'file.rebase',
+      });
+    }
+  }
+
   // Exported function to allow parent to navigate to a specific line/column
   export function gotoLine(line: number, column: number = 0): void {
     if (editorSequenceView) {

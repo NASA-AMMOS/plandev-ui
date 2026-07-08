@@ -14,7 +14,7 @@ import type {
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithMeta } from './requests';
+import { reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -494,7 +494,7 @@ export const WorkspaceApi = {
     user: User | null,
   ): Promise<{ content: string; etag: string | null }> {
     // Throws a WorkspaceRequestError (with status) on any non-2xx — content is never null.
-    const { data, etag } = await reqWorkspaceWithMeta<string>(
+    const { data, etag } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'GET',
       null,
@@ -631,7 +631,7 @@ export const WorkspaceApi = {
     ifMatch?: string | '*',
   ): Promise<string | null> {
     const body = createFormDataWithFile(filePath, fileContent);
-    const { etag } = await reqWorkspaceWithMeta<Workspace>(
+    const { etag } = await reqWorkspaceWithEtag<Workspace>(
       `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
       'PUT',
       body,

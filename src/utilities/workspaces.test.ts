@@ -38,8 +38,8 @@ const mockNavigator = {
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
 const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
-const reqWorkspaceWithMetaMock = vi
-  .spyOn(requests, 'reqWorkspaceWithMeta')
+const reqWorkspaceWithEtagMock = vi
+  .spyOn(requests, 'reqWorkspaceWithEtag')
   .mockResolvedValue({ data: '', etag: null, status: 200 });
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
@@ -270,7 +270,7 @@ describe('Workspace utility function tests', () => {
 
     test('getFileContent', async () => {
       await WorkspaceApi.getFileContent(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceWithMetaMock).toHaveBeenLastCalledWith(
+      expect(reqWorkspaceWithEtagMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq',
         'GET',
         null,
@@ -587,7 +587,7 @@ describe('Workspace utility function tests', () => {
       body.append('file', file, file.name);
 
       await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, null);
-      expect(reqWorkspaceWithMetaMock).toHaveBeenLastCalledWith(
+      expect(reqWorkspaceWithEtagMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq?type=file&overwrite=true',
         'PUT',
         body,

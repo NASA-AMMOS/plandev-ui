@@ -51,13 +51,13 @@ export class WorkspaceSaveConflict {
   updatePage(page: Page): void {
     this.page = page;
     this.modal = page.locator('#modal-container');
-    this.conflictTitle = this.modal.getByText('This file changed since you opened it');
+    this.conflictTitle = this.modal.getByText('This file was updated by someone else');
     this.deletedTitle = this.modal.getByText('File deleted or moved');
     this.theirsHeader = this.modal.getByText('Theirs (server)');
     this.mineHeader = this.modal.getByText('Mine (your edits)');
-    this.takeTheirsButton = this.modal.getByRole('button', { name: 'Take theirs (discard mine)' });
-    this.takeMineButton = this.modal.getByRole('button', { name: 'Take mine (overwrite)' });
-    this.cancelButton = this.modal.getByRole('button', { name: 'Cancel' });
+    this.takeTheirsButton = this.modal.getByRole('button', { name: 'Keep theirs' });
+    this.takeMineButton = this.modal.getByRole('button', { name: 'Keep mine' });
+    this.cancelButton = this.modal.getByRole('button', { name: 'Keep editing' });
     this.recreateButton = this.modal.getByRole('button', { name: 'Recreate file' });
     this.discardButton = this.modal.getByRole('button', { name: 'Discard & close' });
   }

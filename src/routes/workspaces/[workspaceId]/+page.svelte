@@ -190,6 +190,7 @@
   let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
   let activeEditorView: EditorView | null = null;
   let sequenceEditorRef: SequenceEditor;
+  let textEditorRef: TextEditor;
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -665,7 +666,7 @@
       return;
     }
 
-    // open() does the stale check and stores the ETag as baseToken for the next save.
+    // open() does the stale check and stores the ETag as baseEtag for the next save.
     activeDocument.open(filePath, content, etag);
 
     // Fetch fresh metadata so readOnly/user fields are current when the user opens the file
@@ -803,7 +804,7 @@
     // Save the file before the operation
     const path = $activeDocumentPath!;
     const content = $activeDocument.currentContent;
-    const ifMatch = $activeDocument.baseToken ?? '*';
+    const ifMatch = $activeDocument.baseEtag ?? '*';
     try {
       const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
       if (!result) {
@@ -1029,8 +1030,8 @@
   async function saveCurrentFile(content: string) {
     if ($activeDocumentPath) {
       const path = $activeDocumentPath;
-      // baseToken runs the concurrency check; '*' forces (when no token was captured).
-      const ifMatch = $activeDocument.baseToken ?? '*';
+      // baseEtag runs the concurrency check; '*' forces (when no etag was captured).
+      const ifMatch = $activeDocument.baseEtag ?? '*';
       try {
         const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
         if (result) {
@@ -1081,14 +1082,19 @@
     }
 
     if (value.action === 'take-theirs') {
-      activeDocument.replaceWithServer(path, value.content, value.token);
+      // Push the rebase INTO the editor's undo history (before replaceWithServer updates
+      // originalContent, so the non-undoable prop-sync then no-ops) so the user can Cmd-Z back to
+      // the edits they discarded.
+      const editorRef = activeFileIsSequence ? sequenceEditorRef : textEditorRef;
+      editorRef?.rebaseContent(value.content);
+      activeDocument.replaceWithServer(path, value.content, value.etag);
       showSuccessToast('Loaded the latest version of the file');
       return true;
     }
 
     if (value.action === 'take-mine') {
       // Save against the version shown; '*' forces if no token. A re-conflict reopens the diff.
-      return persistMine(path, value.content, value.token ?? '*');
+      return persistMine(path, value.content, value.etag ?? '*');
     }
 
     if (value.action === 'recreate') {
@@ -1711,6 +1717,7 @@
               {:else if isTextOrEmpty}
                 <div class="flex h-full">
                   <TextEditor
+                    bind:this={textEditorRef}
                     availableActions={availableActionsForActiveFile}
                     fileMetadata={activeFileMetadata}
                     includeActions={true}

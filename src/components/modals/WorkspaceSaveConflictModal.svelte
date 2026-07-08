@@ -13,7 +13,6 @@
   import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
-  import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
 
   export let allowMerge: boolean = false;
@@ -32,21 +31,23 @@
     close: void;
     discard: void;
     recreate: void;
-    takeMine: { content: string; token: string | null };
-    takeTheirs: { content: string; token: string | null };
+    takeMine: { content: string; etag: string | null };
+    takeTheirs: { content: string; etag: string | null };
   }>();
 
+  let changedLines: number = 0;
   let diffViewer: WorkspaceDiffViewer | undefined;
   let editedByText: string = '';
   let whenText: string = '';
   let isLoading: boolean = true;
   let loadError: boolean = false;
   let theirsContent: string | null = null;
-  let theirsToken: string | null = null;
+  let theirsEtag: string | null = null;
   let variant: WorkspaceSaveConflictReason = reason === 'deleted' ? 'deleted' : 'conflict';
 
   $: editedByText = lastEditedBy ?? 'another user';
   $: whenText = lastEditedAt ? getTimeAgo(new Date(lastEditedAt)) : '';
+  $: changedLinesText = changedLines > 0 ? ` · ${changedLines} changed ${changedLines === 1 ? 'line' : 'lines'}` : '';
 
   async function loadTheirs() {
     // Re-fetch the server's version for the diff. A 404 means it was deleted. Any other
@@ -57,7 +58,7 @@
     try {
       const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, path, user);
       theirsContent = content;
-      theirsToken = etag;
+      theirsEtag = etag;
       variant = 'conflict';
     } catch (e) {
       if (e instanceof WorkspaceRequestError && e.status === 404) {
@@ -75,13 +76,30 @@
   });
 
   function onTakeMine() {
-    // Save the "Mine" pane against the version shown (theirsToken). If the file moved again,
+    // Save the "Mine" pane against the version shown (theirsEtag). If the file moved again,
     // the save 412s and the diff re-opens rather than overwriting unseen changes.
-    dispatch('takeMine', { content: diffViewer?.getMergedContent() ?? mineContent, token: theirsToken });
+    dispatch('takeMine', { content: diffViewer?.getMergedContent() ?? mineContent, etag: theirsEtag });
   }
 
-  function onTakeTheirs() {
-    dispatch('takeTheirs', { content: theirsContent ?? '', token: theirsToken });
+  async function onTakeTheirs() {
+    // Re-fetch so "take theirs" applies the *latest* server version, not the snapshot from when
+    // the modal opened — someone may have saved again while it was open. A 404 means it was since
+    // deleted, so switch to the deleted flow instead of loading empty content; any other failure
+    // is transient, so show the retry prompt and keep the doc dirty.
+    isLoading = true;
+    loadError = false;
+    try {
+      const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, path, user);
+      dispatch('takeTheirs', { content, etag });
+    } catch (e) {
+      if (e instanceof WorkspaceRequestError && e.status === 404) {
+        theirsContent = null;
+        variant = 'deleted';
+      } else {
+        loadError = true;
+      }
+      isLoading = false;
+    }
   }
 
   function onRecreate() {
@@ -93,9 +111,9 @@
   }
 </script>
 
-<Modal height="min(680px, 85vh)" width="min(1100px, 92vw)" on:close>
+<Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close>
   <ModalHeader on:close>
-    {variant === 'deleted' && !loadError ? 'File deleted or moved' : 'This file changed since you opened it'}
+    {variant === 'deleted' && !loadError ? 'File deleted or moved' : 'This file was updated by someone else'}
   </ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
     <div class="st-typography-body flex flex-none flex-col gap-1.5">
@@ -111,14 +129,13 @@
         </span>
       {:else if allowMerge}
         <span>
-          <b>{fileName}</b> was changed by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}. Edit your version on the right — use the arrows to pull in theirs — then
-          Save, or take theirs to discard your changes.
+          <b>{fileName}</b> · edited by @{editedByText}{whenText ? ` ${whenText}` : ''}{changedLinesText}. Edit your
+          version on the right — use the arrows to pull in theirs — then Save, or keep theirs to discard your changes.
         </span>
       {:else}
-        <span
-          ><b>{fileName}</b> was changed by user @{editedByText}
-          {whenText ? ` ${whenText}` : ''}. Review the differences, then choose how to resolve.
+        <span>
+          <b>{fileName}</b> · edited by @{editedByText}{whenText ? ` ${whenText}` : ''}{changedLinesText}. Choose which
+          version to keep.
         </span>
       {/if}
     </div>
@@ -149,27 +166,52 @@
           {type}
           {languageExtension}
           editable={allowMerge}
+          on:stats={e => (changedLines = e.detail.changedLines)}
         />
       {/if}
     </div>
   </ModalContent>
-  <ModalFooter>
-    <div class="flex gap-2">
-      {#if loadError}
-        <Button variant="outline" on:click={() => dispatch('close')}>Cancel</Button>
-        <Button variant="default" on:click={loadTheirs}>Retry</Button>
-      {:else if variant === 'deleted'}
-        <Button variant="outline" on:click={onDiscard}>Discard &amp; close</Button>
-        <Button variant="default" on:click={onRecreate}>Recreate file</Button>
-      {:else}
-        <Button on:click={onTakeTheirs} disabled={isLoading}>Take theirs (discard mine)</Button>
-        <Button variant="outline" on:click={() => dispatch('close')}>Cancel</Button>
+  <!-- All variants share one gray footer bar so the white buttons read strong by contrast, with no
+       filled treatment; each lossy path spells out its consequence in a subline. -->
+  <div class="flex flex-none flex-col gap-2 rounded-b border-t bg-muted px-4 py-3">
+    {#if loadError}
+      <div class="flex justify-center">
+        <Button size="lg" variant="outline" on:click={loadTheirs}>Retry</Button>
+      </div>
+    {:else if variant === 'deleted'}
+      <div class="flex gap-3">
+        <Button size="lg" variant="outline" class="h-auto flex-1 flex-col gap-0.5 py-2" on:click={onDiscard}>
+          <span class="font-semibold text-destructive">Discard &amp; close</span>
+          <span class="text-xs font-normal text-muted-foreground">Discards your unsaved edits</span>
+        </Button>
+        <Button size="lg" variant="outline" class="h-auto flex-1 flex-col gap-0.5 py-2" on:click={onRecreate}>
+          <span class="font-semibold">Recreate file</span>
+          <span class="text-xs font-normal text-muted-foreground">Saves your edits as a new file</span>
+        </Button>
+      </div>
+    {:else if !isLoading}
+      <div class="flex gap-3">
+        <Button size="lg" variant="outline" class="h-auto flex-1 flex-col gap-0.5 py-2" on:click={onTakeTheirs}>
+          <span class="font-semibold">Keep theirs</span>
+          <span class="text-xs font-normal text-muted-foreground">Discards your unsaved edits</span>
+        </Button>
         {#if allowMerge}
-          <Button on:click={onTakeMine} disabled={isLoading}>Save</Button>
+          <Button size="lg" class="h-auto flex-1 flex-col gap-0.5 py-2" on:click={onTakeMine}>
+            <span class="font-semibold">Save merged</span>
+            <span class="text-xs font-normal text-muted-foreground">Saves your version to the server</span>
+          </Button>
         {:else}
-          <Button variant="destructive" on:click={onTakeMine} disabled={isLoading}>Take mine (overwrite)</Button>
+          <Button size="lg" variant="outline" class="h-auto flex-1 flex-col gap-0.5 py-2" on:click={onTakeMine}>
+            <span class="font-semibold">Keep mine</span>
+            <span class="text-xs font-normal text-muted-foreground">Overwrites the server copy</span>
+          </Button>
         {/if}
-      {/if}
+      </div>
+    {/if}
+    <div class="flex justify-center">
+      <Button variant="ghost" class="hover:bg-muted-foreground/10" on:click={() => dispatch('close')}
+        >Keep editing</Button
+      >
     </div>
-  </ModalFooter>
+  </div>
 </Modal>
