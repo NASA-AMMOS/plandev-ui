@@ -369,8 +369,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-bottom: 16px;
     overflow: auto;
     padding: 8px;
+    padding-bottom: 0;
   }
 
   :global(.activity-directive-grid) {
