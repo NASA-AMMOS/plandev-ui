@@ -171,10 +171,11 @@ export class Plan {
     await addActivityButton.scrollIntoViewIfNeeded();
     await addActivityButton.click();
     // Directive builder should have appeared
-    const activityDirectiveBuilder = this.page.getByText('Activity Directive Builder');
+    const activityDirectiveBuilder = this.page.getByPlaceholder('Enter an optional name for this directive');
     await expect(activityDirectiveBuilder).toBeVisible();
     // Select the proper activity type
-    await this.page.getByLabel('manual-types').getByText(name).click();
+    await this.page.getByLabel('manual-types').getByRole('combobox').click();
+    await this.page.getByRole('menuitem', { name }).click();
     // Create the activity
     await this.page.getByRole('button', { name: 'Create Activity Directive' }).click();
     await this.waitForToast('Activity Directive Created Successfully');
@@ -210,10 +211,11 @@ export class Plan {
     await addActivityButton.scrollIntoViewIfNeeded();
     await addActivityButton.click();
     // Directive builder should have appeared
-    const activityDirectiveBuilder = this.page.getByText('Activity Directive Builder');
+    const activityDirectiveBuilder = this.page.getByPlaceholder('Enter an optional name for this directive');
     await expect(activityDirectiveBuilder).toBeVisible();
     // Select the proper activity type
-    await this.page.getByLabel('manual-types').getByText(name).click();
+    await this.page.getByLabel('manual-types').getByRole('combobox').click();
+    await this.page.getByRole('menuitem', { name }).click();
     // Create the activity
     await this.page.getByRole('button', { name: 'Create Activity Directive' }).click();
     await this.waitForToast('Activity Directive Created Successfully');

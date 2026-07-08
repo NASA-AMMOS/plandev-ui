@@ -36,23 +36,31 @@ test.describe.serial('Plan Activities', () => {
     await setup.plan.addActivityByDragAndDrop('GrowBanana');
     await setup.plan.addActivityByDragAndDrop('PickBanana');
     await setup.plan.addActivityByDragAndDrop('ThrowBanana');
+
+    await setup.page.pause();
+
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
-    await setup.plan.panelActivityForm
-      .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
-      .click();
+    await setup.plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another' }).click();
+
+    await setup.page.pause();
+
     await setup.plan.selectActivityAnchorByIndex(1);
 
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'GrowBanana' }).first().click();
     await setup.plan.panelActivityDirectivesTable.getByRole('button', { name: 'Delete Activity Directive' }).click();
+
+    await setup.page.pause();
+
     await setup.page.locator('.modal-content select').nth(1).selectOption('anchor-plan');
     await setup.page.getByRole('button', { name: 'Confirm' }).click();
     await setup.plan.panelActivityDirectivesTable
       .getByRole('row', { name: 'GrowBanana' })
       .waitFor({ state: 'detached', timeout: 2000 });
+
+    await setup.page.pause();
+
     await setup.plan.panelActivityDirectivesTable.getByRole('row', { name: 'PickBanana' }).first().click();
-    await setup.plan.panelActivityForm
-      .getByRole('button', { name: 'Is Relative To Another Activity Directive' })
-      .click();
+    await setup.plan.panelActivityForm.getByRole('button', { name: 'Is Relative To Another' }).click();
     await setup.page.waitForFunction(
       () => document.querySelector('.anchor-form .selected-display-value')?.innerHTML === 'To Plan',
     );
