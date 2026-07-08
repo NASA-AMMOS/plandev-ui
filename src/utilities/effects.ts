@@ -7198,9 +7198,9 @@ const effects = {
 
   /**
    * Saves a workspace file. Pass `ifMatch` (the `baseEtag`) to run the concurrency check,
-   * or `'*'` to force. Returns `{ etag }` (the new etag) on success. Re-throws a
-   * {@link WorkspaceSaveConflictError} on `412` so the caller can show the conflict modal;
-   * other errors become a failure toast and return `null`.
+   * or `'*'` to force. Returns `{ etag }` (the new etag) on success. Always throws on failure so
+   * callers have a single failure path: a {@link WorkspaceSaveConflictError} on `412` (the caller
+   * shows the conflict modal), or any other error (already surfaced as a failure toast here).
    */
   async saveWorkspaceFile(
     workspaceId: number,
@@ -7208,7 +7208,7 @@ const effects = {
     fileContent: string,
     user: User | null = null,
     ifMatch?: string | '*',
-  ): Promise<{ etag: string | null } | null> {
+  ): Promise<{ etag: string | null }> {
     try {
       const etag = await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user, ifMatch);
 
@@ -7216,13 +7216,13 @@ const effects = {
       logMessage(`Saved workspace file "${filePath}".`);
       return { etag };
     } catch (e) {
-      if (e instanceof WorkspaceSaveConflictError) {
-        // Let the caller resolve the conflict (modal); don't swallow it in a toast.
-        throw e;
+      // Conflict is the caller's to resolve (modal), so don't toast it. Everything else is a real
+      // failure we surface here before rethrowing, so callers just bail in their catch.
+      if (!(e instanceof WorkspaceSaveConflictError)) {
+        catchError('Workspace file was unable to be saved', e as Error);
+        showFailureToast('Workspace File Save Failed');
       }
-      catchError('Workspace file was unable to be saved', e as Error);
-      showFailureToast('Workspace File Save Failed');
-      return null;
+      throw e;
     }
   },
 

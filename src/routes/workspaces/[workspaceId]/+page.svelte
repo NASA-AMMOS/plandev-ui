@@ -806,18 +806,15 @@
     const content = $activeDocument.currentContent;
     const ifMatch = $activeDocument.baseEtag ?? '*';
     try {
-      const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
-      if (!result) {
-        // Save failed (a failure toast was already shown) — don't proceed.
-        return false;
-      }
-      activeDocument.markClean(content, result.etag);
+      const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      activeDocument.markClean(content, etag);
       return true;
     } catch (e) {
       if (e instanceof WorkspaceSaveConflictError) {
         // Proceed with the operation only if the conflict resolution actually saved.
         return await resolveSaveConflict(e, path, content);
       }
+      // Any other failure was already toasted by the effect — just don't proceed.
       return false;
     }
   }
@@ -1033,11 +1030,9 @@
       // baseEtag runs the concurrency check; '*' forces (when no etag was captured).
       const ifMatch = $activeDocument.baseEtag ?? '*';
       try {
-        const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
-        if (result) {
-          activeDocument.markClean(content, result.etag);
-          refreshWorkspaceContents();
-        }
+        const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+        activeDocument.markClean(content, etag);
+        refreshWorkspaceContents();
       } catch (e) {
         if (e instanceof WorkspaceSaveConflictError) {
           await resolveSaveConflict(e, path, content);
@@ -1118,14 +1113,11 @@
    */
   async function persistMine(path: string, content: string, ifMatch: string): Promise<boolean> {
     try {
-      const result = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
-      if (result) {
-        // Rebase the editor on the saved content (no-ops if the user navigated away).
-        activeDocument.replaceWithServer(path, content, result.etag);
-        refreshWorkspaceContents();
-        return true;
-      }
-      return false;
+      const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      // Rebase the editor on the saved content (no-ops if the user navigated away).
+      activeDocument.replaceWithServer(path, content, etag);
+      refreshWorkspaceContents();
+      return true;
     } catch (e) {
       if (e instanceof WorkspaceSaveConflictError) {
         return resolveSaveConflict(e, path, content);
