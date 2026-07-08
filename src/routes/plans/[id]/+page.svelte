@@ -60,7 +60,7 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
-  import { resetDirectiveBuilder } from '../../../stores/directiveBuilder';
+  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -193,7 +193,6 @@
   };
   let compactNavMode = false;
   let constraintsStatusText: string | undefined;
-  let directiveBuilder: ActivityDirectiveBuilder;
   let hasCreateViewPermission: boolean = false;
   let hasUpdateViewPermission: boolean = false;
   let hasExpandPermission: boolean = false;
@@ -786,14 +785,15 @@
 
 <PageTitle subTitle={$plan?.name} title="Plans" />
 
-<ActivityDirectiveBuilder
-  bind:this={directiveBuilder}
-  plan={$plan}
-  on:createActivityDirective={event => {
-    onCreateActivityDirective(event.detail.directive);
-  }}
-  user={$user}
-/>
+{#if $directiveBuilderIsVisible}
+  <ActivityDirectiveBuilder
+    plan={$plan}
+    on:createActivityDirective={event => {
+      onCreateActivityDirective(event.detail.directive);
+    }}
+    user={$user}
+  />
+{/if}
 
 <div class="plan-container">
   <Resizable.PaneGroup direction="vertical" autoSaveId="console">

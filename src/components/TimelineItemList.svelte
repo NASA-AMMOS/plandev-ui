@@ -150,7 +150,6 @@
   }
 
   function onAddNewDirective(activityType: string) {
-    // $activeDirectiveType = activityType;
     updateDirectiveBuilder({ type: activityType });
     $directiveBuilderIsVisible = true;
   }

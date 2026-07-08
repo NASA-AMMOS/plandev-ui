@@ -7,11 +7,7 @@
   import { ChevronDown } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import {
-    directiveBuilderIsVisible,
-    directiveBuilderWIP,
-    updateDirectiveBuilder,
-  } from '../../stores/directiveBuilder';
+  import { directiveBuilderWIP, resetDirectiveBuilder, updateDirectiveBuilder } from '../../stores/directiveBuilder';
   import { field } from '../../stores/form';
   import { planModelActivityTypes } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -58,10 +54,8 @@
     type: $directiveBuilderWIP.type,
   };
   let activityTypesOptions: DropdownOption[] = [];
-  let manualInputWidth: number = 200;
   let planMinDate: Date | undefined;
   let planMaxDate: Date | undefined;
-  let rootRef: HTMLDivElement;
   let startTimeField: FieldStore<string>;
   let startTime: string = $directiveBuilderWIP.startTime ?? plan?.start_time_doy ?? '';
 
@@ -188,137 +182,130 @@
   }
 </script>
 
-<div bind:this={rootRef} class="w-full" style:display="grid">
-  {#if $directiveBuilderIsVisible}
-    <Draggable
-      className="st-menu activity-directive-builder"
-      initialWidth={builderWidth}
-      initialHeight={builderHeight}
-      dragOptions={{ defaultPosition: getDefaultPosition() }}
-    >
-      <div slot="handle">
-        <MenuHeader title="Activity Directive Builder">
-          <button
-            on:click|stopPropagation={() => ($directiveBuilderIsVisible = false)}
-            class="st-button icon"
-            aria-label="close"
-          >
-            <CloseIcon />
-          </button>
-        </MenuHeader>
-      </div>
-      <div class="body">
-        <div class="filters w-full">
-          <div class="directive-section" aria-label="directive-name">
-            <div class="directive-section-header st-typography-medium">
-              <div class="directive-section-title">Directive Name</div>
-            </div>
-            <div class="directive-section-content directive-section-content-bordered">
-              <div bind:clientWidth={manualInputWidth}>
-                <Input>
-                  <input
-                    name="manual-types-filter-input"
-                    value={$directiveBuilderWIP.name}
-                    class="st-input w-full"
-                    aria-label="directive-name"
-                    placeholder="Enter an optional name for this directive..."
-                    use:tooltip={{
-                      content:
-                        'Enter an optional name. The default name is the activity type followed by the activity ID.',
-                    }}
-                    on:input={onDirectiveNameChange}
-                  />
-                </Input>
-              </div>
-            </div>
+<div class="w-full" style:display="grid">
+  <Draggable
+    className="st-menu activity-directive-builder"
+    initialWidth={builderWidth}
+    initialHeight={builderHeight}
+    dragOptions={{ defaultPosition: getDefaultPosition() }}
+  >
+    <div slot="handle">
+      <MenuHeader title="Activity Directive Builder">
+        <button on:click|stopPropagation={resetDirectiveBuilder} class="st-button icon" aria-label="close">
+          <CloseIcon />
+        </button>
+      </MenuHeader>
+    </div>
+    <div class="body">
+      <div class="filters w-full">
+        <div class="directive-section" aria-label="directive-name">
+          <div class="directive-section-header st-typography-medium">
+            <div class="directive-section-title">Directive Name</div>
           </div>
-          <div class="directive-section" aria-label="manual-types">
-            <div class="directive-section-header st-typography-medium">
-              <div class="directive-section-title">Activity Type</div>
-            </div>
-            <div class="directive-section-content directive-section-content-bordered">
-              <div bind:clientWidth={manualInputWidth}>
-                <SearchableDropdown
-                  allowMultiple={false}
-                  options={activityTypesOptions}
-                  loading={false}
-                  on:change={e => {
-                    const v = e.detail[0];
-                    // $activeDirectiveType = v;
-                    updateDirectiveBuilder({ type: v });
+          <div class="directive-section-content directive-section-content-bordered">
+            <div>
+              <Input>
+                <input
+                  name="manual-types-filter-input"
+                  value={$directiveBuilderWIP.name}
+                  class="st-input w-full"
+                  aria-label="directive-name"
+                  placeholder="Enter an optional name for this directive..."
+                  use:tooltip={{
+                    content:
+                      'Enter an optional name. The default name is the activity type followed by the activity ID.',
                   }}
-                  selectedOptionValues={$directiveBuilderWIP.type === '' ? [] : [$directiveBuilderWIP.type]}
-                >
-                  <ChevronDown slot="icon" />
-                </SearchableDropdown>
-              </div>
-            </div>
-          </div>
-          <div class="directive-section" aria-label="start-time">
-            <div class="directive-section-header st-typography-medium">
-              <div class="directive-section-title">
-                Start Time
-                <div class="hint st-typography-body">
-                  ({$plugins.time.primary.label})
-                </div>
-              </div>
-            </div>
-            <div class="directive-section-content directive-section-content-bordered">
-              <DatePickerField
-                minDate={planMinDate}
-                maxDate={planMaxDate}
-                useFallback={!$plugins.time.enableDatePicker}
-                field={startTimeField}
-                hideTodayButton={true}
-              >
-                <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
-                  <PlanLeftArrow />
-                </DatePickerActionButton>
-                <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
-                  <PlanRightArrow />
-                </DatePickerActionButton>
-              </DatePickerField>
-            </div>
-          </div>
-          <div class="directive-section" aria-label="other-filters">
-            <div class="directive-section-header st-typography-medium">
-              <div class="directive-section-title">Arguments</div>
-            </div>
-            <div class="directive-section-content directive-section-content-bordered">
-              <div class="activity-preset">
-                <Parameters
-                  disabled={false}
-                  formParameters={currentActivityTypeFormParams}
-                  on:change={event => {
-                    const { name, value } = event.detail;
-                    dirtyDirective.arguments = { ...dirtyDirective.arguments, [name]: value };
-                    if (currentlySelectedActivityType) {
-                      currentActivityTypeFormParams = refreshFormParameters(
-                        currentlySelectedActivityType,
-                        dirtyDirective.arguments,
-                      );
-                    }
-                    getArgumentValidation();
-                  }}
-                  on:reset={onResetFormParameters}
+                  on:input={onDirectiveNameChange}
                 />
-                {#if !currentActivityTypeFormParams || currentActivityTypeFormParams.length === 0}
-                  <div class="st-typography-label">No Parameters Found</div>
-                {/if}
+              </Input>
+            </div>
+          </div>
+        </div>
+        <div class="directive-section" aria-label="manual-types">
+          <div class="directive-section-header st-typography-medium">
+            <div class="directive-section-title">Activity Type</div>
+          </div>
+          <div class="directive-section-content directive-section-content-bordered">
+            <div>
+              <SearchableDropdown
+                allowMultiple={false}
+                options={activityTypesOptions}
+                loading={false}
+                on:change={e => {
+                  const v = e.detail[0];
+                  updateDirectiveBuilder({ type: v });
+                }}
+                selectedOptionValues={$directiveBuilderWIP.type === '' ? [] : [$directiveBuilderWIP.type]}
+              >
+                <ChevronDown slot="icon" />
+              </SearchableDropdown>
+            </div>
+          </div>
+        </div>
+        <div class="directive-section" aria-label="start-time">
+          <div class="directive-section-header st-typography-medium">
+            <div class="directive-section-title">
+              Start Time
+              <div class="hint st-typography-body">
+                ({$plugins.time.primary.label})
               </div>
             </div>
           </div>
-          <button
-            class="st-button primary mt-auto min-h-6"
-            disabled={!currentlySelectedActivityType}
-            on:click={() => {
-              dispatch('createActivityDirective', { directive: dirtyDirective });
-            }}>Create Activity Directive</button
-          >
+          <div class="directive-section-content directive-section-content-bordered">
+            <DatePickerField
+              minDate={planMinDate}
+              maxDate={planMaxDate}
+              useFallback={!$plugins.time.enableDatePicker}
+              field={startTimeField}
+              hideTodayButton={true}
+            >
+              <DatePickerActionButton on:click={onPlanStartTimeClick} text="Plan Start">
+                <PlanLeftArrow />
+              </DatePickerActionButton>
+              <DatePickerActionButton on:click={onPlanEndTimeClick} text="Plan End">
+                <PlanRightArrow />
+              </DatePickerActionButton>
+            </DatePickerField>
+          </div>
         </div>
+        <div class="directive-section" aria-label="other-filters">
+          <div class="directive-section-header st-typography-medium">
+            <div class="directive-section-title">Arguments</div>
+          </div>
+          <div class="directive-section-content directive-section-content-bordered">
+            <div class="activity-preset">
+              <Parameters
+                disabled={false}
+                formParameters={currentActivityTypeFormParams}
+                on:change={event => {
+                  const { name, value } = event.detail;
+                  dirtyDirective.arguments = { ...dirtyDirective.arguments, [name]: value };
+                  if (currentlySelectedActivityType) {
+                    currentActivityTypeFormParams = refreshFormParameters(
+                      currentlySelectedActivityType,
+                      dirtyDirective.arguments,
+                    );
+                  }
+                  getArgumentValidation();
+                }}
+                on:reset={onResetFormParameters}
+              />
+              {#if !currentActivityTypeFormParams || currentActivityTypeFormParams.length === 0}
+                <div class="st-typography-label">No Parameters Found</div>
+              {/if}
+            </div>
+          </div>
+        </div>
+        <button
+          class="st-button primary mt-auto min-h-6"
+          disabled={!currentlySelectedActivityType}
+          on:click={() => {
+            dispatch('createActivityDirective', { directive: dirtyDirective });
+          }}>Create Activity Directive</button
+        >
       </div>
-    </Draggable>
-  {/if}
+    </div>
+  </Draggable>
 </div>
 
 <style>
