@@ -25,6 +25,7 @@
   import { getTarget } from '../../utilities/generic';
   import { getFormParameters } from '../../utilities/parameters';
   import { convertDoyToYmd, formatDate, getDoyTime, getIntervalFromDoyRange } from '../../utilities/time';
+  import { tooltip } from '../../utilities/tooltip';
   import { required } from '../../utilities/validators';
   import DatePickerField from '../form/DatePickerField.svelte';
   import Input from '../form/Input.svelte';
@@ -70,7 +71,9 @@
   });
   $: {
     startTimeField = field<string>(startTime, [required, $plugins.time.primary.validate]);
-    startTimeField.validateAndSet(startTime);
+    if (startTime !== '') {
+      startTimeField.validateAndSet(startTime);
+    }
   }
   $: if ($directiveBuilderWIP.startTime !== '') {
     startTime = $directiveBuilderWIP.startTime;
@@ -218,7 +221,11 @@
                     value={$directiveBuilderWIP.name}
                     class="st-input w-full"
                     aria-label="directive-name"
-                    placeholder="Enter a name for this directive..."
+                    placeholder="Enter an optional name for this directive..."
+                    use:tooltip={{
+                      content:
+                        'Enter an optional name. The default name is the activity type followed by the activity ID.',
+                    }}
                     on:input={onDirectiveNameChange}
                   />
                 </Input>
@@ -301,7 +308,6 @@
               </div>
             </div>
           </div>
-          <slot name="footer" />
           <button
             class="st-button primary mt-auto min-h-6"
             disabled={!currentlySelectedActivityType}
