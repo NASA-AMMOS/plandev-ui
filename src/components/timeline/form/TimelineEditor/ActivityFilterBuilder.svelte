@@ -320,7 +320,6 @@
       return { x: 0, y: 0 };
     }
     const { x, y, width, height } = rootRef.getBoundingClientRect();
-    console.log('AFB', rootRef.getBoundingClientRect());
 
     let defaultX = 0;
     let defaultY = 0;
