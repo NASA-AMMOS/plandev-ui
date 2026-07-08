@@ -765,11 +765,13 @@
       // Convert offset to absolute start with plan as anchor
       const offsetAsMs = getUnixEpochTimeFromInterval($plan.start_time, directive.start_offset);
       const formattedStart = formatDate(new Date(offsetAsMs), $plugins.time.primary.format);
+      const directiveName =
+        typeof directive.name === 'undefined' || directive.name === '' ? directive.type : directive.name;
       const newDirectiveId: number | null = await effects.createActivityDirective(
         directive.arguments,
         formattedStart,
         directive.type,
-        directive.name,
+        directiveName,
         directive.metadata,
         $plan,
         $user,
