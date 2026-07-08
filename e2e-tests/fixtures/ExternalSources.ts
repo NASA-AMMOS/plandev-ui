@@ -259,7 +259,8 @@ export class ExternalSources {
 
   async gotoTypeManager() {
     await this.page.goto('/external-sources/types', { waitUntil: 'domcontentloaded' });
-    await this.page.locator('.external-source-type-table').waitFor({ state: 'visible', timeout: 15000 });
+    // Anchor on the schema-file input's accessible label rather than a table CSS class.
+    await this.page.getByLabel('Type JSON Schema File').waitFor({ state: 'visible', timeout: 15000 });
   }
 
   async linkDerivationGroup(derivationGroupName: string, sourceTypeName: string) {
@@ -364,16 +365,17 @@ export class ExternalSources {
         await sourceCell.first().click();
         // Wait for selection to complete
         await this.page
-          .locator('.external-source-header')
+          .getByText('Selected External Source', { exact: true })
           .waitFor({ state: 'visible', timeout: 5000 })
           .catch(() => {});
       }
     }
 
     if (validateUpload) {
-      // Wait for the source to be selected by checking for the source header div. Allow generous
-      // time: on a loaded CI backend the create + selection round-trip can exceed 10s.
-      await expect(this.page.locator('.external-source-header')).toBeVisible({ timeout: 20000 });
+      // Wait for the source to be selected by checking for the "Selected External Source" header
+      // text. Allow generous time: on a loaded CI backend the create + selection round-trip can
+      // exceed 10s.
+      await expect(this.page.getByText('Selected External Source', { exact: true })).toBeVisible({ timeout: 20000 });
     }
   }
 

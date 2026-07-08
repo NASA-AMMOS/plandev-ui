@@ -25,7 +25,7 @@ test.describe.serial('Plan Activity Presets', () => {
 
     await setup.plan.fillActivityPresetName('Preset 1');
     await setup.plan.panelActivityForm.getByRole('button', { name: 'Enter a unique name for the new preset' }).click();
-    await setup.plan.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'detached' });
+    await setup.plan.panelActivityForm.getByPlaceholder('Enter preset name').waitFor({ state: 'detached' });
 
     // Creating a preset applies it, so the display should update to the new preset's name.
     await setup.page.waitForFunction(
@@ -43,7 +43,7 @@ test.describe.serial('Plan Activity Presets', () => {
 
     await setup.plan.fillActivityPresetName('Preset 2');
     await setup.plan.panelActivityForm.getByRole('button', { name: 'Enter a unique name for the new preset' }).click();
-    await setup.plan.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'detached' });
+    await setup.plan.panelActivityForm.getByPlaceholder('Enter preset name').waitFor({ state: 'detached' });
 
     await setup.page.waitForFunction(
       () =>
