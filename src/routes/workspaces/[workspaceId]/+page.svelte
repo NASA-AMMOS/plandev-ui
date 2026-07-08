@@ -1100,6 +1100,9 @@
     if (value.action === 'discard') {
       if ($activeDocumentPath === path) {
         activeDocument.close();
+        selectedFilePath = null;
+        confirmAndNavigate(null);
+        refreshWorkspaceContents();
       }
       return false;
     }
