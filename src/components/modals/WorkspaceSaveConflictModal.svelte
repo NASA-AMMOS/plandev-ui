@@ -113,7 +113,7 @@
 
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close>
   <ModalHeader on:close>
-    {variant === 'deleted' && !loadError ? 'File deleted or moved' : 'This file was updated by someone else'}
+    {variant === 'deleted' && !loadError ? 'File deleted or moved' : 'This file was changed by someone else'}
   </ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
     <div class="st-typography-body flex flex-none flex-col gap-1.5">

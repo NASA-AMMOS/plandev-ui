@@ -51,7 +51,7 @@ export class WorkspaceSaveConflict {
   updatePage(page: Page): void {
     this.page = page;
     this.modal = page.locator('#modal-container');
-    this.conflictTitle = this.modal.getByText('This file was updated by someone else');
+    this.conflictTitle = this.modal.getByText('This file was changed by someone else');
     this.deletedTitle = this.modal.getByText('File deleted or moved');
     this.theirsHeader = this.modal.getByText('Theirs (server)');
     this.mineHeader = this.modal.getByText('Mine (your edits)');
