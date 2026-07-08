@@ -24,6 +24,10 @@
   export let workspaceId: number | null = null;
   export let user: User | null = null;
   export let hasEditPermission: boolean = false;
+  // Path of the open file with unsaved changes (or null). A snapshot captures only *saved* files, so we warn.
+  export let unsavedFilePath: string | null = null;
+  // Saves the unsaved file (resolves true once saved), so we can offer "Save & snapshot". Null if unavailable.
+  export let saveActiveDocument: (() => Promise<boolean>) | null = null;
 
   let snapshots: WorkspaceCheckpoint[] = [];
   let loadedFor: number | null = null;
@@ -31,6 +35,8 @@
   let snapshotting: boolean = false;
   let restoring: number | null = null;
   let confirmRestore: WorkspaceCheckpoint | null = null;
+  let note: string = '';
+  let confirmUnsaved: boolean = false;
 
   // (Re)load whenever the workspace changes.
   $: if (workspaceId !== loadedFor) {
@@ -58,13 +64,35 @@
     }
   }
 
-  async function onSnapshot() {
+  // A snapshot only captures saved files — if the open file is dirty, warn before proceeding.
+  function onSnapshotClick() {
+    if (unsavedFilePath) {
+      confirmUnsaved = true;
+    } else {
+      void doSnapshot();
+    }
+  }
+
+  async function onSaveAndSnapshot() {
+    confirmUnsaved = false;
+    if (saveActiveDocument) {
+      const saved = await saveActiveDocument();
+      if (!saved) {
+        return; // save failed or hit a conflict — don't snapshot a state the user didn't confirm
+      }
+    }
+    await doSnapshot();
+  }
+
+  async function doSnapshot() {
     if (workspaceId == null) {
       return;
     }
+    confirmUnsaved = false;
     snapshotting = true;
     try {
-      const result = await WorkspaceApi.snapshotWorkspace(workspaceId, {}, user);
+      const result = await WorkspaceApi.snapshotWorkspace(workspaceId, { message: note.trim() || undefined }, user);
+      note = '';
       const n = result.checkpoint.fileCount;
       showSuccessToast(`Snapshot ${result.checkpoint.name} created (${n} file${n === 1 ? '' : 's'})`);
       await loadSnapshots();
@@ -116,9 +144,18 @@
             </p>
 
             {#if hasEditPermission}
-              <Button size="sm" variant="default" disabled={snapshotting} on:click={onSnapshot}>
-                {snapshotting ? 'Snapshotting…' : 'Snapshot workspace'}
-              </Button>
+              <div class="flex flex-col gap-1">
+                <input
+                  class="rounded border border-border bg-transparent px-2 py-1 text-xs"
+                  aria-label="Snapshot note"
+                  placeholder="Optional note"
+                  bind:value={note}
+                  disabled={snapshotting}
+                />
+                <Button size="sm" variant="default" disabled={snapshotting} on:click={onSnapshotClick}>
+                  {snapshotting ? 'Snapshotting…' : 'Snapshot workspace'}
+                </Button>
+              </div>
             {/if}
 
             {#if loading}
@@ -176,6 +213,25 @@
     <ModalFooter>
       <Button variant="outline" on:click={() => (confirmRestore = null)}>Cancel</Button>
       <Button variant="default" on:click={onConfirmRestore}>Restore</Button>
+    </ModalFooter>
+  </Modal>
+{/if}
+
+{#if confirmUnsaved}
+  <Modal height="auto" width="min(520px, 92vw)" on:close={() => (confirmUnsaved = false)}>
+    <ModalHeader on:close={() => (confirmUnsaved = false)}>Unsaved changes won't be included</ModalHeader>
+    <ModalContent>
+      <p class="text-sm">
+        <strong>{unsavedFilePath}</strong> has unsaved changes. A snapshot captures only saved files, so those
+        changes won't be in it.
+      </p>
+    </ModalContent>
+    <ModalFooter>
+      <Button variant="outline" on:click={() => (confirmUnsaved = false)}>Cancel</Button>
+      <Button variant="ghost" on:click={doSnapshot}>Snapshot without them</Button>
+      {#if saveActiveDocument}
+        <Button variant="default" on:click={onSaveAndSnapshot}>Save &amp; snapshot</Button>
+      {/if}
     </ModalFooter>
   </Modal>
 {/if}

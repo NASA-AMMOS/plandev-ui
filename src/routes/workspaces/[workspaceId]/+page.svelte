@@ -1035,6 +1035,16 @@
     }
   }
 
+  // Save the open dirty file so it can be included in a workspace snapshot ("Save & snapshot").
+  // Resolves true once the file is saved (no longer dirty), false if the save failed/conflicted.
+  async function saveActiveDocumentForSnapshot(): Promise<boolean> {
+    if (!$activeDocumentPath || !$activeDocumentIsDirty) {
+      return true;
+    }
+    await saveCurrentFile($activeDocument.currentContent);
+    return !$activeDocumentIsDirty;
+  }
+
   /**
    * Shows the conflict modal and applies the user's choice. Returns whether the file was
    * saved (so save-before-an-operation callers know it's safe to proceed).
@@ -1594,6 +1604,8 @@
             {hasEditWorkspacePermission}
             {hasEditWorkspaceCollaboratorsPermission}
             parcels={$parcels}
+            unsavedFilePath={$activeDocumentIsDirty ? $activeDocumentPath : null}
+            saveActiveDocument={saveActiveDocumentForSnapshot}
             user={$user}
             users={$users}
             usersLoading={$initialUsersLoading}

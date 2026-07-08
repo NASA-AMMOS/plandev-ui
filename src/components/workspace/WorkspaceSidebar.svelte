@@ -59,6 +59,9 @@
   export let parcels: Parcel[] = [];
   export let hasEditWorkspacePermission: boolean = false;
   export let hasEditWorkspaceCollaboratorsPermission: boolean = false;
+  // For the Snapshots tab: the open file with unsaved changes (or null), and a saver for "Save & snapshot".
+  export let unsavedFilePath: string | null = null;
+  export let saveActiveDocument: (() => Promise<boolean>) | null = null;
 
   const permissionError = 'You do not have permission to edit this workspace';
 
@@ -203,6 +206,8 @@
         workspaceId={workspace?.id ?? null}
         {user}
         hasEditPermission={hasEditWorkspacePermission}
+        {unsavedFilePath}
+        {saveActiveDocument}
         on:snapshotRestored
       />
     {:else if activeTab === 'settings'}
