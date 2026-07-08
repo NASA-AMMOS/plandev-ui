@@ -385,8 +385,6 @@
   }
 
   function onBuildActivityDirective(startTime: string, activityType: string) {
-    // $activeDirectiveType = activityType;
-    // $activeDirectiveStartTime = startTime;
     updateDirectiveBuilder({ startTime, type: activityType });
     $directiveBuilderIsVisible = true;
   }
