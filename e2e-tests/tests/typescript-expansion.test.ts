@@ -51,7 +51,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
-  await plan.addActivity('PeelBanana');
+  await plan.addActivityByDragAndDrop('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
 

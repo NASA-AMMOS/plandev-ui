@@ -18,7 +18,7 @@ test.describe.serial('Plan Merge', () => {
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await setup.plan.addActivity('BiteBanana');
+    await setup.plan.addActivityByDragAndDrop('BiteBanana');
   });
 
   test('Create a branch', async ({ baseURL }) => {
@@ -93,7 +93,7 @@ test.describe.serial('Plan Merge with Deleted Source Plan', () => {
   const planBranchName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
   test('Add an activity to the parent plan', async () => {
-    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
   });
 
   test('Create a branch', async ({ baseURL }) => {

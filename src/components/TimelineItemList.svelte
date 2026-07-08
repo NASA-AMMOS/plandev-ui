@@ -4,7 +4,8 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
-  import { CirclePlus, GripVertical } from 'lucide-svelte';
+  import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
+  import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
     ChartType,
@@ -14,6 +15,7 @@
     TimelineItemListFilterOption,
     TimelineItemType,
   } from '../types/timeline';
+  import { permissionHandler } from '../utilities/permissionHandler';
   import { tooltip } from '../utilities/tooltip';
   import Input from './form/Input.svelte';
   import LayerPicker from './LayerPicker.svelte';
@@ -38,6 +40,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let hasCreatePermission: boolean = true;
 
   let activeItemIndex: number = -1;
   let menu: Menu;
@@ -144,6 +147,11 @@
       return item.schema.metadata.description.value;
     }
     return undefined;
+  }
+
+  function onAddNewDirective(activityType: string) {
+    updateDirectiveBuilder({ type: activityType });
+    $directiveBuilderIsVisible = true;
   }
 </script>
 
@@ -304,11 +312,30 @@
                 }}
                 let:builders
               >
-                <Button {builders} variant="ghost" size="icon-sm" aria-label="Add{capitalize(typeName)}-{item.name}">
-                  <CirclePlus size={16} />
+                <Button {builders} variant="ghost" size="icon-sm" aria-label="Filter{capitalize(typeName)}-{item.name}">
+                  <Filter size={16} />
                 </Button>
               </LayerPicker>
             </div>
+            {#if typeName === 'activity'}
+              <div
+                use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
+                use:permissionHandler={{
+                  hasPermission: hasCreatePermission,
+                  permissionError: 'You do not have permission to create activities.',
+                }}
+                class="flex items-center"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Add{capitalize(typeName)}-{item.name}"
+                  on:click={() => onAddNewDirective(item.name)}
+                >
+                  <CirclePlus size={16} />
+                </Button>
+              </div>
+            {/if}
             <div class="drag">
               <GripVertical size={16} />
             </div>

@@ -19,6 +19,7 @@
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
+  import ActivityDirectiveBuilder from '../../../components/activity/ActivityDirectiveBuilder.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
@@ -59,6 +60,7 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
+  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -104,6 +106,7 @@
     planSnapshotId,
     resetPlanSnapshotStores,
   } from '../../../stores/planSnapshots';
+  import { plugins } from '../../../stores/plugins';
   import {
     enableScheduling,
     latestSchedulingRequest,
@@ -141,6 +144,7 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
+  import type { ActivityDirectiveInsertInput } from '../../../types/activity';
   import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
@@ -162,6 +166,7 @@
   } from '../../../utilities/simulation';
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../../utilities/time';
   import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
@@ -754,11 +759,43 @@
       }
     }
   }
+
+  async function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    if ($plan !== null && $plan.model) {
+      // Convert offset to absolute start with plan as anchor
+      const offsetAsMs = getUnixEpochTimeFromInterval($plan.start_time, directive.start_offset);
+      const formattedStart = formatDate(new Date(offsetAsMs), $plugins.time.primary.format);
+      const directiveName =
+        typeof directive.name === 'undefined' || directive.name === '' ? directive.type : directive.name;
+      const newDirectiveId: number | null = await effects.createActivityDirective(
+        directive.arguments,
+        formattedStart,
+        directive.type,
+        directiveName,
+        directive.metadata,
+        $plan,
+        $user,
+      );
+      if (newDirectiveId !== null) {
+        resetDirectiveBuilder();
+      }
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={$plan?.name} title="Plans" />
+
+{#if $directiveBuilderIsVisible}
+  <ActivityDirectiveBuilder
+    plan={$plan}
+    on:createActivityDirective={event => {
+      onCreateActivityDirective(event.detail.directive);
+    }}
+    user={$user}
+  />
+{/if}
 
 <div class="plan-container">
   <Resizable.PaneGroup direction="vertical" autoSaveId="console">

@@ -29,6 +29,7 @@
   export let maxDate: Date = new Date(Date.UTC(currentYear + 20, 11)); // add 20 years;
   export let minDate: Date = new Date(Date.UTC(currentYear - 20, 0)); // subtract 20 years
   export let use: ActionArray = [];
+  export let hideTodayButton: boolean = false;
 
   const dispatch = createEventDispatcher<{
     change: { value: string };
@@ -295,9 +296,11 @@
       </div>
       <Month {maxDate} {minDate} month={viewMonth} year={viewYear} {selectedDate} on:select={onSelect} />
       <div class="mt-2 grid gap-y-2 border-t p-4">
-        <DatePickerActionButton on:click={setToday} text="Today">
-          <CalendarDays size={16} />
-        </DatePickerActionButton>
+        {#if !hideTodayButton}
+          <DatePickerActionButton on:click={setToday} text="Today">
+            <CalendarDays size={16} />
+          </DatePickerActionButton>
+        {/if}
         <slot />
         <DatePickerActionButton on:click={clearDate} text="Clear">
           <WandSparkles size={16} />

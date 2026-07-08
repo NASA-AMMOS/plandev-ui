@@ -149,8 +149,8 @@ import type {
   ConstraintEffectiveArguments,
   DefaultEffectiveArguments,
   EffectiveArguments,
+  ErrorMap,
   ParametersMap,
-  ParameterValidationError,
   ParameterValidationResponse,
   SchedulingGoalEffectiveArguments,
 } from '../types/parameter';
@@ -1053,7 +1053,7 @@ const effects = {
     metadata: ActivityMetadata,
     plan: Plan | null,
     user: User | null,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       if ((plan && !queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) || !plan) {
         throwPermissionError('add a directive to the plan');
@@ -1095,6 +1095,7 @@ const effects = {
 
           showSuccessToast('Activity Directive Created Successfully');
           logMessage(`Created activity directive "${name}" (ID=${id}).`);
+          return id;
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -1105,6 +1106,7 @@ const effects = {
       catchError('Activity Directive Create Failed', e as Error);
       showFailureToast('Activity Directive Create Failed');
     }
+    return null;
   },
 
   async createActivityDirectiveTags(
@@ -8903,11 +8905,11 @@ const effects = {
 
   async validateActivityArguments(
     activityTypeName: string,
-    activityId: number,
+    activityId: number | undefined,
     modelId: number,
     argumentsMap: ArgumentsMap,
     user: User | null,
-  ): Promise<ParameterValidationResponse> {
+  ): Promise<ErrorMap> {
     try {
       const data = await reqHasura<ParameterValidationResponse>(
         gql.VALIDATE_ACTIVITY_ARGUMENTS,
@@ -8921,14 +8923,32 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
-        logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
-        return validateActivityArguments;
+        if (activityId !== undefined) {
+          logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
+        } else {
+          logMessage(`Validated activity arguments for pending directive of "${activityTypeName}"`);
+        }
+
+        // If there were errors, create and return a map of them
+        if (!validateActivityArguments.success && validateActivityArguments.errors) {
+          const errorsMap = validateActivityArguments.errors.reduce((map: Record<string, string[]>, error) => {
+            error.subjects?.forEach(subject => {
+              if (!map[subject]) {
+                map[subject] = [];
+              }
+              map[subject].push(error.message);
+            });
+            return map;
+          }, {});
+          return errorsMap;
+        } else {
+          return {};
+        }
       } else {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      const { message } = e as Error;
-      return { errors: [{ message } as ParameterValidationError], success: false };
+      return {};
     }
   },
 

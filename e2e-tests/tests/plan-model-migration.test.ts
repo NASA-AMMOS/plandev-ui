@@ -42,13 +42,13 @@ test.beforeAll(async ({ browser, baseURL }) => {
   await plans.goto();
   await plans.createPlan(plans.planName, modelA);
   await plan.goto();
-  await plan.addActivity('BakeBananaBread');
-  await plan.addActivity('BiteBanana');
-  await plan.addActivity('ChangeProducer');
-  await plan.addActivity('GrowBanana');
-  await plan.addActivity('LineCount');
-  await plan.addActivity('PeelBanana');
-  await plan.addActivity('PickBanana');
+  await plan.addActivityByDragAndDrop('BakeBananaBread');
+  await plan.addActivityByDragAndDrop('BiteBanana');
+  await plan.addActivityByDragAndDrop('ChangeProducer');
+  await plan.addActivityByDragAndDrop('GrowBanana');
+  await plan.addActivityByDragAndDrop('LineCount');
+  await plan.addActivityByDragAndDrop('PeelBanana');
+  await plan.addActivityByDragAndDrop('PickBanana');
 });
 
 test.afterAll(async () => {
