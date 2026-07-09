@@ -26,4 +26,10 @@
   }
 </script>
 
-<input class="st-input w-full" spellcheck="false" bind:value title={argDef.description} />
+<input
+  class="st-input w-full"
+  spellcheck="false"
+  bind:value
+  title={argDef.description}
+  aria-label={argDef.name || undefined}
+/>

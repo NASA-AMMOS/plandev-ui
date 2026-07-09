@@ -14,7 +14,7 @@ import type {
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace, reqWorkspaceMetadata } from './requests';
+import { reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -488,8 +488,21 @@ export const WorkspaceApi = {
   async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
     return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
   },
-  async getFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
-    return reqWorkspace<string>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false);
+  async getFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string; etag: string | null }> {
+    // Throws a WorkspaceRequestError (with status) on any non-2xx — content is never null.
+    const { data, etag } = await reqWorkspaceWithEtag<string>(
+      joinPath([workspaceId, filePath]),
+      'GET',
+      null,
+      user,
+      undefined,
+      false,
+    );
+    return { content: data, etag };
   },
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
@@ -604,22 +617,30 @@ export const WorkspaceApi = {
       { 'Content-Type': 'application/json' },
     );
   },
+  /**
+   * Saves a workspace file and returns the new `ETag`. With `ifMatch` the server runs the
+   * concurrency check and `412`s (as a `WorkspaceSaveConflictError`) if it changed; `'*'`
+   * forces. Only `If-Match` is injected — the browser sets the multipart `Content-Type`.
+   */
   async saveFile(
     workspaceId: number,
     filePath: string,
     fileContent: string,
     shouldOverwrite: boolean,
     user: User | null,
-  ) {
+    ifMatch?: string | '*',
+  ): Promise<string | null> {
     const body = createFormDataWithFile(filePath, fileContent);
-    return reqWorkspace<Workspace>(
+    const { etag } = await reqWorkspaceWithEtag<Workspace>(
       `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
       'PUT',
       body,
       user,
       undefined,
       false,
+      ifMatch ? { 'If-Match': ifMatch } : {},
     );
+    return etag;
   },
   async setFileMetadata(
     workspaceId: number,
