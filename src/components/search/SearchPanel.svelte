@@ -104,7 +104,7 @@
     modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
 
     // If the selected model is no longer available, reset the selection
-    if (selectedModelId !== undefined) {
+    if (modelOptions.length > 0 && selectedModelId !== undefined) {
       const availableModels = new Set(modelOptions.map(opt => opt.value));
       if (!availableModels.has(selectedModelId)) {
         selectedModelId = undefined;
@@ -116,7 +116,7 @@
     tagOptions = $tagsStore.map(tag => ({ display: tag.name, value: tag.name }));
 
     // If the selected tag is no longer available, reset the selection
-    if (filters.tagValue) {
+    if (tagOptions.length > 0 && filters.tagValue) {
       const availableTags = new Set(tagOptions.map(opt => opt.value));
       if (!availableTags.has(filters.tagValue)) {
         filters = { ...filters, planTag: '', tagValue: '' };
@@ -128,7 +128,7 @@
     userOptions = $users.filter((u): u is string => u !== null).map(u => ({ display: u, value: u }));
 
     // If the user is no longer available, reset the selections
-    if (filters.createdBy || filters.lastModifiedBy || filters.planOwner) {
+    if (userOptions.length > 0 && (filters.createdBy || filters.lastModifiedBy || filters.planOwner)) {
       let filtersUpdate: Partial<typeof DEFAULT_FILTERS> = {};
       const availableUsers = new Set(userOptions.map(opt => opt.value));
       if (!availableUsers.has(filters.createdBy)) {
@@ -161,7 +161,7 @@
       .sort((a, b) => a.display.localeCompare(b.display));
 
     // If a selected activity type is no longer available, remove the selection
-    if (filters.actType.length > 0) {
+    if (typeOptions.length > 0 && filters.actType.length > 0) {
       const availableTypes = new Set(typeOptions.map(opt => opt.value));
       const validTypes = filters.actType.filter(type => availableTypes.has(type));
       if (validTypes.length !== filters.actType.length) {
@@ -181,7 +181,7 @@
     presetOptions = presetNames.map(name => ({ display: name, value: name }));
 
     // If the selected preset is no longer available, reset the selection
-    if (filters.preset) {
+    if (presetOptions.length > 0 && filters.preset) {
       const availablePresets = new Set(presetOptions.map(opt => opt.value));
       if (!availablePresets.has(filters.preset)) {
         filters = { ...filters, preset: '' };
@@ -205,7 +205,7 @@
     argNameOptions = [...paramNames].sort((a, b) => a.localeCompare(b)).map(name => ({ display: name, value: name }));
 
     // If the selected argument is no longer available, reset the selection
-    if (filters.argName) {
+    if (argNameOptions.length > 0 && filters.argName) {
       const availableArgNames = new Set(argNameOptions.map(opt => opt.value));
       if (!availableArgNames.has(filters.argName)) {
         filters = { ...filters, argName: '' };
@@ -219,7 +219,7 @@
       .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() }));
 
     // If the selected goal is no longer available, reset the selection
-    if (filters.schedulingGoalId) {
+    if (goalOptions.length > 0 && filters.schedulingGoalId) {
       const availableGoals = new Set(goalOptions.map(opt => opt.value));
       if (!availableGoals.has(filters.schedulingGoalId)) {
         filters = { ...filters, schedulingGoalId: '' };
