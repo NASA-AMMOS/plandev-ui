@@ -115,4 +115,38 @@ describe('Searchable Dropdown component', () => {
 
     expect(getAllByRole('menuitem')).toHaveLength(3);
   });
+
+  it('Should mark placeholder option (with null value) as selected when no option is selected', async () => {
+    const { getByText, getAllByRole } = render(SearchableDropdown, {
+      options,
+      placeholder: 'Select an option',
+      showPlaceholderOption: true,
+    });
+
+    await fireEvent.click(getByText('Select an option'));
+
+    const menuItems = getAllByRole('menuitem');
+    expect(menuItems).toHaveLength(options.length + 1);
+
+    const placeholderMenuItem = menuItems[0];
+    expect(placeholderMenuItem.classList.contains('selected')).toBe(true);
+  });
+
+  it('Should not mark option with empty string value as selected when no option is selected and it is at index 0', async () => {
+    const emptyValueOption = { display: 'All Options', value: '' };
+    const optionsWithEmpty = [emptyValueOption, ...options];
+    const { getByText, getAllByRole } = render(SearchableDropdown, {
+      options: optionsWithEmpty,
+      placeholder: 'None',
+      showPlaceholderOption: true,
+    });
+
+    await fireEvent.click(getByText('None'));
+
+    const menuItems = getAllByRole('menuitem');
+    expect(menuItems).toHaveLength(optionsWithEmpty.length + 1);
+
+    const emptyValueMenuItem = menuItems[1];
+    expect(emptyValueMenuItem.classList.contains('selected')).toBe(false);
+  });
 });

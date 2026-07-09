@@ -100,20 +100,55 @@
 
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
 
-  $: modelOptions = [
-    { display: '', value: '' },
-    ...orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id })),
-  ];
+  $: {
+    modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
 
-  $: tagOptions = [{ display: '', value: '' }, ...$tagsStore.map(tag => ({ display: tag.name, value: tag.name }))];
-
-  $: userOptions = [
-    { display: '', value: '' },
-    ...$users.filter((u): u is string => u !== null).map(u => ({ display: u, value: u })),
-  ];
+    // If the selected model is no longer available, reset the selection
+    if (modelOptions.length > 0 && selectedModelId !== undefined) {
+      const availableModels = new Set(modelOptions.map(opt => opt.value));
+      if (!availableModels.has(selectedModelId)) {
+        selectedModelId = undefined;
+      }
+    }
+  }
 
   $: {
-    const activityTypeNames: string[] = [''];
+    tagOptions = $tagsStore.map(tag => ({ display: tag.name, value: tag.name }));
+
+    // If the selected tag is no longer available, reset the selection
+    if (tagOptions.length > 0 && filters.tagValue) {
+      const availableTags = new Set(tagOptions.map(opt => opt.value));
+      if (!availableTags.has(filters.tagValue)) {
+        filters = { ...filters, planTag: '', tagValue: '' };
+      }
+    }
+  }
+
+  $: {
+    userOptions = $users.filter((u): u is string => u !== null).map(u => ({ display: u, value: u }));
+
+    // If the user is no longer available, reset the selections
+    if (userOptions.length > 0 && (filters.createdBy || filters.lastModifiedBy || filters.planOwner)) {
+      let filtersUpdate: Partial<typeof DEFAULT_FILTERS> = {};
+      const availableUsers = new Set(userOptions.map(opt => opt.value));
+      if (!availableUsers.has(filters.createdBy)) {
+        filtersUpdate = { ...filtersUpdate, createdBy: '' };
+      }
+      if (!availableUsers.has(filters.lastModifiedBy)) {
+        filtersUpdate = { ...filtersUpdate, lastModifiedBy: '' };
+      }
+      if (!availableUsers.has(filters.planOwner)) {
+        filtersUpdate = { ...filtersUpdate, planOwner: '' };
+      }
+
+      if (Object.keys(filtersUpdate).length > 0) {
+        filters = { ...filters, ...filtersUpdate };
+      }
+    }
+  }
+
+  $: {
+    const activityTypeNames: string[] = [];
     if (selectedModel) {
       activityTypeNames.push(...selectedModel.activity_types.map(type => type.name));
     } else {
@@ -124,6 +159,15 @@
     typeOptions = activityTypeNames
       .map(type => ({ display: type, value: type }))
       .sort((a, b) => a.display.localeCompare(b.display));
+
+    // If a selected activity type is no longer available, remove the selection
+    if (typeOptions.length > 0 && filters.actType.length > 0) {
+      const availableTypes = new Set(typeOptions.map(opt => opt.value));
+      const validTypes = filters.actType.filter(type => availableTypes.has(type));
+      if (validTypes.length !== filters.actType.length) {
+        filters = { ...filters, actType: validTypes };
+      }
+    }
   }
 
   $: {
@@ -134,7 +178,15 @@
           .map(preset => preset.name),
       ),
     ];
-    presetOptions = [{ display: '', value: '' }, ...presetNames.map(name => ({ display: name, value: name }))];
+    presetOptions = presetNames.map(name => ({ display: name, value: name }));
+
+    // If the selected preset is no longer available, reset the selection
+    if (presetOptions.length > 0 && filters.preset) {
+      const availablePresets = new Set(presetOptions.map(opt => opt.value));
+      if (!availablePresets.has(filters.preset)) {
+        filters = { ...filters, preset: '' };
+      }
+    }
   }
 
   $: {
@@ -150,18 +202,30 @@
         }
       }
     }
-    argNameOptions = [
-      { display: '', value: '' },
-      ...[...paramNames].sort((a, b) => a.localeCompare(b)).map(name => ({ display: name, value: name })),
-    ];
+    argNameOptions = [...paramNames].sort((a, b) => a.localeCompare(b)).map(name => ({ display: name, value: name }));
+
+    // If the selected argument is no longer available, reset the selection
+    if (argNameOptions.length > 0 && filters.argName) {
+      const availableArgNames = new Set(argNameOptions.map(opt => opt.value));
+      if (!availableArgNames.has(filters.argName)) {
+        filters = { ...filters, argName: '' };
+      }
+    }
   }
 
-  $: goalOptions = [
-    { display: '', value: '' },
-    ...[...$schedulingGoalResponses]
+  $: {
+    goalOptions = [...$schedulingGoalResponses]
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() })),
-  ];
+      .map(goal => ({ display: `${goal.name} (${goal.id})`, value: goal.id.toString() }));
+
+    // If the selected goal is no longer available, reset the selection
+    if (goalOptions.length > 0 && filters.schedulingGoalId) {
+      const availableGoals = new Set(goalOptions.map(opt => opt.value));
+      if (!availableGoals.has(filters.schedulingGoalId)) {
+        filters = { ...filters, schedulingGoalId: '' };
+      }
+    }
+  }
 
   // Initialize from URL on first page load (browser only — SSR can't navigate)
   $: if (browser && $page.url) {
@@ -362,9 +426,10 @@
           <SearchableDropdown
             options={modelOptions}
             loading={$modelsLoading}
+            placeholder=""
             on:change={e => {
               const v = e.detail[0];
-              selectedModelId = v === '' || v === undefined ? undefined : Number(v);
+              selectedModelId = v === '' || v == null ? undefined : Number(v);
             }}
             selectedOptionValues={[selectedModelId ?? '']}
           >
@@ -401,6 +466,7 @@
           <SearchableDropdown
             options={argNameOptions}
             loading={$modelsLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, argName: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.argName]}
           >
@@ -431,6 +497,7 @@
           <SearchableDropdown
             options={tagOptions}
             loading={$tagsLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, tagValue: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.tagValue]}
           >
@@ -443,6 +510,7 @@
           <SearchableDropdown
             options={presetOptions}
             loading={$presetsLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, preset: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.preset]}
           >
@@ -455,6 +523,7 @@
           <SearchableDropdown
             options={userOptions}
             loading={$usersLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, createdBy: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.createdBy]}
           >
@@ -467,6 +536,7 @@
           <SearchableDropdown
             options={userOptions}
             loading={$usersLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, lastModifiedBy: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.lastModifiedBy]}
           >
@@ -555,6 +625,7 @@
           <SearchableDropdown
             options={userOptions}
             loading={$usersLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, planOwner: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.planOwner]}
           >
@@ -567,6 +638,7 @@
           <SearchableDropdown
             options={tagOptions}
             loading={$tagsLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, planTag: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.planTag]}
           >
@@ -579,6 +651,7 @@
           <SearchableDropdown
             options={goalOptions}
             loading={$goalsLoading}
+            placeholder=""
             on:change={e => (filters = { ...filters, schedulingGoalId: e.detail[0]?.toString() ?? '' })}
             selectedOptionValues={[filters.schedulingGoalId]}
           >
