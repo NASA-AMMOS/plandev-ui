@@ -415,12 +415,7 @@
     if (!$activeDocumentIsDirty) {
       return true;
     }
-    const decision = await resolveUnsavedChanges(
-      'There are unsaved changes. What would you like to do before navigating away from the current file?',
-      'Save and Navigate',
-      'Discard and Navigate',
-      'Keep Editing',
-    );
+    const decision = await resolveUnsavedChangesBeforeFileSwitch();
     if (decision === 'stay') {
       return false;
     }
@@ -797,15 +792,7 @@
     return false;
   }
 
-  /**
-   * Prompts the user about unsaved changes and resolves the save/discard decision so callers
-   * don't have to reimplement the modal + save-attempt dance. Returns:
-   * - 'stay': user cancelled, or chose Save but the save failed/was cancelled — do not navigate.
-   * - 'proceed-saved': document was saved (and marked clean); safe to navigate.
-   * - 'proceed-discarded': user chose to discard; caller decides whether to revert content.
-   * Callers own the post-decision action (goto / replaceState / content-mode switch) and any
-   * discard-time content revert, since those differ per call site.
-   */
+  /** Shared core for the unsaved-changes prompt; prefer the context-specific wrappers below. */
   async function resolveUnsavedChanges(
     message: string,
     confirmSaveLabel: string,
@@ -827,6 +814,16 @@
       return (await saveActiveDocument()) ? 'proceed-saved' : 'stay';
     }
     return 'proceed-discarded';
+  }
+
+  /** Unsaved-changes prompt for navigating away from the current file (in-page file/mode switch). */
+  function resolveUnsavedChangesBeforeFileSwitch() {
+    return resolveUnsavedChanges(
+      'There are unsaved changes. What would you like to do before navigating away from the current file?',
+      'Save and Navigate',
+      'Discard and Navigate',
+      'Keep Editing',
+    );
   }
 
   async function confirmAndNavigate(filePath: string | null) {
@@ -1304,12 +1301,7 @@
   ) {
     // Guard against switching away from dirty file
     if ($workspaceContentMode === WorkspaceContentMode.File && $activeDocumentIsDirty) {
-      const decision = await resolveUnsavedChanges(
-        'There are unsaved changes. What would you like to do before navigating away from the current file?',
-        'Save and Navigate',
-        'Discard and Navigate',
-        'Keep Editing',
-      );
+      const decision = await resolveUnsavedChangesBeforeFileSwitch();
       if (decision === 'stay') {
         return;
       }
