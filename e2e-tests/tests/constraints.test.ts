@@ -29,6 +29,7 @@ test.describe.serial('Constraints', () => {
     await setup.plan.createConstraint(baseURL);
   });
 
+  // largely a test of backend functionality, but also tests that constraint results show correctly
   test('Evaluate a failing and passing constraint', async ({ baseURL }) => {
     originalConstraintName = setup.plan.constraints.constraintName;
 
