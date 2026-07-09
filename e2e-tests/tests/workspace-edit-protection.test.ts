@@ -155,6 +155,13 @@ test.describe.serial('Workspace simultaneous-edit protection', () => {
     await setup.page.keyboard.press('ControlOrMeta+z');
     await expect(editor).toContainText('// my change');
     await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Leave a clean editor for the next serial test. "Keep theirs" already advanced the stored
+    // token to the server version, so this save succeeds without re-conflicting. Without it the
+    // dirty doc leaks: the next test's createAndOpenSequence auto-selects its new file, which pops
+    // a "Navigate Away" modal whose backdrop blocks the file-row click.
+    await workspace.saveSequence();
+    await expect(workspace.saveSequenceButton).toBeDisabled();
   });
 
   test('"Keep mine" saves the local version and the next save succeeds', async () => {
