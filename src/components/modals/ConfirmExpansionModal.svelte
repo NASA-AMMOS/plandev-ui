@@ -48,9 +48,9 @@
   let warningMessage = '';
 
   $: if ($checkConstraintsStatus === Status.Failed) {
-    warningMessage = 'Constraint Evaluation Failure';
+    warningMessage = 'Constraints Could Not Be Evaluated';
   } else if (simulationOutOfDate) {
-    warningMessage = 'Simulation Outdated';
+    warningMessage = 'Simulation Is Out Of Date';
   } else if (!allConstraintsHaveBeenChecked && allConstraintsThatAreCheckedPass) {
     warningMessage = 'Unchecked Constraints';
   } else {
@@ -91,60 +91,99 @@
   <ModalHeader on:close>{warningMessage}</ModalHeader>
   <ModalContent>
     {#if $checkConstraintsStatus === Status.Failed}
-      <p>The most recent constraint evaluation failed.</p>
-      <p>
-        The status of constraints is therefore undefined, and the plan have violations that the mission planner is not
-        aware of.
-      </p>
+      <p>The most recent constraint evaluation failed, so the current constraint status is unknown.</p>
       {#if uncheckedConstraints.length > 0 || failingConstraints.length > 0}
         <br />
         <p><i>For the most recent constraint run, the results were that:</i></p>
+        <br />
       {/if}
     {:else if $checkConstraintsStatus === Status.Incomplete}
-      <p>The most recent constraint evaluation is incomplete.</p>
-      <p>
-        The status of constraints is therefore ill-defined, and the plan have violations that the mission planner is not
-        aware of.
-      </p>
+      <p>The most recent constraint evaluation didn't finish, so the current constraint status is incomplete.</p>
       {#if uncheckedConstraints.length > 0 || failingConstraints.length > 0}
         <br />
         <p><i>For the most recent constraint run, the results were that:</i></p>
+        <br />
       {/if}
     {:else if simulationOutOfDate}
       <!-- If expansion is disabled for an out of date simulation, this won't show. But if we remove that guard, this shows. -->
-      <p>Simulation is out of date. This means the constraint results in the constraints tab are currently invalid.</p>
+      <p>
+        The plan has changed since the last simulation, so the constraint results in the Constraints panel no longer
+        reflect the current plan.
+      </p>
       {#if uncheckedConstraints.length > 0 || failingConstraints.length > 0}
         <br />
         <p><i>For the most recent constraint run, the results were that:</i></p>
+        <br />
       {/if}
     {/if}
-    {#if uncheckedConstraints.length > 0}
-      <p>The following constraints were unchecked:</p>
-      <div class="constraints-list">
-        {#each uncheckedConstraints as unchecked}
-          <p>{unchecked}</p>
-        {/each}
-      </div>
-    {/if}
     {#if failingConstraints.length > 0}
-      <p>The following constraints were violated:</p>
-      <div class="constraints-list">
+      {#if simulationOutOfDate}
+        <p>
+          The last evaluation found violations in {failingConstraints.length === 1
+            ? 'this constraint'
+            : 'these constraints'}:
+        </p>
+      {:else}
+        <p>{failingConstraints.length === 1 ? 'This constraint is' : 'These constraints are'} currently violated:</p>
+      {/if}
+      <ul class="list-disc pl-5">
         {#each failingConstraints as failing}
-          <p>{failing.name} <b>({failing.viols} violation{pluralize(failing.viols)})</b></p>
+          <li>{failing.name} <b>({failing.viols} violation{pluralize(failing.viols)})</b></li>
         {/each}
-      </div>
+      </ul>
+      <br />
+    {/if}
+    {#if uncheckedConstraints.length > 0}
+      {#if simulationOutOfDate}
+        <p>
+          From the last evaluation, {uncheckedConstraints.length === 1
+            ? "this constraint hasn't"
+            : "these constraints haven't"} been checked and may be violated:
+        </p>
+      {:else}
+        <p>
+          {uncheckedConstraints.length === 1 ? "This constraint hasn't" : "These constraints haven't"} been checked and may
+          be violated:
+        </p>
+      {/if}
+      <ul class="list-disc pl-5">
+        {#each uncheckedConstraints as unchecked}
+          <li>{unchecked}</li>
+        {/each}
+      </ul>
     {/if}
     <br />
-    <p><i>Proceed with expansion?</i></p>
+    {#if simulationOutOfDate}
+      <p><b>Expansion will run against the previous simulation and may not match the current plan.</b></p>
+    {:else}
+      <p><b>Expanding now may produce sequences that violate mission constraints.</b></p>
+    {/if}
   </ModalContent>
+  <div class="final-warning">
+    <p><b><i>Do you want to expand anyway?</i></b></p>
+  </div>
   <ModalFooter>
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
-    <button class="st-button" on:click={() => confirm()}>Expand</button>
+    <button
+      class="st-button bg-destructive text-destructive-foreground hover:!bg-destructive/90"
+      on:click={() => confirm()}>Expand Anyways</button
+    >
   </ModalFooter>
 </Modal>
 
 <style>
-  .constraints-list {
-    margin-left: 10px;
+  .final-warning {
+    position: relative;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+  }
+
+  p {
+    font-size: 0.75rem;
+  }
+
+  li {
+    font-size: 0.67rem;
   }
 </style>
