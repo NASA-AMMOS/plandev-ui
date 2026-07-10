@@ -7,6 +7,7 @@
   import { activityDirectivesDB } from '../../stores/activities';
   import { constraintRuns } from '../../stores/constraints';
   import { selectedExternalEventsRaw } from '../../stores/external-event';
+  import { schedulingAnalysisStatus } from '../../stores/scheduling';
   import { initialSpansLoading, simulationStatus } from '../../stores/simulation';
   import { timelineResourcesErroring, timelineResourcesLoading } from '../../stores/timelineResourceStatus';
   import { tooltip } from '../../utilities/tooltip';
@@ -20,6 +21,14 @@
     $simulationStatus => $simulationStatus === Status.Pending || $simulationStatus === Status.Incomplete,
   );
 
+  // Scheduling produces new activities and typically re-simulates, so keep the
+  // indicator up while a scheduling run is in flight.
+  const schedulingRunning: Readable<boolean> = derived(
+    schedulingAnalysisStatus,
+    $schedulingAnalysisStatus =>
+      $schedulingAnalysisStatus === Status.Pending || $schedulingAnalysisStatus === Status.Incomplete,
+  );
+
   const loading: Readable<boolean> = derived(
     [
       timelineResourcesLoading,
@@ -28,6 +37,7 @@
       constraintRuns.loading,
       selectedExternalEventsRaw.loading,
       simulationStreaming,
+      schedulingRunning,
     ],
     values => values.some(Boolean),
   );
