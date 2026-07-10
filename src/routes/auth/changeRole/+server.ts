@@ -2,8 +2,8 @@ import { base } from '$app/paths';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import type { CookieSerializeOptions } from 'cookie';
-import { computeRolesFromJWT } from '../../../hooks.server';
 import type { ChangeUserRoleRequestBody } from '../../../types/auth';
+import { computeRolesFromJWT } from '../../../utilities/auth';
 
 export const POST: RequestHandler = async event => {
   const body: ChangeUserRoleRequestBody = await event.request.json();

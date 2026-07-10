@@ -195,6 +195,22 @@ services:
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  keycloak:
+    # Only started when running the OIDC test phase: `docker compose --profile oidc up`.
+    # Imports the canned realm from e2e-tests/oauth/realm-export.json, which defines the
+    # `aerie` OIDC client (PKCE) plus the three test users (AerieAdmin/AerieUser/AerieViewer).
+    profiles: ['oidc']
+    container_name: aerie_keycloak
+    image: 'quay.io/keycloak/keycloak:latest'
+    ports: ['8000:8000']
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: kcadmin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: kcadmin
+      KC_FEATURES: scripts
+      KC_HTTP_PORT: 8000
+    command: ['start-dev', '--import-realm']
+    volumes:
+      - ./e2e-tests/oauth/realm-export.json:/opt/keycloak/data/import/realm-export.json
   aerie_workspace:
     container_name: aerie_workspace
     depends_on: ['postgres']

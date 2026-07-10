@@ -2,10 +2,10 @@ import { browser } from '$app/environment';
 import { debounce, isEqual } from 'lodash-es';
 import { type Readable, type Subscriber, type Unsubscriber, type Updater } from 'svelte/store';
 import type { GqlSubscribable, NextValue, QueryVariables, Subscription } from '../types/subscribable';
-import { logout } from '../utilities/login';
 import { EXPIRED_JWT } from '../utilities/permissions';
 import {
   clearPendingQueryName,
+  connectionState,
   getSharedClient,
   registerSubscription,
   restartSharedClient,
@@ -31,6 +31,8 @@ export function gqlSubscribable<T>(
   let variables: QueryVariables | null = initialVariables;
   let loading: boolean = true;
   let error: string = '';
+  let recoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+  let recoveryStateUnsub: (() => void) | null = null;
 
   // Subscribers for the _loading and _error stores
   const loadingSubscribers: Set<Subscriber<boolean>> = new Set();
@@ -86,6 +88,16 @@ export function gqlSubscribable<T>(
   function clientSubscribe() {
     const client = getSharedClient();
     if (browser && client && subscriptionActive) {
+      // Cancel any pending error recovery since we're resubscribing now
+      if (recoveryTimeout) {
+        clearTimeout(recoveryTimeout);
+        recoveryTimeout = null;
+      }
+      if (recoveryStateUnsub) {
+        recoveryStateUnsub();
+        recoveryStateUnsub = null;
+      }
+
       // Clean up any existing subscription before creating new one
       if (subscriptionCleanup) {
         subscriptionCleanup();
@@ -107,19 +119,75 @@ export function gqlSubscribable<T>(
             // Subscription completed normally
           },
           error: async (err: Error | CloseEvent) => {
-            console.error('Socket subscribe error', err);
-
+            // Auth-related close events (expired JWT, 4401/4403) are handled by
+            // gqlClient.ts's on.closed handler, which has proper guards for HMR
+            // and connection lifecycle. Don't logout here — just report the error
+            // and let graphql-ws retry with fresh credentials from cookies.
+            let newError: string;
+            let isConnectionError = false;
             if ('reason' in err && err.reason.includes(EXPIRED_JWT)) {
-              await logout(EXPIRED_JWT);
+              newError = 'Session credentials expired';
+              isConnectionError = true;
+            } else if (Array.isArray(err)) {
+              // GraphQL server errors (e.g., permission denied) — don't auto-recover
+              newError = err.map(e => e.message ?? 'Unknown socket error').join(', ');
+            } else if ('message' in err) {
+              newError = err.message;
+              isConnectionError = true;
             } else {
-              let newError: string;
-              if (Array.isArray(err)) {
-                newError = err.map(e => e.message ?? 'Unknown socket error').join(', ');
-              } else if ('message' in err) {
-                newError = err.message;
-              } else {
-                newError = 'Unknown socket error';
+              newError = 'Unknown socket error';
+              isConnectionError = true;
+            }
+            // Auto-recover from connection-level errors silently (keep stale data).
+            // Server errors (permission denied, etc.) are surfaced to the UI.
+            if (isConnectionError && subscriptionActive && subscribers.size > 0) {
+              // Clean up any prior recovery
+              if (recoveryStateUnsub) {
+                recoveryStateUnsub();
+                recoveryStateUnsub = null;
               }
+              if (recoveryTimeout) {
+                clearTimeout(recoveryTimeout);
+                recoveryTimeout = null;
+              }
+
+              // When graphql-ws fires the error callback, the subscription is terminated.
+              // Use two recovery strategies:
+              // 1. connectionState listener - fast recovery if graphql-ws reconnects
+              // 2. Fallback timer - kick graphql-ws out of lazy mode if needed
+              let skipFirst = true;
+              recoveryStateUnsub = connectionState.subscribe(state => {
+                if (skipFirst) {
+                  skipFirst = false;
+                  return;
+                }
+                if (state === 'connected') {
+                  if (recoveryTimeout) {
+                    clearTimeout(recoveryTimeout);
+                    recoveryTimeout = null;
+                  }
+                  if (recoveryStateUnsub) {
+                    recoveryStateUnsub();
+                    recoveryStateUnsub = null;
+                  }
+                  if (subscriptionActive && subscribers.size > 0) {
+                    resubscribe();
+                  }
+                }
+              });
+
+              recoveryTimeout = setTimeout(() => {
+                recoveryTimeout = null;
+                if (recoveryStateUnsub) {
+                  recoveryStateUnsub();
+                  recoveryStateUnsub = null;
+                }
+                if (subscriptionActive && subscribers.size > 0) {
+                  resubscribe();
+                }
+              }, 5000);
+            } else {
+              // Non-recoverable error (e.g., GraphQL server error) — surface to UI
               setError(newError);
               setLoading(false);
               subscribers.forEach(({ next }) => {
@@ -243,6 +311,16 @@ export function gqlSubscribable<T>(
 
       if (subscribers.size === 0 && subscriptionActive) {
         subscriptionActive = false;
+
+        // Cancel any pending error recovery
+        if (recoveryTimeout) {
+          clearTimeout(recoveryTimeout);
+          recoveryTimeout = null;
+        }
+        if (recoveryStateUnsub) {
+          recoveryStateUnsub();
+          recoveryStateUnsub = null;
+        }
 
         // Capture cleanup function before it might be reassigned
         const cleanup = subscriptionCleanup;

@@ -1,12 +1,66 @@
+import { dev } from '$app/environment';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import type { Handle } from '@sveltejs/kit';
+import * as auth from '$lib/server/oidc';
+import { error, type Handle } from '@sveltejs/kit';
 import { parse, type CookieSerializeOptions } from 'cookie';
-import { jwtDecode } from 'jwt-decode';
-import type { BaseUser, ParsedUserToken, User } from './types/app';
+import type { BaseUser } from './types/app';
 import type { ReqValidateSSOResponse } from './types/auth';
-import effects from './utilities/effects';
+import { computeRolesFromCookies, computeRolesFromJWT } from './utilities/auth';
 import { reqGatewayForwardCookies } from './utilities/requests';
+
+/**
+ * Build Content Security Policy directives.
+ * CSP helps prevent XSS attacks by restricting where scripts/resources can be loaded from.
+ */
+function buildCSPDirectives(): string {
+  // Extract hostnames from URLs for connect-src
+  const connectSources = [
+    "'self'",
+    env.PUBLIC_HASURA_CLIENT_URL,
+    env.PUBLIC_HASURA_WEB_SOCKET_URL,
+    env.PUBLIC_GATEWAY_CLIENT_URL,
+    env.PUBLIC_ACTION_CLIENT_URL,
+    env.PUBLIC_WORKSPACE_CLIENT_URL,
+  ].filter(Boolean);
+
+  return [
+    "default-src 'self'",
+    // 'unsafe-inline' needed for Svelte's scoped styles and Monaco editor
+    // 'unsafe-eval' needed for Monaco editor's syntax highlighting
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    // Workers needed for Monaco editor
+    "worker-src 'self' blob:",
+    `connect-src ${connectSources.join(' ')}`,
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
+
+/**
+ * Add security headers to response.
+ * Uses Report-Only mode initially to gather violations without breaking functionality.
+ * Change to 'Content-Security-Policy' to enforce after testing.
+ */
+function addSecurityHeaders(response: Response): Response {
+  const csp = buildCSPDirectives();
+
+  // Use Report-Only mode to monitor violations without blocking
+  // Change to 'Content-Security-Policy' to enforce after testing
+  response.headers.set('Content-Security-Policy-Report-Only', csp);
+
+  // Additional security headers
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return response;
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
   // Ignore Chrome DevTools requests to prevent noisy 404 logs
@@ -14,15 +68,65 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (event.url.pathname.startsWith('/.well-known/appspecific/com.chrome.')) {
     return new Response(null, { status: 404 });
   }
+  if (event.url.pathname.startsWith(`${base}/error`) || event.url.pathname.startsWith(`${base}/oidc`)) {
+    // don't want hooks running on an error page
+    const response = await resolve(event);
+    return addSecurityHeaders(response);
+  }
+  if (
+    env.PUBLIC_AUTH_OIDC_ENABLED === 'true' &&
+    event.url.pathname.startsWith(`${base}/auth`) &&
+    !event.url.pathname.startsWith(`${base}/auth/changeRole`)
+  ) {
+    error(
+      500,
+      `Attempting to access /auth endpoint "${event.url.pathname}" while OIDC enabled (env.PUBLIC_AUTH_OIDC_ENABLED='true').`,
+    );
+  }
 
   try {
-    if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
-      return await handleSSOAuth({ event, resolve });
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true') {
+      return addSecurityHeaders(await handleOIDCAuth({ event, resolve }));
+    } else if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
+      return addSecurityHeaders(await handleSSOAuth({ event, resolve }));
     } else {
-      return await handleJWTAuth({ event, resolve });
+      return addSecurityHeaders(await handleJWTAuth({ event, resolve }));
     }
   } catch (e) {
-    console.log(e);
+    event.locals.user = null;
+  }
+
+  return addSecurityHeaders(await resolve(event));
+};
+
+/**
+ * Sets local user to the decoded access token enriched with additional
+ * fine-grained query-related permissions.
+ */
+const handleOIDCAuth: Handle = async ({ event, resolve }) => {
+  event = await auth.handler(event);
+
+  // the above handler doesn't impact the event.request.headers, but it does
+  // impact the cookies object. we only gain information by using that...
+  // so let's use it!
+  const activeRole = event.cookies.get('activeRole') ?? null;
+  const token = event.cookies.get('accessToken');
+
+  if (token) {
+    const user: BaseUser = { id: null, token };
+    event.locals.user = await computeRolesFromJWT(user, activeRole);
+
+    // If the active role cookie is not in the list of allowed roles, then set
+    // it to the user's default role.
+    if (event.locals.user && !event.locals.user.allowedRoles.includes(activeRole || '')) {
+      event.cookies.set('activeRole', event.locals.user.defaultRole, {
+        httpOnly: false,
+        path: `${base}/`,
+        sameSite: 'lax',
+        secure: !dev,
+      });
+    }
+  } else {
     event.locals.user = null;
   }
 
@@ -95,20 +199,14 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
 
   const roles = await computeRolesFromJWT(user, activeRole);
 
+  // create and set activeRole cookie
   if (roles) {
-    // create and set cookies
-    const userStr = JSON.stringify(user);
-    const userCookie = Buffer.from(userStr).toString('base64');
     const cookieOpts: CookieSerializeOptions & { path: string } = {
       httpOnly: false,
       path: `${base}/`,
       sameSite: 'none',
+      secure: !dev,
     };
-
-    // if logout just cleared user cookie, don't re-set it
-    if (!event.url.pathname.includes('/auth/logout')) {
-      event.cookies.set('user', userCookie, cookieOpts);
-    }
 
     // don't overwrite existing activeRole, unless it doesn't exist anymore
     if (!activeRoleCookie || activeRoleCookie === 'deleted' || !roles.allowedRoles.includes(activeRoleCookie)) {
@@ -120,46 +218,3 @@ const handleSSOAuth: Handle = async ({ event, resolve }) => {
 
   return await resolve(event);
 };
-
-async function computeRolesFromCookies(
-  userCookie: string | null,
-  activeRoleCookie: string | null,
-): Promise<User | null> {
-  const userBuffer = Buffer.from(userCookie ?? '', 'base64');
-  const userStr = userBuffer.toString('utf-8');
-
-  try {
-    const baseUser: BaseUser = JSON.parse(userStr);
-    return computeRolesFromJWT(baseUser, activeRoleCookie);
-  } catch {
-    return null;
-  }
-}
-
-export async function computeRolesFromJWT(baseUser: BaseUser, activeRole: string | null): Promise<User | null> {
-  const { success } = await effects.session(baseUser);
-  if (!success) {
-    return null;
-  }
-
-  const decodedToken: ParsedUserToken = jwtDecode(baseUser.token);
-
-  const allowedRoles = decodedToken['https://hasura.io/jwt/claims']['x-hasura-allowed-roles'];
-  const defaultRole = decodedToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
-
-  const user: User = {
-    ...baseUser,
-    activeRole: activeRole ?? defaultRole,
-    allowedRoles,
-    defaultRole,
-    permissibleQueries: null,
-    rolePermissions: null,
-  };
-  const permissibleQueries = await effects.getUserQueries(user);
-  const rolePermissions = await effects.getRolePermissions(user);
-  return {
-    ...user,
-    permissibleQueries,
-    rolePermissions,
-  };
-}

@@ -1,0 +1,420 @@
+import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
+import { type ClaimsConfig, type MaybeToken, type Rule } from '$lib/types/oidc';
+import { type Cookies, type RequestEvent } from '@sveltejs/kit';
+import * as arctic from 'arctic';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { JwksClient } from 'jwks-rsa';
+import type { User } from '../../types/app';
+
+/**
+ * Generate a cryptographically secure nonce for OIDC.
+ * The nonce prevents replay attacks by binding the ID token to a specific authentication request.
+ */
+export function generateNonce(): string {
+  return crypto.randomBytes(16).toString('base64url');
+}
+
+// Lazily initialized JWKS client (created on first use for runtime env config). Cache signing keys
+// and rate-limit fetches so unknown-`kid` floods can't hammer the IdP; bounds mirror the action and
+// workspace servers. (jwks-rsa defaults to no rate limiting + a small cache.)
+let _jwksClient: JwksClient | undefined;
+function getJwksClient(): JwksClient | undefined {
+  if (!_jwksClient && env.OIDC_JWKS_URL) {
+    _jwksClient = new JwksClient({
+      cache: true,
+      cacheMaxAge: 24 * 60 * 60 * 1000, // 24h
+      cacheMaxEntries: 100,
+      jwksRequestsPerMinute: 10,
+      jwksUri: env.OIDC_JWKS_URL,
+      rateLimit: true,
+      timeout: 30000,
+    });
+  }
+  return _jwksClient;
+}
+
+// Supported JWT signing algorithms. RS256 is the most common for OIDC.
+// Can be overridden via OIDC_ALGORITHMS env var (space-separated, e.g., "RS256 RS384 RS512")
+function getSupportedAlgorithms(): jwt.Algorithm[] {
+  // Split on whitespace and drop empties. Guarding against empty/whitespace values matters:
+  // `''.split(' ')` returns `['']` (a truthy array), so a naive `|| ['RS256']` fallback would
+  // never fire for OIDC_ALGORITHMS='' and every token would fail with "invalid algorithm".
+  const parsed = env.OIDC_ALGORITHMS?.split(' ')
+    .map(alg => alg.trim())
+    .filter(Boolean);
+  return (parsed && parsed.length > 0 ? parsed : ['RS256']) as jwt.Algorithm[];
+}
+
+/**
+ * JWT claim path configuration (server side).
+ * Default paths follow Hasura's JWT claims namespace convention:
+ *   https://hasura.io/jwt/claims -> x-hasura-user-id, x-hasura-allowed-roles, x-hasura-default-role
+ *
+ * Override via OIDC_CLAIMS_NAMESPACE / OIDC_CLAIMS_USER_ID / OIDC_CLAIMS_ALLOWED_ROLES / OIDC_CLAIMS_DEFAULT_ROLE.
+ * Must stay in lockstep with the client-side config in src/utilities/auth.ts, Hasura's HASURA_GRAPHQL_JWT_SECRET
+ * claims_map, the gateway's JWT parsing, and your IdP's token mapper.
+ */
+export function getClaimsConfig(): ClaimsConfig {
+  return {
+    allowedRoles: env.OIDC_CLAIMS_ALLOWED_ROLES || 'x-hasura-allowed-roles',
+    defaultRole: env.OIDC_CLAIMS_DEFAULT_ROLE || 'x-hasura-default-role',
+    namespace: env.OIDC_CLAIMS_NAMESPACE || 'https://hasura.io/jwt/claims',
+    userId: env.OIDC_CLAIMS_USER_ID || 'x-hasura-user-id',
+  };
+}
+
+/**
+ * Base verification options for all tokens (signature, issuer, expiration).
+ * Access tokens are treated as opaque by OIDC clients - audience validation
+ * is only required for ID tokens per the OIDC spec.
+ */
+function getBaseVerifyOpts(): jwt.VerifyOptions {
+  return {
+    algorithms: getSupportedAlgorithms(),
+    ignoreExpiration: false,
+    issuer: env.OIDC_ISSUER,
+  };
+}
+
+/**
+ * ID token verification includes audience validation per OIDC spec.
+ * The audience must match the client ID that requested the token.
+ */
+function getIdTokenVerifyOpts(): jwt.VerifyOptions {
+  return {
+    ...getBaseVerifyOpts(),
+    audience: env.OIDC_AUDIENCE || undefined,
+  };
+}
+
+/**
+ * Remove invalid tokens, refresh if appropriate, and set locals for tokens and roles.
+ * Only invoked on page refresh. Does not execute behavior if cookies expire and page doesn't refresh (see cookieStoreListener() for that)
+ *
+ * Will log but not raise any errors.
+ *
+ * @param {RequestEvent} event - The SvelteKit request event containing cookies.
+ */
+export async function handler(event: RequestEvent): Promise<RequestEvent> {
+  return sanitize(event).then(refresh);
+}
+
+/**
+ * Removes invalid access or id tokens.
+ * Only invoked in handler.
+ *
+ * Note: This **may** mutate the given event.
+ *
+ * @param evt
+ * @returns RequestEvent
+ */
+async function sanitize(evt: RequestEvent) {
+  // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
+  await verify(evt.cookies.get('accessToken')).catch(_ => evt.cookies.delete('accessToken', { path: '/' }));
+  // ID tokens require audience validation per OIDC spec
+  await verify(evt.cookies.get('idToken'), getJwksClient(), getIdTokenVerifyOpts()).catch(_ =>
+    evt.cookies.delete('idToken', { path: '/' }),
+  );
+  return evt;
+}
+
+/**
+ * Refreshes tokens iff access or id token is missing.
+ * Only invoked in handler.
+ *
+ * Note: This **may** mutate the given event.
+ *
+ * @param evt
+ * @returns RequestEvent
+ */
+async function refresh(evt: RequestEvent) {
+  if (!evt.cookies.get('accessToken') || !evt.cookies.get('idToken')) {
+    const refreshToken: string | undefined = evt.cookies.get('refreshToken');
+    if (refreshToken) {
+      // unconditionally clear refreshToken. if it was invalid, we don't want it, and if it's valid, it will be replaced!
+      evt.cookies.delete('refreshToken', { path: '/' });
+      try {
+        const client = await Client.instance;
+        const tokens = await client.refresh(refreshToken);
+        await updateWithNewTokens(evt.cookies, tokens);
+      } catch (err) {
+        // Refresh token is expired or invalid at the IdP.
+        // Clear remaining tokens and let the request proceed unauthenticated.
+        // The app's auth guards will redirect to login.
+        console.error('Token refresh failed (refresh token likely expired):', err instanceof Error ? err.message : err);
+        evt.cookies.delete('accessToken', { path: '/' });
+        evt.cookies.delete('idToken', { path: '/' });
+      }
+    }
+  }
+  return evt;
+}
+
+/**
+ * Verify ensures raw token values are signed by the expected issuer and haven't expired.
+ *
+ * @param token - The raw base64 encoded JWT token to verify. If null, the function will return null.
+ * @param opts - Verification options to pass to jsonwebtoken. Defaults to sensible defaults.
+ * @returns The decoded JWT payload if verification is successful, otherwise throws an error.
+ * @throws {Error} If the token is invalid, expired, or if there are issues
+ */
+export async function verify(
+  token: string | undefined,
+  client = getJwksClient(),
+  opts: jwt.VerifyOptions = getBaseVerifyOpts(),
+): Promise<MaybeToken> {
+  if (!token) {
+    return undefined;
+  }
+  if (!client) {
+    throw new Error('Cannot verify JWT without a configured JWKS Client');
+  }
+  if (client) {
+    const header = jwt.decode(token, { complete: true })?.header;
+    if (!header) {
+      throw new Error('Malformed JWT token: no header present.');
+    }
+    const key = await client.getSigningKey(header.kid);
+    return jwt.verify(token, key.getPublicKey(), opts) as MaybeToken;
+  }
+}
+
+/**
+ * Verify an ID token with full OIDC-compliant validation (signature, issuer, expiration, audience).
+ *
+ * @param idToken - The raw ID token string to verify
+ * @returns The decoded JWT payload if verification is successful
+ * @throws {Error} If the token is invalid, expired, or fails audience validation
+ */
+export async function verifyIdToken(idToken: string): Promise<MaybeToken> {
+  return verify(idToken, getJwksClient(), getIdTokenVerifyOpts());
+}
+
+/**
+ * Verify that the nonce in an ID token matches the expected nonce.
+ * This prevents replay attacks where an attacker reuses a previously issued ID token.
+ *
+ * @param idToken - The raw ID token string
+ * @param expectedNonce - The nonce that was sent in the authorization request
+ * @throws {Error} If the nonce doesn't match or is missing
+ */
+export function verifyNonce(idToken: string, expectedNonce: string): void {
+  const decoded = jwt.decode(idToken) as { nonce?: string } | null;
+  if (!decoded) {
+    throw new Error('Failed to decode ID token for nonce verification');
+  }
+  if (!decoded.nonce) {
+    throw new Error('ID token is missing nonce claim');
+  }
+  if (decoded.nonce !== expectedNonce) {
+    throw new Error('ID token nonce does not match expected nonce (possible replay attack)');
+  }
+}
+
+/**
+ * Client is a singleton that manages OAuth2/OIDC interactions.
+ *
+ * It avoids re-fetching OIDC configuration by caching values on first use.
+ *
+ */
+export class Client {
+  private static _initPromise: Promise<Client>;
+  private static _instance: Client;
+
+  private authorizationEndpoint!: string;
+  private client!: arctic.OAuth2Client;
+  private clientId!: string;
+  private clientSecret!: string | null;
+  private logoutEndpoint!: string;
+  private redirectEndpoint!: string;
+  private scopes!: string[];
+  private tokenEndpoint!: string;
+
+  private constructor() {
+    // Use init() for async initialization
+  }
+
+  static get instance(): Promise<Client> {
+    if (!this._initPromise) {
+      const client = new Client();
+      this._initPromise = client.init().then(() => {
+        this._instance = client;
+        return client;
+      });
+    }
+    return this._initPromise;
+  }
+
+  createAuthorizationURLWithPKCE(): { authorizationUrl: URL; nonce: string; state: string; verifier: string } {
+    const verifier: string = arctic.generateCodeVerifier();
+    const state: string = arctic.generateState();
+    const nonce: string = generateNonce();
+    const authorizationUrl: URL = this.client.createAuthorizationURLWithPKCE(
+      this.authorizationEndpoint,
+      state,
+      arctic.CodeChallengeMethod.S256,
+      verifier,
+      this.scopes,
+    );
+    // Add nonce parameter for OIDC replay attack protection
+    authorizationUrl.searchParams.set('nonce', nonce);
+    return { authorizationUrl, nonce, state, verifier };
+  }
+
+  /**
+   * Exchange an authorization code (and verifier) for tokens.
+   *
+   * @param code
+   * @param verifier
+   * @returns
+   */
+  async exchange(code: string, verifier: string): Promise<arctic.OAuth2Tokens | undefined> {
+    return this.client.validateAuthorizationCode(this.tokenEndpoint, code, verifier);
+  }
+
+  // arctic handles token revocation, but not logout, as described here https://blog.elest.io/keycloak-token-management-expiration-revocation-and-renewal/, which is what we want to end the session
+  getLogoutEndpoint(): string {
+    return this.logoutEndpoint;
+  }
+
+  getRedirectEndpoint(): string {
+    return this.redirectEndpoint;
+  }
+
+  private async init(): Promise<void> {
+    // Fetch well-known configuration first if URL is provided
+    if (env.OIDC_WELL_KNOWN_URL) {
+      try {
+        const res = await fetch(env.OIDC_WELL_KNOWN_URL);
+        const data = await res.json();
+        this.authorizationEndpoint = data.authorization_endpoint ?? data.authorizationEndpoint;
+        this.tokenEndpoint = data.token_endpoint ?? data.tokenEndpoint;
+        this.logoutEndpoint = data.end_session_endpoint ?? data.endSessionEndpoint;
+      } catch (err) {
+        console.error('Error fetching OIDC configuration:', err);
+      }
+    }
+
+    // Fall back to explicit env vars if not set from well-known
+    this.authorizationEndpoint ??= env.OIDC_AUTHORIZATION_URL;
+    this.tokenEndpoint ??= env.OIDC_TOKEN_URL;
+    this.redirectEndpoint = env.OIDC_REDIRECT_URI;
+    this.logoutEndpoint ??= env.OIDC_LOGOUT_URL;
+    this.clientId = env.OIDC_CLIENT_ID;
+    this.clientSecret = env.OIDC_CLIENT_SECRET || null;
+    this.scopes = env.OIDC_SCOPES ? env.OIDC_SCOPES.split(' ') : ['openid', 'profile', 'email'];
+
+    // The entire client configuration is validated here, this should help
+    // people understand everything they need to set without having to fix
+    // one problem... then another... then another...
+    const problems = this.validateConfiguration();
+
+    if (problems.length > 0) {
+      throw new Error('OAuth2 client configuration is incomplete.', { cause: problems });
+    } else {
+      this.client = new arctic.OAuth2Client(this.clientId, this.clientSecret, this.redirectEndpoint);
+    }
+  }
+
+  /**
+   * Request new tokens using a refresh token.
+   *
+   * @param token - The refresh token to use to obtain new tokens.
+   * @returns
+   */
+  async refresh(token: string): Promise<arctic.OAuth2Tokens> {
+    return this.client.refreshAccessToken(this.tokenEndpoint, token, this.scopes);
+  }
+
+  private validateConfiguration(): string[] {
+    const problems: string[] = [];
+
+    if (!this.authorizationEndpoint) {
+      problems.push('Missing OIDC authorization endpoint. Check OIDC_WELL_KNOWN_URL or OIDC_AUTHORIZATION_URL.');
+    }
+
+    if (!this.tokenEndpoint) {
+      problems.push('Missing OIDC token endpoint. Check OIDC_WELL_KNOWN_URL or OIDC_TOKEN_URL.');
+    }
+
+    if (!this.redirectEndpoint) {
+      problems.push('Missing OIDC redirect URI. Check OIDC_WELL_KNOWN_URL or OIDC_REDIRECT_URI.');
+    }
+
+    if (!this.clientId) {
+      problems.push('Missing OIDC client ID. Check OIDC_CLIENT_ID.');
+    }
+
+    if (this.scopes.length === 0) {
+      problems.push('Missing OIDC scopes. Check OIDC_SCOPES environment variable.');
+    }
+
+    if (!this.scopes.includes('openid')) {
+      problems.push('OIDC scopes must include "openid". Check OIDC_SCOPES environment variable.');
+    }
+
+    return problems;
+  }
+}
+
+export async function updateWithNewTokens(cookies: Cookies, tokens: arctic.OAuth2Tokens): Promise<boolean> {
+  console.debug('Persisting tokens following a refresh...');
+
+  // Check token validity.
+  // Access tokens use base verification (no audience check - treated as opaque per OIDC spec)
+  const accessJwt = await verify(tokens.accessToken());
+  // ID tokens require audience validation per OIDC spec
+  const idJwt = await verify(tokens.idToken(), getJwksClient(), getIdTokenVerifyOpts());
+
+  if (accessJwt && idJwt) {
+    // SECURITY: Cookie settings explained:
+    // - secure: only sent over HTTPS in production
+    // - sameSite: 'lax' allows cookies on top-level navigations (needed for OIDC redirect back)
+    //   but blocks cross-site POST requests (CSRF protection)
+    // - httpOnly: false for accessToken/idToken because client JS needs them for Hasura requests
+    // - httpOnly: true for refreshToken to protect it from XSS
+    cookies.set('accessToken', tokens.accessToken(), { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
+    cookies.set('idToken', tokens.idToken(), { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
+    cookies.set('refreshToken', tokens.refreshToken(), { httpOnly: true, path: '/', sameSite: 'lax', secure: !dev });
+
+    // User row provisioning is handled gateway-side via session()'s lazy upsert
+    // (see aerie-gateway/src/packages/auth/functions.ts:session). Doing it here
+    // through Hasura with the user's own JWT would require widening permissions.users
+    // insert/update rights to user/viewer roles, which we deliberately avoid.
+    return true;
+  }
+
+  return false;
+}
+
+/*
+ * This function provides developers with a way to evaluate their own rule
+ * against an access token in +page.server.ts or +layout.server.ts
+ *
+ * It is **NOT** responsible for decoding the token, refreshing it, or
+ * validating it.
+ *
+ * https://svelte.dev/docs/kit/load#Implications-for-authentication
+ *
+ * There are a few possible strategies to ensure an auth check occurs before protected code.
+ *
+ * To prevent data waterfalls and preserve layout load caches:
+ *
+ * Use hooks to protect multiple routes before any load functions run
+ *
+ * Use auth guards directly in +page.server.js load functions for route specific protection
+ * Putting an auth guard in +layout.server.js requires all child pages to call
+ * await parent() before protected code. Unless every child page depends on
+ * returned data from await parent(), the other options will be more performant.
+ */
+
+export function enforce(user: User | null, rule: Rule): boolean {
+  // Any value other than 'true' is considered a failure. This is intentional.
+  if (rule(user) === true) {
+    return true;
+  } else {
+    throw new Error('Unauthorized access: Rule evaluation failed');
+  }
+}

@@ -5289,6 +5289,7 @@ const effects = {
     }
   },
 
+  // NOTE: may want to move this out of effects
   async getRolePermissions(user: User | null): Promise<RolePermissionsMap | null> {
     try {
       const roleData = await reqHasura<RolePermissionResponse[] | null>(gql.GET_ROLE_PERMISSIONS, {}, user, undefined);
@@ -5643,6 +5644,7 @@ const effects = {
     }
   },
 
+  // NOTE: may want to move this out of effects
   async getUserQueries(user: User | null): Promise<PermissibleQueriesMap | null> {
     try {
       const data = await reqHasura<PermissibleQueryResponse | null>(gql.GET_PERMISSIBLE_QUERIES, {}, user, undefined);

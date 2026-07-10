@@ -1,8 +1,10 @@
-import { base } from '$app/paths';
+import { dev } from '$app/environment';
+import { getClaimsConfig } from '$lib/server/oidc';
+import { extractClaims } from '$lib/types/oidc';
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { jwtDecode } from 'jwt-decode';
-import type { BaseUser, ParsedUserToken } from '../../../types/app';
+import type { BaseUser } from '../../../types/app';
 import type { LoginRequestBody, ReqAuthResponse } from '../../../types/auth';
 import effects from '../../../utilities/effects';
 
@@ -18,13 +20,17 @@ export const POST: RequestHandler = async event => {
       const user: BaseUser = { id: username, token };
       const userStr = JSON.stringify(user);
       const userCookie = Buffer.from(userStr).toString('base64');
-      const parsedUserToken: ParsedUserToken = jwtDecode(user.token);
-      const defaultRole = parsedUserToken['https://hasura.io/jwt/claims']['x-hasura-default-role'];
+      const decodedToken = jwtDecode(user.token) as Record<string, unknown>;
+      const claims = extractClaims(decodedToken, getClaimsConfig());
 
-      return json(
-        { success: true, user },
-        { headers: { 'set-cookie': `activeRole=${defaultRole}; path=${base}/,user=${userCookie}; Path=${base}/` } },
-      );
+      event.cookies.set('activeRole', claims.defaultRole, {
+        httpOnly: false,
+        path: '/',
+        sameSite: 'lax',
+        secure: !dev,
+      });
+      event.cookies.set('user', userCookie, { httpOnly: false, path: '/', sameSite: 'lax', secure: !dev });
+      return json({ success: true, user });
     } else {
       return json({ message, success: false });
     }

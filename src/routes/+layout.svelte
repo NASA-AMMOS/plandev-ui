@@ -3,6 +3,7 @@
 <script lang="ts">
   import { beforeNavigate } from '$app/navigation';
   import { env } from '$env/dynamic/public';
+  import { cookieStoreListener } from '$lib/stores/oidc';
   import { ModeWatcher } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { mergeWith } from 'lodash-es';
@@ -12,9 +13,10 @@
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
   import { clearLogs } from '../stores/errors';
-  import { restartSharedClient } from '../stores/gqlClient';
+  import { disposeSharedClient, restartSharedClient } from '../stores/gqlClient';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import type { UserStore } from '../types/app';
+  import { getCookieValue } from '../utilities/browser';
   import { loadPluginCode } from '../utilities/plugins';
   import type { LayoutData } from './$types';
 
@@ -28,23 +30,63 @@
   $pluginsLoaded = pluginsEnabled ? false : true;
 
   $: {
-    user.set(data.user || null);
+    let userData = data.user ? { ...data.user } : null;
+    // In OIDC mode, data.user may be stale after HMR (token expired, role changed).
+    // Replace with current cookie values.
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true' && userData) {
+      const freshToken = getCookieValue('accessToken');
+      if (freshToken) {
+        userData = { ...userData, token: freshToken };
+      }
+      const activeRole = getCookieValue('activeRole');
+      if (activeRole) {
+        userData = { ...userData, activeRole };
+      }
+    }
+    user.set(userData);
   }
 
   // Only restart WebSocket when role actually changes, not on every navigation
   // graphql-ws automatically re-subscribes all active subscriptions when reconnected
   $: {
     const newRole = $user?.activeRole ?? null;
-    if (newRole !== previousRole && previousRole !== null) {
+    // Only restart when role actually changes, not on initial load
+    if (previousRole !== null && newRole !== previousRole) {
       restartSharedClient();
     }
     previousRole = newRole;
   }
 
   onMount(() => {
+    const onTokenRefreshed = (e: Event) => {
+      const { token } = (e as CustomEvent<{ token: string }>).detail;
+      user.update(u => (u ? { ...u, token } : u));
+    };
+
+    if (env.PUBLIC_AUTH_OIDC_ENABLED === 'true' && $user) {
+      cookieStoreListener();
+      window.addEventListener('oidc-token-refreshed', onTokenRefreshed);
+    }
+
     if (pluginsEnabled && !$pluginsLoaded) {
       loadPlugins();
     }
+
+    return () => {
+      // Use the window-stored cleanup which always targets the current listener,
+      // even if HMR re-established it with fresh module references.
+      const oidcCleanup = (window as any).__oidcCookieCleanup as (() => void) | undefined;
+      oidcCleanup?.();
+      window.removeEventListener('oidc-token-refreshed', onTokenRefreshed);
+      console.log('Unsubscribed from cookie store changes.');
+
+      // Skip disposing the WebSocket client during HMR - the client should persist
+      // across layout re-mounts so restartSharedClient() can still manage it.
+      // On full page unload, the browser closes the WebSocket automatically.
+      if (!import.meta.hot) {
+        disposeSharedClient();
+      }
+    };
   });
 
   beforeNavigate(({ from, to }) => {

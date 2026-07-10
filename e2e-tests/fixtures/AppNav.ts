@@ -29,6 +29,12 @@ export class AppNav {
     await this.pageLoadingLocator.waitFor({ state: 'detached' });
   }
 
+  async show() {
+    await this.appMenuButton.click();
+    await this.appMenu.waitFor({ state: 'attached' });
+    await this.appMenu.waitFor({ state: 'visible' });
+  }
+
   updatePage(page: Page): void {
     this.aboutModal = page.locator(`.modal:has-text("About")`);
     this.aboutModalCloseButton = page.locator(`.modal:has-text("About") >> button:has-text("Close")`);
