@@ -27,9 +27,18 @@ export type Profile = {
   };
 };
 
+// Dynamics for real profiles (linear interpolation)
+export type RealDynamics = {
+  initial: number;
+  rate: number;
+};
+
+// Dynamics can be: simple value (discrete), RealDynamics (real), or null/missing (gap)
+export type ProfileDynamics = RealDynamics | string | number | boolean | null;
+
 export type ProfileSegment = {
   dataset_id: number;
-  dynamics: any;
+  dynamics?: ProfileDynamics;
   is_gap: boolean;
   profile_id: number;
   start_offset: string;
