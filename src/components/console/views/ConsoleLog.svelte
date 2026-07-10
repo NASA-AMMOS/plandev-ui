@@ -3,7 +3,7 @@
 <script lang="ts">
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
-  import { onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import type { BaseError, LogMessage } from '../../../types/errors';
   import { isLogMessage } from '../../../utilities/errors';
 
@@ -11,69 +11,87 @@
   import { formatMS } from '../../../utilities/time';
 
   export let log: BaseError;
+  export let index: number = -1;
   export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
   export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
+  const dispatch = createEventDispatcher<{
+    toggle: { index: number; open: boolean; size: number };
+  }>();
+
+  let detailsEl: HTMLDetailsElement;
   let expandable: boolean = false;
+  let isTruncated: boolean = false;
   let leftContents: HTMLDivElement;
   let open: boolean = defaultExpanded;
   let expansionPadding: number = 0;
   let level: string = '';
   let renderedMessage: string = '';
 
-  $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
+  $: expandable = !!(log.data || log.trace || log.cause || log.service || isTruncated);
   $: level = (log as LogMessage).level || '';
-  // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
+  // If the message is empty but we have data, fall back to a stringified preview so
+  // the closed row isn't blank. When expanded, the expansion area already shows the
+  // full data block — don't duplicate it inline.
   $: renderedMessage =
     !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
 
-  onMount(() => {
-    // On mount, calculate the amount of padding needed for the expansion content
-    if (leftContents) {
-      expansionPadding = leftContents.clientWidth + 12; // Add 12px to account for gaps
-    }
-  });
-
-  function formatLogShortTimestamp(timestamp: string): string {
-    try {
-      // Remove any trailing microseconds/nanoseconds after the Z
-      // which are present on certain error types and not parseable by native JS Date.
-      const cleanTimestamp = timestamp.replace(/Z\.\d+$/, 'Z');
-      const date = new Date(cleanTimestamp);
-      if (isNaN(date.getTime())) {
-        return timestamp; // Return original if parsing fails
-      }
-      return date.toLocaleString('en-US', {
-        timeStyle: 'medium',
-      });
-    } catch {
-      return timestamp; // Return original if any error occurs
+  function onToggle() {
+    if (open && leftContents && !expansionPadding) {
+      expansionPadding = leftContents.clientWidth + 12;
     }
   }
 
-  function formatLogLongTimestamp(timestamp: string): string {
-    try {
-      // Remove any trailing microseconds/nanoseconds after the Z
-      // which are present on certain error types and not parseable by native JS Date.
-      const cleanTimestamp = timestamp.replace(/Z\.\d+$/, 'Z');
-      const date = new Date(cleanTimestamp);
-      if (isNaN(date.getTime())) {
-        return timestamp; // Return original if parsing fails
+  // Truncation detection: tracks whether the message overflows the truncated container.
+  function observeOverflow(node: HTMLElement) {
+    const update = () => {
+      isTruncated = node.scrollWidth > node.clientWidth;
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return { destroy: () => observer.disconnect() };
+  }
+
+  // Row size dispatch: fires whenever <details> resizes (initial mount, user toggle,
+  // expansion area appearing/disappearing because truncation status changed on
+  // window resize). One mechanism covers all paths that affect the virtualizer's
+  // cached size for this row.
+  function observeRowSize(node: HTMLDetailsElement) {
+    const observer = new ResizeObserver(() => {
+      if (index < 0) {
+        return;
       }
-      return date.toISOString();
+      dispatch('toggle', { index, open, size: node.getBoundingClientRect().height });
+    });
+    observer.observe(node);
+    return { destroy: () => observer.disconnect() };
+  }
+
+  function formatTimestamp(timestamp: string, mode: 'short' | 'long'): string {
+    try {
+      // Strip trailing microseconds/nanoseconds (e.g. "Z.123456") which some error
+      // types include and `new Date()` can't parse.
+      const date = new Date(timestamp.replace(/Z\.\d+$/, 'Z'));
+      if (isNaN(date.getTime())) {
+        return timestamp;
+      }
+      return mode === 'short' ? date.toLocaleString('en-US', { timeStyle: 'medium' }) : date.toISOString();
     } catch {
-      return timestamp; // Return original if any error occurs
+      return timestamp;
     }
   }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <details
+  bind:this={detailsEl}
+  use:observeRowSize
   class="group"
   bind:open
+  on:toggle={onToggle}
   on:keypress={e => {
     // prevent expansion when no content is available
     if (!expandable) {
@@ -109,7 +127,7 @@
           <div class="flex gap-2">
             {#if showTimestamp}
               <span class="flex flex-shrink-0 text-muted-foreground">
-                {formatLogShortTimestamp(log.timestamp)}
+                {formatTimestamp(log.timestamp, 'short')}
               </span>
             {/if}
             {#if showLevel && level}
@@ -133,10 +151,12 @@
             {/if}
           </div>
         </div>
-        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          <slot name="message" {log} message={renderedMessage} {expandable} {open}>
-            {renderedMessage}
-          </slot>
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden">
+          <div class="min-w-0 flex-1 truncate" use:observeOverflow>
+            <slot name="message" {log} message={renderedMessage} {expandable} {open}>
+              {renderedMessage}
+            </slot>
+          </div>
           {#if isLogMessage(log) && typeof log.duration === 'number'}
             <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
           {/if}
@@ -146,9 +166,12 @@
   </summary>
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
+      {#if isTruncated && log.message}
+        <div class="mb-3 whitespace-pre-wrap break-all">{log.message}</div>
+      {/if}
       {#if log.timestamp && showLongTimestamp}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          Timestamp: {formatLogLongTimestamp(log.timestamp)}
+          Timestamp: {formatTimestamp(log.timestamp, 'long')}
         </div>
       {/if}
       {#if log.data && safeStringify(log.data) !== '{}'}
