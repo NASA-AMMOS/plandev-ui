@@ -250,7 +250,6 @@ describe('reqWorkspace error parsing', () => {
   });
 });
 
-
 // Minimal Response stand-in: `headers.get` is the only header API the code uses,
 // so a plain object avoids depending on a global `Headers` implementation.
 // todo: deduplicate - this almost duplicates the mocks above (due to merged code)

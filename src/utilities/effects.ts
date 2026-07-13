@@ -298,13 +298,7 @@ import {
   showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import {
-  reqActionServer,
-  reqExtension,
-  reqGateway,
-  reqHasura,
-  WorkspaceSaveConflictError,
-} from './requests';
+import { reqActionServer, reqExtension, reqGateway, reqHasura, WorkspaceSaveConflictError } from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
@@ -6396,7 +6390,10 @@ const effects = {
         const { modelExternalSourceLink: sourceAssociation } = data;
         // If the return was null, do nothing - only act on success or non-null
         if (sourceAssociation !== null) {
-          logMessage('log', `Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          logMessage(
+            'log',
+            `Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`,
+          );
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
