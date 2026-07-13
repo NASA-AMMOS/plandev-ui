@@ -148,8 +148,8 @@ import type {
   ConstraintEffectiveArguments,
   DefaultEffectiveArguments,
   EffectiveArguments,
+  ErrorMap,
   ParametersMap,
-  ParameterValidationError,
   ParameterValidationResponse,
   SchedulingGoalEffectiveArguments,
 } from '../types/parameter';
@@ -298,7 +298,13 @@ import {
   showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
+import {
+  reqActionServer,
+  reqExtension,
+  reqGateway,
+  reqHasura,
+  WorkspaceSaveConflictError,
+} from './requests';
 import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
@@ -1063,7 +1069,7 @@ const effects = {
     metadata: ActivityMetadata,
     plan: Plan | null,
     user: User | null,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       if ((plan && !queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) || !plan) {
         throwPermissionError('add a directive to the plan');
@@ -1105,6 +1111,7 @@ const effects = {
 
           showSuccessToast('Activity Directive Created Successfully');
           logMessage('log', `Created activity directive "${name}" (ID=${id}).`);
+          return id;
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -1115,6 +1122,7 @@ const effects = {
       catchError('log', 'Activity Directive Create Failed', e as Error);
       showFailureToast('Activity Directive Create Failed');
     }
+    return null;
   },
 
   async createActivityDirectiveTags(
@@ -3070,7 +3078,7 @@ const effects = {
           const sourceDissociation = data.modelDerivationGroupLink?.returning[0];
           // If the return was null, do nothing - only act on success or non-null
           if (sourceDissociation) {
-            logMessage(`Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
+            logMessage('log', `Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
             showSuccessToast('Derivation Group Disassociated Successfully');
           }
         } else {
@@ -3078,7 +3086,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Derivation Group De-linking Failed', e as Error);
+      catchError('log', 'Derivation Group De-linking Failed', e as Error);
       showFailureToast('Derivation Group De-linking Failed');
       derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
@@ -5899,22 +5907,21 @@ const effects = {
     return null;
   },
 
-  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
+  async getWorkspaceFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string | null; etag: string | null }> {
     try {
-      const fileContents = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
-
-      if (fileContents != null) {
-        logMessage('log', `Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
-        return fileContents;
-      } else {
-        throw Error(`Workspace file contents not found`);
-      }
+      const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
+      logMessage('log', `Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
+      return { content, etag };
     } catch (e) {
       catchError('log', 'Unable to retrieve workspace file', e as Error);
       showFailureToast('Workspace File Retrieval Failed', e);
     }
 
-    return null;
+    return { content: null, etag: null };
   },
 
   async getWorkspaceFileContentBlob(workspace: Workspace, filePath: string, user: User | null): Promise<Blob | null> {
@@ -5984,7 +5991,7 @@ const effects = {
         chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
           let sequenceDefinition = '';
           if (getFileContents) {
-            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)) ?? '';
+            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)).content ?? '';
           }
           return {
             definition: sequenceDefinition,
@@ -6389,14 +6396,14 @@ const effects = {
         const { modelExternalSourceLink: sourceAssociation } = data;
         // If the return was null, do nothing - only act on success or non-null
         if (sourceAssociation !== null) {
-          logMessage(`Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          logMessage('log', `Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
         throw new Error('Model is not defined.');
       }
     } catch (e) {
-      catchError('Derivation Group Linking Failed', e as Error);
+      catchError('log', 'Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
       derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
@@ -7241,15 +7248,33 @@ const effects = {
     }
   },
 
-  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+  /**
+   * Saves a workspace file. Pass `ifMatch` (the `baseEtag`) to run the concurrency check,
+   * or `'*'` to force. Returns `{ etag }` (the new etag) on success. Always throws on failure so
+   * callers have a single failure path: a {@link WorkspaceSaveConflictError} on `412` (the caller
+   * shows the conflict modal), or any other error (already surfaced as a failure toast here).
+   */
+  async saveWorkspaceFile(
+    workspaceId: number,
+    filePath: string,
+    fileContent: string,
+    user: User | null = null,
+    ifMatch?: string | '*',
+  ): Promise<{ etag: string | null }> {
     try {
-      await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user);
+      const etag = await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user, ifMatch);
 
       showSuccessToast('Workspace File Saved Successfully');
       logMessage('log', `Saved workspace file "${filePath}".`);
+      return { etag };
     } catch (e) {
-      catchError('log', 'Workspace file was unable to be saved', e as Error);
-      showFailureToast('Workspace File Save Failed', e);
+      // Conflict is the caller's to resolve (modal), so don't toast it. Everything else is a real
+      // failure we surface here before rethrowing, so callers just bail in their catch.
+      if (!(e instanceof WorkspaceSaveConflictError)) {
+        catchError('log', 'Workspace file was unable to be saved', e as Error);
+        showFailureToast('Workspace File Save Failed', e);
+      }
+      throw e;
     }
   },
 
@@ -7382,7 +7407,7 @@ const effects = {
       if ((e as Error)?.name === 'AbortError') {
         return null;
       }
-      catchError('Search Failed', e as Error);
+      catchError('log', 'Search Failed', e as Error);
       showFailureToast('Search Failed');
     }
     return null;
@@ -8035,7 +8060,7 @@ const effects = {
     }
   },
 
-  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<void> {
+  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
@@ -8047,14 +8072,14 @@ const effects = {
       if (updatePlan.id != null) {
         showSuccessToast('Plan Updated Successfully');
         logMessage('log', `Updated plan "${plan.name}" (ID=${plan.id}).`);
-        return;
+        return true;
       } else {
         throw Error(`Unable to update plan with ID: "${plan.id}"`);
       }
     } catch (e) {
       catchError('log', 'Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
-      return;
+      return false;
     }
   },
 
@@ -8106,6 +8131,20 @@ const effects = {
       showFailureToast('Plan Snapshot Update Failed');
       return;
     }
+  },
+
+  /**
+   * Applies a plan time-bounds update (new `start_time` + `duration`) and returns whether it
+   * succeeded. The confirmation/warning UX and the start/end editing now live in
+   * ChangePlanBoundsModal, which calls this; callers compute `planTimeUpdate` with
+   * `computePlanTimeUpdate` (kept pure in utilities/plan.ts to avoid an effects <-> plan cycle).
+   */
+  async updatePlanTimeBounds(
+    plan: Plan | PlanSlim,
+    planTimeUpdate: { duration: string; start_time: string },
+    user: User | null,
+  ): Promise<boolean> {
+    return effects.updatePlan(plan as Plan, planTimeUpdate, user);
   },
 
   async updateSchedulingConditionDefinitionTags(
@@ -8943,11 +8982,11 @@ const effects = {
 
   async validateActivityArguments(
     activityTypeName: string,
-    activityId: number,
+    activityId: number | undefined,
     modelId: number,
     argumentsMap: ArgumentsMap,
     user: User | null,
-  ): Promise<ParameterValidationResponse> {
+  ): Promise<ErrorMap> {
     try {
       const data = await reqHasura<ParameterValidationResponse>(
         gql.VALIDATE_ACTIVITY_ARGUMENTS,
@@ -8961,14 +9000,32 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
-        logMessage('log', `Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
-        return validateActivityArguments;
+        if (activityId !== undefined) {
+          logMessage('log', `Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
+        } else {
+          logMessage('log', `Validated activity arguments for pending directive of "${activityTypeName}"`);
+        }
+
+        // If there were errors, create and return a map of them
+        if (!validateActivityArguments.success && validateActivityArguments.errors) {
+          const errorsMap = validateActivityArguments.errors.reduce((map: Record<string, string[]>, error) => {
+            error.subjects?.forEach(subject => {
+              if (!map[subject]) {
+                map[subject] = [];
+              }
+              map[subject].push(error.message);
+            });
+            return map;
+          }, {});
+          return errorsMap;
+        } else {
+          return {};
+        }
       } else {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      const { message } = e as Error;
-      return { errors: [{ message } as ParameterValidationError], success: false };
+      return {};
     }
   },
 

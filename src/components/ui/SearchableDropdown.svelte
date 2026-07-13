@@ -39,7 +39,7 @@
   export let maxListHeight: string = '300px';
   export let name: string | undefined = undefined;
   export let updatePermissionError: string = 'You do not have permission to update this';
-  export let placeholder: string = '';
+  export let placeholder: string | null = null;
   export let planReadOnly: boolean = false;
   export let selectedOptionLabel: string = '';
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
@@ -132,7 +132,7 @@
   $: {
     filteredOptions = !searchFilter
       ? [
-          ...(showPlaceholderOption && placeholder
+          ...(showPlaceholderOption && placeholder !== null
             ? [
                 {
                   display: placeholder,
@@ -156,7 +156,7 @@
 
   $: {
     if (selectedOptions.length < 1) {
-      label = placeholder;
+      label = placeholder ?? '';
     } else if (selectedOptionLabel) {
       label = selectedOptionLabel;
     } else if (selectedOptions.length === 1) {
@@ -277,7 +277,7 @@
           {@const displayedOption = item}
           {@const selected =
             !!selectedOptions.find(o => o.value === displayedOption.value) ||
-            (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0)}
+            (!!showPlaceholderOption && selectedOptions.length === 0 && index === 0 && !displayedOption.value)}
           <MenuItem
             className="min-h-9 py-2"
             {selected}

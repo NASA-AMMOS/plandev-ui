@@ -15,7 +15,7 @@
 </script>
 
 <div>
-  <select class="st-select w-full" required bind:value title={argDef.description}>
+  <select class="st-select w-full" required bind:value title={argDef.description} aria-label={argDef.name}>
     {#each ['false', 'true'] as ev}
       <option>{ev}</option>
     {/each}

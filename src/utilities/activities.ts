@@ -142,7 +142,8 @@ export enum ActivityDeletionAction {
 
 export function computeActivityDirectivesMap(
   activityDirectiveDBs: ActivityDirectiveDB[],
-  plan: Plan,
+  planStartTimeYmd: string,
+  planEndTimeDoy: string,
   spansMap: SpansMap,
   spanUtilityMaps: SpanUtilityMaps,
 ) {
@@ -156,7 +157,8 @@ export function computeActivityDirectivesMap(
     preprocessActivityDirectiveDB(
       activityDirectiveDB,
       directiveDBMap,
-      plan,
+      planStartTimeYmd,
+      planEndTimeDoy,
       spansMap,
       spanUtilityMaps,
       cachedStartTimes,
@@ -168,17 +170,18 @@ export function computeActivityDirectivesMap(
 export function preprocessActivityDirectiveDB(
   activityDirectiveDB: ActivityDirectiveDB,
   activityDirectivesMap: ActivityDirectivesMap,
-  plan: Plan,
+  planStartTimeYmd: string,
+  planEndTimeDoy: string,
   spansMap: SpansMap,
   spanUtilityMaps: SpanUtilityMaps,
   cachedStartTimes = {},
 ): ActivityDirective {
   let start_time_ms = -1;
-  if (plan && typeof plan.start_time === 'string') {
+  if (planStartTimeYmd) {
     start_time_ms = getActivityDirectiveStartTimeMs(
       activityDirectiveDB.id,
-      plan.start_time,
-      plan.end_time_doy,
+      planStartTimeYmd,
+      planEndTimeDoy,
       activityDirectivesMap,
       spansMap,
       spanUtilityMaps,
@@ -380,7 +383,13 @@ export function addAbsoluteTimeToRevision(
   spansMap: SpansMap,
   spanUtilityMaps: SpanUtilityMaps,
 ): ActivityDirectiveRevision {
-  const activityDirectivesMap = computeActivityDirectivesMap(activitiesDirectivesDB, plan, spansMap, spanUtilityMaps);
+  const activityDirectivesMap = computeActivityDirectivesMap(
+    activitiesDirectivesDB,
+    plan.start_time,
+    plan.end_time_doy,
+    spansMap,
+    spanUtilityMaps,
+  );
   //Temporarily overlay the currentActivity with the revision
   const tempDirectivesMap: ActivityDirectivesMap = {
     ...activityDirectivesMap,
@@ -454,7 +463,8 @@ export function packActivityDirectivesInPlan(
 
   const activityDirectivesMap = computeActivityDirectivesMap(
     activitiesDirectivesDB,
-    sourcePlan,
+    sourcePlan.start_time,
+    sourcePlan.end_time_doy,
     spansMap,
     spanUtilityMaps,
   );

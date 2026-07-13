@@ -119,7 +119,7 @@
       $activityArgumentDefaultsMap[activityType?.name || ''] ?? {},
     );
   }
-  $: validateArguments(revision ? revision.arguments : activityDirective.arguments);
+  $: getArgumentValidation(revision ? revision.arguments : activityDirective.arguments);
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
@@ -418,30 +418,15 @@
     }
   }
 
-  async function validateArguments(newArguments: ArgumentsMap | null): Promise<void> {
-    if (newArguments) {
-      const { type } = activityDirective;
-      const { errors, success } = await effects.validateActivityArguments(
-        type,
+  async function getArgumentValidation(newArguments: ArgumentsMap | null): Promise<void> {
+    if (newArguments && user) {
+      parameterErrorMap = await effects.validateActivityArguments(
+        activityDirective.type,
         activityDirective.id,
         modelId,
         newArguments,
         user,
       );
-
-      if (!success && errors) {
-        parameterErrorMap = errors.reduce((map: Record<string, string[]>, error) => {
-          error.subjects?.forEach(subject => {
-            if (!map[subject]) {
-              map[subject] = [];
-            }
-            map[subject].push(error.message);
-          });
-          return map;
-        }, {});
-      } else {
-        parameterErrorMap = {};
-      }
     }
   }
 

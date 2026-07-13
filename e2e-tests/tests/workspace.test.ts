@@ -14,6 +14,7 @@ let setup: BrowserSetupResult;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
+let sequenceB: { sequenceName: string; sequencePath: string };
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
@@ -23,6 +24,19 @@ let workspaceForUnauthorized: Workspace;
 // Separate browser contexts for multi-user tests
 let setupAuthorized: BrowserSetupResult; // userA - will be added as collaborator
 let setupUnauthorized: BrowserSetupResult; // userB - not a collaborator
+
+/**
+ * Asserts the three invariants of "this sequence is the active workspace file":
+ * URL matches, the file's row is selected in the tree, and the editor pane has
+ * rendered the file's section title. Used by the back/forward navigation tests.
+ */
+async function expectSequenceActive(seq: { sequenceName: string; sequencePath: string }): Promise<void> {
+  await expect(setup.page).toHaveURL(
+    getWorkspacesUrl(workspace.baseURL, parseInt(workspaceId), `${seq.sequencePath}/${seq.sequenceName}`),
+  );
+  await expect(workspace.getFileRow(seq.sequenceName)).toHaveAttribute('aria-selected', 'true');
+  await expect(setup.page.getByTitle(`${seq.sequencePath}/${seq.sequenceName}`).first()).toBeVisible();
+}
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
@@ -130,6 +144,49 @@ test.describe.serial('Workspace', () => {
         `${sequence.sequencePath}/${sequence.sequenceName}`,
       ),
     );
+  });
+
+  // The next six tests exercise the workspace's browser-history state machine:
+  // open a second file, walk back/forward, switch to the actions tab and back.
+  // Each transition is verified against three invariants — URL, tree selection,
+  // and the editor pane's rendered section title — via expectSequenceActive.
+  test('Back/forward: create a second sequence and open it builds the back stack', async () => {
+    sequenceB = await workspace.createSequence();
+    await workspace.clearSearch();
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.clickFile(sequenceB.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: browser back returns to the previously opened sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequence);
+  });
+
+  test('Back/forward: browser forward returns to the more recent sequence', async () => {
+    await setup.page.goForward();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: switching to the actions tab updates the URL', async () => {
+    await setup.page.getByLabel('Actions', { exact: true }).click();
+    await expect(setup.page).toHaveURL(/sidebarTab=actions/);
+  });
+
+  test('Back/forward: browser back from actions tab returns to the previously open sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: restore state for downstream tests (sequence A active, B deleted)', async () => {
+    await workspace.searchForFileAndWait(sequence.sequenceName);
+    await workspace.clickFile(sequence.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequence);
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.deleteSequence(sequenceB.sequenceName);
+    await workspace.clearSearch();
   });
 
   test('Update the selected sequence content', async () => {
@@ -546,17 +603,31 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Toggle file read-only and verify editor is locked', async () => {
-    // Create a sequence file to test with
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    // Use the adaptation's input-sequence extension so the file opens as a sequence with the
+    // Selected Command panel (a plain `.seq` would open as generic text — no command panel).
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
     // Wait for the editor to load and the file metadata banner to appear
     await expect(workspace.readOnlyCheckbox).toBeVisible({ timeout: 10000 });
 
+    // Add a command so the Selected Command panel renders editable argument inputs.
+    await workspace.fillSequenceContent('C FSW_CMD_0 "ON" true 0.5');
+
+    // The Selected Command panel (right side) shows the command's argument editors;
+    // float_arg_0 renders as a numeric input (spinbutton) labeled by its arg name.
+    const commandArgInput = setup.page.getByRole('spinbutton', { name: 'float_arg_0' });
+    await expect(commandArgInput).toBeVisible({ timeout: 10000 });
+
     // Verify the file is initially editable — title should NOT contain "(Read only)"
     await expect(setup.page.getByText('(Read only)')).not.toBeVisible();
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive.
+    await expect(commandArgInput).toBeEnabled();
+
+    // Persist so the document is clean before toggling read-only / deleting later.
+    await workspace.saveSequence();
 
     // Toggle read-only ON
     await workspace.readOnlyCheckbox.click();
@@ -567,6 +638,10 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button is hidden (read-only files can't be saved)
     await expect(workspace.saveSequenceButton).not.toBeVisible();
+
+    // Verify the Selected Command panel argument inputs are disabled while read-only —
+    // `EditorState.readOnly` alone wouldn't stop the form-builder from editing the document.
+    await expect(commandArgInput).toBeDisabled();
 
     // Verify the editor rejects input — type something and confirm content didn't change
     await workspace.sequenceEditor.click();
@@ -582,6 +657,8 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button reappears
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive again.
+    await expect(commandArgInput).toBeEnabled();
 
     // Cleanup
     await workspace.searchForFileAndWait(sequenceName);

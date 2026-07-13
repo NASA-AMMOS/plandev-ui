@@ -25,6 +25,8 @@ export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
 export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
+export const planBoundsPreviewOverride: Writable<{ duration: string; start_time: string } | null> = writable(null);
+
 /* "plan" store dependencies */
 export const initialPlan: Writable<Plan | null> = writable(null);
 
@@ -47,6 +49,10 @@ export const plan: Readable<Plan | null> = derived([initialPlan, planMetadata], 
 export const planModelId: Readable<number> = derived(initialPlan, $plan => $plan?.model?.id ?? -1);
 
 export const planModelRevision: Readable<number> = derived(initialPlan, $plan => $plan?.model?.revision ?? -1);
+
+export const planStartTimeYmd: Readable<string> = derived(plan, $plan => $plan?.start_time ?? '');
+
+export const planEndTimeDoy: Readable<string> = derived(plan, $plan => $plan?.end_time_doy ?? '');
 
 /* Subscriptions. */
 
@@ -73,9 +79,6 @@ export function resetPlanStores() {
   createPlanError.set(null);
   creatingPlan.set(false);
   initialPlan.set(null);
-  planEndTimeMs.set(0);
-  planStartTimeMs.set(0);
-  maxTimeRange.set({ end: 0, start: 0 });
   viewTimeRange.set({ end: 0, start: 0 });
 }
 

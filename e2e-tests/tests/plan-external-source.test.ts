@@ -142,7 +142,7 @@ test.describe.serial('Plan External Sources', () => {
     await setupA.page.getByRole('tab', { exact: true, name: 'Events' }).click();
     await expect(setupA.page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
     await setupA.page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
-    await setupA.page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();
+    await setupA.page.getByLabel(`FilterExternalevent-${externalSources.exampleEventType}`).click();
     await setupA.page.getByRole('menuitem', { name: 'New Row +' }).click();
     await expect(
       setupA.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),

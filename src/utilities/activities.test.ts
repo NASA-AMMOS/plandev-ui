@@ -540,9 +540,11 @@ describe('updateAnchorStartOffset', () => {
     spanIdToDirectiveIdMap,
   };
 
+  const testPlan = getTestPlan();
   const activityDirectivesMap = computeActivityDirectivesMap(
     getTestActivityDirectivesDB(),
-    getTestPlan(),
+    testPlan.start_time,
+    testPlan.end_time_doy,
     spans,
     spanUtilityMaps,
   );

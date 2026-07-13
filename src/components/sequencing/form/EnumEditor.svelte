@@ -9,6 +9,7 @@
 
   export let argDef: FswCommandArgumentEnum;
   export let commandDictionary: CommandDictionary | null = null;
+  export let disabled: boolean = false;
   export let initVal: string;
   export let setInEditor: (val: string) => void;
 
@@ -37,14 +38,16 @@
 <div>
   {#if enumValues.length > SEARCH_THRESHOLD}
     <SearchableDropdown
+      {disabled}
       {options}
       on:change={onSelectReferenceModel}
       {selectedOptionValues}
+      name={argDef.name}
       placeholder={value}
       searchPlaceholder="Filter values"
     />
   {:else}
-    <select class="st-select w-full" required bind:value>
+    <select class="st-select w-full" required bind:value aria-label={argDef.name}>
       {#if !isValueInEnum}
         <option>{value}</option>
       {/if}

@@ -136,7 +136,7 @@
 </script>
 
 <div class="flex h-full w-full flex-col">
-  <div class="h-full min-h-[300px]" role="tabpanel">
+  <div class="h-full min-h-0" role="tabpanel">
     {#if activeTab === 'files'}
       <div class="grid h-full grid-rows-[min-content_auto]">
         <Sidebar.Header className="p-0">
@@ -257,7 +257,7 @@
                     </select>
                   </Input>
                 </fieldset>
-                <fieldset>
+                <fieldset class="pb-4">
                   <Input layout="stacked">
                     <label use:tooltip={{ content: 'Collaborators', placement: 'top' }} for="collaborators">
                       Collaborators

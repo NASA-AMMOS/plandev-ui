@@ -7,6 +7,7 @@
   import { afterUpdate, createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { SOURCES, TRIGGERS, dndzone } from 'svelte-dnd-action';
   import { InvalidDate } from '../../constants/time';
+  import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../../stores/directiveBuilder';
   import { planDerivationGroupLinks } from '../../stores/external-source';
   import { plugins } from '../../stores/plugins';
   import { viewAddTimelineRow, viewUpdateTimeline } from '../../stores/views';
@@ -382,6 +383,11 @@
       tooltip.hide();
     }
   }
+
+  function onBuildActivityDirective(startTime: string, activityType: string) {
+    updateDirectiveBuilder({ startTime, type: activityType });
+    $directiveBuilderIsVisible = true;
+  }
 </script>
 
 <svelte:window on:keydown={onKeyDown} />
@@ -513,6 +519,7 @@
             yAxes={row.yAxes}
             {timelineZoomTransform}
             on:contextMenu={e => onContextMenu(e, row)}
+            on:buildDirective={e => onBuildActivityDirective(e.detail.startTime, e.detail.type)}
             on:dblClick
             on:deleteActivityDirective
             on:mouseDown={onMouseDown}

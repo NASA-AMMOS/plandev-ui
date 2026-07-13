@@ -22,6 +22,7 @@
     closeSuggestions();
   };
   export let allowMultiple: boolean = true;
+  export let boxClassName: string = 'max-h-[40vh]';
   export let createTagObject: (name: string) => Tag = (name: string) => {
     return { color: generateRandomPastelColor(), created_at: '', id: -1, name, owner: '' };
   };
@@ -234,7 +235,7 @@
 
 <div
   class={classNames(
-    'flex max-h-[40vh] gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px] focus-within:ring-2 focus-within:ring-ring',
+    `flex ${boxClassName} gap-2 overflow-hidden rounded-md border border-input bg-background p-[2px] focus-within:ring-2 focus-within:ring-ring`,
     {
       [className]: !!className,
       'cursor-not-allowed opacity-50': disabled,

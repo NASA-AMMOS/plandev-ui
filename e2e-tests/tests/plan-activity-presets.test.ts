@@ -7,7 +7,7 @@ test.beforeAll(async ({ browser }) => {
   setup = await setupTest(browser);
   await setup.plan.goto();
 
-  await setup.plan.addActivity('GrowBanana');
+  await setup.plan.addActivityByDragAndDrop('GrowBanana');
   await setup.plan.panelActivityDirectivesTable.getByRole('gridcell', { name: 'GrowBanana' }).first().click();
 
   await setup.plan.panelActivityForm.locator('.parameter-base-number input[type="number"]').fill('2');

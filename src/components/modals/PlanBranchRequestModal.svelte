@@ -1,11 +1,13 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Alert } from '@nasa-jpl/stellar-svelte';
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import MergeIcon from '@nasa-jpl/stellar/icons/merge.svg?component';
+  import { TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { Plan, PlanBranchRequestAction, PlanForMerging } from '../../types/plan';
-  import AlertError from '../ui/AlertError.svelte';
+  import { getDoyTime, getDoyTimeFromInterval, getIntervalInMs } from '../../utilities/time';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
@@ -37,6 +39,7 @@
   let selectedPlan: PlanForMerging | null = null;
   let selectedPlanId: number | null = null;
   let planModelsCompatible: boolean = true;
+  let timeBoundsCompatible: boolean = true;
 
   $: selectedPlanId = plan?.parent_plan?.id ?? null;
   $: selectedPlan = planList.find(({ id }) => id === selectedPlanId) ?? null;
@@ -55,7 +58,21 @@
   } else {
     planModelsCompatible = true;
   }
-  $: createButtonDisabled = selectedPlanId === null || !planModelsCompatible;
+  $: if (selectedPlan && plan.parent_plan) {
+    timeBoundsCompatible =
+      new Date(plan.start_time).getTime() === new Date(plan.parent_plan.start_time).getTime() &&
+      getIntervalInMs(plan.duration) === getIntervalInMs(plan.parent_plan.duration);
+  } else {
+    timeBoundsCompatible = true;
+  }
+  $: createButtonDisabled = selectedPlanId === null || !planModelsCompatible || !timeBoundsCompatible;
+
+  $: sourceStartTime = getDoyTime(new Date(plan.start_time), false);
+  $: sourceEndTime = getDoyTimeFromInterval(plan.start_time, plan.duration, false);
+  $: targetStartTime = plan.parent_plan ? getDoyTime(new Date(plan.parent_plan.start_time), false) : '';
+  $: targetEndTime = plan.parent_plan
+    ? getDoyTimeFromInterval(plan.parent_plan.start_time, plan.parent_plan.duration, false)
+    : '';
 
   function create() {
     if (!createButtonDisabled && selectedPlan !== null) {
@@ -83,10 +100,24 @@
   <ModalContent>
     <div class="branch-action-container">
       {#if !planModelsCompatible}
-        <AlertError
-          fullError={`Current branch's model (ID: ${plan.model_id}) does not match target plan's model (ID: ${plan.parent_plan?.model_id})`}
-          error="Cannot create merge request due to mismatch in source and target plan models"
-        />
+        <Alert.Root variant="destructive" class="mb-3">
+          <TriangleAlert class="h-4 w-4" />
+          <Alert.Title>Invalid Merge Request</Alert.Title>
+          <Alert.Description>
+            Current branch's model (ID: {plan.model_id}) does not match target plan's model (ID: {plan.parent_plan
+              ?.model_id})
+          </Alert.Description>
+        </Alert.Root>
+      {/if}
+      {#if !timeBoundsCompatible}
+        <Alert.Root variant="destructive" class="mb-3">
+          <TriangleAlert class="h-4 w-4" />
+          <Alert.Title>Invalid Merge Request</Alert.Title>
+          <Alert.Description>
+            Current branch (start: {sourceStartTime}, end: {sourceEndTime}) and target plan (start: {targetStartTime},
+            end: {targetEndTime}) have different time bounds.
+          </Alert.Description>
+        </Alert.Root>
       {/if}
       <div>
         <div class="branch-header">Current branch</div>

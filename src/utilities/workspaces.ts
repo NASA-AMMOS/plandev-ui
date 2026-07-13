@@ -1,7 +1,8 @@
 import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
 import JSZip from 'jszip';
 import { PATH_DELIMITER } from '../constants/workspaces';
-import { WorkspaceContentType } from '../enums/workspace';
+import { SearchParameters } from '../enums/searchParameters';
+import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
 import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
@@ -14,7 +15,7 @@ import type {
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
 import type { LogMessage } from '../types/console';
-import { CompoundError, reqWorkspace, reqWorkspaceMetadata } from './requests';
+import { CompoundError, reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -56,6 +57,65 @@ export function separateFilenameFromPath(filePath: string): { filename: string; 
 
 export function cleanPath(path: string | null = '') {
   return (path ?? '').replace(/^\.{0,2}\//, '').replace(/\/$/, '');
+}
+
+export interface WorkspaceUrlState {
+  actionId: number | null;
+  actionRunId: number | null;
+  filePath: string | null;
+  mode: WorkspaceContentMode;
+  sidebarTab: string;
+}
+
+function parseIdParam(raw: string | null): number | null {
+  if (raw === null) {
+    return null;
+  }
+  const n = parseInt(raw, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+/**
+ * Derive workspace navigation state from a URL's search params. Single source
+ * of truth for the URL-driven slice of the workspace page — the page applies
+ * these to stores/let-vars on initial mount and on popstate.
+ */
+export function parseUrlState(url: URL): WorkspaceUrlState {
+  const filePath = url.searchParams.get(SearchParameters.SEQUENCE_ID);
+  const actionRunId = parseIdParam(url.searchParams.get(SearchParameters.ACTION_RUN_ID));
+  const actionId = parseIdParam(url.searchParams.get(SearchParameters.ACTION_ID));
+  const sidebarTabParam = url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+
+  let mode: WorkspaceContentMode;
+  let sidebarTab: string;
+  if (actionRunId !== null) {
+    mode = WorkspaceContentMode.ActionRunDetail;
+    sidebarTab = 'actions';
+  } else if (actionId !== null) {
+    mode = WorkspaceContentMode.ActionDetail;
+    sidebarTab = 'actions';
+  } else if (sidebarTabParam === 'actions') {
+    mode = WorkspaceContentMode.ActionRunsList;
+    sidebarTab = 'actions';
+  } else {
+    mode = WorkspaceContentMode.File;
+    sidebarTab = 'files';
+  }
+
+  return { actionId, actionRunId, filePath, mode, sidebarTab };
+}
+
+/**
+ * Whether `path` is visible within the file-browser when its breadcrumb is
+ * pointing at `breadcrumb`. The browser renders strict descendants of
+ * `breadcrumb` (or every top-level entry when at root), so the breadcrumb
+ * folder itself is NOT considered "in" the view.
+ */
+export function isPathInBreadcrumb(path: string, breadcrumb: string): boolean {
+  if (breadcrumb === '') {
+    return true;
+  }
+  return path.startsWith(`${breadcrumb}/`);
 }
 
 export function joinPath(pathParts: (string | number | boolean)[]) {
@@ -447,8 +507,21 @@ export const WorkspaceApi = {
   async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
     return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
   },
-  async getFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
-    return reqWorkspace<string>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false);
+  async getFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string; etag: string | null }> {
+    // Throws a WorkspaceRequestError (with status) on any non-2xx — content is never null.
+    const { data, etag } = await reqWorkspaceWithEtag<string>(
+      joinPath([workspaceId, filePath]),
+      'GET',
+      null,
+      user,
+      undefined,
+      false,
+    );
+    return { content: data, etag };
   },
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
@@ -563,22 +636,30 @@ export const WorkspaceApi = {
       { 'Content-Type': 'application/json' },
     );
   },
+  /**
+   * Saves a workspace file and returns the new `ETag`. With `ifMatch` the server runs the
+   * concurrency check and `412`s (as a `WorkspaceSaveConflictError`) if it changed; `'*'`
+   * forces. Only `If-Match` is injected — the browser sets the multipart `Content-Type`.
+   */
   async saveFile(
     workspaceId: number,
     filePath: string,
     fileContent: string,
     shouldOverwrite: boolean,
     user: User | null,
-  ) {
+    ifMatch?: string | '*',
+  ): Promise<string | null> {
     const body = createFormDataWithFile(filePath, fileContent);
-    return reqWorkspace<Workspace>(
+    const { etag } = await reqWorkspaceWithEtag<Workspace>(
       `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
       'PUT',
       body,
       user,
       undefined,
       false,
+      ifMatch ? { 'If-Match': ifMatch } : {},
     );
+    return etag;
   },
   async setFileMetadata(
     workspaceId: number,

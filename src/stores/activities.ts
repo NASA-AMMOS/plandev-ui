@@ -10,7 +10,7 @@ import type { DefaultEffectiveArguments, DefaultEffectiveArgumentsMap } from '..
 import type { SpanId } from '../types/simulation';
 import { computeActivityDirectivesMap } from '../utilities/activities';
 import gql from '../utilities/gql';
-import { initialPlan, planId } from './plan';
+import { planEndTimeDoy, planId, planStartTimeYmd } from './plan';
 import { planSnapshotActivityDirectives, planSnapshotId } from './planSnapshots';
 import { selectedSpanId, spansMap, spanUtilityMaps } from './simulation';
 import { gqlSubscribable } from './subscribable';
@@ -59,24 +59,34 @@ export const activityArgumentDefaultsMap: Readable<DefaultEffectiveArgumentsMap>
 );
 
 export const activityDirectivesMap = derived(
-  [activityDirectivesDB, planSnapshotId, planSnapshotActivityDirectives, initialPlan, spansMap, spanUtilityMaps],
+  [
+    activityDirectivesDB,
+    planSnapshotId,
+    planSnapshotActivityDirectives,
+    planStartTimeYmd,
+    planEndTimeDoy,
+    spansMap,
+    spanUtilityMaps,
+  ],
   ([
     $activityDirectivesDB,
     $planSnapshotId,
     $planSnapshotActivityDirectives,
-    $initialPlan,
+    $planStartTimeYmd,
+    $planEndTimeDoy,
     $spansMap,
     $spanUtilityMaps,
   ]) => {
     if (!$spansMap) {
       return null;
     }
-    if ($initialPlan === null) {
+    if (!$planStartTimeYmd) {
       return {};
     }
     return computeActivityDirectivesMap(
       $planSnapshotId !== null ? $planSnapshotActivityDirectives : $activityDirectivesDB,
-      $initialPlan,
+      $planStartTimeYmd,
+      $planEndTimeDoy,
       $spansMap,
       $spanUtilityMaps,
     );

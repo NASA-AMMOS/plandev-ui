@@ -22,6 +22,7 @@
   import type { LintDiagnostic } from '../../types/console';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
+  import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { phoenixResources } from '../../utilities/sequence-editor/adaptation-resources';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -160,6 +161,9 @@
       effects: compartmentReadonly.reconfigure([
         EditorState.readOnly.of(!isEditable),
         EditorView.editable.of(isEditable),
+        // Block programmatic edits (lint fixes, command panel, sanitizer) that readOnly
+        // misses, but allow the editor's own 'file.open' content sync.
+        ...(isEditable ? [] : [readOnlyChangeGuard(['file.open'])]),
       ]),
     });
   }
@@ -347,6 +351,20 @@
     return true;
   }
 
+  /**
+   * Replace the editor content and DO record it in the undo history — unlike the file-open sync,
+   * which is excluded from history. Used by "take theirs" so the user can Cmd-Z back to the edits
+   * they discarded (the full-doc replace and its inverse are exact, so undo/redo stay clean).
+   */
+  export function rebaseContent(content: string): void {
+    if (editorSequenceView && editorSequenceView.state.doc.toString() !== content) {
+      editorSequenceView.dispatch({
+        changes: { from: 0, insert: content, to: editorSequenceView.state.doc.length },
+        userEvent: 'file.rebase',
+      });
+    }
+  }
+
   // Exported function to allow parent to navigate to a specific line/column
   export function gotoLine(line: number, column: number = 0): void {
     if (editorSequenceView) {
@@ -385,7 +403,11 @@
         EditorView.updateListener.of(viewUpdate => dispatchLintChange(viewUpdate.view)),
         blockTheme,
         compartmentAdaptation.of(inputEditorExtension),
-        compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+        compartmentReadonly.of(
+          readOnly || previewOnly || isLoading
+            ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+            : [EditorState.readOnly.of(false)],
+        ),
         EditorView.updateListener.of(viewUpdate => {
           for (const tr of viewUpdate.transactions) {
             if (tr.annotation(Transaction.userEvent) === 'sanitize.smartQuotes') {
@@ -496,7 +518,12 @@
   {#if showCommandFormBuilder}
     <CssGridGutter track={1} type="column" />
     {#if phoenixContext && phoenixContext.commandDictionary !== null}
-      <CommandPanel {phoenixContext} {commandInfoMapper} {editorSequenceView} />
+      <CommandPanel
+        {phoenixContext}
+        {commandInfoMapper}
+        {editorSequenceView}
+        readOnly={readOnly || previewOnly || isLoading}
+      />
     {:else}
       <Panel overflowYBody="hidden" padBody>
         <svelte:fragment slot="header">

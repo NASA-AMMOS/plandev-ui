@@ -22,7 +22,7 @@
   class={cn('overflow-auto rounded bg-muted py-2 font-mono text-xs leading-5', maxHeightClass, className)}
 >
   {#each logs as log}
-    <div class="whitespace-pre-wrap break-words px-3">
+    <div class="whitespace-pre-wrap break-words px-4">
       {#if log.timestamp}<span class="text-muted-foreground">{log.timestamp}</span>{' '}{/if}<span
         class={cn('uppercase', levelTextClass[log.level])}>{log.level.padEnd(5)}</span
       >{' '}<span>{log.message}</span>

@@ -9,6 +9,7 @@
   import UserInputRow from './UserInputRow.svelte';
 
   export let allowMultiple: boolean = true;
+  export let boxClassName: string = 'max-h-[40vh]';
   export let className: string = '';
   export let disabled: boolean = false;
   export let name: string = '';
@@ -136,6 +137,7 @@
   bind:this={inputRef}
   {addTag}
   {allowMultiple}
+  {boxClassName}
   {disabled}
   {className}
   showPlaceholderIfDisabled

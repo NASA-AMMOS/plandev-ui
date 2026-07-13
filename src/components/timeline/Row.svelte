@@ -141,6 +141,7 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
+    buildDirective: { startTime: string; type: string };
     discreteTreeExpansionChange: DiscreteTreeExpansionMap;
     mouseDown: MouseDown;
     mouseOver: MouseOver;
@@ -759,9 +760,16 @@
           const missingActivity = (items as ActivityType[]).find(item => !typesInRow.has(item.name));
 
           const createActivities = () => {
-            items.forEach(item => {
-              effects.createActivityDirective({}, start_time, item.name, item.name, {}, plan, user);
-            });
+            // Do not use the builder for a multiple activity add
+            if (items.length > 1) {
+              items.forEach(item => {
+                effects.createActivityDirective({}, start_time, item.name, item.name, {}, plan, user);
+              });
+            } else {
+              items.forEach(item => {
+                dispatch('buildDirective', { startTime: start_time, type: item.name });
+              });
+            }
           };
 
           // If the row is not configure to visualize all requested activities
