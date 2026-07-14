@@ -171,7 +171,9 @@ test.describe.serial('External Sources', () => {
     await externalSources.deleteSource(externalSources.externalSourceFileName);
     await externalSources.deleteSource(externalSources.externalSourceNoAttributeKey);
     await externalSources.deleteSource(externalSources.externalSourceEmptyAttributeKey);
-    await expect(setup.page.getByText('External Source Deleted Successfully')).toBeVisible();
+    // deleteSource waits for each source's row to disappear, so deletion is already confirmed. Don't
+    // assert the "Deleted Successfully" toast here — it's fired per-delete and auto-dismisses, so by
+    // this point (after three deletes) it's gone. The state assertions below verify the empty state.
     await expect(externalSources.inputFile).toBeVisible();
     await expect(externalSources.externalEventSelectedForm).not.toBeVisible();
     await expect(externalSources.externalSourceSelectedForm).not.toBeVisible();

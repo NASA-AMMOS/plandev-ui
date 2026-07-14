@@ -1,0 +1,46 @@
+{
+  "event_types": {
+    "MDGEvent": {
+      "title": "MDGEvent",
+      "description": "Schema for the attributes of the MDGEvent External Event Type.",
+      "type": "object",
+      "properties": {
+        "example1": {
+          "type": "string"
+        },
+        "example2": {
+          "type": "number"
+        },
+        "optional": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "example1",
+        "example2"
+      ]
+    }
+  },
+  "source_types": {
+    "MDG External Source": {
+      "title": "MDG External Source",
+      "description": "Schema for the attributes of the MDG External Source External Source Type.",
+      "type": "object",
+      "properties": {
+        "optional": {
+          "type": "string"
+        },
+        "version": {
+          "type": "number"
+        },
+        "spacecraft": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "spacecraft"
+      ]
+    }
+  }
+}

@@ -6,7 +6,9 @@ version: '3.7'
 services:
   aerie_action:
     container_name: aerie_action
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
@@ -30,7 +32,9 @@ services:
       - aerie_file_store:/usr/src/app/action_file_store
   aerie_gateway:
     container_name: aerie_gateway
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       AUTH_TYPE: none
       GQL_API_URL: http://localhost:8080/v1/graphql
@@ -50,7 +54,9 @@ services:
       - aerie_file_store:/app/files
   aerie_merlin:
     container_name: aerie_merlin
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_URL: http://hasura:8080/v1/graphql
@@ -73,7 +79,9 @@ services:
       - aerie_file_store:/usr/src/app/merlin_file_store
   aerie_merlin_worker:
     container_name: aerie_merlin_worker
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       AERIE_DB_HOST: postgres
       AERIE_DB_PORT: 5432
@@ -93,7 +101,11 @@ services:
       - aerie_file_store:/usr/src/app/merlin_file_store:ro
   aerie_scheduler:
     container_name: aerie_scheduler
-    depends_on: ['aerie_merlin', 'postgres']
+    depends_on:
+      aerie_merlin:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
@@ -113,7 +125,9 @@ services:
       - aerie_file_store:/usr/src/app/merlin_file_store
   aerie_scheduler_worker:
     container_name: aerie_scheduler_worker
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
@@ -136,7 +150,9 @@ services:
       - aerie_file_store:/usr/src/app/merlin_file_store:ro
   aerie_sequencing:
     container_name: aerie_sequencing
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       LOG_FILE: console
@@ -156,7 +172,9 @@ services:
       - aerie_file_store:/usr/src/app/sequencing_file_store
   hasura:
     container_name: aerie_hasura
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       AERIE_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie?options=-c%20search_path%3Dutil_functions%2Chasura%2Cpermissions%2Ctags%2Cmerlin%2Cscheduler%2Csequencing%2Cpublic'
       AERIE_MERLIN_URL: 'http://aerie_merlin:27183'
@@ -171,6 +189,8 @@ services:
       HASURA_GRAPHQL_LOG_LEVEL: info
       HASURA_GRAPHQL_METADATA_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_hasura'
       HASURA_GRAPHQL_METADATA_DIR: /hasura-metadata
+      # Default is 30s; give migrations more room when Postgres is slow to accept connections.
+      HASURA_GRAPHQL_MIGRATIONS_SERVER_TIMEOUT: '60'
     image: 'ghcr.io/nasa-ammos/aerie-hasura:${AERIE_IMAGE_TAG:-develop}'
     ports: ['8080:8080']
     restart: always
@@ -193,11 +213,23 @@ services:
     image: 'ghcr.io/nasa-ammos/aerie-postgres:${AERIE_IMAGE_TAG:-develop}'
     ports: ['5432:5432']
     restart: always
+    # Gate dependents on Postgres actually accepting connections. Without this, every service
+    # (hasura, merlin, gateway, ...) starts immediately and races Postgres, logging "connection
+    # refused" retries and, for Hasura, risking a migration timeout on a slow runner. start_period
+    # covers the aerie-postgres image's first-run DB/schema initialization.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     volumes:
       - postgres_data:/var/lib/postgresql/data
   aerie_workspace:
     container_name: aerie_workspace
-    depends_on: ['postgres']
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       AERIE_DB_HOST: postgres
       AERIE_DB_PORT: 5432

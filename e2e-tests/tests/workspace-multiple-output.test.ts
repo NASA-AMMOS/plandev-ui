@@ -93,11 +93,17 @@ for (let i = 0; i < adaptation.outputs.length; i++) {
   test.describe.serial('Workspace with sequence adaptation with multiple output languages', () => {
     test(`Convert input to ${output.name}`, async () => {
       const outputEditor = workspace.page.getByTestId('output-editor');
+      const outputFormat = workspace.page.getByRole('combobox', { name: 'Output Format' });
 
-      await workspace.page.getByRole('combobox', { name: 'Output Format' }).selectOption({ index: i });
-
-      // Validate that the output editor contains the correct output for the selected adaptation output language
-      await expect(outputEditor).toContainText(languageOutput);
+      // selectOption on this Svelte object-bound <select> intermittently doesn't stick: Svelte
+      // re-syncs the native selection back to its bound value, so the format can revert to the
+      // previous language (confirmed via the failure trace — the combobox stayed on the prior
+      // option; real user clicks work fine). Retry select-and-verify until the output editor
+      // reflects the chosen language.
+      await expect(async () => {
+        await outputFormat.selectOption({ index: i });
+        await expect(outputEditor).toContainText(languageOutput, { timeout: 2000 });
+      }).toPass({ timeout: 15000 });
     });
 
     test(`Copy the output for ${output.name}`, async () => {

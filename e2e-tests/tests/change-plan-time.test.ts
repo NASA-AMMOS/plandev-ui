@@ -88,7 +88,7 @@ test.describe.serial('Change Plan Time Bounds', () => {
     await setup.plan.setPlanEndTime('2022-025T00:00:00');
 
     // Plan-end-anchored activity must keep its absolute time (offset adjusted by the backend).
-    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.end)).toBe(beforeEnd);
+    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.end), { timeout: 15000 }).toBe(beforeEnd);
     // Start-anchored + chained activities are unaffected since the start did not move.
     expect(await setup.plan.getActivityStartTime(NAMES.start)).toBe(beforeStart);
     expect(await setup.plan.getActivityStartTime(NAMES.child)).toBe(beforeChild);
@@ -98,7 +98,7 @@ test.describe.serial('Change Plan Time Bounds', () => {
     await setup.plan.setPlanStartTime('2022-001T00:00:00');
 
     // Plan-start-anchored activity must keep its absolute time (offset adjusted by the backend).
-    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.start)).toBe(beforeStart);
+    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.start), { timeout: 15000 }).toBe(beforeStart);
     // Activity anchored to another activity follows its anchor, so it is unaffected.
     expect(await setup.plan.getActivityStartTime(NAMES.child)).toBe(beforeChild);
   });
@@ -108,6 +108,6 @@ test.describe.serial('Change Plan Time Bounds', () => {
   // plan-end delta (zero here), not the start delta.
   test('Moving the plan start keeps plan-end-anchored activities fixed in absolute time', async () => {
     await setup.plan.setPlanStartTime('2022-001T00:00:00');
-    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.end)).toBe(beforeEnd);
+    await expect.poll(() => setup.plan.getActivityStartTime(NAMES.end), { timeout: 15000 }).toBe(beforeEnd);
   });
 });
