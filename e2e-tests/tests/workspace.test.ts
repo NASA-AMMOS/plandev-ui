@@ -47,7 +47,7 @@ async function expectSequenceActive(seq: { sequenceName: string; sequencePath: s
 
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
-  test.setTimeout(60000); // 60 seconds
+  test.setTimeout(120000); // 120 seconds
 
   // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
   setup = await setupTest(browser, { model: false });
@@ -354,10 +354,13 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(file2);
     await workspace.clickFile(file2, { force: true });
 
-    // Should show confirmation modal
+    // Should show confirmation modal with all three outcomes
     const modal = setup.page.locator('#modal-container');
     await modal.waitFor({ state: 'attached' });
     await expect(modal).toContainText('unsaved changes');
+    await expect(modal.getByRole('button', { name: 'Save and Navigate' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Discard and Navigate' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Keep Editing' })).toBeVisible();
 
     // Cancel navigation
     await setup.page.getByRole('button', { name: 'Keep Editing' }).click();
@@ -371,6 +374,167 @@ test.describe.serial('Workspace', () => {
     await workspace.deleteFile(file1);
     await workspace.searchForFileAndWait(file2);
     await workspace.deleteFile(file2);
+  });
+
+  test('Save and Navigate persists edits and lands on the target file', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file1 } = await workspace.createSequence();
+    const { sequenceName: file2, sequencePath: path2 } = await workspace.createSequence();
+
+    // Edit file1 so it has unsaved changes
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Navigate to file2 and choose "Save and Navigate"
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2, { force: true });
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.waitForToast('Workspace File Saved Successfully');
+
+    // Landed on the target file
+    await expect(setup.page).toHaveURL(
+      getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path2}/${file2}`),
+    );
+
+    // Reopening file1 shows the persisted edit
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
+
+  test('Discard and Navigate drops edits and lands on the target file', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file1 } = await workspace.createSequence();
+    const { sequenceName: file2, sequencePath: path2 } = await workspace.createSequence();
+
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Navigate to file2 and choose "Discard and Navigate"
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2, { force: true });
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Discard and Navigate' }).click();
+
+    await expect(setup.page).toHaveURL(
+      getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path2}/${file2}`),
+    );
+
+    // Reopening file1 shows the original (edit was discarded, never saved)
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await expect(workspace.sequenceEditorContent).not.toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
+
+  test('Save and Navigate to the actions view saves the file and keeps it in the URL', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file, sequencePath: path } = await workspace.createSequence();
+    const fileUrl = getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path}/${file}`);
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Save and Navigate
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.waitForToast('Workspace File Saved Successfully');
+
+    // Back to the Files tab: the file is still open, saved, and present in the URL
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(setup.page).toHaveURL(fileUrl);
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
+  });
+
+  test('Discard and Navigate to the actions view reverts unsaved edits', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file } = await workspace.createSequence();
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Discard and Navigate
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Discard and Navigate' }).click();
+
+    // Back to the Files tab: edits reverted, file is clean
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+    await expect(workspace.sequenceEditorContent).not.toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
+  });
+
+  test('Saving an unsaved draft via navigation creates the file and keeps it in the URL', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const draftName = `${generateRandomName()}.seq`;
+
+    // Reset to a no-file (draft) state, then make the draft dirty
+    await workspace.goto();
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Save and Navigate -> name prompt
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.sequenceNameInput.fill(draftName);
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Confirm' }).click();
+    await workspace.waitForToast('Workspace File Created Successfully');
+
+    // Back to the Files tab: the draft is now a real file, selected, and in the URL
+    // (regression: previously it returned as a path-less blank document)
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(setup.page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), draftName));
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(draftName);
+    await workspace.deleteFile(draftName);
+  });
+
+  test('Returning to the Files tab preserves the open file in the URL', async () => {
+    const { sequenceName: file, sequencePath: path } = await workspace.createSequence();
+    const fileUrl = getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path}/${file}`);
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await expect(setup.page).toHaveURL(fileUrl);
+
+    // Switch to Actions and back to Files (no unsaved changes, so no modal)
+    await workspace.actionsTabButton.click();
+    await workspace.workspaceFileBrowserButton.click();
+
+    // The open file must still be reflected in the URL (regression for the dropped file param)
+    await expect(setup.page).toHaveURL(fileUrl);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
   });
 
   test('Move file to folder', async () => {

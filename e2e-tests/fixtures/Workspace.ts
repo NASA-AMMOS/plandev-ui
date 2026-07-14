@@ -6,6 +6,7 @@ import { getWorkspacesUrl } from '../../src/utilities/routes';
 import { generateRandomName, hoverRowAndWaitForButton, setFileInputByBuffer } from '../utilities/helpers';
 
 export class Workspace {
+  actionsTabButton!: Locator;
   editSequenceButton!: Locator;
   fileInput!: Locator;
   folderNameInput!: Locator;
@@ -24,6 +25,7 @@ export class Workspace {
   saveSequenceButton!: Locator;
   searchInput!: Locator;
   sequenceEditor!: Locator;
+  sequenceEditorContent!: Locator;
   sequenceNameInput!: Locator;
   textEditor!: Locator;
   userMetadataEditor!: Locator;
@@ -154,8 +156,11 @@ export class Workspace {
   }
 
   async fillSequenceContent(content: string): Promise<void> {
-    await this.sequenceEditor.click();
-    await this.sequenceEditor.fill(content);
+    // Target the contenteditable host (.cm-content) rather than a line div (.cm-activeLine):
+    // CodeMirror remounts when navigating between files, and a line div can briefly resolve
+    // before its contenteditable ancestor is ready, making fill() throw "not editable".
+    await this.sequenceEditorContent.click();
+    await this.sequenceEditorContent.fill(content);
   }
 
   private async fillSequenceName(name: string, path?: string): Promise<void> {
@@ -221,7 +226,14 @@ export class Workspace {
     }
     const moreActionsButton = row.getByLabel('More actions');
     await hoverRowAndWaitForButton(this.page, row, moreActionsButton);
-    await moreActionsButton.click();
+    // Open the menu via a DOM click event instead of a synthesized pointer click. The button
+    // sits at the row's right edge under AG Grid's invisible vertical scrollbar overlay and
+    // is only revealed on hover, so a real click is fragile: its actionability scroll summons
+    // the overlay (which intercepts the click) and moves the row off the cursor (hiding the
+    // button, so the click retries forever). The handler positions the menu from the button's
+    // own getBoundingClientRect (event.currentTarget), so dispatching 'click' opens the menu
+    // correctly without depending on pointer coordinates, scroll position, or hover.
+    await moreActionsButton.dispatchEvent('click');
     await this.workspaceFileContextMenu.waitFor({ state: 'visible' });
   }
 
@@ -289,6 +301,7 @@ export class Workspace {
   }
 
   updatePage(page: Page): void {
+    this.actionsTabButton = page.getByRole('button', { exact: true, name: 'Actions' });
     this.editSequenceButton = page.getByRole('button', { name: 'Edit Sequence' });
     // File input is detected as a button in Chrome for Testing (Playwright 1.57+)
     // Use locator chain: find by aria-label within the modal
@@ -309,6 +322,7 @@ export class Workspace {
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.searchInput = page.getByPlaceholder('Search files and folders');
     this.sequenceEditor = page.locator('.cm-activeLine').first();
+    this.sequenceEditorContent = page.locator('.cm-content').first();
     this.sequenceNameInput = page.locator('#modal-container').getByRole('textbox', { name: 'File Name' });
     this.textEditor = page.locator('.cm-activeLine').nth(2);
     this.userMetadataEditor = page.locator('.user-metadata-editor .cm-content').first();
