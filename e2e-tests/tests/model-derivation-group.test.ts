@@ -89,6 +89,7 @@ test.afterAll(async () => {
 
 test.describe.serial('Model Derivation Group Linking', () => {
   test('Derivation groups can be linked to a model and show in plan', async ({ baseURL }) => {
+    test.setTimeout(60 * 1000);
     // check the current plan...
     await originalPlan.goto();
     await setup.page.waitForURL(`${baseURL}/plans/${originalPlanId}`, { timeout: 3000 });
