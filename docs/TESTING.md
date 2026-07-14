@@ -30,6 +30,13 @@ If this is your first time running the tests you may need to install the Playwri
 npx playwright install
 ```
 
+#### Auth failures
+
+If several tests are failing due to auth issues, you may need to clear your Playwright cache first:
+```sh
+npm run test:e2e:clear-cache
+```
+
 #### New backend service:
 
 If a new backend service has been added to PlanDev, make sure to update the [docker-compose-test.yml](../docker-compose-test.yml) in order for the CI to be able to spin up the backend correctly.

@@ -116,14 +116,15 @@ test.describe.serial('Model Derivation Group Linking', () => {
     // now, create a new plan
     await setup.plans.goto();
     await setup.page.waitForURL(`${baseURL}/plans`, { timeout: 3000 });
-    await setup.plans.createPlan('secondPlan', setup.modelName);
+    const newPlanName = 'secondPlan';
+    await setup.plans.createPlan(newPlanName, setup.modelName);
     newPlan = new Plan(
       setup.page,
       setup.plans,
       setup.constraints,
       setup.schedulingGoals,
       setup.schedulingConditions,
-      setup.planName,
+      newPlanName,
     );
     newPlanId = Number(setup.plans.planId);
 
