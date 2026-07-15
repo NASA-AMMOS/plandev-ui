@@ -1167,11 +1167,13 @@ const gql = {
       $seqIds: [String!]!,
       $modelId: Int!,
       $simulationDatasetId: Int!
+      $bypassConstraints: Boolean
     ) {
       expandTemplates: ${Queries.EXPAND_ALL_TEMPLATES}(
         seqIds: $seqIds,
         simulationDatasetId: $simulationDatasetId,
         modelId: $modelId,
+        bypassConstraints: $bypassConstraints
       ) {
         success
       }

@@ -24,6 +24,7 @@ export class Plan {
   constraintManageButton: Locator;
   constraintModalFilter: Locator;
   constraintNewButton: Locator;
+  constraintStatusSelector: (status: string) => string;
   externalSourceManageButton: Locator;
   gridMenu: Locator;
   gridMenuButton: Locator;
@@ -96,6 +97,8 @@ export class Plan {
     public planName = plans.planName,
   ) {
     this.constraintListItemSelector = `.constraint-list-item:has-text("${constraints.constraintName}")`;
+    this.constraintStatusSelector = (status: string) =>
+      `.nav-button:has-text("Constraints") .status-badge[aria-label=${status}]`;
     this.schedulingConditionListItemSelector = (conditionName: string) =>
       `.scheduling-condition:has-text("${conditionName}")`;
     this.schedulingGoalListItemSelector = (goalName: string) => `.scheduling-goal:has-text("${goalName}")`;
@@ -488,10 +491,10 @@ export class Plan {
     await this.waitForSimulationStatus(expectedFinalState);
   }
 
-  async removeConstraint() {
+  async removeConstraint(name: string) {
     await this.constraintManageButton.click();
-    await this.constraintModalFilter.fill(this.constraints.constraintName);
-    const row = this.page.getByRole('row', { name: this.constraints.constraintName });
+    await this.constraintModalFilter.fill(name);
+    const row = this.page.getByRole('row', { name });
     await expect(row).toBeVisible();
     // Use click with force for AG Grid checkboxes - check/uncheck fails with Chrome for Testing
     const checkbox = row.getByRole('checkbox');
@@ -499,7 +502,7 @@ export class Plan {
     await checkbox.click({ force: true });
     await expect(checkbox).not.toBeChecked();
     await this.page.getByRole('button', { name: 'Update' }).click();
-    await this.page.locator(this.constraintListItemSelector).waitFor({ state: 'detached' });
+    await this.page.locator(this.constraintListItemSelector).first().waitFor({ state: 'detached' });
   }
 
   async removePlanCollaborator(name: string) {
@@ -744,7 +747,7 @@ export class Plan {
     this.changeMissionModelMigrateButton = this.changeMissionModelModal.getByRole('button', {
       name: 'Change Mission Model',
     });
-    this.constraintManageButton = page.locator(`button[name="manage-constraints"]`);
+    this.constraintManageButton = page.getByRole('button', { name: 'Manage Constraints' }).first();
     this.constraintModalFilter = page.locator('.modal').getByPlaceholder('Filter constraints');
     this.constraintNewButton = page.locator(`button[name="new-constraint"]`);
     this.consoleContainer = page.getByTestId('console');
@@ -836,6 +839,11 @@ export class Plan {
   async waitForActivityCheckingStatus(status: Status) {
     await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeAttached({ timeout: 10000 });
     await expect(this.page.locator(this.activityCheckingStatusSelector(status))).toBeVisible();
+  }
+
+  async waitForConstraintStatus(status: string) {
+    await expect(this.page.locator(this.constraintStatusSelector(status))).toBeAttached({ timeout: 10000 });
+    await expect(this.page.locator(this.constraintStatusSelector(status))).toBeVisible();
   }
 
   async waitForPlanCollaboratorLoad() {

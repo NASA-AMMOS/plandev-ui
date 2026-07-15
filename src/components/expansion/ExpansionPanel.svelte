@@ -8,20 +8,30 @@
   import { Download, FileCode2, SquareCode } from 'lucide-svelte';
   import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
   import { SequencingMode } from '../../enums/sequencing';
+  import { Status } from '../../enums/status';
+  import { allowedConstraintPlanSpecs, checkConstraintsStatus, constraintResponseMap } from '../../stores/constraints';
   import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
+  import { plugins } from '../../stores/plugins';
   import { expandedTemplates } from '../../stores/sequence-template';
   import { sequenceFilters } from '../../stores/sequencing';
-  import { simulationDatasetLatest, simulationDatasetsPlan } from '../../stores/simulation';
+  import {
+    simulationDatasetId,
+    simulationDatasetLatest,
+    simulationDatasetsPlan,
+    simulationStatus,
+  } from '../../stores/simulation';
   import type { User } from '../../types/app';
+  import type { ConstraintInvocationMap, ConstraintResponse } from '../../types/constraint';
   import type { ExpansionSequence, SequenceFilter } from '../../types/expansion';
   import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
   import { downloadBlob, downloadJSON } from '../../utilities/generic';
-  import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
+  import { showConfirmExpansionModal, showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { convertDoyToYmd, formatDate } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import GridMenu from '../menus/GridMenu.svelte';
   import ModalFooter from '../modals/ModalFooter.svelte';
@@ -57,6 +67,14 @@
   let hasCreatePermissionSequence: boolean = false;
   let hasCreatePermissionSequenceFilter: boolean = false;
 
+  let allConstraintsHaveBeenChecked = true;
+  let allConstraintsThatAreCheckedPass = true;
+  let simulationOutOfDate = false;
+
+  // copied from ConstraintsPanel. Unable to move this into a store, as ConstraintsPanel directly modifies startTime, though we do not need to here.
+  let startTime: string;
+  let endTime: string;
+
   $: if (user !== null && $plan !== null && $plan.model) {
     hasDeletePermissionSequence = featurePermissions.expansionSequences.canDelete(user, $plan);
     hasDeletePermissionSequenceFilter = featurePermissions.sequenceFilter.canDelete(user, $plan.model);
@@ -73,22 +91,86 @@
   $: sequencesAndFilters = [...relevantExpansionSequences, ...$sequenceFilters];
 
   $: {
-    if ($simulationDatasetLatest) {
-      if (relevantExpansionSequences.length > 0) {
-        if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-          isExpansionDisabled = false;
-          expansionDisabledMessage = 'Expansion not available for sequence templates';
+    if (!simulationOutOfDate) {
+      if ($simulationDatasetLatest) {
+        if (relevantExpansionSequences.length > 0) {
+          if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+            isExpansionDisabled = false;
+            expansionDisabledMessage = 'Expansion not available for sequence templates';
+          } else {
+            isExpansionDisabled = selectedExpansionSetId === null;
+            expansionDisabledMessage = selectedExpansionSetId === null ? 'No expansion set selected' : '';
+          }
         } else {
-          isExpansionDisabled = selectedExpansionSetId === null;
-          expansionDisabledMessage = selectedExpansionSetId === null ? 'No expansion set selected' : '';
+          isExpansionDisabled = true;
+          expansionDisabledMessage = 'No relevant expansion sequences found';
         }
       } else {
         isExpansionDisabled = true;
-        expansionDisabledMessage = 'No relevant expansion sequences found';
+        expansionDisabledMessage = 'Completed simulation required';
       }
     } else {
-      isExpansionDisabled = true;
-      expansionDisabledMessage = 'Completed simulation required';
+      // Question for PlanDev team: should we include this? Or only in the modal.
+      isExpansionDisabled = false;
+      expansionDisabledMessage = 'Simulation is out of date.';
+    }
+  }
+
+  // copied from ConstraintsPanel
+  $: if ($plan) {
+    startTime = formatDate(new Date($plan.start_time), $plugins.time.primary.format);
+    const endTimeYmd = convertDoyToYmd($plan.end_time_doy);
+    if (endTimeYmd) {
+      endTime = formatDate(new Date(endTimeYmd), $plugins.time.primary.format);
+    } else {
+      endTime = '';
+    }
+  }
+  $: startTimeMs = typeof startTime === 'string' ? $plugins.time.primary.parse(startTime)?.getTime() : null;
+  $: endTimeMs = typeof endTime === 'string' ? $plugins.time.primary.parse(endTime)?.getTime() : null;
+  let constraintToConstraintResponseMap: ConstraintInvocationMap<ConstraintResponse> = {};
+  $: if ($allowedConstraintPlanSpecs && $constraintResponseMap && startTimeMs && endTimeMs) {
+    constraintToConstraintResponseMap = {};
+    $allowedConstraintPlanSpecs.forEach(constraintPlanSpec => {
+      const { constraint_id: constraintId, invocation_id: invocationId } = constraintPlanSpec;
+      const constraintResponse = $constraintResponseMap[constraintId]?.[invocationId];
+      if (constraintResponse) {
+        if (!constraintToConstraintResponseMap[constraintId]) {
+          constraintToConstraintResponseMap[constraintId] = {};
+        }
+
+        constraintToConstraintResponseMap[constraintId][invocationId] = {
+          constraintId,
+          constraintInvocationId: invocationId,
+          constraintName: constraintResponse.constraintName,
+          errors: constraintResponse.errors,
+          results: constraintResponse.results && {
+            ...constraintResponse.results,
+            violations:
+              constraintResponse.results.violations?.map(violation => ({
+                ...violation,
+                // Filter violations/windows by time bounds
+                windows: violation.windows.filter(
+                  window => window.end >= (startTimeMs ?? 0) && window.start <= (endTimeMs ?? 0),
+                ),
+              })) ?? null,
+          },
+          type: constraintResponse.type,
+        };
+      }
+    });
+  }
+
+  $: constraintPlanSpecsInPlan = $allowedConstraintPlanSpecs.filter(spec => $plan && spec.plan_id === $plan.id);
+  $: {
+    simulationOutOfDate = $simulationStatus === Status.Modified;
+
+    for (let constraintSpec of constraintPlanSpecsInPlan) {
+      let checked = constraintToConstraintResponseMap[constraintSpec.constraint_id]?.[constraintSpec.invocation_id];
+      allConstraintsHaveBeenChecked &&= !!checked;
+      if (checked) {
+        allConstraintsThatAreCheckedPass &&= (checked.results.violations?.length ?? 0) <= 0;
+      }
     }
   }
 
@@ -166,12 +248,33 @@
     }
   }
 
-  function onExpandSequence(sequence: ExpansionSequence) {
-    if ($simulationDatasetLatest !== null && $plan !== null) {
-      if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-        effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
-      } else if (selectedExpansionSetId !== null) {
-        effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, user);
+  async function onExpandSequence(sequence: ExpansionSequence) {
+    var result = { confirm: true };
+    if (
+      !(
+        $checkConstraintsStatus !== Status.Failed &&
+        $checkConstraintsStatus !== Status.Incomplete &&
+        !simulationOutOfDate &&
+        allConstraintsHaveBeenChecked &&
+        allConstraintsThatAreCheckedPass
+      )
+    ) {
+      result = await showConfirmExpansionModal(
+        simulationOutOfDate,
+        allConstraintsHaveBeenChecked,
+        allConstraintsThatAreCheckedPass,
+        constraintPlanSpecsInPlan,
+        constraintToConstraintResponseMap,
+        $simulationDatasetId,
+      );
+    }
+    if (result.confirm) {
+      if ($simulationDatasetLatest !== null && $plan !== null) {
+        if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
+          effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
+        } else if (selectedExpansionSetId !== null) {
+          effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, user);
+        }
       }
     }
   }
@@ -411,9 +514,9 @@
                   aria-label={`Expand '${sequenceOrFilter.seq_id}'`}
                   class="st-button icon"
                   disabled={isExpansionDisabled}
-                  on:click|stopPropagation={() => {
+                  on:click|stopPropagation={async () => {
                     if (isExpansionSequence(sequenceOrFilter)) {
-                      onExpandSequence(sequenceOrFilter);
+                      await onExpandSequence(sequenceOrFilter);
                     }
                   }}
                 >

@@ -44,9 +44,14 @@ export class Constraints {
     await this.page.waitForURL(`${baseURL}/constraints`);
   }
 
-  async deleteConstraint() {
+  async deleteConstraint(name: string) {
     await this.goto();
-    await this.filterTable(this.constraintName);
+    this.tableRow = await this.table.getByRole('row', { name });
+    this.tableRowDeleteButton = await this.tableRow
+      .getByRole('gridcell')
+      .getByRole('button', { name: 'Delete Constraint' });
+
+    await this.filterTable(name);
     await expect(this.tableRow).toBeVisible();
 
     await this.tableRow.hover();

@@ -58,4 +58,33 @@ test.describe.serial('Plan Expansion', () => {
     await setup.plan.showPanel(PanelNames.EXPANSION);
     await setup.plan.applySequenceFilter(sequenceFilterName, setup.plans.planId);
   });
+
+  test('Planners warned if constraints have issues', async ({ baseURL }) => {
+    setup.plan.constraints.constraintDefinition =
+      "export default function peelFailing(): Constraint { return Real.Resource('/peel').lessThan(-1000); }";
+    await setup.plan.showConstraintsLayout();
+    await setup.plan.createConstraint(baseURL);
+
+    // evaluate constraints
+    await setup.page.getByRole('navigation').getByText('Constraints').click();
+    await setup.page.getByText('Check Constraints', { exact: true }).click();
+
+    // expand
+    await setup.plan.showPanel(PanelNames.EXPANSION);
+    await setup.page.locator('select[name="expansionSetId"]').selectOption('2');
+
+    const sequenceName = `${sequenceFilterName} Sequence (Plan ${setup.planId})`;
+    await setup.page.getByText(sequenceName, { exact: true }).hover();
+
+    const expansionButton = setup.page.getByRole('button', { name: `Expand '${sequenceName}'` });
+    await expansionButton.waitFor({ state: 'visible' });
+    await expansionButton.click();
+
+    // check warning
+    await expect(setup.page.getByText('Violating Constraints')).toBeVisible();
+    await expect(setup.page.getByText('This constraint is currently')).toBeVisible();
+    await expect(setup.page.getByText('(1 violation)')).toBeVisible();
+
+    await setup.page.getByRole('button', { name: 'Expand Anyways' }).click();
+  });
 });

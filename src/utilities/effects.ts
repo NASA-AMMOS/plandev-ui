@@ -4253,7 +4253,13 @@ const effects = {
     }
   },
 
-  async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
+  async expandTemplates(
+    seqIds: string[],
+    simulationDatasetId: number,
+    plan: Plan,
+    user: User | null,
+    bypassConstraints: boolean = true,
+  ): Promise<void> {
     try {
       if (!plan.model) {
         throw Error(`No model found for plan ${plan.id}, cannot expand templates`);
@@ -4268,6 +4274,7 @@ const effects = {
       const data = await reqHasura<{ success: boolean }>(
         gql.EXPAND_TEMPLATES,
         {
+          bypassConstraints,
           modelId: plan.model.id,
           seqIds,
           simulationDatasetId,
@@ -4290,6 +4297,8 @@ const effects = {
       }
     } catch (e) {
       catchError('Sequence Templating Failed', e as Error);
+
+      // TODO: show error more cleanly; e.extensions.internal.response.body
       sequenceTemplateExpansionStatus.set(Status.Failed);
       sequenceTemplateExpansionError.set(e as string);
       showFailureToast('Sequence Templating Failed');
