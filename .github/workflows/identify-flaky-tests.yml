@@ -1,0 +1,74 @@
+name: Identify Flaky Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflows:
+        description: 'Comma-separated workflow files to analyze'
+        required: true
+        default: 'test.yml,canary.yml'
+      branch:
+        description: 'Branch to analyze'
+        required: true
+        default: 'develop'
+      max-runs:
+        description: 'Maximum completed runs to analyze per workflow'
+        required: true
+        default: '35'
+      artifact-name:
+        description: 'E2E results artifact name'
+        required: true
+        default: 'E2E Test Results'
+      output-limit:
+        description: 'Maximum leaderboard rows to show'
+        required: true
+        default: '25'
+
+  pull_request:
+    paths:
+      - '.github/workflows/identify-flaky-tests.yml'
+      - '.github/workflows/scripts/identify-flaky-tests.mjs'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  identify-flaky-tests:
+    name: Identify Flaky Tests
+    runs-on: ubuntu-latest
+
+    # don't run on forks
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22.22.0'
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Identify Flaky Tests
+        run: node .github/workflows/scripts/identify-flaky-tests.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_WORKFLOWS: ${{ inputs.workflows || 'test.yml,canary.yml' }}
+          INPUT_BRANCH: ${{ inputs.branch || 'develop' }}
+          INPUT_MAX_RUNS: ${{ inputs.max-runs || '35' }}
+          INPUT_ARTIFACT_NAME: ${{ inputs.artifact-name || 'E2E Test Results' }}
+          INPUT_OUTPUT_LIMIT: ${{ inputs.output-limit || '25' }}
+
+      - name: Upload Flaky Test Report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Flaky Test Report
+          path: |
+            tmp/flaky-test-report
+          if-no-files-found: warn
