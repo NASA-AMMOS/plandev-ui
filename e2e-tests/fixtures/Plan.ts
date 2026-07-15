@@ -394,7 +394,10 @@ export class Plan {
   }
 
   async fillActivityPresetName(presetName: string) {
-    await this.panelActivityForm.getByRole('combobox', { name: 'None' }).click();
+    // Open the preset control by its stable name attribute rather than the current display value
+    // ('None'), so creating a preset works whether or not one is already applied (e.g. creating a
+    // second preset after the first is applied). This mirrors how selectActivityPresetByName opens it.
+    await this.panelActivityForm.locator('div[name="Set Preset"]').click();
     await this.panelActivityForm.locator('.dropdown-header').waitFor({ state: 'attached' });
     await this.panelActivityForm.getByPlaceholder('Enter preset name').click();
     await this.panelActivityForm.getByPlaceholder('Enter preset name').fill(presetName);
@@ -563,25 +566,28 @@ export class Plan {
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).click();
     await this.panelActivityForm.getByRole('menuitem', { name: presetName }).waitFor({ state: 'detached' });
 
-    try {
-      const applyPresetButton = this.page.getByRole('button', { name: 'Apply Preset' });
-
-      // allow time for modal to apply the preset to show up if applicable
-      await applyPresetButton.waitFor({ state: 'attached', timeout: 1000 });
-      if (await applyPresetButton.isVisible()) {
-        await applyPresetButton.click();
-      }
-    } catch (e) {
-      if ((e as Error).name !== 'TimeoutError') {
-        console.error(e);
-      }
-    }
-
-    await this.page.waitForFunction(
+    // Applying a preset onto a directive whose parameters were modified pops an "Apply Preset"
+    // confirmation modal; selecting a non-conflicting preset (e.g. 'None') does not. Rather than
+    // racing a fixed 1s timeout (which silently dropped the modal when it appeared late under CI
+    // load and left the preset unapplied), wait for whichever settles first: the modal appearing
+    // (click it to confirm) or the display value updating on its own (no modal was needed).
+    const applyPresetButton = this.page.getByRole('button', { name: 'Apply Preset' });
+    const displayValueSettled = this.page.waitForFunction(
       presetName =>
         document.querySelector('.activity-preset-input-container .selected-display-value')?.innerHTML === presetName,
       presetName,
     );
+    const modalAppeared = applyPresetButton
+      .waitFor({ state: 'visible' })
+      .then(() => true)
+      .catch(() => false);
+
+    const modalWon = await Promise.race([modalAppeared, displayValueSettled.then(() => false).catch(() => false)]);
+    if (modalWon) {
+      await applyPresetButton.click();
+    }
+
+    await displayValueSettled;
     await expect(this.panelActivityForm.getByRole('combobox', { name: presetName })).toBeVisible();
   }
 

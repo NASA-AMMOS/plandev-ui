@@ -34,6 +34,7 @@ import { View } from '../fixtures/View.js';
 // Default URLs from environment variables, with fallbacks for local development
 const DEFAULT_HASURA_URL = process.env.PUBLIC_HASURA_CLIENT_URL ?? 'http://localhost:8080/v1/graphql';
 const DEFAULT_GATEWAY_URL = process.env.PUBLIC_GATEWAY_CLIENT_URL ?? 'http://localhost:9000';
+const DEFAULT_WORKSPACE_URL = process.env.PUBLIC_WORKSPACE_CLIENT_URL ?? 'http://localhost:28000';
 
 export interface ApiUser {
   id: string;
@@ -55,10 +56,16 @@ export class AerieApi {
   private gatewayUrl: string;
   private hasuraUrl: string;
   private user: ApiUser | null = null;
+  private workspaceUrl: string;
 
-  constructor(hasuraUrl: string = DEFAULT_HASURA_URL, gatewayUrl: string = DEFAULT_GATEWAY_URL) {
+  constructor(
+    hasuraUrl: string = DEFAULT_HASURA_URL,
+    gatewayUrl: string = DEFAULT_GATEWAY_URL,
+    workspaceUrl: string = DEFAULT_WORKSPACE_URL,
+  ) {
     this.hasuraUrl = hasuraUrl;
     this.gatewayUrl = gatewayUrl;
+    this.workspaceUrl = workspaceUrl;
   }
 
   async createActivityDirective(activityDirective: ActivityDirectiveInsertInput): Promise<{ id: number }> {
@@ -82,6 +89,22 @@ export class AerieApi {
     });
 
     return { id: constraintId };
+  }
+
+  /**
+   * Create external source & event types via the Gateway, bypassing the UI schema-upload flow.
+   * `sourceTypes` / `eventTypes` are the JSON Schema objects keyed by type name (as in the
+   * Schema_*.json fixtures' `source_types` / `event_types`).
+   */
+  async createExternalSourceEventTypes(
+    sourceTypes: Record<string, object>,
+    eventTypes: Record<string, object>,
+  ): Promise<void> {
+    const body = JSON.stringify({
+      event_types: JSON.stringify(eventTypes),
+      source_types: JSON.stringify(sourceTypes),
+    });
+    await this.gatewayRequest('/uploadExternalSourceEventTypes', 'POST', body);
   }
 
   async createModel(model: ModelInsertInput): Promise<{ id: number }> {
@@ -129,6 +152,24 @@ export class AerieApi {
       tag: { color, name },
     });
     return data.insert_tags_one;
+  }
+
+  /**
+   * Create a file (with content) or folder (omit content) in a workspace via the Workspace Service,
+   * bypassing the UI. The UI creation path is covered by dedicated tests; this is for fast seeding.
+   */
+  async createWorkspaceItem(workspaceId: number, path: string, content?: string): Promise<void> {
+    const isFolder = content === undefined;
+    const type = isFolder ? 'directory' : 'file';
+
+    let body: FormData | undefined;
+    if (!isFolder) {
+      const fileName = path.split('/').at(-1) ?? path;
+      body = new FormData();
+      body.append('file', new Blob([content]), fileName);
+    }
+
+    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}`, 'PUT', body, { workspace: true });
   }
 
   async deleteActivityDirectives(planId: number, activityIds: number[]): Promise<void> {
@@ -190,6 +231,40 @@ export class AerieApi {
     return { id: data.duplicate_plan.new_plan_id };
   }
 
+  /**
+   * Make an authenticated request to the Gateway (or the Workspace service when `workspace` is
+   * true) and return the raw Response. Auth headers are attached automatically; Content-Type is
+   * set only for string bodies (FormData supplies its own multipart boundary). Throws on non-2xx.
+   */
+  private async gatewayRequest(
+    path: string,
+    method: string,
+    body?: FormData | string,
+    { workspace = false }: { workspace?: boolean } = {},
+  ): Promise<Response> {
+    const user = this.requireUser();
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${user.token}`,
+      'x-hasura-role': 'aerie_admin',
+      'x-hasura-user-id': user.id,
+    };
+    if (typeof body === 'string') {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(`${workspace ? this.workspaceUrl : this.gatewayUrl}${path}`, {
+      body,
+      headers,
+      method,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request to ${path} failed: ${response.statusText} - ${await response.text()}`);
+    }
+
+    return response;
+  }
+
   async getPlan(id: number): Promise<unknown> {
     const data = await this.gqlQuery<{ plan: unknown }>(gql.GET_PLAN, { id });
     return data.plan;
@@ -228,17 +303,15 @@ export class AerieApi {
     variables: Record<string, unknown> = {},
     role: string = 'aerie_admin',
   ): Promise<T> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
+    const user = this.requireUser();
 
     const response = await fetch(this.hasuraUrl, {
       body: JSON.stringify({ query: queryString, variables }),
       headers: {
-        Authorization: `Bearer ${this.user.token}`,
+        Authorization: `Bearer ${user.token}`,
         'Content-Type': 'application/json',
         'x-hasura-role': role,
-        'x-hasura-user-id': this.user.id,
+        'x-hasura-user-id': user.id,
       },
       method: 'POST',
     });
@@ -280,6 +353,16 @@ export class AerieApi {
     return this.user;
   }
 
+  /**
+   * Assert a user is logged in and return it. Used to guard all authenticated requests.
+   */
+  private requireUser(): ApiUser {
+    if (!this.user) {
+      throw new Error('Not logged in. Call login() first.');
+    }
+    return this.user;
+  }
+
   async restorePlanSnapshot(planId: number, snapshotId: number): Promise<{ snapshot_id: number }> {
     const data = await this.gqlQuery<{ restore_from_snapshot: { snapshot_id: number } }>(gql.RESTORE_PLAN_SNAPSHOT, {
       plan_id: planId,
@@ -304,13 +387,25 @@ export class AerieApi {
   }
 
   /**
+   * Upload an external source via the Gateway, bypassing the UI. The referenced source/event types
+   * must already exist (see createExternalSourceEventTypes); the derivation group is created if
+   * needed. `sourceJson` is the parsed contents of an external-source fixture file.
+   */
+  async uploadExternalSource(derivationGroupName: string, sourceJson: object): Promise<void> {
+    const formData = new FormData();
+    formData.append('derivation_group_name', derivationGroupName);
+    formData.append(
+      'external_source_file',
+      new Blob([JSON.stringify(sourceJson)], { type: 'application/json' }),
+      'external_source.json',
+    );
+    await this.gatewayRequest('/uploadExternalSource', 'POST', formData);
+  }
+
+  /**
    * Upload a JAR file to the Gateway and return the uploaded file ID.
    */
   async uploadFile(filePath: string): Promise<number> {
-    if (!this.user) {
-      throw new Error('Not logged in. Call login() first.');
-    }
-
     const fileBuffer = fs.readFileSync(filePath);
     const fileName = nodePath.basename(filePath);
 
@@ -323,21 +418,7 @@ export class AerieApi {
     const formData = new FormData();
     formData.append('file', new Blob([arrayBuffer]), fileName);
 
-    const response = await fetch(`${this.gatewayUrl}/file`, {
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${this.user.token}`,
-        'x-hasura-role': 'aerie_admin',
-        'x-hasura-user-id': this.user.id,
-      },
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`File upload failed: ${response.statusText} - ${errorText}`);
-    }
-
+    const response = await this.gatewayRequest('/file', 'POST', formData);
     const data = await response.json();
     return data.id;
   }
@@ -381,8 +462,9 @@ export async function createAuthenticatedApi(
   password: string = 'test',
   hasuraUrl: string = DEFAULT_HASURA_URL,
   gatewayUrl: string = DEFAULT_GATEWAY_URL,
+  workspaceUrl: string = DEFAULT_WORKSPACE_URL,
 ): Promise<AerieApi> {
-  const api = new AerieApi(hasuraUrl, gatewayUrl);
+  const api = new AerieApi(hasuraUrl, gatewayUrl, workspaceUrl);
   await api.login(username, password);
   return api;
 }

@@ -68,7 +68,10 @@ export class Model {
   async saveModel() {
     await expect(this.saveButton).toBeVisible();
     await this.saveButton.click();
-    await expect(this.saveButton).toBeVisible();
+    // Wait for the update mutation to actually persist before returning. Callers immediately
+    // navigate away (e.g. creating a plan from this model), so returning on button visibility
+    // alone raced the save and left the association unsaved.
+    await this.page.waitForSelector('.toastify:has-text("Model Updated Successfully")', { timeout: 10000 });
   }
 
   async switchToConditions() {
