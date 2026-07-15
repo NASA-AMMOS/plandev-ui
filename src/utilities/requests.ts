@@ -284,6 +284,7 @@ async function throwWorkspaceError(response: Response): Promise<never> {
       },
     ]);
   }
+  // todo: improve this fallback case, add more error details even if body is missing/wrong format
   throw new Error(response.statusText);
 }
 
@@ -426,6 +427,8 @@ export async function reqWorkspaceWithEtag<T = any>(
   const etag = response.headers.get('ETag');
 
   if (response.status === 412) {
+    // save was rejected specifically because the etag didn't match - ie. the file has changed since last save
+    // throw a WorkspaceSaveConflictError (instead of usual CompoundError) so we can catch it and show modal
     let parsed: { data?: Record<string, any>; message?: string } | null = null;
     try {
       parsed = await response.json();
@@ -445,7 +448,7 @@ export async function reqWorkspaceWithEtag<T = any>(
   }
 
   if (!response.ok) {
-    // wrap response details in an Error and throw it so it can be properly logged
+    // wrap response details in a CompoundError and throw it so it can be properly logged
     await throwWorkspaceError(response);
   }
 

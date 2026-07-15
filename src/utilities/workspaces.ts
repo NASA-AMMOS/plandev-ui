@@ -512,7 +512,7 @@ export const WorkspaceApi = {
     filePath: string,
     user: User | null,
   ): Promise<{ content: string; etag: string | null }> {
-    // Throws a WorkspaceRequestError (with status) on any non-2xx — content is never null.
+    // Throws an Error or CompoundError on any non-2xx — content is never null.
     const { data, etag } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'GET',

@@ -371,27 +371,30 @@ describe('reqWorkspaceWithEtag', () => {
     expect((error as WorkspaceSaveConflictError).currentETag).toBeNull();
   });
 
-  test('throws a typed WorkspaceRequestError carrying the HTTP status on other non-ok responses', async () => {
+  test('throws a CompoundError carrying the error details on other non-ok responses', async () => {
     // The status lets callers (e.g. the conflict modal) distinguish a definite 404 — file
     // genuinely deleted — from a transient 5xx/network failure they should not treat as deletion.
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ status: 404 })));
+    const notFoundMock = { jsonBody: { message: 'not found', type: 'NOT_FOUND' }, status: 404 };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(notFoundMock)));
     let notFound: unknown;
     try {
       await reqWorkspaceWithEtag('1/foo.seq', 'GET', null, null);
     } catch (e) {
       notFound = e;
     }
-    expect(notFound).toBeInstanceOf(WorkspaceRequestError);
+    console.log(notFound);
+    expect(notFound).toBeInstanceOf(CompoundError);
     expect(notFound).not.toBeInstanceOf(WorkspaceSaveConflictError);
-    expect((notFound as WorkspaceRequestError).status).toBe(404);
+    expect((notFound as CompoundError).errors[0]?.type).toBe('NOT_FOUND');
 
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ status: 500 })));
+    const serverErrorMock = { jsonBody: { message: 'error', type: 'SERVER_ERROR' }, status: 500 };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(serverErrorMock)));
     let serverError: unknown;
     try {
       await reqWorkspaceWithEtag('1/foo.seq', 'GET', null, null);
     } catch (e) {
       serverError = e;
     }
-    expect((serverError as WorkspaceRequestError).status).toBe(500);
+    expect((serverError as CompoundError).errors[0]?.type).toBe('SERVER_ERROR');
   });
 });
