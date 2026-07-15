@@ -374,7 +374,6 @@ describe('reqWorkspaceWithEtag', () => {
     } catch (e) {
       notFound = e;
     }
-    console.log(notFound);
     expect(notFound).toBeInstanceOf(CompoundError);
     expect(notFound).not.toBeInstanceOf(WorkspaceSaveConflictError);
     expect((notFound as CompoundError).errors[0]?.type).toBe('NO_SUCH_FILE');
