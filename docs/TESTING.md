@@ -33,6 +33,7 @@ npx playwright install
 #### Auth failures
 
 If several tests are failing due to auth issues, you may need to clear your Playwright cache first:
+
 ```sh
 npm run test:e2e:clear-cache
 ```
