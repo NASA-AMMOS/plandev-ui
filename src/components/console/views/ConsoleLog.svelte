@@ -148,7 +148,7 @@
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
       {#if log.cause}
-        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all mb-3">
+        <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           {log.cause}
         </div>
       {/if}
@@ -171,7 +171,7 @@
         </div>
       {/if}
       {#if log.trace}
-        <pre class="m-0 whitespace-pre-wrap break-words mt-3">{log.trace}</pre>
+        <pre class="m-0 mt-3 whitespace-pre-wrap break-words">{log.trace}</pre>
       {/if}
     </div>
   {/if}
