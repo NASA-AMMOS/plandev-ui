@@ -17,3 +17,4 @@ unit-test-results
 /playwright/.cache/
 /.playwright/
 .codex
+/tmp/
