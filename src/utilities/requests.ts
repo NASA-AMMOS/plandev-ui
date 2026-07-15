@@ -445,8 +445,8 @@ export async function reqWorkspaceWithEtag<T = any>(
   }
 
   if (!response.ok) {
-    // Surface the status so callers can tell a definite 404 from a transient failure.
-    throw new WorkspaceRequestError(response.status, response.statusText);
+    // wrap response details in an Error and throw it so it can be properly logged
+    await throwWorkspaceError(response);
   }
 
   const data = (asJson ? await response.json() : await response.text()) as T;
