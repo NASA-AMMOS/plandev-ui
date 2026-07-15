@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { BaseUser } from '../types/app';
 import { ErrorTypes } from './errors';
-import {
-  CompoundError,
-  reqHasura,
-  reqWorkspace,
-  reqWorkspaceWithEtag,
-  WorkspaceSaveConflictError,
-} from './requests';
+import { CompoundError, reqHasura, reqWorkspace, reqWorkspaceWithEtag, WorkspaceSaveConflictError } from './requests';
 
 vi.mock('$env/dynamic/public', () => ({
   env: {
