@@ -1,6 +1,6 @@
 import type { ActivityDirectiveId } from './activity';
 import type { UserId } from './app';
-import type { BaseError, SimulationDatasetError } from './errors';
+import type { ConsoleEntry } from './console';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
 
@@ -82,7 +82,7 @@ export type SimulationEvent = {
 };
 
 export type SimulateResponse = {
-  reason: SimulationDatasetError;
+  reason: ConsoleEntry;
   simulationDatasetId: number;
   status: 'complete' | 'failed' | 'incomplete' | 'pending';
 };
@@ -105,7 +105,7 @@ export type SimulationDataset = {
   model_id: number;
   model_revision: number;
   plan_revision: number;
-  reason: SimulationDatasetError | null;
+  reason: ConsoleEntry | null;
   requested_at: string;
   requested_by: string;
   simulation_end_time: string | null;
@@ -140,7 +140,7 @@ export type SimulationTemplateSetInput = Partial<SimulationTemplateInsertInput>;
 
 export type SimulationDatasetReason = {
   errors: {
-    [activityId: string]: BaseError;
+    [activityId: string]: ConsoleEntry;
   };
   success: boolean;
 };

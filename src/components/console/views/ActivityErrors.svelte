@@ -5,7 +5,7 @@
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import { getContext } from 'svelte';
   import type { DataGridColumnDef } from '../../../types/data-grid';
-  import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/errors';
+  import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/console';
   import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';

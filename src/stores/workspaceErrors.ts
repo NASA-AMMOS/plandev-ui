@@ -1,6 +1,13 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActionRunSlim } from '../types/actions';
-import type { AdaptationLog, AdaptationMessage, BaseError, LintDiagnostic, LintError, LogLevel } from '../types/errors';
+import type {
+  AdaptationLog,
+  AdaptationMessage,
+  ConsoleEntry,
+  LintDiagnostic,
+  LintError,
+  LogLevel,
+} from '../types/console';
 import { ErrorTypes } from '../utilities/errors';
 import { compare } from '../utilities/generic';
 import { actionDefinitionsByWorkspace, actionRunsByWorkspace } from './actions';
@@ -32,8 +39,8 @@ export const workspaceActionRunsForSession: Readable<ActionRunSlim[]> = derived(
   },
 );
 
-// All session action runs mapped to BaseError format (for console display)
-export const workspaceActionRunMessages: Readable<(BaseError & { level: LogLevel })[]> = derived(
+// All session action runs mapped to ConsoleEntry format (for console display)
+export const workspaceActionRunMessages: Readable<(ConsoleEntry & { level: LogLevel })[]> = derived(
   [workspaceActionRunsForSession, actionDefinitionsByWorkspace, workspaceId],
   ([$workspaceActionRuns, $actionDefinitionsByWorkspace, $workspaceId]) => {
     const actionDefs = $actionDefinitionsByWorkspace[$workspaceId] ?? {};
@@ -57,14 +64,14 @@ export const workspaceActionRunMessages: Readable<(BaseError & { level: LogLevel
 );
 
 // Failed/errored action runs only (for error counts)
-export const workspaceActionErrors: Readable<BaseError[]> = derived(
+export const workspaceActionErrors: Readable<ConsoleEntry[]> = derived(
   [workspaceActionRunMessages],
   ([$workspaceActionRunMessages]) => $workspaceActionRunMessages.filter(m => m.level === 'error'),
 );
 
 /* Helper Functions */
 
-function isWorkspaceAdaptationError(message: AdaptationLog | BaseError) {
+function isWorkspaceAdaptationError(message: AdaptationLog | ConsoleEntry) {
   return (
     message.type === ErrorTypes.WORKSPACE_ADAPTATION_ERROR ||
     (message as AdaptationLog).level === 'error' ||
@@ -72,7 +79,7 @@ function isWorkspaceAdaptationError(message: AdaptationLog | BaseError) {
   );
 }
 
-export function addWorkspaceAdaptationError(error: BaseError): void {
+export function addWorkspaceAdaptationError(error: ConsoleEntry): void {
   workspaceAdaptationMessages.update(messages => [...messages, { ...error, level: 'error' as LogLevel }]);
 }
 

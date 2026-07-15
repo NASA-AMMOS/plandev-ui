@@ -67,13 +67,13 @@
     allProblems,
     clearLogs,
     clearSchedulingErrors,
-    constraintRunErrors,
+    constraintErrors,
     errorLogs,
     modelErrors,
     resetErrorStores,
     schedulingErrors,
-    simulationDatasetErrors,
-  } from '../../../stores/errors';
+    simulationErrors,
+  } from '../../../stores/console';
   import {
     lastExpandedSimulationDatasetId,
     planExpansionStatus,
@@ -143,7 +143,7 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirectiveInsertInput } from '../../../types/activity';
-  import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
+  import type { ActivityErrorCounts, LogLevel } from '../../../types/console';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -1122,8 +1122,8 @@
               </div>
               <div class="flex items-center py-0.5">
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
-                <ConsoleTab value="simulation" numberOfErrors={$simulationDatasetErrors?.length}>Simulation</ConsoleTab>
-                <ConsoleTab value="constraints" numberOfErrors={$constraintRunErrors?.length}>Constraints</ConsoleTab>
+                <ConsoleTab value="simulation" numberOfErrors={$simulationErrors?.length}>Simulation</ConsoleTab>
+                <ConsoleTab value="constraints" numberOfErrors={$constraintErrors?.length}>Constraints</ConsoleTab>
                 <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
                 <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
                 <div
@@ -1150,10 +1150,10 @@
           <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
-          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors}>
+          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
-          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors}>
+          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
           <ConsoleActivityErrors

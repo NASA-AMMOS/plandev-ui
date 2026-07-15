@@ -4,28 +4,29 @@
   import { cn } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, ChevronRight } from 'lucide-svelte';
   import { onMount } from 'svelte';
-  import type { BaseError, LogMessage } from '../../../types/errors';
-  import { isLogMessage } from '../../../utilities/errors';
+  import type { ConsoleEntry, LogMessage } from '../../../types/console';
 
   import { safeStringify } from '../../../utilities/text';
   import { formatMS } from '../../../utilities/time';
 
-  export let log: BaseError;
+  export let log: ConsoleEntry;
   export let defaultExpanded: boolean = false;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
   export let showLongTimestamp: boolean = true;
   export let showType: boolean = true;
 
+  let duration: number | undefined;
   let expandable: boolean = false;
-  let leftContents: HTMLDivElement;
-  let open: boolean = defaultExpanded;
   let expansionPadding: number = 0;
+  let leftContents: HTMLDivElement;
   let level: string = '';
+  let open: boolean = defaultExpanded;
   let renderedMessage: string = '';
 
   $: expandable = log.data || log.trace || log.cause || log.service ? true : false;
   $: level = (log as LogMessage).level || '';
+  $: duration = (log as LogMessage).duration;
   // if we have no message but we *do* have data, and row is not expanded, render data as message so row isn't empty
   $: renderedMessage =
     !log.message.trim() && log.data && !(expandable && open) ? safeStringify(log.data) : (log.message ?? '');
@@ -137,8 +138,8 @@
           <slot name="message" {log} message={renderedMessage} {expandable} {open}>
             {renderedMessage}
           </slot>
-          {#if isLogMessage(log) && typeof log.duration === 'number'}
-            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(log.duration)})</div>
+          {#if typeof duration === 'number'}
+            <div class="whitespace-nowrap italic text-muted-foreground">({formatMS(duration)})</div>
           {/if}
         </div>
       </div>
@@ -146,18 +147,23 @@
   </summary>
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
-      {#if log.timestamp && showLongTimestamp}
+      {#if log.cause}
         <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          {log.cause}
+        </div>
+      {/if}
+      {#if log.type}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          Type: {log.type}
+        </div>
+      {/if}
+      {#if log.timestamp && showLongTimestamp}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>
       {/if}
       {#if log.data && safeStringify(log.data) !== '{}'}
         <pre class="m-0 whitespace-pre-wrap break-words">{safeStringify(log.data, 2)}</pre>
-      {/if}
-      {#if log.cause}
-        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
-          {log.cause}
-        </div>
       {/if}
       {#if log.service}
         <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
@@ -165,7 +171,7 @@
         </div>
       {/if}
       {#if log.trace}
-        <pre class="m-0 whitespace-pre-wrap break-words">{log.trace}</pre>
+        <pre class="m-0 mt-3 whitespace-pre-wrap break-words">{log.trace}</pre>
       {/if}
     </div>
   {/if}

@@ -1,25 +1,29 @@
 import type { ErrorTypes } from '../utilities/errors';
-import type { ConstraintResult, UserCodeError } from './constraint';
 
 export type LogLevel = 'error' | 'warn' | 'info';
 
-export interface BaseError {
-  cause?: string; // longer human-readable string, explaining detailed cause of error & any recommendations to fix
-  data?: Record<string, any>; // optional unstructured data object with any additional useful error data
-  message: string; // short (1-2 sentences) human-readable string explaining the cause of the error
-  service?: string; // optional string identifying the backend service that threw the error
-  timestamp: string; // ISO 8601 UTC string timestamp at the time the error happened
-  trace?: string; // stack trace of error
-  type: ErrorTypes; // very short, semi-human-readable string representing the category/class/type of error, in all caps and underscores, eg. “INVALID_SIMULATION_ID”
+// Universal shape for anything renderable in a Console row: backend exceptions, thrown JS errors,
+// info/timing logs, validation problems, adaptation events, etc. Optional fields are populated as available.
+export interface ConsoleEntry {
+  cause?: string; // longer human-readable detail or recommendations
+  data?: Record<string, any>; // optional unstructured payload
+  message: string; // short (1-2 sentences) human-readable description
+  service?: string; // optional backend service identifier (set on backend-sourced entries)
+  timestamp: string; // ISO 8601 UTC timestamp
+  trace?: string; // stack or backend trace (errors only)
+  type: ErrorTypes; // category/class identifier in SCREAMING_SNAKE_CASE, e.g. "NO_SUCH_SCHEDULING_SPECIFICATION"
 }
 
-export interface LogMessage extends BaseError {
-  duration?: number; // optional ms
+export type ErrorCategory = 'constraint' | 'log' | 'scheduling' | 'simulation';
+
+export interface LogMessage extends ConsoleEntry {
+  category?: ErrorCategory; // set when the entry enters consoleEntries; unset for pre-categorization shapes
+  duration?: number;
   level: LogLevel;
-  type: ErrorTypes.CAUGHT_ERROR | ErrorTypes.LOG;
+  type: ErrorTypes;
 }
 
-export interface AnchorValidationError extends BaseError {
+export interface AnchorValidationError extends ConsoleEntry {
   data: {
     activityId: number;
   };
@@ -33,37 +37,6 @@ export interface ActivityValidationErrors {
   errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
   status: ActivityValidationStatus;
   type: string;
-}
-
-export interface ConstraintRunError extends BaseError {
-  data: {
-    constraintId: number;
-    errors?: UserCodeError[];
-    violations?: Pick<ConstraintResult, 'violations'>;
-  };
-}
-
-export interface SchedulingError extends BaseError {
-  data: {
-    errors: {
-      [activityId: string]: unknown;
-    };
-    success: boolean;
-  };
-}
-
-export interface SimulationDatasetError extends BaseError {
-  data: {
-    activityStackStrace?: string;
-    elapsedTime?: string;
-    errors?: {
-      [activityId: string]: unknown;
-    };
-    executingActivityType?: string;
-    executingDirectiveId?: number;
-    success?: boolean;
-    utcTimeDoy?: string;
-  };
 }
 
 export interface ActivityDirectiveInstantiationError {
@@ -154,7 +127,7 @@ export interface LintDiagnostic {
   to: { column: number; line: number };
 }
 
-export interface LintError extends BaseError {
+export interface LintError extends ConsoleEntry {
   data: {
     column: number;
     filePath: string;
@@ -165,11 +138,11 @@ export interface LintError extends BaseError {
   type: ErrorTypes.WORKSPACE_LINT_ERROR;
 }
 
-export interface AdaptationLog extends BaseError {
+export interface AdaptationLog extends ConsoleEntry {
   data: any[];
   level: LogLevel;
   type: ErrorTypes.WORKSPACE_ADAPTATION_LOG;
 }
 
-export type AdaptationError = BaseError & { level: LogLevel };
+export type AdaptationError = ConsoleEntry & { level: LogLevel };
 export type AdaptationMessage = AdaptationLog | AdaptationError;

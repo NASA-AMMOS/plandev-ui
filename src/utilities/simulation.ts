@@ -35,7 +35,8 @@ export function getSimulationProgress(simulationDataset: SimulationDataset | nul
 export function getSimulationExtent(simulationDataset: SimulationDataset): string | null {
   // Look for the extent in the reason if the sim failed, otherwise grab it from the extent object
   if (simulationDataset.status === 'failed' || simulationDataset.canceled) {
-    return simulationDataset.reason?.data.elapsedTime ?? null;
+    const elapsedTime = simulationDataset.reason?.data?.elapsedTime;
+    return typeof elapsedTime === 'string' ? elapsedTime : null;
   } else {
     return simulationDataset.extent?.extent ?? null;
   }

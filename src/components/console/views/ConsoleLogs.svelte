@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import { getContext } from 'svelte';
-  import type { BaseError, LogLevel, LogMessage } from '../../../types/errors';
+  import type { ConsoleEntry, LogLevel, LogMessage } from '../../../types/console';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
   import EmptyState from '../EmptyState.svelte';
   import ConsoleLog from './ConsoleLog.svelte';
@@ -12,7 +12,7 @@
   export let defaultExpanded: boolean = false;
   export let emptyStateMessage: string = 'No reported problems';
   export let noMatchingResultsMessage: string = 'No matches';
-  export let logs: BaseError[] = [];
+  export let logs: ConsoleEntry[] = [];
   export let logLevels: LogLevel[] | undefined = undefined;
   export let showLevel: boolean = true;
   export let showTimestamp: boolean = true;
@@ -49,7 +49,7 @@
 
         if (logLevels) {
           // Filter by selected log levels when the log has a level property.
-          // Items without a level (plain BaseError) always pass through.
+          // Items without a level (plain ConsoleEntry) always pass through.
           if (Object.hasOwn(log, 'level')) {
             return logLevelSet.has((log as LogMessage).level);
           } else {
