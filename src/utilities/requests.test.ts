@@ -6,7 +6,6 @@ import {
   reqHasura,
   reqWorkspace,
   reqWorkspaceWithEtag,
-  WorkspaceRequestError,
   WorkspaceSaveConflictError,
 } from './requests';
 
@@ -372,9 +371,8 @@ describe('reqWorkspaceWithEtag', () => {
   });
 
   test('throws a CompoundError carrying the error details on other non-ok responses', async () => {
-    // The status lets callers (e.g. the conflict modal) distinguish a definite 404 — file
-    // genuinely deleted — from a transient 5xx/network failure they should not treat as deletion.
-    const notFoundMock = { jsonBody: { message: 'not found', type: 'NOT_FOUND' }, status: 404 };
+    // The error type lets callers (e.g. the conflict modal) distinguish a definite file not found from other errors
+    const notFoundMock = { jsonBody: { message: 'not found', type: 'NO_SUCH_FILE' }, status: 404 };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(notFoundMock)));
     let notFound: unknown;
     try {
@@ -385,7 +383,7 @@ describe('reqWorkspaceWithEtag', () => {
     console.log(notFound);
     expect(notFound).toBeInstanceOf(CompoundError);
     expect(notFound).not.toBeInstanceOf(WorkspaceSaveConflictError);
-    expect((notFound as CompoundError).errors[0]?.type).toBe('NOT_FOUND');
+    expect((notFound as CompoundError).errors[0]?.type).toBe('NO_SUCH_FILE');
 
     const serverErrorMock = { jsonBody: { message: 'error', type: 'SERVER_ERROR' }, status: 500 };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(serverErrorMock)));

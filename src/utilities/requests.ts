@@ -368,21 +368,6 @@ export class WorkspaceSaveConflictError extends Error {
   }
 }
 
-/**
- * Thrown for a failed (non-`2xx`, non-`412`) workspace request. Carries the HTTP `status`
- * so callers can tell a real `404` (file gone) from a transient blip (network/`5xx`).
- */
-export class WorkspaceRequestError extends Error {
-  name: string;
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = 'WorkspaceRequestError';
-    this.status = status;
-  }
-}
-
 /** A workspace response plus its `ETag` and HTTP status. */
 export interface WorkspaceResponseWithEtag<T> {
   data: T;

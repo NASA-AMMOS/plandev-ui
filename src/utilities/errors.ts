@@ -108,6 +108,10 @@ export function extractBackendMessage(error: unknown): string | null {
   return null;
 }
 
+export function isNoSuchFileCompoundError(error: unknown): boolean {
+  return isCompoundError(error) && error.errors.some(({ type }) => type === ErrorTypes.NO_SUCH_FILE);
+}
+
 function isCompoundError(error: unknown): error is CompoundErrorShape {
   return (
     error instanceof Error && error.name === 'CompoundError' && Array.isArray((error as CompoundErrorShape).errors)

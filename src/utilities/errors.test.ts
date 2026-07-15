@@ -7,6 +7,7 @@ import {
   generateActivityValidationErrorRollups,
   getActivityIdsFromError,
   isInstantiationError,
+  isNoSuchFileCompoundError,
   isUnknownTypeError,
   isValidationNoticesError,
 } from './errors';
@@ -325,6 +326,23 @@ describe('extractBackendMessage', () => {
     const long = 'x'.repeat(300);
     const ce = new CompoundError(long, [makeLogMessage({ message: long })]);
     expect(extractBackendMessage(ce)).toBe(long);
+  });
+});
+
+describe('isNoSuchFileCompoundError', () => {
+  test('returns true for a CompoundError containing a NO_SUCH_FILE entry', () => {
+    const ce = new CompoundError('File not found', [makeLogMessage({ type: ErrorTypes.NO_SUCH_FILE })]);
+    expect(isNoSuchFileCompoundError(ce)).toBe(true);
+  });
+
+  test('returns false for non-file workspace errors and non-CompoundError inputs', () => {
+    expect(
+      isNoSuchFileCompoundError(
+        new CompoundError('Workspace not found', [makeLogMessage({ type: ErrorTypes.NO_SUCH_WORKSPACE })]),
+      ),
+    ).toBe(false);
+    expect(isNoSuchFileCompoundError(new Error('plain error'))).toBe(false);
+    expect(isNoSuchFileCompoundError(null)).toBe(false);
   });
 });
 

@@ -7,7 +7,8 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import type { WorkspaceContentType } from '../../enums/workspace';
   import type { User } from '../../types/app';
-  import { WorkspaceRequestError, type WorkspaceSaveConflictReason } from '../../utilities/requests';
+  import { isNoSuchFileCompoundError } from '../../utilities/errors';
+  import type { WorkspaceSaveConflictReason } from '../../utilities/requests';
   import { getTimeAgo } from '../../utilities/time';
   import { WorkspaceApi } from '../../utilities/workspaces';
   import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
@@ -61,7 +62,7 @@
       theirsEtag = etag;
       variant = 'conflict';
     } catch (e) {
-      if (e instanceof WorkspaceRequestError && e.status === 404) {
+      if (isNoSuchFileCompoundError(e)) {
         variant = 'deleted';
       } else {
         loadError = true;
@@ -92,7 +93,7 @@
       const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, path, user);
       dispatch('takeTheirs', { content, etag });
     } catch (e) {
-      if (e instanceof WorkspaceRequestError && e.status === 404) {
+      if (isNoSuchFileCompoundError(e)) {
         theirsContent = null;
         variant = 'deleted';
       } else {
