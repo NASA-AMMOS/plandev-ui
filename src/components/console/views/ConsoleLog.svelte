@@ -147,8 +147,13 @@
   </summary>
   {#if expandable && open}
     <div class="bg-neutral-200/50 px-4 py-2" style={`padding-left: ${expansionPadding}px`}>
+      {#if log.type}
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+          Type: {log.type}
+        </div>
+      {/if}
       {#if log.timestamp && showLongTimestamp}
-        <div class="mb-3 flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
+        <div class="flex min-w-0 items-baseline gap-1 overflow-hidden break-all">
           Timestamp: {formatLogLongTimestamp(log.timestamp)}
         </div>
       {/if}
