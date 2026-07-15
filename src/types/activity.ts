@@ -1,7 +1,7 @@
 import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
 import type { PartialWith, UserId } from './app';
-import type { ActivityDirectiveValidationFailures } from './errors';
+import type { ActivityDirectiveValidationFailures } from './console';
 import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { PlanSchema } from './plan';

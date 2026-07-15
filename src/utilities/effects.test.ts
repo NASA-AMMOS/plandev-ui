@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as Errors from '../stores/errors';
+import * as Errors from '../stores/console';
 import { mockUser } from '../tests/mocks/user/mockUser';
 import type { DerivationGroupInsertInput } from '../types/external-source';
 import type { Model } from '../types/model';
@@ -77,6 +77,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Preset Unable To Be Applied To Activity',
         Error('Unable to apply preset with ID: "1" to directive with ID: "2"'),
       );
@@ -116,6 +117,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Simulation Update Failed',
         Error('Unable to update simulation with ID: "1"'),
       );
@@ -141,6 +143,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'constraint',
         'Check Constraints Failed',
         Error('Unable to check constraints for plan with ID: "1"'),
       );
@@ -203,6 +206,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Derivation Group Create Failed',
         Error('Unable to create derivation group'),
       );
@@ -219,6 +223,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.getExternalEvents('test', 'test', mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Failed to retrieve external events.',
         Error("Unable to get external events for external source 'test' (derivation group: 'test')."),
       );
@@ -235,6 +240,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.getExternalEventTypesBySource('test', 'test', mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Failed to retrieve external event types for source',
         Error('Unable to retrieve external event types for source'),
       );
@@ -251,6 +257,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.getExternalEventTypes(1, mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Failed to retrieve external event types',
         Error('Unable to gather all external event types for the source'),
       );
@@ -297,6 +304,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Activity Directive Create Failed',
         Error('Unable to create activity directive "foo" on plan with ID 1'),
       );
@@ -314,6 +322,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.createActivityDirectiveTags([], mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Create Activity Directive Tags Failed',
         Error('Unable to create activity directive tags'),
       );
@@ -341,6 +350,7 @@ describe('Handle modal and requests in effects', () => {
 
       expect(catchErrorSpy).toHaveBeenCalledOnce();
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Create Activity Directive Tags Failed',
         Error('Some activity directive tags were not successfully created'),
       );
@@ -358,6 +368,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.createSequenceTemplate('', '', 0, '', 0, '', mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Create Sequence Template Failed',
         Error('Create Sequence Template Failed'),
       );
@@ -388,6 +399,7 @@ describe('Handle modal and requests in effects', () => {
       );
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Sequence Template Deletion Failed',
         Error('Unable to delete sequence template with ID: "0"'),
       );
@@ -405,6 +417,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.createSequenceFilter({} as ActivityLayerFilter, '', 0, mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Create Sequence Filter Failed',
         Error('Create Sequence Filter Failed'),
       );
@@ -423,6 +436,7 @@ describe('Handle modal and requests in effects', () => {
       await effects.deleteSequenceFilters([1, 2, 3], mockUser);
 
       expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
         'Sequence Filter Delete Failed',
         Error('Unable to delete sequence filters with IDs: "1,2,3"'),
       );
@@ -451,7 +465,11 @@ describe('Handle modal and requests in effects', () => {
         mockUser,
       );
 
-      expect(catchErrorSpy).toHaveBeenCalledWith('Sequence Templating Failed', Error('Sequence Templating Failed'));
+      expect(catchErrorSpy).toHaveBeenCalledWith(
+        'log',
+        'Sequence Templating Failed',
+        Error('Sequence Templating Failed'),
+      );
     });
   });
 

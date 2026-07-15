@@ -1,13 +1,31 @@
-import { describe, expect, test } from 'vitest';
-import type { AnchorValidationError, SchedulingError } from '../types/errors';
+import { describe, expect, test, vi } from 'vitest';
+import type { AnchorValidationError, ConsoleEntry, LogMessage } from '../types/console';
 import {
   ErrorTypes,
+  composeErrorMessage,
+  extractBackendMessage,
   generateActivityValidationErrorRollups,
   getActivityIdsFromError,
   isInstantiationError,
+  isNoSuchFileCompoundError,
   isUnknownTypeError,
   isValidationNoticesError,
 } from './errors';
+import { CompoundError } from './requests';
+
+vi.mock('$env/dynamic/public', () => ({ env: {} }));
+vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('./login', () => ({ logout: vi.fn() }));
+
+function makeLogMessage(overrides: Partial<LogMessage> = {}): LogMessage {
+  return {
+    level: 'error',
+    message: '',
+    timestamp: '2026-05-22T00:00:00Z',
+    type: ErrorTypes.CAUGHT_ERROR,
+    ...overrides,
+  };
+}
 
 describe('Errors Util', () => {
   test('isInstantiationError - Should correctly determine if the error is an instantiation error', () => {
@@ -234,7 +252,129 @@ describe('Errors Util', () => {
         message: '',
         timestamp: '',
         type: ErrorTypes.GLOBAL_SCHEDULING_CONDITIONS_FAILED,
-      } as SchedulingError),
+      } as ConsoleEntry),
     ).deep.eq([1, 2]);
+  });
+});
+
+describe('extractBackendMessage', () => {
+  test('returns null for non-Error inputs', () => {
+    expect(extractBackendMessage(undefined)).toBeNull();
+    expect(extractBackendMessage(null)).toBeNull();
+    expect(extractBackendMessage('a string')).toBeNull();
+    expect(extractBackendMessage({ message: 'not an Error' })).toBeNull();
+  });
+
+  test('returns null for plain Error (no CompoundError)', () => {
+    expect(extractBackendMessage(new Error('plain error'))).toBeNull();
+  });
+
+  test('returns the inner backend message for a single-error CompoundError without a cause', () => {
+    const ce = new CompoundError('Could not find workspace 42.', [
+      makeLogMessage({ message: 'Could not find workspace 42.', type: ErrorTypes.NO_SUCH_WORKSPACE }),
+    ]);
+    expect(extractBackendMessage(ce)).toBe('Could not find workspace 42.');
+  });
+
+  test("prefers the inner cause over message when both are present (backend's actionable root cause)", () => {
+    const ce = new CompoundError("Unable to move 'foo (1)' to './foo'.", [
+      makeLogMessage({
+        cause: './foo already exists.',
+        message: "Unable to move 'foo (1)' to './foo'.",
+      }),
+    ]);
+    expect(extractBackendMessage(ce)).toBe('./foo already exists.');
+  });
+
+  test('falls back to message when cause is empty/whitespace', () => {
+    const ce = new CompoundError('Could not find workspace 42.', [
+      makeLogMessage({ cause: '', message: 'Could not find workspace 42.' }),
+    ]);
+    expect(extractBackendMessage(ce)).toBe('Could not find workspace 42.');
+  });
+
+  test('returns null when the single inner message is empty (path-1 HTTP not-OK)', () => {
+    // reqHasura's HTTP-not-OK path constructs: new CompoundError(statusText, [{ ...defaultError }])
+    // where defaultError.message = ''. The outer is the statusText ('Internal Server Error') —
+    // not user-friendly, so we fall through to the caller's static label.
+    const ce = new CompoundError('Internal Server Error', [makeLogMessage({ message: '' })]);
+    expect(extractBackendMessage(ce)).toBeNull();
+  });
+
+  test('returns null when the single inner message is whitespace', () => {
+    const ce = new CompoundError('Internal Server Error', [makeLogMessage({ message: '   ' })]);
+    expect(extractBackendMessage(ce)).toBeNull();
+  });
+
+  test('returns the outer summary for a multi-error CompoundError', () => {
+    const ce = new CompoundError('Some files failed to move', [
+      makeLogMessage({ message: 'file A failed' }),
+      makeLogMessage({ message: 'file B failed' }),
+    ]);
+    expect(extractBackendMessage(ce)).toBe('Some files failed to move');
+  });
+
+  test("returns null for the generic 'Multiple errors occurred' outer", () => {
+    const ce = new CompoundError('Multiple errors occurred', [
+      makeLogMessage({ message: 'err A' }),
+      makeLogMessage({ message: 'err B' }),
+    ]);
+    expect(extractBackendMessage(ce)).toBeNull();
+  });
+
+  test('returns the raw backend message untruncated (presentation concerns live in callers)', () => {
+    const long = 'x'.repeat(300);
+    const ce = new CompoundError(long, [makeLogMessage({ message: long })]);
+    expect(extractBackendMessage(ce)).toBe(long);
+  });
+});
+
+describe('isNoSuchFileCompoundError', () => {
+  test('returns true for a CompoundError containing a NO_SUCH_FILE entry', () => {
+    const ce = new CompoundError('File not found', [makeLogMessage({ type: ErrorTypes.NO_SUCH_FILE })]);
+    expect(isNoSuchFileCompoundError(ce)).toBe(true);
+  });
+
+  test('returns false for non-file workspace errors and non-CompoundError inputs', () => {
+    expect(
+      isNoSuchFileCompoundError(
+        new CompoundError('Workspace not found', [makeLogMessage({ type: ErrorTypes.NO_SUCH_WORKSPACE })]),
+      ),
+    ).toBe(false);
+    expect(isNoSuchFileCompoundError(new Error('plain error'))).toBe(false);
+    expect(isNoSuchFileCompoundError(null)).toBe(false);
+  });
+});
+
+describe('composeErrorMessage', () => {
+  test('returns just the label when no error is provided', () => {
+    expect(composeErrorMessage('Workspace Save Failed', undefined)).toBe('Workspace Save Failed');
+  });
+
+  test('returns just the label for a plain Error (no backend message extractable)', () => {
+    expect(composeErrorMessage('Workspace Save Failed', new Error('boom'))).toBe('Workspace Save Failed');
+  });
+
+  test("prefixes the label with ': <backend>' when a single-error CompoundError carries a substantive message", () => {
+    const ce = new CompoundError('Could not find workspace 42.', [
+      makeLogMessage({ message: 'Could not find workspace 42.' }),
+    ]);
+    expect(composeErrorMessage('Workspace Retrieval Failed', ce)).toBe(
+      'Workspace Retrieval Failed: Could not find workspace 42.',
+    );
+  });
+
+  test('uses the cause over the message when both are present', () => {
+    const ce = new CompoundError("Unable to move 'foo (1)' to './foo'.", [
+      makeLogMessage({ cause: './foo already exists.', message: "Unable to move 'foo (1)' to './foo'." }),
+    ]);
+    expect(composeErrorMessage('Workspace File Rename Failed', ce)).toBe(
+      'Workspace File Rename Failed: ./foo already exists.',
+    );
+  });
+
+  test('returns just the label for a path-1 (empty-inner) CompoundError', () => {
+    const ce = new CompoundError('Internal Server Error', [makeLogMessage({ message: '' })]);
+    expect(composeErrorMessage('Workspace Save Failed', ce)).toBe('Workspace Save Failed');
   });
 });

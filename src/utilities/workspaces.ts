@@ -14,7 +14,8 @@ import type {
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
 import { pathMatchesExtensionPattern } from './parameters';
-import { reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
+import type { LogMessage } from '../types/console';
+import { CompoundError, reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
 import { pluralize } from './text';
 
 export function mapWorkspaceTreePaths(nodes: WorkspaceTreeNode[], currentPath: string[] = []): WorkspaceTreeMap {
@@ -426,6 +427,24 @@ export function isBulkOperationSuccess(response: BulkOperationResponse) {
   return response.status >= 200 && response.status <= 299;
 }
 
+// Each `response` is a backend WorkspaceFormattedError (LogMessage-shaped). Build a CompoundError
+// so the caller's `catchError(...)` produces one Console entry per failed item with full backend
+// metadata (type, service, data, trace) preserved. The item path is stashed into `data.item` for
+// the expanded view rather than duplicated in the message (backend messages typically include it).
+export function buildBulkOperationCompoundError(failedOps: BulkOperationResponses, verb: string): CompoundError {
+  const logs: LogMessage[] = failedOps.map(({ item, response }) => {
+    const fmt = response as unknown as LogMessage;
+    return {
+      ...fmt,
+      data: { ...(fmt.data ?? {}), item },
+      level: 'error',
+      message: fmt.message ?? `Failed to ${verb} ${item}`,
+      timestamp: fmt.timestamp ?? new Date().toISOString(),
+    };
+  });
+  return new CompoundError(`Some file${pluralize(failedOps.length)} failed to ${verb}`, logs);
+}
+
 export function isFileConflictResponse(response: BulkOperationResponse) {
   // Check if status is between 200 and 299 (inclusive)
   return response.status === 409;
@@ -493,7 +512,7 @@ export const WorkspaceApi = {
     filePath: string,
     user: User | null,
   ): Promise<{ content: string; etag: string | null }> {
-    // Throws a WorkspaceRequestError (with status) on any non-2xx — content is never null.
+    // Throws an Error or CompoundError on any non-2xx — content is never null.
     const { data, etag } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'GET',

@@ -9,7 +9,7 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/errors';
+  import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/console';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -27,7 +27,7 @@
     ActivityDirectiveInstantiationFailure,
     ActivityErrorCategories,
     ActivityErrorRollup,
-  } from '../../types/errors';
+  } from '../../types/console';
   import type { FieldStore } from '../../types/form';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
   import type { ActivityDirectiveTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';

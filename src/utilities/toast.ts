@@ -1,4 +1,5 @@
 import Toastify from 'toastify-js';
+import { composeErrorMessage } from './errors';
 
 interface Toast {
   hideToast: () => void;
@@ -6,6 +7,8 @@ interface Toast {
   showToast: () => void;
   readonly toastElement: Element | null;
 }
+
+const TOAST_MESSAGE_MAX_LENGTH = 200;
 
 let currentToasts: Toast[] = [];
 
@@ -55,7 +58,8 @@ function showToast(toast: Toast) {
   currentToasts.push(toast);
 }
 
-export function showFailureToast(text: string): void {
+export function showFailureToast(label: string, error?: unknown): void {
+  const text = truncate(composeErrorMessage(label, error));
   const toast = Toastify({
     backgroundColor: '#a32a2a',
     callback: toastCallback,
@@ -71,6 +75,10 @@ export function showFailureToast(text: string): void {
     text,
   });
   showToast(toast);
+}
+
+function truncate(msg: string): string {
+  return msg.length > TOAST_MESSAGE_MAX_LENGTH ? msg.slice(0, TOAST_MESSAGE_MAX_LENGTH - 1) + '…' : msg;
 }
 
 export function showSuccessToast(text: string): void {

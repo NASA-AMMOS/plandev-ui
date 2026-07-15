@@ -5,7 +5,7 @@
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../enums/status';
   import type { ActivityDirectiveValidationStatus } from '../../types/activity';
-  import type { ActivityErrorCounts } from '../../types/errors';
+  import type { ActivityErrorCounts } from '../../types/console';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
 

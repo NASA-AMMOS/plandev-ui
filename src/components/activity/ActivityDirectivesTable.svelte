@@ -8,7 +8,7 @@
   import type { ActivityDirective, ActivityDirectiveId, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/errors';
+  import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/console';
   import type { Plan } from '../../types/plan';
   import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';

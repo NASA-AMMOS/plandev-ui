@@ -1,6 +1,6 @@
 import { forEachDiagnostic } from '@codemirror/lint';
 import type { EditorView } from 'codemirror';
-import type { LintDiagnostic } from '../../types/errors';
+import type { LintDiagnostic } from '../../types/console';
 
 export function getLintDiagnostics(view: EditorView): LintDiagnostic[] {
   const diagnostics: LintDiagnostic[] = [];
