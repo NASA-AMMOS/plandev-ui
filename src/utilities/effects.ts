@@ -216,9 +216,8 @@ import {
   type SequenceAdaptationMetadata,
 } from '../types/sequencing';
 import type {
-  PlanDataset,
   Profile,
-  Resource,
+  ProfileSegment,
   ResourceType,
   SimulateResponse,
   Simulation,
@@ -261,7 +260,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { compare, convertToQuery } from './generic';
+import { convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showApplySequenceFilterModal,
@@ -299,7 +298,6 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { reqActionServer, reqExtension, reqGateway, reqHasura, WorkspaceSaveConflictError } from './requests';
-import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';
@@ -4846,6 +4844,39 @@ const effects = {
     }
   },
 
+  async getExternalProfileSegmentsSince(
+    datasetId: number,
+    profileId: number,
+    sinceOffset: string,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<ProfileSegment[] | null> {
+    try {
+      const data = await reqHasura<{ profile_segments: ProfileSegment[] }[]>(
+        gql.GET_EXTERNAL_PROFILE_SEGMENTS_SINCE,
+        { datasetId, profileId, sinceOffset },
+        user,
+        signal,
+      );
+      const { profile: profiles } = data;
+      if (profiles && profiles.length === 1) {
+        return profiles[0].profile_segments;
+      }
+      return null;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      catchError(
+        'log',
+        `Failed to retrieve external profile segments (datasetId=${datasetId}, profileId=${profileId})`,
+        error,
+      );
+      throw error;
+    }
+  },
+
   async getFile(
     fileId: number,
     user: User | null,
@@ -5226,14 +5257,30 @@ const effects = {
     }
   },
 
-  getResource(
+  async getProfileSince(
     datasetId: number,
     name: string,
+    sinceOffset: string,
     user: User | null,
     signal: AbortSignal | undefined = undefined,
-  ): Promise<Record<string, Profile[] | null>> {
-    const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-    return data;
+  ): Promise<Profile | null> {
+    try {
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILE_SINCE, { datasetId, name, sinceOffset }, user, signal);
+      const { profile: profiles } = data;
+      if (profiles && profiles.length === 1) {
+        return profiles[0];
+      }
+      return null;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      // Re-throw so the caller can surface the error in the timeline status
+      // indicator; catchError still routes it to the global log pipeline.
+      catchError('log', `Unable to retrieve profile ${name}`, error);
+      throw error;
+    }
   },
 
   async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
@@ -5254,79 +5301,6 @@ const effects = {
     } catch (e) {
       catchError('log', 'Unable to retrieve resource types', e as Error);
       return [];
-    }
-  },
-
-  async getResourcesExternal(
-    planId: number,
-    simulationDatasetId: number | null,
-    startTimeYmd: string,
-    user: User | null,
-    signal: AbortSignal | undefined = undefined,
-  ): Promise<{ aborted: boolean; resources: Resource[] }> {
-    try {
-      // Always fetch external resources that aren't tied to a simulation, optionally get the resources tied to one if we have a dataset ID.
-      const clauses: { simulation_dataset_id: { _is_null: boolean } | { _eq: number } }[] = [
-        { simulation_dataset_id: { _is_null: true } },
-      ];
-      if (simulationDatasetId !== null) {
-        clauses.push({ simulation_dataset_id: { _eq: simulationDatasetId } });
-      }
-
-      const data = await reqHasura<PlanDataset[]>(
-        gql.GET_PROFILES_EXTERNAL,
-        {
-          planId,
-          simulationDatasetFilter: clauses,
-        },
-        user,
-        signal,
-      );
-      const { plan_dataset: planDatasets } = data;
-      if (planDatasets != null) {
-        let resources: Resource[] = [];
-
-        const profileMap: Set<string> = new Set();
-        planDatasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
-          return compare(datasetIdA, datasetIdB, false);
-        });
-
-        for (const dataset of planDatasets) {
-          const {
-            dataset: { profiles },
-            offset_from_plan_start,
-          } = dataset;
-          const uniqueProfiles: Profile[] = profiles.filter(profile => {
-            if (!profileMap.has(profile.name)) {
-              profileMap.add(profile.name);
-              return true;
-            }
-            return false;
-          });
-
-          uniqueProfiles.forEach(profile => {
-            logMessage(
-              'log',
-              `Retrieved external profile ${profile.name} (${profile.profile_segments} segment${profile.profile_segments.length}) for simulation ID=${simulationDatasetId}.`,
-            );
-          });
-
-          const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
-          resources = [...resources, ...sampledResources];
-        }
-        return { aborted: false, resources };
-      } else {
-        throw Error('Unable to get external resources');
-      }
-    } catch (e) {
-      let aborted = false;
-      const error = e as Error;
-      if (error.name !== 'AbortError') {
-        catchError('log', 'Unable to retrieve external profiles ', error);
-        showFailureToast('Failed to retrieve external profiles');
-        aborted = true;
-      }
-      return { aborted, resources: [] };
     }
   },
 

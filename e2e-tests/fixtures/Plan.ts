@@ -467,6 +467,7 @@ export class Plan {
   async goto(planId = this.plans.planId) {
     await this.page.goto(`/plans/${planId}`, { waitUntil: 'load' });
     await this.page.waitForURL(`/plans/${planId}`, { waitUntil: 'load' });
+    await this.planTitle.waitFor({ state: 'visible' });
     await this.waitForTimelineLoading();
   }
 

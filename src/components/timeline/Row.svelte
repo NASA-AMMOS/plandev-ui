@@ -4,24 +4,20 @@
   import type { ScaleTime } from 'd3-scale';
   import { select, type Selection } from 'd3-selection';
   import { zoom as d3Zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import FilterWithXIcon from '../../assets/filter-with-x.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../constants/view';
-  import { Status } from '../../enums/status';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { catchError, logMessage } from '../../stores/console';
+  import { selectedExternalEventsRaw } from '../../stores/external-event';
   import {
     derivationGroupVisibilityMap,
     externalSources,
     planDerivationGroupLinks,
   } from '../../stores/external-source';
+  import { createExternalResourceSubscription } from '../../stores/externalResource';
   import { planModelActivityTypes } from '../../stores/plan';
-  import {
-    externalResources,
-    fetchingResourcesExternal,
-    resourceTypes,
-    resourceTypesLoading,
-  } from '../../stores/simulation';
+  import { createProfileSubscription } from '../../stores/profile';
+  import { resourceTypes, resourceTypesLoading } from '../../stores/simulation';
   import { selectedRow, viewAddFilterToRow } from '../../stores/views';
   import type {
     ActivityDirective,
@@ -66,8 +62,6 @@
   import { getExternalEventRowId } from '../../utilities/externalEvents';
   import { classNames } from '../../utilities/generic';
   import { showConfirmActivityCreationModal } from '../../utilities/modal';
-  import { sampleProfiles } from '../../utilities/resources';
-  import { getSimulationStatus } from '../../utilities/simulation';
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
   import {
@@ -157,6 +151,12 @@
     zoom: D3ZoomEvent<HTMLCanvasElement, any>;
   }>();
 
+  // External events stream in via a single plan-wide subscription, so these loading
+  // and error flags are shared across all rows that render an external event layer
+  // (unlike resources, which subscribe per row).
+  const externalEventsLoading = selectedExternalEventsRaw.loading;
+  const externalEventsError = selectedExternalEventsRaw.error;
+
   let blur: FocusEvent;
   let contextmenu: MouseEvent;
   let dblclick: MouseEvent;
@@ -221,7 +221,7 @@
     }
   });
 
-  $: if (plan && simulationDataset !== null && layers && $externalResources && !$resourceTypesLoading) {
+  $: if (plan && simulationDataset !== null && layers && !$resourceTypesLoading) {
     const simulationDatasetId = simulationDataset.dataset_id;
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
@@ -233,119 +233,72 @@
     });
     const resourceNames = Array.from(resourceNamesSet);
 
-    // Cancel and delete unused and stale requests as well as any external resources that
-    // are not in the list of current external resources
+    // Drop entries no longer referenced by any layer or whose sim dataset
+    // changed. Both factories own their own registry cleanup on unsubscribe.
     Object.entries(resourceRequestMap).forEach(([key, value]) => {
-      if (
-        resourceNames.indexOf(key) < 0 ||
-        value.simulationDatasetId !== simulationDatasetId ||
-        (value.type === 'external' && !$resourceTypes.find(type => type.name === name))
-      ) {
-        value.controller?.abort();
+      if (resourceNames.indexOf(key) < 0 || value.simulationDatasetId !== simulationDatasetId) {
+        value.unsubscribe?.();
         delete resourceRequestMap[key];
         resourceRequestMap = { ...resourceRequestMap };
       }
     });
 
-    // Only update if simulation is complete
-    if (
-      getSimulationStatus(simulationDataset) === Status.Complete ||
-      getSimulationStatus(simulationDataset) === Status.Canceled
-    ) {
-      const startTimeYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
-      resourceNames.forEach(async name => {
-        // Check if resource is external
-        const isExternal = !$resourceTypes.find(type => type.name === name);
-        if (isExternal) {
-          // Handle external datasets separately as they are globally loaded and subscribed to
-          let resource = null;
-          if (!$fetchingResourcesExternal) {
-            resource = $externalResources.find(resource => resource.name === name) || null;
-          }
-          let error = !resource && !$fetchingResourcesExternal ? 'External Profile not Found' : '';
+    const simProfileStartYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
+    resourceNames.forEach(name => {
+      if (
+        resourceRequestMap[name] &&
+        simulationDatasetId === resourceRequestMap[name].simulationDatasetId &&
+        resourceRequestMap[name].unsubscribe
+      ) {
+        return;
+      }
 
-          resourceRequestMap = {
-            ...resourceRequestMap,
-            [name]: {
-              ...resourceRequestMap[name],
-              error,
-              loading: $fetchingResourcesExternal,
-              resource,
-              simulationDatasetId,
-              type: 'external',
+      const isExternal = !$resourceTypes.find(type => type.name === name);
+      // External datasets are matched by the simulation_dataset *id* (what
+      // plan_dataset.simulation_dataset_id references), whereas internal
+      // profiles are fetched by dataset_id. These are distinct id spaces;
+      // passing dataset_id to the external factory makes its sim-tied
+      // plan_dataset row preference silently never match.
+      const subscription = isExternal
+        ? createExternalResourceSubscription(simulationDataset.id, name, plan.start_time, user)
+        : createProfileSubscription(simulationDatasetId, name, simProfileStartYmd, user);
+      const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
+      // subscription.store.subscribe() runs its callback immediately,
+      // before it returns. That callback creates an unsubscribe function
+      // that references this variable — so it must already exist.
+      // Declaring it (= null) before subscribing avoids referencing it before it's assigned.
+      let storeUnsubscribe: (() => void) | null = null;
+      storeUnsubscribe = subscription.store.subscribe(({ error, loading, resource }) => {
+        resourceRequestMap = {
+          ...resourceRequestMap,
+          [name]: {
+            ...resourceRequestMap[name],
+            error,
+            loading,
+            resource,
+            simulationDatasetId,
+            type,
+            unsubscribe: () => {
+              storeUnsubscribe?.();
+              subscription.unsubscribe();
             },
-          };
-        } else {
-          // Skip matching resources requests that have already been added for this simulation
-          if (
-            resourceRequestMap[name] &&
-            simulationDatasetId === resourceRequestMap[name].simulationDatasetId &&
-            (resourceRequestMap[name].loading || resourceRequestMap[name].error || resourceRequestMap[name].resource)
-          ) {
-            return;
-          }
-
-          const controller = new AbortController();
-          resourceRequestMap = {
-            ...resourceRequestMap,
-            [name]: {
-              ...resourceRequestMap[name],
-              controller,
-              error: '',
-              loading: true,
-              resource: null,
-              simulationDatasetId,
-              type: 'internal',
-            },
-          };
-
-          let resource = null;
-          let error = '';
-          let aborted = false;
-          try {
-            const startTime = performance.now();
-            const response = await effects.getResource(simulationDatasetId, name, user, controller.signal);
-            const { profile } = response;
-            if (profile && profile.length === 1) {
-              resource = sampleProfiles([profile[0]], startTimeYmd)[0];
-              logMessage(
-                'log',
-                `Retrieved profile ${name} (${profile[0].profile_segments.length} segment${pluralize(profile[0].profile_segments.length)}) for simulation ${simulationDatasetId}.`,
-                { duration: performance.now() - startTime },
-              );
-            } else {
-              throw new Error('Profile not Found');
-            }
-          } catch (e) {
-            const err = e as Error;
-            if (err.name === 'AbortError') {
-              aborted = true;
-            } else {
-              catchError('log', `Profile Download Failed for ${name}`, e as Error);
-              error = err.message;
-            }
-          } finally {
-            if (!aborted) {
-              resourceRequestMap = {
-                ...resourceRequestMap,
-                [name]: {
-                  ...resourceRequestMap[name],
-                  error,
-                  loading: false,
-                  resource,
-                },
-              };
-            }
-          }
-        }
+          },
+        };
       });
-    }
+    });
   } else if (simulationDataset === null) {
-    Object.entries(resourceRequestMap).forEach(([_key, value]) => {
-      value.controller?.abort();
+    Object.values(resourceRequestMap).forEach(value => {
+      value.unsubscribe?.();
     });
     resourceRequestMap = {};
   }
+
+  onDestroy(() => {
+    Object.values(resourceRequestMap).forEach(value => {
+      value.unsubscribe?.();
+    });
+    resourceRequestMap = {};
+  });
 
   $: onDragenter(dragenter);
   $: onDragleave(dragleave);
@@ -385,6 +338,7 @@
   $: if (resourceRequestMap) {
     const newLoadedResources: Resource[] = [];
     const newLoadingErrors: string[] = [];
+    let anyLoading = false;
     Object.values(resourceRequestMap).forEach(resourceRequest => {
       if (resourceRequest.resource) {
         newLoadedResources.push(resourceRequest.resource);
@@ -392,14 +346,15 @@
       if (resourceRequest.error) {
         newLoadingErrors.push(resourceRequest.error);
       }
+      if (resourceRequest.loading) {
+        anyLoading = true;
+      }
     });
     loadedResources = newLoadedResources;
     resourceLoadingErrors = newLoadingErrors;
-
-    // Consider row to be loading if the number of completed resource requests (loaded or error state)
-    // is not equal to the total number of resource requests
-    anyResourcesLoading =
-      loadedResources.length + resourceLoadingErrors.length !== Object.keys(resourceRequestMap).length;
+    // Use per-request loading flag, not loaded+errored vs total: a request
+    // with both data and an error would be double-counted and stick true.
+    anyResourcesLoading = anyLoading;
   }
 
   // Compute scale domains for axes since it is optionally defined in the view
@@ -980,7 +935,7 @@
         </g>
       </svg>
       <!-- Loading indicator -->
-      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap))}
+      {#if (hasResourceLayer && anyResourcesLoading) || (hasActivityLayerFilters && (!activityDirectivesMap || !spansMap)) || (hasExternalEventsLayer && $externalEventsLoading)}
         <div class="layer-message loading st-typography-label">Loading...</div>
       {/if}
       <!-- Empty state -->
@@ -992,6 +947,10 @@
         <div class="layer-message error st-typography-label">
           Failed to load profiles for {resourceLoadingErrors.length} layer{pluralize(resourceLoadingErrors.length)}
         </div>
+      {/if}
+      <!-- External event error indicator -->
+      {#if hasExternalEventsLayer && $externalEventsError}
+        <div class="layer-message error st-typography-label">Failed to load external events</div>
       {/if}
       <!-- Layers of Canvas Visualizations. -->
       <div class="layers" style="width: {drawWidth}px">

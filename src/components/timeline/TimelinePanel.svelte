@@ -50,6 +50,7 @@
   import Panel from '../ui/Panel.svelte';
   import PanelHeaderActions from '../ui/PanelHeaderActions.svelte';
   import Timeline from './Timeline.svelte';
+  import TimelineStatusIndicator from './TimelineStatusIndicator.svelte';
   import TimelineViewControls from './TimelineViewControls.svelte';
 
   export let user: User | null;
@@ -181,7 +182,10 @@
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
-    <div class="st-typography-medium timeline-title">Timeline</div>
+    <div class="timeline-title-group">
+      <div class="st-typography-medium timeline-title">Timeline</div>
+      <TimelineStatusIndicator />
+    </div>
     <PanelHeaderActions>
       <div class="header-actions timeline-icon-tray">
         <TimelineViewControls
@@ -280,6 +284,10 @@
 </Panel>
 
 <style>
+  .timeline-title-group {
+    align-items: center;
+    display: flex;
+  }
   .timeline-title {
     padding: 0px 4px;
     user-select: none;

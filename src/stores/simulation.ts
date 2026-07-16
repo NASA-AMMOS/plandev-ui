@@ -2,7 +2,6 @@ import { keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { Status } from '../enums/status';
 import type {
-  Resource,
   ResourceType,
   Simulation,
   SimulationDataset,
@@ -18,19 +17,14 @@ import type { Axis } from '../types/timeline';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { getSimulationProgress } from '../utilities/simulation';
-import { planId, planModelId, planModelRevision, planRevision } from './plan';
+import { planDatasets, planId, planModelId, planModelRevision, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
 
 export const simulationDatasetId: Writable<number> = writable(-1);
 
-export const externalResources: Writable<Resource[]> = writable([]);
-
 export const externalResourceNames: Writable<string[]> = writable([]);
-
-// default to true since we cannot differentiate between "ext resources have been initially fetched" and "fetching ext resources"
-export const fetchingResourcesExternal: Writable<boolean> = writable(true);
 
 export const resourceTypes: Writable<ResourceType[]> = writable([]);
 
@@ -97,11 +91,32 @@ export const selectedSimulationEventId: Writable<number | null> = writable(null)
 /* Derived. */
 
 export const allResourceTypes: Readable<ResourceType[]> = derived(
-  [resourceTypes, externalResources],
-  ([$resourceTypes, $externalResources]) => {
-    return $resourceTypes
-      .map(({ name, schema }) => ({ name, schema }))
-      .concat($externalResources.map(({ name, schema }) => ({ name, schema })));
+  [resourceTypes, planDatasets, simulationDatasetId],
+  ([$resourceTypes, $planDatasets, $simulationDatasetId]) => {
+    const seen = new Set<string>();
+    const out: ResourceType[] = [];
+    // Add resource types from the model
+    for (const { name, schema } of $resourceTypes) {
+      if (!seen.has(name)) {
+        seen.add(name);
+        out.push({ name, schema });
+      }
+    }
+    // Add resource types from datasets tied to the current sim or untied to any sim (plan-level).
+    for (const planDataset of $planDatasets) {
+      const tiedToOtherSim =
+        planDataset.simulation_dataset_id !== null && planDataset.simulation_dataset_id !== $simulationDatasetId;
+      if (tiedToOtherSim) {
+        continue;
+      }
+      for (const profile of planDataset.dataset.profiles) {
+        if (!seen.has(profile.name)) {
+          seen.add(profile.name);
+          out.push({ name: profile.name, schema: profile.type.schema });
+        }
+      }
+    }
+    return out;
   },
 );
 
@@ -171,9 +186,7 @@ export const simulationDatasetLatestId = derived(
 /* Helper Functions. */
 
 export function resetSimulationStores() {
-  externalResources.set([]);
   externalResourceNames.set([]);
-  fetchingResourcesExternal.set(false);
   initialSpansLoading.set(true);
   selectedSpanId.update(() => null);
   simulation.updateValue(() => null);

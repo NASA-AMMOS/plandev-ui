@@ -2,6 +2,7 @@ import test, { expect } from '@playwright/test';
 import { Status } from '../../src/enums/status.js';
 import { PanelNames } from '../fixtures/Plan.js';
 import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
+import { anyCanvasHasContent } from '../utilities/canvas.js';
 
 let setup: FullSetupResult;
 
@@ -61,9 +62,31 @@ test.describe.serial('Simulation', async () => {
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
   });
 
+  // Smoke test for the windowed-pull pipeline: indicator settles cleanly and
+  // canvases render non-transparent content (catches the "blank plot" bug an
+  // indicator-only check would miss).
+  test(`Streaming pipeline: indicator settles + canvases render across two re-sims`, async () => {
+    const timelineErrorIndicator = setup.plan.page.getByRole('status', { name: 'Timeline data error' });
+    const timelineLoadingIndicator = setup.plan.page.getByRole('status', { name: 'Timeline loading' });
+    const timelineCanvasContent = () => anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas');
+
+    await setup.plan.reRunSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+    await expect(timelineLoadingIndicator).not.toBeVisible();
+    await expect.poll(timelineCanvasContent, { timeout: 10000 }).toBe(true);
+
+    await setup.plan.reRunSimulation();
+    await expect(timelineErrorIndicator).not.toBeVisible();
+    await expect(timelineLoadingIndicator).not.toBeVisible();
+    await expect.poll(timelineCanvasContent, { timeout: 10000 }).toBe(true);
+  });
+
   test(`Plans with an invalid activity should fail simulation`, async () => {
+    const timelineLoadingIndicator = setup.plan.page.getByRole('status', { name: 'Timeline loading' });
     await setup.plan.addActivityByDragAndDrop('BakeBananaBread');
     await setup.plan.runSimulation(Status.Failed);
+    // Regression: indicator must settle for terminal-null sims too.
+    await expect(timelineLoadingIndicator).not.toBeVisible();
   });
 
   test(`Modified plans should indicate that simulation is out of date`, async () => {

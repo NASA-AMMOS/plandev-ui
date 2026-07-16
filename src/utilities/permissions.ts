@@ -818,6 +818,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_EXPANSION_SEQUENCE_SEQ_JSON: () => true,
   GET_EXTERNAL_EVENTS: () => true,
   GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
+  GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
   GET_MODELS: () => true,
   GET_PARCEL: () => true,
   GET_PARSED_CHANNEL_DICTIONARY: () => true,
@@ -835,8 +836,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_PLAN_SNAPSHOT_ACTIVITY_DIRECTIVES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.PLAN_SNAPSHOT_ACTIVITIES], user);
   },
-  GET_PROFILE: () => true,
-  GET_PROFILES_EXTERNAL: () => true,
+  GET_PROFILE_SINCE: () => true,
   GET_RESOURCE_TYPES: () => true,
   GET_ROLE_PERMISSIONS: () => true,
   GET_SCHEDULING_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK: () => true,
