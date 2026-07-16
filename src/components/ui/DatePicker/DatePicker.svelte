@@ -130,7 +130,20 @@
     updateView(currentMonthDate);
   }
 
-  onMount(() => (isMounted = true));
+  onMount(() => {
+    isMounted = true;
+
+    const currentDateTimestamp = currentDate.getTime();
+    const minDateTimestamp = minDate.getTime();
+    const maxDateTimestamp = maxDate.getTime();
+
+    // Default the view to be within the specified min and max dates if the current date lies outside the range
+    if (currentDateTimestamp < minDateTimestamp || currentDateTimestamp > maxDateTimestamp) {
+      const middleTimestamp = (minDateTimestamp + maxDateTimestamp) / 2;
+      const middleDate = new Date(middleTimestamp);
+      updateView(middleDate);
+    }
+  });
 
   onDestroy(closeDatePicker);
 
@@ -255,8 +268,7 @@
   function setToday() {
     setDateString(getDoyTime(currentDate));
 
-    viewMonth = currentDate.getUTCMonth();
-    viewYear = currentYear;
+    updateView(currentDate);
   }
 </script>
 

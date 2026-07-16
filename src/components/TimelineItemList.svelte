@@ -160,7 +160,7 @@
     <input
       bind:value={filterText}
       on:keydown={onInputKeydown}
-      class="st-input"
+      class="st-input min-w-20"
       name="search"
       autocomplete="off"
       placeholder="Filter {typeName} types"
