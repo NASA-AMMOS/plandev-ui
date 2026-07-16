@@ -3,7 +3,7 @@ import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
 import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
-import { catchError } from './errors';
+import { catchError } from './console';
 import { planDatasets } from './plan';
 import {
   acquireTimelineResource,
@@ -222,7 +222,7 @@ export function createExternalResourceSubscription(
           lastMeta = null;
           resetForNewProfile();
           lastError = 'Resource not found in attached external datasets';
-          catchError(`Unable to load resource "${name}"`, new Error(lastError));
+          catchError('log', `Unable to load resource "${name}"`, new Error(lastError));
           emit();
         });
         return;

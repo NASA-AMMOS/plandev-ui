@@ -216,7 +216,6 @@ import {
   type SequenceAdaptationMetadata,
 } from '../types/sequencing';
 import type {
-  PlanDataset,
   Profile,
   ProfileSegment,
   ResourceType,
@@ -261,8 +260,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { ErrorTypes } from './errors';
-import { compare, convertToQuery } from './generic';
+import { convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showApplySequenceFilterModal,
@@ -300,14 +298,12 @@ import {
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import {
-  CompoundError,
   reqActionServer,
   reqExtension,
   reqGateway,
   reqHasura,
   WorkspaceSaveConflictError,
 } from './requests';
-import { sampleProfiles } from './resources';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';

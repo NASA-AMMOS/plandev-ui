@@ -7,7 +7,7 @@ import { pickEffectiveDuration } from '../utilities/profile';
 import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
 import { pluralize } from '../utilities/text';
-import { catchError, logMessage } from './errors';
+import { catchError, logMessage } from './console';
 import { simulationDataset } from './simulation';
 import {
   acquireTimelineResource,
@@ -84,9 +84,9 @@ export function createProfileSubscription(
     }
     aggregateLogged = true;
     logMessage(
+      'log',
       `Retrieved profile "${name}" (${accumulator.length} segment${pluralize(accumulator.length)}) for dataset ID=${datasetId}.`,
-      '',
-      performance.now() - createdAt,
+      {duration: performance.now() - createdAt}
     );
   }
 
@@ -131,7 +131,7 @@ export function createProfileSubscription(
         // of silently settling into a blank row.
         resolved = true;
         lastError = 'Resource not found in simulation dataset';
-        catchError(`Unable to load resource "${name}"`, new Error(lastError));
+        catchError('log', `Unable to load resource "${name}"`, new Error(lastError));
       }
       if (!streamingActive) {
         logFinalAggregate();
