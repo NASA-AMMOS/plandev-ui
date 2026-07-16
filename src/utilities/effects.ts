@@ -4227,7 +4227,15 @@ const effects = {
       }
 
       const startTime = performance.now();
-      const data = await reqHasura<{ id: number }>(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
+      const data = await reqHasura<{ id: number }>(
+        gql.EXPAND,
+        {
+          bypassConstraints: false,
+          expansionSetId,
+          simulationDatasetId,
+        },
+        user,
+      );
       if (data.expand != null) {
         planExpansionStatusStore.set(Status.Complete);
         showSuccessToast('Plan Expanded Successfully');
