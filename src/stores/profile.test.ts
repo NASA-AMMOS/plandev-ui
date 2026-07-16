@@ -2,6 +2,15 @@ import { writable, type Writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { Profile, Resource, SimulationDataset } from '../types/simulation';
 
+// required for tests which transitively import `$env/dynamic/public` - unavailable in the vitest environment
+vi.mock('$env/dynamic/public', () => ({
+  env: {
+    PUBLIC_HASURA_CLIENT_URL: 'http://test/hasura',
+    PUBLIC_HASURA_SERVER_URL: 'http://test/hasura',
+    PUBLIC_WORKSPACE_CLIENT_URL: 'http://test/ws',
+  },
+}));
+
 const getProfileSinceMock = vi.fn();
 vi.mock('../utilities/effects', () => ({
   default: {
@@ -12,6 +21,10 @@ vi.mock('../utilities/effects', () => ({
 const simulationDatasetMock: Writable<SimulationDataset | null> = writable(null);
 vi.mock('./simulation', () => ({
   simulationDataset: simulationDatasetMock,
+  simulationDatasetLatestId: writable(null),
+  simulationDatasetsPlan: writable(null),
+  spanUtilityMaps: writable({}),
+  spansMap: writable({}),
 }));
 
 // Stub: `./errors` transitively pulls `$env/dynamic/public` via requests.ts.

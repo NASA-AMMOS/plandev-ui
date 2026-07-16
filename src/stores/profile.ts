@@ -86,7 +86,7 @@ export function createProfileSubscription(
     logMessage(
       'log',
       `Retrieved profile "${name}" (${accumulator.length} segment${pluralize(accumulator.length)}) for dataset ID=${datasetId}.`,
-      {duration: performance.now() - createdAt}
+      { duration: performance.now() - createdAt },
     );
   }
 

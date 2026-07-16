@@ -297,13 +297,7 @@ import {
   showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import {
-  reqActionServer,
-  reqExtension,
-  reqGateway,
-  reqHasura,
-  WorkspaceSaveConflictError,
-} from './requests';
+import { reqActionServer, reqExtension, reqGateway, reqHasura, WorkspaceSaveConflictError } from './requests';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';

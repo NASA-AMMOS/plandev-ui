@@ -3,6 +3,7 @@ import type { BaseUser } from '../types/app';
 import { ErrorTypes } from './errors';
 import { CompoundError, reqHasura, reqWorkspace, reqWorkspaceWithEtag, WorkspaceSaveConflictError } from './requests';
 
+// required for tests which transitively import `$env/dynamic/public` - unavailable in the vitest environment
 vi.mock('$env/dynamic/public', () => ({
   env: {
     PUBLIC_HASURA_CLIENT_URL: 'http://test/hasura',

@@ -2,6 +2,15 @@ import { writable, type Subscriber, type Writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { PlanDataset, Profile, ProfileSegment, Resource } from '../types/simulation';
 
+// required for tests which transitively import `$env/dynamic/public` - unavailable in the vitest environment
+vi.mock('$env/dynamic/public', () => ({
+  env: {
+    PUBLIC_HASURA_CLIENT_URL: 'http://test/hasura',
+    PUBLIC_HASURA_SERVER_URL: 'http://test/hasura',
+    PUBLIC_WORKSPACE_CLIENT_URL: 'http://test/ws',
+  },
+}));
+
 const getExternalProfileSegmentsSinceMock = vi.fn();
 vi.mock('../utilities/effects', () => ({
   default: {
@@ -29,7 +38,15 @@ const planDatasetsMock: PlanDatasetsMock = {
   subscribe: planDatasetsValue.subscribe,
 };
 vi.mock('./plan', () => ({
+  plan: writable({}),
   planDatasets: planDatasetsMock,
+  planEndTimeDoy: writable(''),
+  planId: writable(1),
+  planModelId: writable(1),
+  planModelRevision: writable(1),
+  planRevision: writable(1),
+  planStartTimeMs: writable(''),
+  planStartTimeYmd: writable(''),
 }));
 
 vi.mock('./errors', () => ({
