@@ -1,6 +1,8 @@
 import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Dictionaries } from '../fixtures/Dictionaries.js';
+import { ExpansionRules } from '../fixtures/ExpansionRules.js';
+import { ExpansionSets } from '../fixtures/ExpansionSets.js';
 import { Parcels } from '../fixtures/Parcels.js';
 import { PanelNames } from '../fixtures/Plan.js';
 import { setupTest, teardownTest, type FullSetupResult } from '../utilities/api.js';
@@ -12,11 +14,15 @@ let setup: FullSetupResult;
 let dictionaryName: string;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
+let expansionRules: ExpansionRules;
+let expansionSets: ExpansionSets;
 
 test.beforeAll(async ({ baseURL, browser }) => {
   setup = await setupTest(browser);
   dictionaries = new Dictionaries(setup.page);
   parcels = new Parcels(setup.page);
+  expansionRules = new ExpansionRules(setup.page, parcels, setup.models);
+  expansionSets = new ExpansionSets(setup.page, parcels, setup.models, expansionRules);
 
   await dictionaries.goto();
   await dictionaries.createCommandDictionary();
@@ -26,7 +32,6 @@ test.beforeAll(async ({ baseURL, browser }) => {
 });
 
 test.afterAll(async () => {
-  await parcels.goto();
   await teardownTest(setup);
 });
 
@@ -60,18 +65,43 @@ test.describe.serial('Plan Expansion', () => {
   });
 
   test('Planners warned if constraints have issues', async ({ baseURL }) => {
+    await expansionRules.goto();
+    await expansionRules.createExpansionRule(baseURL);
+    await expansionSets.goto();
+    await expansionSets.createExpansionSet(baseURL);
+    const expansionSetId = await expansionSets.page
+      .getByRole('tabpanel')
+      .filter({ hasText: 'Expansion Sets' })
+      .getByRole('treegrid')
+      .getByRole('row', { name: expansionSets.expansionSetName })
+      .getByRole('gridcell')
+      .first()
+      .textContent();
+
+    await setup.plan.goto();
+
     setup.plan.constraints.constraintDefinition =
       "export default function peelFailing(): Constraint { return Real.Resource('/peel').lessThan(-1000); }";
     await setup.plan.showConstraintsLayout();
     await setup.plan.createConstraint(baseURL);
 
+    // running a simulation on the plan is required before being able to check constraints
+    await setup.plan.showPanel(PanelNames.SIMULATION, true);
+    // run the simulation if it already hasn't been
+    if (await setup.plan.simulateButton.isEnabled()) {
+      await setup.plan.runSimulation();
+    }
+
     // evaluate constraints
-    await setup.page.getByRole('navigation').getByText('Constraints').click();
-    await setup.page.getByText('Check Constraints', { exact: true }).click();
+    await setup.plan.navButtonConstraints.click();
+    await setup.plan.navButtonConstraintsMenu.getByText('Check Constraints', { exact: true }).click();
 
     // expand
     await setup.plan.showPanel(PanelNames.EXPANSION);
-    await setup.page.locator('select[name="expansionSetId"]').selectOption('2');
+
+    await setup.page
+      .locator('select[name="expansionSetId"]')
+      .selectOption({ label: `${expansionSets.expansionSetName} (${expansionSetId})` });
 
     const sequenceName = `${sequenceFilterName} Sequence (Plan ${setup.planId})`;
     await setup.page.getByText(sequenceName, { exact: true }).hover();
