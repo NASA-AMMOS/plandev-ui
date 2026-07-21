@@ -112,11 +112,6 @@ function transformDerivationGroups(
           };
         };
         external_sources: {
-          external_events_aggregate: {
-            aggregate: {
-              count: number;
-            };
-          };
           key: string;
         }[];
         name: string;
@@ -134,16 +129,7 @@ function transformDerivationGroups(
         name: derivationGroup.name,
         owner: derivationGroup.owner,
         source_type_name: derivationGroup.source_type_name,
-        sources: new Map(
-          derivationGroup.external_sources.reduce(
-            (accumulatedSources, currentSource) => {
-              const source_key = currentSource.key;
-              const event_counts = currentSource.external_events_aggregate.aggregate.count;
-              return [...accumulatedSources, [source_key, { event_counts }] as [string, { event_counts: number }]];
-            },
-            <[string, { event_counts: number }][]>[],
-          ),
-        ),
+        sources: derivationGroup.external_sources.map(externalSource => externalSource.key),
       });
     });
   }

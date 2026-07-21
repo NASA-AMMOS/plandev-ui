@@ -16,7 +16,7 @@
 
   $: derivationGroupsAreAllEmpty = derivationGroups.reduce(
     (isEmptyAcc: boolean, currentDerivationGroup: DerivationGroup) => {
-      return isEmptyAcc && currentDerivationGroup.sources.size === 0;
+      return isEmptyAcc && currentDerivationGroup.sources.length === 0;
     },
     true,
   );

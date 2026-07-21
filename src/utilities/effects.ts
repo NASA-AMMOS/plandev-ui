@@ -121,6 +121,7 @@ import type { ExternalEvent, ExternalEventDB, ExternalEventType } from '../types
 import type {
   DerivationGroup,
   DerivationGroupInsertInput,
+  ExternalSourceExternalEventCountResponse,
   ExternalSourcePkey,
   ExternalSourceSlim,
   ModelDerivationGroup,
@@ -4530,6 +4531,29 @@ const effects = {
         error,
       );
       throw error;
+    }
+  },
+
+  async getExternalSourceEventCount(externalSource: ExternalSourceSlim, user: User | null): Promise<number> {
+    try {
+      const data = await reqHasura<ExternalSourceExternalEventCountResponse>(
+        gql.GET_EXTERNAL_SOURCE_EXTERNAL_EVENT_COUNT,
+        {
+          derivationGroupName: externalSource.derivation_group_name,
+          externalSourceKey: externalSource.key,
+        },
+        user,
+      );
+      const externalSourceCount = data.external_source_by_pk?.external_events_aggregate.aggregate.count;
+      if (externalSourceCount) {
+        return externalSourceCount;
+      } else {
+        return 0;
+      }
+    } catch (e) {
+      catchError('log', `Failed to get external events for external source: ${externalSource.key}`, e as Error);
+      showFailureToast('Failed to get external source event count');
+      return 0;
     }
   },
 

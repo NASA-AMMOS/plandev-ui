@@ -777,8 +777,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
   GET_EXTERNAL_EVENTS: () => true,
-  GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
+  GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: user => queryPermissions.SUB_DERIVATION_GROUPS(user),
   GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
+  GET_EXTERNAL_SOURCE_EXTERNAL_EVENT_COUNT: () => true,
   GET_MODELS: () => true,
   GET_PARCEL: () => true,
   GET_PARSED_CHANNEL_DICTIONARY: () => true,
