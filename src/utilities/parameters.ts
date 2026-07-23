@@ -187,6 +187,23 @@ export function pathMatchesExtensionPattern(path: string, pattern: string): bool
   return false;
 }
 
+export function textMatchesPattern(path: string, pattern: string): boolean {
+  // Handle the "match all" wildcard
+  if (!pattern.length || pattern === '*') {
+    return true;
+  }
+
+  return path.search(pattern) !== -1;
+}
+
+function filterByPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
+  // Handle the "match all" wildcard
+  if (!pattern.length || pattern === '*') {
+    return [...options]; // Return a shallow copy of all options
+  }
+  return options.filter(option => textMatchesPattern(option.value, pattern));
+}
+
 function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
   // Handle the "match all" wildcard
   if (!pattern.length || pattern === '*') {
@@ -237,8 +254,10 @@ export function getFormParameters(
         options = dropdownOptions.filter(({ type }) => type === 'SEQUENCE');
       } else {
         const fileOptions = dropdownOptions.filter(({ type }) => type !== 'DIRECTORY');
-        if (schema.pattern) {
-          options = filterByExtensionPattern(fileOptions, schema.pattern);
+        if (schema.extensionPattern) {
+          options = filterByExtensionPattern(fileOptions, schema.extensionPattern);
+        } else if (schema.filenamePattern) {
+          options = filterByPattern(fileOptions, schema.filenamePattern);
         } else {
           options = fileOptions;
         }
