@@ -196,7 +196,7 @@ export function textMatchesPattern(path: string, pattern: string): boolean {
   return path.search(pattern) !== -1;
 }
 
-function filterByPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
+export function filterByFilenamePattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
   // Handle the "match all" wildcard
   if (!pattern.length || pattern === '*') {
     return [...options]; // Return a shallow copy of all options
@@ -204,7 +204,7 @@ function filterByPattern(options: ValueSchemaOption[], pattern: string): ValueSc
   return options.filter(option => textMatchesPattern(option.value, pattern));
 }
 
-function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
+export function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
   // Handle the "match all" wildcard
   if (!pattern.length || pattern === '*') {
     return [...options]; // Return a shallow copy of all options
@@ -257,7 +257,7 @@ export function getFormParameters(
         if (schema.extensionPattern) {
           options = filterByExtensionPattern(fileOptions, schema.extensionPattern);
         } else if (schema.filenamePattern) {
-          options = filterByPattern(fileOptions, schema.filenamePattern);
+          options = filterByFilenamePattern(fileOptions, schema.filenamePattern);
         } else {
           options = fileOptions;
         }

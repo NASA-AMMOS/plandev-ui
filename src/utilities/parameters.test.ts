@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import type { FormParameter } from '../types/parameter';
+import type { ValueSchemaOption } from '../types/schema';
 import {
   applyRequiredErrors,
+  filterByExtensionPattern,
+  filterByFilenamePattern,
   formatParameterValue,
   getArgument,
   getCleansedStructArguments,
@@ -545,5 +548,54 @@ describe('applyRequiredErrors', () => {
     const result = applyRequiredErrors(formParameters, touchedNames);
 
     expect(result[0].errors).toEqual(['This field is required']);
+  });
+});
+
+describe('filterByPattern', () => {
+  test('Should be able to filter by extension', () => {
+    const exampleOptions: ValueSchemaOption[] = [
+      {
+        display: 'thisisafile.txt',
+        value: 'thisisafile.txt',
+      },
+      {
+        display: 'maybeasequence.seqn',
+        value: 'maybeasequence.seqn',
+      },
+      {
+        display: 'somethingelse.stol',
+        value: 'somethingelse.stol',
+      },
+      {
+        display: 'orthistoo.TXT',
+        value: 'orthistoo.TXT',
+      },
+    ];
+    const examplePattern = '.txt';
+    const result = filterByExtensionPattern(exampleOptions, examplePattern);
+    expect(result.length).toEqual(2);
+  });
+  test('Should be able to filter by filename', () => {
+    const exampleOptions: ValueSchemaOption[] = [
+      {
+        display: 'thisisafile.txt',
+        value: 'thisisafile.txt',
+      },
+      {
+        display: 'maybeasequence.seqn',
+        value: 'maybeasequence.seqn',
+      },
+      {
+        display: 'adifferentSEQUENCE.stol',
+        value: 'adifferentSEQUENCE.stol',
+      },
+      {
+        display: 'orthistoo.TXT',
+        value: 'orthistoo.TXT',
+      },
+    ];
+    const examplePattern = 'sequence';
+    const result = filterByFilenamePattern(exampleOptions, examplePattern);
+    expect(result.length).toEqual(1);
   });
 });
