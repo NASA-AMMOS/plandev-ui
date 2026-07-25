@@ -140,7 +140,17 @@ import type {
   ModelDerivationGroup,
   PlanDerivationGroup,
 } from '../types/external-source';
-import type { Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
+import type {
+  DiscoveredExternalModel,
+  ExternalBackendCatalog,
+  ExternalModelInsertInput,
+  Model,
+  ModelInsertInput,
+  ModelLog,
+  ModelSchema,
+  ModelSetInput,
+  ModelSlim,
+} from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
@@ -283,6 +293,7 @@ import {
   showManagePlanDerivationGroups,
   showManagePlanSchedulingConditionsModal,
   showManagePlanSchedulingGoalsModal,
+  showModelInUseModal,
   showMoveItemToWorkspaceModal,
   showMoveWorkspaceItemModal,
   showNewWorkspaceFolderModal,
@@ -3465,6 +3476,18 @@ const effects = {
         throwPermissionError('delete this model');
       }
 
+      // Removal guard: a model cannot be deleted while any plan references it
+      // (plan.model_id FK -> mission_model.id). Block and explain if so.
+      const referencingPlans = await effects.getPlansUsingModel(model.id, user);
+      if (referencingPlans.length > 0) {
+        await showModelInUseModal(model, referencingPlans);
+        logMessage(
+          'log',
+          `Blocked deletion of model "${model.name}" (ID=${model.id}); referenced by ${referencingPlans.length} plan${pluralize(referencingPlans.length)}.`,
+        );
+        return;
+      }
+
       const { confirm } = await showConfirmModal(
         'Delete',
         `Are you sure you want to delete "${model.name}" version ${model.version}?`,
@@ -3473,7 +3496,10 @@ const effects = {
 
       if (confirm) {
         const { id, jar_id } = model;
-        await effects.deleteFile(jar_id, user);
+        // External models (model_type = "external") are not backed by an uploaded JAR file.
+        if (jar_id != null) {
+          await effects.deleteFile(jar_id, user);
+        }
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
@@ -4844,6 +4870,30 @@ const effects = {
     }
   },
 
+  async getExternalModelCatalog(user: User | null): Promise<ExternalBackendCatalog[]> {
+    try {
+      if (!queryPermissions.GET_EXTERNAL_MODEL_CATALOG(user)) {
+        throwPermissionError('view the external model catalog');
+      }
+
+      const data = await reqHasura<ExternalBackendCatalog[]>(gql.GET_EXTERNAL_MODEL_CATALOG, {}, user);
+      const { getExternalModelCatalog: catalog } = data;
+
+      if (catalog != null) {
+        logMessage(
+          'log',
+          `Retrieved external model catalog with ${catalog.length} backend${pluralize(catalog.length)}`,
+        );
+        return catalog;
+      } else {
+        throw Error('External model catalog not found');
+      }
+    } catch (e) {
+      catchError('log', 'Failed to retrieve external model catalog', e as Error);
+      return [];
+    }
+  },
+
   async getExternalProfileSegmentsSince(
     datasetId: number,
     profileId: number,
@@ -5254,6 +5304,17 @@ const effects = {
     } catch (e) {
       catchError('log', 'Unable to retrieve plans and models', e as Error);
       return { models: [], plans: [] };
+    }
+  },
+
+  async getPlansUsingModel(modelId: number, user: User | null): Promise<{ id: number; name: string }[]> {
+    try {
+      const data = await reqHasura<{ id: number; name: string }[]>(gql.GET_PLANS_USING_MODEL, { modelId }, user);
+      const { plans } = data;
+      return plans ?? [];
+    } catch (e) {
+      catchError('log', `Failed to retrieve plans referencing model ${modelId}`, e as Error);
+      return [];
     }
   },
 
@@ -6997,6 +7058,51 @@ const effects = {
     } catch (e) {
       showFailureToast('Resolve Merge Request Conflict Failed');
       catchError('log', 'Resolve Merge Request Conflict Failed', e as Error);
+    }
+  },
+
+  /**
+   * Registers a single mission model discovered on an external backend by inserting a
+   * `mission_model` row (model_type = "external"). A DB event trigger causes the server to
+   * introspect the model asynchronously and populate its activity/resource/parameter types,
+   * exactly like the JAR-upload flow. Returns the new model id on success, or an error message.
+   */
+  async registerExternalModel(
+    backend: string,
+    model: DiscoveredExternalModel,
+    user: User | null,
+  ): Promise<{ error: string | null; id: number | null }> {
+    try {
+      if (!queryPermissions.CREATE_MODEL(user)) {
+        throwPermissionError('register an external model');
+      }
+
+      const modelInsertInput: ExternalModelInsertInput = {
+        external_backend: backend,
+        external_model_key: model.key,
+        mission: model.name,
+        model_type: 'external',
+        name: model.name,
+        version: model.version,
+      };
+      const data = await reqHasura<Model>(gql.CREATE_MODEL, { model: modelInsertInput }, user);
+      const { createModel } = data;
+
+      if (createModel != null) {
+        const { id } = createModel;
+        showSuccessToast(`External model "${model.name}" registered successfully`);
+        logMessage(
+          'log',
+          `Registered external model "${model.name}" (v${model.version}, key=${model.key}) from backend "${backend}".`,
+        );
+        return { error: null, id };
+      } else {
+        throw Error(`Unable to register external model "${model.name}"`);
+      }
+    } catch (e) {
+      catchError('log', `Failed to register external model "${model.name}"`, e as Error);
+      showFailureToast(`Failed to register "${model.name}"`);
+      return { error: (e as Error).message, id: null };
     }
   },
 

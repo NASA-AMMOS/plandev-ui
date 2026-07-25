@@ -19,6 +19,7 @@
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
   import effects from '../../utilities/effects';
+  import { showRegisterExternalModelsModal } from '../../utilities/modal';
   import { getModelStatusRollup } from '../../utilities/model';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -255,6 +256,10 @@
     selectedModelId = modelId;
   }
 
+  function openExternalBackends() {
+    showRegisterExternalModelsModal(user);
+  }
+
   async function submitForm(e: SubmitEvent) {
     if (files) {
       const newModelId = await effects.createModel(name, version, files, user, description);
@@ -466,6 +471,22 @@
             </button>
           </fieldset>
         </form>
+
+        <div class="external-backends">
+          <div class="external-backends-divider">
+            <span class="st-typography-label">Or</span>
+          </div>
+          <button
+            class="st-button secondary w-full"
+            on:click={openExternalBackends}
+            use:permissionHandler={{
+              hasPermission: hasCreateModelPermission,
+              permissionError: createModelPermissionError,
+            }}
+          >
+            Register from external backend
+          </button>
+        </div>
       {/if}
     </svelte:fragment>
   </Panel>
@@ -544,5 +565,27 @@
 
   button.icon-button:hover {
     color: var(--st-primary-100);
+  }
+
+  .external-backends {
+    display: flex;
+    flex-direction: column;
+    padding: 0 8px 8px;
+    row-gap: 8px;
+  }
+
+  .external-backends-divider {
+    align-items: center;
+    color: var(--st-gray-50);
+    display: flex;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .external-backends-divider::before,
+  .external-backends-divider::after {
+    border-top: 1px solid var(--st-gray-20);
+    content: '';
+    flex: 1;
   }
 </style>

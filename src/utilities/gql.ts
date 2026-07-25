@@ -1415,6 +1415,22 @@ const gql = {
     }
   `,
 
+  GET_EXTERNAL_MODEL_CATALOG: `#graphql
+    query GetExternalModelCatalog {
+      getExternalModelCatalog: ${Queries.GET_EXTERNAL_MODEL_CATALOG} {
+        backend
+        reachable
+        error
+        models {
+          key
+          name
+          version
+          identityHash
+        }
+      }
+    }
+  `,
+
   // Windowed pull for an external profile's segments — counterpart to
   // GET_PROFILE_SINCE for sim profiles. Keyed on (datasetId, profileId)
   // because external names can collide across plan_dataset rows (e.g. one
@@ -1669,6 +1685,15 @@ const gql = {
             name
           }
         }
+      }
+    }
+  `,
+
+  GET_PLANS_USING_MODEL: `#graphql
+    query GetPlansUsingModel($modelId: Int!) {
+      plans: ${Queries.PLANS}(where: { model_id: { _eq: $modelId } }, order_by: { id: asc }) {
+        id
+        name
       }
     }
   `,

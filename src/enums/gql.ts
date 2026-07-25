@@ -113,6 +113,7 @@ export enum Queries {
   GET_COMMAND_TYPE_SCRIPT = 'getCommandTypeScript',
   GET_CONFLICTING_ACTIVITIES = 'get_conflicting_activities',
   GET_EDSL_FOR_SEQ_JSON = 'getEdslForSeqJson',
+  GET_EXTERNAL_MODEL_CATALOG = 'getExternalModelCatalog',
   GET_MODEL_EFFECTIVE_ARGUMENTS = 'getModelEffectiveArguments',
   GET_NON_CONFLICTING_ACTIVITIES = 'get_non_conflicting_activities',
   GET_SCHEDULING_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK = 'getSchedulingProcedureEffectiveArgumentsBulk',

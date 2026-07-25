@@ -818,6 +818,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_EXPANSION_SEQUENCE_SEQ_JSON: () => true,
   GET_EXTERNAL_EVENTS: () => true,
   GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
+  GET_EXTERNAL_MODEL_CATALOG: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.GET_EXTERNAL_MODEL_CATALOG], user);
+  },
   GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
   GET_MODELS: () => true,
   GET_PARCEL: () => true,
@@ -830,6 +833,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   GET_PLANS_AND_MODELS: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.MISSION_MODELS, Queries.PLANS], user);
+  },
+  GET_PLANS_USING_MODEL: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.PLANS], user);
   },
   GET_PLAN_EVENT_TYPES: () => true,
   GET_PLAN_MERGE_NON_CONFLICTING_ACTIVITIES: () => true,

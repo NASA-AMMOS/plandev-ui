@@ -25,6 +25,7 @@ import ManagePlanDerivationGroupsModal from '../components/modals/ManagePlanDeri
 import ManagePlanSchedulingConditionsModal from '../components/modals/ManagePlanSchedulingConditionsModal.svelte';
 import ManagePlanSchedulingGoalsModal from '../components/modals/ManagePlanSchedulingGoalsModal.svelte';
 import MergeReviewEndedModal from '../components/modals/MergeReviewEndedModal.svelte';
+import ModelInUseModal from '../components/modals/ModelInUseModal.svelte';
 import MoveItemToWorkspaceModal from '../components/modals/MoveItemToWorkspaceModal.svelte';
 import MoveWorkspaceItemModal from '../components/modals/MoveWorkspaceItemModal.svelte';
 import NewSequenceModal from '../components/modals/NewSequenceModal.svelte';
@@ -33,6 +34,7 @@ import NewWorkspaceSequenceModal from '../components/modals/NewWorkspaceSequence
 import PlanBranchesModal from '../components/modals/PlanBranchesModal.svelte';
 import PlanBranchRequestModal from '../components/modals/PlanBranchRequestModal.svelte';
 import PlanMergeRequestsModal from '../components/modals/PlanMergeRequestsModal.svelte';
+import RegisterExternalModelsModal from '../components/modals/RegisterExternalModelsModal.svelte';
 import RenameWorkspaceItemModal from '../components/modals/RenameWorkspaceItemModal.svelte';
 import RestorePlanSnapshotModal from '../components/modals/RestorePlanSnapshotModal.svelte';
 import RunActionModal from '../components/modals/RunActionModal.svelte';
@@ -52,6 +54,7 @@ import type { User } from '../types/app';
 import type { ExpansionSequence } from '../types/expansion';
 import type { DerivationGroup, ExternalSourcePkey, ExternalSourceSlim } from '../types/external-source';
 import type { ModalElement, ModalElementValue } from '../types/modal';
+import type { ModelSlim } from '../types/model';
 import type { ArgumentsMap } from '../types/parameter';
 import type { Plan, PlanBranchRequestAction, PlanForMerging, PlanMergeRequestStatus, PlanSlim } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
@@ -160,6 +163,61 @@ export async function showConfirmModal(
           target.resolve = null;
           resolve({ confirm: true });
           confirmModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a blocking ModelInUseModal explaining that a model cannot be deleted while plans
+ * reference it. Resolves once the user dismisses the modal.
+ */
+export async function showModelInUseModal(
+  model: ModelSlim,
+  plans: { id: number; name: string }[],
+): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const modelInUseModal = new ModelInUseModal({ props: { model, plans }, target });
+        target.resolve = resolve;
+
+        modelInUseModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modelInUseModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows a RegisterExternalModelsModal that lists operator-configured external backends and
+ * lets an admin register discovered models. Resolves once the modal is closed.
+ */
+export async function showRegisterExternalModelsModal(user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const registerExternalModelsModal = new RegisterExternalModelsModal({ props: { user }, target });
+        target.resolve = resolve;
+
+        registerExternalModelsModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          registerExternalModelsModal.$destroy();
         });
       }
     } else {
