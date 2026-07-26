@@ -224,6 +224,50 @@ describe('Errors Util', () => {
     ]);
   });
 
+  test('generateActivityValidationErrorRollups - Should count validation notices that name no subject', () => {
+    // An external model validates by trying to construct the activity, so a failure often cannot be
+    // attributed to a single parameter and arrives with subjects: []. Counting only subjects made these
+    // vanish -- the activity rendered as valid while the backend was refusing it.
+    expect(
+      generateActivityValidationErrorRollups([
+        {
+          activityId: 7,
+          errors: [
+            {
+              errors: {
+                validationNotices: [
+                  { message: 'could not construct activity: incompatible arguments', subjects: [] },
+                  { message: 'rate must be > 0', subjects: ['rate'] },
+                ],
+              },
+              success: false,
+              type: ErrorTypes.VALIDATION_NOTICES,
+            },
+          ],
+          status: 'complete',
+          type: 'banana',
+        },
+      ]),
+    ).toEqual([
+      {
+        errorCounts: {
+          extra: 0,
+          invalidAnchor: 0,
+          // one attributed subject ('rate') plus one unattributed notice
+          invalidParameter: 2,
+          missing: 0,
+          outOfBounds: 0,
+          pending: 0,
+          wrongType: 0,
+        },
+        id: 7,
+        // the unattributed notice has no field to highlight, so it contributes no location
+        location: ['rate'],
+        type: 'banana',
+      },
+    ]);
+  });
+
   test('getActivityIdsFromError - Should return no IDs when given unsupported error', () => {
     expect(
       getActivityIdsFromError({

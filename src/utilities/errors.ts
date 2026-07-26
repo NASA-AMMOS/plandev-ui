@@ -150,6 +150,9 @@ export function generateActivityValidationErrorRollups(
     let missingLocations: string[] = [];
     let outOfBoundsLocations: string[] = [];
     let wrongTypeLocations: string[] = [];
+    // Validation notices that name no subject. They have no field to highlight, so they cannot become a
+    // location, but they are still errors and have to be counted somewhere or they disappear.
+    let unattributedNoticeCount = 0;
 
     if (status === 'complete') {
       errors.forEach(error => {
@@ -171,6 +174,14 @@ export function generateActivityValidationErrorRollups(
               ...([] as string[]).concat(...error.errors.validationNotices.map(({ subjects }) => subjects)),
             ]),
           ];
+          // A notice with NO subjects is a whole-activity failure that cannot be blamed on one
+          // parameter. External models produce these routinely -- a backend validates by attempting to
+          // construct the activity, and the construction fails on the argument set as a whole. Counting
+          // only subjects made them vanish completely: no location, no count, and an activity rendering
+          // as valid while the backend was refusing it.
+          unattributedNoticeCount += error.errors.validationNotices.filter(
+            ({ subjects }) => !subjects || subjects.length === 0,
+          ).length;
         } else {
           const { message } = error;
           if (/end-time\sanchor/i.test(message)) {
@@ -188,7 +199,7 @@ export function generateActivityValidationErrorRollups(
       errorCounts: {
         extra: extraLocations.length,
         invalidAnchor: invalidAnchorLocations.length,
-        invalidParameter: invalidParameterLocations.length,
+        invalidParameter: invalidParameterLocations.length + unattributedNoticeCount,
         missing: missingLocations.length,
         outOfBounds: outOfBoundsLocations.length,
         pending: status === 'pending' ? 1 : 0,
