@@ -103,6 +103,22 @@ jobs:
         run: npm run build
       - name: Install Playwright Dependencies (Test - e2e)
         run: npx playwright install chromium --with-deps
+      - name: Wait for Backend Services (PlanDev)
+        # Defense-in-depth alongside the compose healthcheck: don't start tests until Hasura is
+        # actually serving, so runs no longer race a slow-to-start backend. Bounded (no hang).
+        run: |
+          echo "Waiting for Hasura to be ready (http://localhost:8080/healthz)..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/healthz >/dev/null 2>&1; then
+              echo "Hasura ready after ~$((i * 3))s"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Backend did not become ready in time. Service status:"
+          docker compose -f docker-compose-test.yml ps
+          docker compose -f docker-compose-test.yml logs --tail 100
+          exit 1
       - name: Test (e2e)
         run: npm run test:e2e
       - name: Upload Results

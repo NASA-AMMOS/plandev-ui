@@ -27,11 +27,11 @@ import {
   activityDirectivesDB as activityDirectivesDBStore,
   selectedActivityDirectiveId as selectedActivityDirectiveIdStore,
 } from '../stores/activities';
+import { catchError, clearConsoleEntries, logMessage } from '../stores/console';
 import {
   checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
-import { catchError, catchSchedulingError, logMessage } from '../stores/errors';
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
@@ -115,7 +115,6 @@ import type {
   ConstraintPlanSpecSetInput,
   ConstraintResult,
 } from '../types/constraint';
-import type { LogMessage } from '../types/errors';
 import type {
   ExpandedSequence,
   ExpansionRule,
@@ -149,8 +148,8 @@ import type {
   ConstraintEffectiveArguments,
   DefaultEffectiveArguments,
   EffectiveArguments,
+  ErrorMap,
   ParametersMap,
-  ParameterValidationError,
   ParameterValidationResponse,
   SchedulingGoalEffectiveArguments,
 } from '../types/parameter';
@@ -217,9 +216,8 @@ import {
   type SequenceAdaptationMetadata,
 } from '../types/sequencing';
 import type {
-  PlanDataset,
   Profile,
-  Resource,
+  ProfileSegment,
   ResourceType,
   SimulateResponse,
   Simulation,
@@ -262,8 +260,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { ErrorTypes } from './errors';
-import { compare, convertToQuery } from './generic';
+import { convertToQuery } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showApplySequenceFilterModal,
@@ -300,8 +297,7 @@ import {
   showWorkspaceBulkOperationConflictModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
-import { CompoundError, reqActionServer, reqExtension, reqGateway, reqHasura } from './requests';
-import { sampleProfiles } from './resources';
+import { reqActionServer, reqExtension, reqGateway, reqHasura, WorkspaceSaveConflictError } from './requests';
 import { convertResponseToMetadata } from './scheduling';
 import { buildSearchActivitiesWhereClauses, type ActivitySearchFilters } from './searchFilters';
 import { compareEvents } from './simulation';
@@ -325,6 +321,7 @@ import {
   validateViewJSONAgainstSchema,
 } from './view';
 import {
+  buildBulkOperationCompoundError,
   cleanPath,
   doesFilenameMatchExtension,
   findNodeInDirectory,
@@ -381,6 +378,8 @@ async function bulkMoveWorkspaceItems(
     );
   }
 
+  // Snapshot the initial responses so per-item success logging survives the shift-based loop below.
+  const initialResponses: BulkOperationResponses = [...responses];
   const failedFileOperations: BulkOperationResponses = [];
   const renamedFiles: Record<string, string> = {};
   const skippedFiles = new Set<string>();
@@ -515,11 +514,15 @@ async function bulkMoveWorkspaceItems(
     }
   }
   if (failedFileOperations.length) {
-    throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to move`, {
-      cause: JSON.stringify(
-        failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
-      ),
-    });
+    // Log each item that DID succeed so partial-failure runs still show what worked.
+    const failedItems = new Set(failedFileOperations.map(op => op.item));
+    const verb = shouldCopy ? 'Copied' : 'Moved';
+    for (const op of initialResponses) {
+      if (isBulkOperationSuccess(op) && !skippedFiles.has(op.item) && !failedItems.has(op.item)) {
+        logMessage('log', `${verb} ${op.item}`);
+      }
+    }
+    throw buildBulkOperationCompoundError(failedFileOperations, shouldCopy ? 'copy' : 'move');
   }
 
   return { renamedFiles, skippedFiles };
@@ -568,6 +571,7 @@ const effects = {
 
           if (data !== null) {
             logMessage(
+              'log',
               `Applied sequence filter "${filter.name}" (ID=${filter.id}) to simulation dataset ID=${simulationDatasetId}.`,
             );
             showSuccessToast('Filter Applied Successfully');
@@ -577,7 +581,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Filter Application Failed', e as Error);
+      catchError('log', 'Filter Application Failed', e as Error);
       showFailureToast('Filter Application Failed');
     }
   },
@@ -619,14 +623,17 @@ const effects = {
           user,
         );
         if (data.apply_preset_to_activity != null) {
-          logMessage(`Applied preset "${preset.name}" (ID=${preset.id}) to activity directive ID=${activityId}.`);
+          logMessage(
+            'log',
+            `Applied preset "${preset.name}" (ID=${preset.id}) to activity directive ID=${activityId}.`,
+          );
           showSuccessToast('Preset Successfully Applied to Activity');
         } else {
           throw Error(`Unable to apply preset with ID: "${preset.id}" to directive with ID: "${activityId}"`);
         }
       }
     } catch (e) {
-      catchError('Preset Unable To Be Applied To Activity', e as Error);
+      catchError('log', 'Preset Unable To Be Applied To Activity', e as Error);
       showFailureToast('Preset Application Failed');
     }
   },
@@ -660,11 +667,11 @@ const effects = {
         const newSimulation: Simulation = { ...simulation, arguments: template.arguments, template };
 
         await effects.updateSimulation(plan, newSimulation, user);
-        logMessage(`Applied template ID=${template.id} to simulation ID=${simulation.id}.`);
+        logMessage('log', `Applied template ID=${template.id} to simulation ID=${simulation.id}.`);
         showSuccessToast('Template Successfully Applied to Simulation');
       }
     } catch (e) {
-      catchError('Template Unable To Be Applied To Simulation', e as Error);
+      catchError('log', 'Template Unable To Be Applied To Simulation', e as Error);
       showFailureToast('Template Application Failed');
     }
   },
@@ -679,7 +686,7 @@ const effects = {
 
       if (response.success) {
         showSuccessToast(response.message);
-        logMessage(`Executed extension "${extension.label}" (ID=${extension.id}).`);
+        logMessage('log', `Executed extension "${extension.label}" (ID=${extension.id}).`);
         window.open(response.url, '_blank');
       } else {
         throw new Error(response.message);
@@ -687,7 +694,7 @@ const effects = {
     } catch (error: any) {
       const failureMessage = `Extension: ${extension.label} was not executed successfully`;
 
-      catchError(failureMessage, error as Error);
+      catchError('log', failureMessage, error as Error);
       showFailureToast(failureMessage);
     }
   },
@@ -716,7 +723,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Action Cancellation Failed', e as Error);
+      catchError('log', 'Action Cancellation Failed', e as Error);
       showFailureToast('Action Cancellation Failed');
     }
   },
@@ -736,11 +743,11 @@ const effects = {
 
       if (confirm) {
         await reqHasura<SeqId>(gql.CANCEL_SCHEDULING_REQUEST, { id: analysisId }, user);
-        logMessage(`Canceled scheduling request ID=${analysisId}.`);
+        logMessage('log', `Canceled scheduling request ID=${analysisId}.`);
         showSuccessToast('Scheduling Request Successfully Canceled');
       }
     } catch (e) {
-      catchError('Scheduling Request Unable To Be Canceled', e as Error);
+      catchError('log', 'Scheduling Request Unable To Be Canceled', e as Error);
       showFailureToast('Scheduling Request Cancel Failed');
     }
   },
@@ -760,16 +767,17 @@ const effects = {
 
       if (confirm) {
         await reqHasura<SeqId>(gql.CANCEL_SIMULATION, { id: simulationDatasetId }, user);
-        logMessage(`Canceled simulation ID=${simulationDatasetId}.`);
+        logMessage('log', `Canceled simulation ID=${simulationDatasetId}.`);
         showSuccessToast('Simulation Successfully Canceled');
       }
     } catch (e) {
-      catchError('Simulation Unable To Be Canceled', e as Error);
+      catchError('log', 'Simulation Unable To Be Canceled', e as Error);
       showFailureToast('Simulation Cancel Failed');
     }
   },
 
   async checkConstraints(plan: Plan, user: User | null, force: boolean = false): Promise<void> {
+    clearConsoleEntries('constraint');
     try {
       checkConstraintsQueryStatusStore.set(Status.Incomplete);
       if (plan !== null) {
@@ -803,7 +811,7 @@ const effects = {
             showSuccessToast('All Constraints Checked');
             checkConstraintsQueryStatusStore.set(Status.Complete);
           }
-          logMessage(`Ran constraint checking.`, '', performance.now() - startTime);
+          logMessage('log', `Ran constraint checking.`, { duration: performance.now() - startTime });
         } else {
           throw Error(`Unable to check constraints for plan with ID: "${plan.id}"`);
         }
@@ -812,8 +820,8 @@ const effects = {
       }
     } catch (e) {
       checkConstraintsQueryStatusStore.set(Status.Failed);
-      catchError('Check Constraints Failed', e as Error);
-      showFailureToast('Check Constraints Failed');
+      catchError('constraint', 'Check Constraints Failed', e as Error);
+      showFailureToast('Check Constraints Failed', e);
     }
   },
 
@@ -829,10 +837,10 @@ const effects = {
         user,
       );
       const modelCompatabilityForPlan: ModelCompatabilityForPlan = data.check_model_compatibility_for_plan?.result;
-      logMessage(`Checked plan model migration compatibility for model ID=${newModelId}.`);
+      logMessage('log', `Checked plan model migration compatibility for model ID=${newModelId}.`);
       return modelCompatabilityForPlan;
     } catch (e) {
-      catchError('Check Plan Model Migration Compatibility Failed', e as Error);
+      catchError('log', 'Check Plan Model Migration Compatibility Failed', e as Error);
     }
   },
 
@@ -896,15 +904,14 @@ const effects = {
           }));
 
         await reqHasura<ActivityDirectiveDB>(gql.UPDATE_ACTIVITY_DIRECTIVES, { updates: anchorUpdates }, user);
-        logMessage(
-          `Pasted ${activities.length} activity directive${pluralize(activities.length)}.`,
-          `ID${pluralize(activities.length)}: ${activities.map(a => a.id).join(', ')}`,
-        );
+        logMessage('log', `Pasted ${activities.length} activity directive${pluralize(activities.length)}.`, {
+          details: `ID${pluralize(activities.length)}: ${activities.map(a => a.id).join(', ')}`,
+        });
         showSuccessToast(`Pasted ${activities.length} Activity Directive${pluralize(activities.length)}`);
         return clonedActivitiesReferences;
       }
     } catch (e) {
-      catchError('Activity Directive Paste Failed', e as Error);
+      catchError('log', 'Activity Directive Paste Failed', e as Error);
       showFailureToast('Activity Directive Paste Failed');
     }
   },
@@ -937,7 +944,7 @@ const effects = {
         );
         const { insert_action_definition_one } = data;
         if (insert_action_definition_one) {
-          logMessage(`Created action "${name}" in workspace ID=${workspaceId}.`);
+          logMessage('log', `Created action "${name}" in workspace ID=${workspaceId}.`);
           showSuccessToast('Action Created Successfully');
           return true;
         } else {
@@ -947,7 +954,7 @@ const effects = {
         throw new Error('Action Creation Failed');
       }
     } catch (e) {
-      catchError('Action Creation Failed', e as Error);
+      catchError('log', 'Action Creation Failed', e as Error);
       showFailureToast('Action Creation Failed');
       return false;
     }
@@ -970,6 +977,7 @@ const effects = {
         const { insert_action_definition_version_one } = data;
         if (insert_action_definition_version_one) {
           logMessage(
+            'log',
             `Created version v${insert_action_definition_version_one.revision} for action ID=${actionDefinitionId}.`,
           );
           showSuccessToast('New Version Uploaded');
@@ -981,7 +989,7 @@ const effects = {
         throw new Error('Version Upload Failed');
       }
     } catch (e) {
-      catchError('Version Upload Failed', e as Error);
+      catchError('log', 'Version Upload Failed', e as Error);
       showFailureToast('Version Upload Failed');
       return false;
     }
@@ -1030,16 +1038,16 @@ const effects = {
 
       if (actionRunResult !== null) {
         const actionRunId = actionRunResult.id;
-        logMessage(`Created action run ID=${actionRunId}.`);
+        logMessage('log', `Created action run ID=${actionRunId}.`);
         // send follow-up secrets request directly to action server, containing transient secrets + JWT (in header)
         await effects.sendActionSecretParameters(workspace, secretParameters, actionRunId, user);
-        logMessage(`Sent secrets for action run ID=${actionRunId}.`);
+        logMessage('log', `Sent secrets for action run ID=${actionRunId}.`);
         return actionRunResult.id;
       } else {
         throw Error(`Unable to run action`);
       }
     } catch (e) {
-      catchError('Action Run Creation Failed', e as Error);
+      catchError('log', 'Action Run Creation Failed', e as Error);
       showFailureToast('Action Run Creation Failed');
       return null;
     }
@@ -1053,7 +1061,7 @@ const effects = {
     metadata: ActivityMetadata,
     plan: Plan | null,
     user: User | null,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       if ((plan && !queryPermissions.CREATE_ACTIVITY_DIRECTIVE(user, plan)) || !plan) {
         throwPermissionError('add a directive to the plan');
@@ -1094,7 +1102,8 @@ const effects = {
           selectedSpanIdStore.set(null);
 
           showSuccessToast('Activity Directive Created Successfully');
-          logMessage(`Created activity directive "${name}" (ID=${id}).`);
+          logMessage('log', `Created activity directive "${name}" (ID=${id}).`);
+          return id;
         } else {
           throw Error(`Unable to create activity directive "${name}" on plan with ID ${plan.id}`);
         }
@@ -1102,9 +1111,10 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError('Activity Directive Create Failed', e as Error);
+      catchError('log', 'Activity Directive Create Failed', e as Error);
       showFailureToast('Activity Directive Create Failed');
     }
+    return null;
   },
 
   async createActivityDirectiveTags(
@@ -1126,7 +1136,10 @@ const effects = {
         }
 
         tags.forEach(tag => {
-          logMessage(`Created activity directive tag ID=${tag.tag_id} for activity directive ID=${tag.directive_id}.`);
+          logMessage(
+            'log',
+            `Created activity directive tag ID=${tag.tag_id} for activity directive ID=${tag.directive_id}.`,
+          );
         });
         showSuccessToast('Created Activity Directive Tags');
         return affectedRows;
@@ -1134,7 +1147,7 @@ const effects = {
         throw Error('Unable to create activity directive tags');
       }
     } catch (e) {
-      catchError('Create Activity Directive Tags Failed', e as Error);
+      catchError('log', 'Create Activity Directive Tags Failed', e as Error);
       showFailureToast('Create Activity Directive Tags Failed');
       return null;
     }
@@ -1164,13 +1177,16 @@ const effects = {
       if (data.insert_activity_presets_one != null) {
         const { insert_activity_presets_one: activityPreset } = data;
         showSuccessToast(`Activity Preset ${activityPreset.name} Created Successfully`);
-        logMessage(`Created activity preset "${activityPreset.name}" for activity type "${associatedActivityType}".`);
+        logMessage(
+          'log',
+          `Created activity preset "${activityPreset.name}" for activity type "${associatedActivityType}".`,
+        );
         return activityPreset;
       } else {
         throw Error(`Unable to create activity preset "${name}"`);
       }
     } catch (e) {
-      catchError('Activity Preset Create Failed', e as Error);
+      catchError('log', 'Activity Preset Create Failed', e as Error);
       showFailureToast('Activity Preset Create Failed');
       return null;
     }
@@ -1225,6 +1241,7 @@ const effects = {
 
         showSuccessToast('Constraint Created Successfully');
         logMessage(
+          'log',
           `Created ${constraintInsertInput.public ? 'public' : 'private'} ${definitionType} constraint "${constraint.name}".`,
         );
         return id;
@@ -1232,7 +1249,7 @@ const effects = {
         throw Error(`Unable to create constraint "${constraintToCreate.name}"`);
       }
     } catch (e) {
-      catchError('Constraint Creation Failed', e as Error);
+      catchError('log', 'Constraint Creation Failed', e as Error);
       showFailureToast('Constraint Creation Failed');
       return null;
     }
@@ -1278,6 +1295,7 @@ const effects = {
       if (constraintDefinition != null) {
         showSuccessToast('New Constraint Revision Created Successfully');
         logMessage(
+          'log',
           `Created new constraint revision ${constraintDefinition.revision} for constraint ID=${constraintId}.`,
         );
         return constraintDefinition;
@@ -1285,7 +1303,7 @@ const effects = {
         throw Error(`Unable to create constraint definition for constraint "${constraintId}"`);
       }
     } catch (e) {
-      catchError('Constraint Creation Failed', e as Error);
+      catchError('log', 'Constraint Creation Failed', e as Error);
       showFailureToast('Constraint Creation Failed');
       return null;
     }
@@ -1309,6 +1327,7 @@ const effects = {
         const { invocation_id: invocationId } = createConstraintSpec;
         showSuccessToast('New Constraint Invocation Created Successfully');
         logMessage(
+          'log',
           `Created constraint invocation for constraint "${createConstraintSpec.constraint_metadata?.name}" (ID=${createConstraintSpec.constraint_id}).`,
         );
         return invocationId ?? null;
@@ -1316,7 +1335,7 @@ const effects = {
         throw Error('Unable to create a constraint spec invocation');
       }
     } catch (e) {
-      catchError('Constraint invocation creation failed', e as Error);
+      catchError('log', 'Constraint invocation creation failed', e as Error);
       showFailureToast('Constraint Invocation Creation Failed');
       return null;
     }
@@ -1336,14 +1355,14 @@ const effects = {
         const { createSequenceAdaptation: newSequenceAdaptation } = data;
 
         if (newSequenceAdaptation != null) {
-          logMessage(`Created custom adaptation "${adaptation.name}".`);
+          logMessage('log', `Created custom adaptation "${adaptation.name}".`);
           return { ...newSequenceAdaptation, type: DictionaryTypes.ADAPTATION };
         } else {
           throw Error('Unable to upload sequence adaptation');
         }
       }
     } catch (e) {
-      catchError('Sequence Adaptation Upload Failed', e as Error);
+      catchError('log', 'Sequence Adaptation Upload Failed', e as Error);
     }
 
     return null;
@@ -1363,6 +1382,7 @@ const effects = {
       if (created !== null) {
         showSuccessToast('Derivation Group Created Successfully');
         logMessage(
+          'log',
           `Created derivation group "${derivationGroup.name}" for source type "${derivationGroup.source_type_name}".`,
         );
         return created as DerivationGroup;
@@ -1370,7 +1390,7 @@ const effects = {
         throw Error(`Unable to create derivation group`);
       }
     } catch (e) {
-      catchError('Derivation Group Create Failed', e as Error);
+      catchError('log', 'Derivation Group Create Failed', e as Error);
       showFailureToast('Derivation Group Create Failed');
       createDerivationGroupErrorStore.set((e as Error).message);
       return undefined;
@@ -1392,6 +1412,7 @@ const effects = {
         const { id } = createExpansionRule;
         showSuccessToast('Expansion Rule Created Successfully');
         logMessage(
+          'log',
           `Created expansion rule "${rule.name}" (ID=${createExpansionRule.id}) for parcel ID=${rule.parcel_id}.`,
         );
         savingExpansionRuleStore.set(false);
@@ -1400,7 +1421,7 @@ const effects = {
         throw Error(`Unable to create expansion rule "${rule.name}"`);
       }
     } catch (e) {
-      catchError('Expansion Rule Create Failed', e as Error);
+      catchError('log', 'Expansion Rule Create Failed', e as Error);
       showFailureToast('Expansion Rule Create Failed');
       savingExpansionRuleStore.set(false);
       createExpansionRuleErrorStore.set((e as Error).message);
@@ -1423,14 +1444,14 @@ const effects = {
           throw Error('Some expansion rule tags were not successfully created');
         }
         tags.forEach(tag => {
-          logMessage(`Created expansion rule tag ID=${tag.tag_id} for rule ID=${tag.rule_id}.`);
+          logMessage('log', `Created expansion rule tag ID=${tag.tag_id} for rule ID=${tag.rule_id}.`);
         });
         return affectedRows;
       } else {
         throw Error(`Unable to create expansion rule tags`);
       }
     } catch (e) {
-      catchError('Create Expansion Rule Tags Failed', e as Error);
+      catchError('log', 'Create Expansion Rule Tags Failed', e as Error);
       showFailureToast('Create Expansion Rule Tags Failed');
       return null;
     }
@@ -1451,14 +1472,14 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        logMessage(`Created expansion rule sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
+        logMessage('log', `Created expansion rule sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
         creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
         throw Error(`Unable to create expansion sequence with ID: "${seqId}"`);
       }
     } catch (e) {
-      catchError('Expansion Sequence Create Failed', e as Error);
+      catchError('log', 'Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
       creatingExpansionSequenceStore.set(false);
       return null;
@@ -1496,6 +1517,7 @@ const effects = {
         const { id } = createExpansionSet;
         showSuccessToast('Expansion Set Created Successfully');
         logMessage(
+          'log',
           `Created expansion set "${createExpansionSet.name ?? 'unnamed'}" (ID=${createExpansionSet.id}) for parcel ID=${parcelId}.`,
         );
         savingExpansionSetStore.set(false);
@@ -1504,7 +1526,7 @@ const effects = {
         throw Error('Unable to create expansion set');
       }
     } catch (e) {
-      catchError('Expansion Set Create Failed', e as Error);
+      catchError('log', 'Expansion Set Create Failed', e as Error);
       showFailureToast('Expansion Set Create Failed');
       savingExpansionSetStore.set(false);
       return null;
@@ -1534,6 +1556,7 @@ const effects = {
         const { createExternalSource: newExternalSource } = reqResponse;
         showSuccessToast('External Source Created Successfully');
         logMessage(
+          'log',
           `Created external source "${newExternalSource.source_type_name}" for derivation group "${derivationGroupName}".`,
         );
         creatingExternalSourceStore.set(false);
@@ -1544,7 +1567,7 @@ const effects = {
         throw new Error(respErrors);
       }
     } catch (e) {
-      catchError('External Source Create Failed', e as Error);
+      catchError('log', 'External Source Create Failed', e as Error);
       showFailureToast('External Source Create Failed');
       if ((e as Error).message.includes('external_source_type_matches_derivation_group')) {
         createExternalSourceErrorStore.set('Cannot duplicate derivation groups!');
@@ -1577,7 +1600,7 @@ const effects = {
 
       const response = await reqGateway(`/uploadExternalSourceEventTypes`, 'POST', JSON.stringify(body), user, false);
       if (response?.errors === undefined) {
-        logMessage(`Created external source and event type.`);
+        logMessage('log', `Created external source and event type.`);
         showSuccessToast('External Source & Event Type Created Successfully');
         return true;
       } else {
@@ -1587,7 +1610,7 @@ const effects = {
     } catch (e) {
       showFailureToast('External Source & Event Type Create Failed');
       createExternalSourceEventTypeErrorStore.set((e as Error).message);
-      catchError('External Source & Event Type Create Failed', e as Error);
+      catchError('log', 'External Source & Event Type Create Failed', e as Error);
       return false;
     }
   },
@@ -1611,7 +1634,7 @@ const effects = {
       const file: File = files[0];
       const jarId = await effects.uploadFile(file, user);
       showSuccessToast('Model Uploaded Successfully. Processing model...');
-      logMessage(`Uploaded model file "${name}" (v${version}).`);
+      logMessage('log', `Uploaded model file "${name}" (v${version}).`);
 
       if (jarId !== null) {
         const modelInsertInput: ModelInsertInput = {
@@ -1627,7 +1650,7 @@ const effects = {
           const { id } = createModel;
 
           showSuccessToast('Model Created Successfully');
-          logMessage(`Created model "${name}" (v${version}).`);
+          logMessage('log', `Created model "${name}" (v${version}).`);
           createModelErrorStore.set(null);
           creatingModelStore.set(false);
 
@@ -1637,7 +1660,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Model Create Failed', e as Error);
+      catchError('log', 'Model Create Failed', e as Error);
       showFailureToast('Model Create Failed');
       createModelErrorStore.set((e as Error).message);
       creatingModelStore.set(false);
@@ -1660,11 +1683,11 @@ const effects = {
       }
 
       const { id } = createParcel;
-      logMessage(`Created parcel "${parcel.name}" (ID=${id}).`);
+      logMessage('log', `Created parcel "${parcel.name}" (ID=${id}).`);
       showSuccessToast('Parcel Created Successfully');
       return id;
     } catch (e) {
-      catchError('Parcel Create Failed', e as Error);
+      catchError('log', 'Parcel Create Failed', e as Error);
       showFailureToast('Parcel Create Failed');
       return null;
     }
@@ -1688,6 +1711,7 @@ const effects = {
       if (insertParcelToParameterDictionary) {
         insertParcelToParameterDictionary.returning.forEach(entry => {
           logMessage(
+            'log',
             `Created parcel to parameter dictionary ID=${entry.parameter_dictionary_id} for parcel ID=${entry.parcel_id}.`,
           );
         });
@@ -1698,7 +1722,7 @@ const effects = {
 
       return insertParcelToParameterDictionary.returning;
     } catch (e) {
-      catchError('Create parcel to parameter dictionaries failed', e as Error);
+      catchError('log', 'Create parcel to parameter dictionaries failed', e as Error);
       showFailureToast('Create parcel to parameter dictionaries failed');
     }
 
@@ -1762,7 +1786,7 @@ const effects = {
         };
 
         showSuccessToast('Plan Created Successfully');
-        logMessage(`Created plan "${name}" (ID=${id}) with model ID=${modelId}.`);
+        logMessage('log', `Created plan "${name}" (ID=${id}) with model ID=${modelId}.`);
         createPlanErrorStore.set(null);
         creatingPlanStore.set(false);
 
@@ -1771,7 +1795,7 @@ const effects = {
         throw Error(`Unable to create plan "${name}"`);
       }
     } catch (e) {
-      catchError('Plan Create Failed', e as Error);
+      catchError('log', 'Plan Create Failed', e as Error);
       showFailureToast('Plan Create Failed');
       createPlanErrorStore.set((e as Error).message);
       creatingPlanStore.set(false);
@@ -1795,6 +1819,7 @@ const effects = {
         if (duplicatePlan != null) {
           goto(`${base}/plans/${duplicatePlan.new_plan_id}`);
           logMessage(
+            'log',
             `Created plan branch "${name}" (ID=${planToBranch.id}) from parent plan "${plan.name}" (ID=${plan.id}).`,
           );
           showSuccessToast('Branch Created Successfully');
@@ -1803,7 +1828,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Branch Creation Failed', e as Error);
+      catchError('log', 'Branch Creation Failed', e as Error);
       showFailureToast('Branch Creation Failed');
     }
   },
@@ -1830,12 +1855,13 @@ const effects = {
             user,
           );
           logMessage(
+            'log',
             `Created plan branch request from source plan "${sourcePlan.name}" (ID=${sourcePlan.id}) into target plan "${targetPlan.name}" (ID=${targetPlan.id}).`,
           );
         }
       }
     } catch (e) {
-      catchError('Create plan branch request failed', e as Error);
+      catchError('log', 'Create plan branch request failed', e as Error);
       showFailureToast('Plan Branch Create Failed');
     }
   },
@@ -1856,6 +1882,7 @@ const effects = {
           throw Error('Some plan collaborators were not successfully added');
         }
         logMessage(
+          'log',
           `Added plan collaborator${pluralize(collaborators.length)} "${collaborators.map(c => c.collaborator).join(', ')}" to plan ID=${plan.id}.`,
         );
         showSuccessToast('Plan Collaborators Updated');
@@ -1864,7 +1891,7 @@ const effects = {
         throw Error('Unable to create plan collaborators');
       }
     } catch (e) {
-      catchError('Plan Collaborator Create Failed', e as Error);
+      catchError('log', 'Plan Collaborator Create Failed', e as Error);
       showFailureToast('Plan Collaborator Create Failed');
       return;
     }
@@ -1893,6 +1920,7 @@ const effects = {
       if (createMergeRequest != null) {
         const { merge_request_id: mergeRequestId } = createMergeRequest;
         logMessage(
+          'log',
           `Created plan merge request from source plan "${sourcePlan.name}" (ID=${sourcePlan.id}) into target plan "${targetPlan.name}" (ID=${targetPlan.id}).`,
         );
         showSuccessToast('Merge Request Created Successfully');
@@ -1901,7 +1929,7 @@ const effects = {
         throw Error('Unable to create a branch merge request');
       }
     } catch (e) {
-      catchError('Merge Request Create Failed', e as Error);
+      catchError('log', 'Merge Request Create Failed', e as Error);
       showFailureToast('Merge Request Create Failed');
       return null;
     }
@@ -1918,11 +1946,11 @@ const effects = {
       if (confirm && value) {
         const { description, name, plan: planToSnapshot, tags } = value;
         await effects.createPlanSnapshotHelper(planToSnapshot.id, name, description, tags, user);
-        logMessage(`Created plan snapshot "${name}".`);
+        logMessage('log', `Created plan snapshot "${name}".`);
         showSuccessToast('Snapshot Created Successfully');
       }
     } catch (e) {
-      catchError('Snapshot Creation Failed', e as Error);
+      catchError('log', 'Snapshot Creation Failed', e as Error);
       showFailureToast('Snapshot Creation Failed');
     }
   },
@@ -1983,14 +2011,14 @@ const effects = {
           showSuccessToast('Plan Snapshot Updated Successfully');
         }
         tags.forEach(tag => {
-          logMessage(`Created plan snapshot tag ID=${tag.tag_id} for snapshot ID=${tag.snapshot_id}.`);
+          logMessage('log', `Created plan snapshot tag ID=${tag.tag_id} for snapshot ID=${tag.snapshot_id}.`);
         });
         return affectedRows;
       } else {
         throw Error('Unable to create plan snapshot tags');
       }
     } catch (e) {
-      catchError('Create Plan Snapshot Tags Failed', e as Error);
+      catchError('log', 'Create Plan Snapshot Tags Failed', e as Error);
       showFailureToast('Create Plan Snapshot Tags Failed');
       return null;
     }
@@ -2019,14 +2047,14 @@ const effects = {
           showSuccessToast('Plan Updated Successfully');
         }
         tags.forEach(tag => {
-          logMessage(`Created plan tag ID=${tag.tag_id}.`);
+          logMessage('log', `Created plan tag ID=${tag.tag_id}.`);
         });
         return affectedRows;
       } else {
         throw Error('Unable to create plan tags');
       }
     } catch (e) {
-      catchError('Create Plan Tags Failed', e as Error);
+      catchError('log', 'Create Plan Tags Failed', e as Error);
       showFailureToast('Create Plan Tags Failed');
       return null;
     }
@@ -2075,6 +2103,7 @@ const effects = {
 
         showSuccessToast('Scheduling Condition Created Successfully');
         logMessage(
+          'log',
           `Created ${isPublic ? 'public' : 'private'} scheduling condition "${createSchedulingCondition.name}" (ID=${id}).`,
         );
         return id;
@@ -2082,7 +2111,7 @@ const effects = {
         throw Error(`Unable to create scheduling condition "${name}"`);
       }
     } catch (e) {
-      catchError('Scheduling Condition Creation Failed', e as Error);
+      catchError('log', 'Scheduling Condition Creation Failed', e as Error);
       showFailureToast('Scheduling Condition Creation Failed');
       return null;
     }
@@ -2114,13 +2143,13 @@ const effects = {
       const { conditionDefinition } = data;
       if (conditionDefinition != null) {
         showSuccessToast('New Scheduling Condition Revision Created Successfully');
-        logMessage(`Created scheduling condition definition for condition ID=${conditionId}.`);
+        logMessage('log', `Created scheduling condition definition for condition ID=${conditionId}.`);
         return conditionDefinition;
       } else {
         throw Error(`Unable to create condition definition for scheduling condition "${conditionId}"`);
       }
     } catch (e) {
-      catchError('Scheduling Condition Creation Failed', e as Error);
+      catchError('log', 'Scheduling Condition Creation Failed', e as Error);
       showFailureToast('Scheduling Condition Creation Failed');
       return null;
     }
@@ -2179,6 +2208,7 @@ const effects = {
 
         showSuccessToast('Scheduling Goal Created Successfully');
         logMessage(
+          'log',
           `Created ${isPublic ? 'public' : 'private'} scheduling goal "${createSchedulingGoal.name}" (ID=${createSchedulingGoal.id}).`,
         );
         return id;
@@ -2186,7 +2216,7 @@ const effects = {
         throw Error(`Unable to create scheduling goal "${name}"`);
       }
     } catch (e) {
-      catchError('Scheduling Goal Creation Failed', e as Error);
+      catchError('log', 'Scheduling Goal Creation Failed', e as Error);
       showFailureToast('Scheduling Goal Creation Failed');
       return null;
     }
@@ -2230,14 +2260,14 @@ const effects = {
       );
       const { goalDefinition } = data;
       if (goalDefinition != null) {
-        logMessage(`Created ${definitionType} scheduling goal definition for goal ID=${goalId}.`);
+        logMessage('log', `Created ${definitionType} scheduling goal definition for goal ID=${goalId}.`);
         showSuccessToast('New Scheduling Goal Revision Created Successfully');
         return goalDefinition;
       } else {
         throw Error(`Unable to create goal definition for scheduling goal "${goalId}"`);
       }
     } catch (e) {
-      catchError('Scheduling Goal Creation Failed', e as Error);
+      catchError('log', 'Scheduling Goal Creation Failed', e as Error);
       showFailureToast('Scheduling Goal Creation Failed');
       return null;
     }
@@ -2261,13 +2291,16 @@ const effects = {
       if (createSchedulingSpecGoal != null) {
         const { specification_id: specificationId } = createSchedulingSpecGoal;
         showSuccessToast('New Scheduling Goal Invocation Created Successfully');
-        logMessage(`Created scheduling goal plan specification ID=${specificationId} for goal ID=${specGoal.goal_id}.`);
+        logMessage(
+          'log',
+          `Created scheduling goal plan specification ID=${specificationId} for goal ID=${specGoal.goal_id}.`,
+        );
         return specificationId;
       } else {
         throw Error('Unable to create a scheduling spec goal invocation');
       }
     } catch (e) {
-      catchError('Scheduling Goal Invocation Creation Failed', e as Error);
+      catchError('log', 'Scheduling Goal Invocation Creation Failed', e as Error);
       showFailureToast('Scheduling Goal Invocation Creation Failed');
       return null;
     }
@@ -2288,10 +2321,10 @@ const effects = {
         user,
       );
       const { createSchedulingSpec: newSchedulingSpec } = data;
-      logMessage(`Created scheduling plan specification ID=${newSchedulingSpec?.id}.`);
+      logMessage('log', `Created scheduling plan specification ID=${newSchedulingSpec?.id}.`);
       return newSchedulingSpec;
     } catch (e) {
-      catchError('Create scheduling plan specification failed', e as Error);
+      catchError('log', 'Create scheduling plan specification failed', e as Error);
       return null;
     }
   },
@@ -2323,13 +2356,13 @@ const effects = {
 
       if (createSequenceFilter != null) {
         showSuccessToast('Sequence Filter Created Successfully');
-        logMessage(`Created sequence filter for sequence "${seqName}".`);
+        logMessage('log', `Created sequence filter for sequence "${seqName}".`);
         return result.createSequenceFilter?.id;
       } else {
         throw Error('Create Sequence Filter Failed');
       }
     } catch (e) {
-      catchError('Create Sequence Filter Failed', e as Error);
+      catchError('log', 'Create Sequence Filter Failed', e as Error);
       showFailureToast('Create Sequence Filter Failed');
     }
     return undefined;
@@ -2365,6 +2398,7 @@ const effects = {
 
       if (insertSequenceTemplateOne !== null) {
         logMessage(
+          'log',
           `Created ${language} sequence template "${name}" for activity type "${activityType}" for parcel ID=${parcelId}.`,
         );
         showSuccessToast('Sequence Template Created Successfully');
@@ -2372,7 +2406,7 @@ const effects = {
         throw Error('Create Sequence Template Failed');
       }
     } catch (e) {
-      catchError('Create Sequence Template Failed', e as Error);
+      catchError('log', 'Create Sequence Template Failed', e as Error);
       showFailureToast('Create Sequence Template Failed');
     }
   },
@@ -2400,14 +2434,14 @@ const effects = {
       );
 
       if (newTemplate != null) {
-        logMessage(`Created simulation template "${name}" (ID=${newTemplate.id}).`);
+        logMessage('log', `Created simulation template "${name}" (ID=${newTemplate.id}).`);
         showSuccessToast(`Simulation Template ${name} Created Successfully`);
         return newTemplate;
       } else {
         throw Error(`Unable to create simulation template "${name}"`);
       }
     } catch (e) {
-      catchError('Simulation Template Create Failed', e as Error);
+      catchError('log', 'Simulation Template Create Failed', e as Error);
       showFailureToast('Simulation Template Create Failed');
       return null;
     }
@@ -2426,7 +2460,7 @@ const effects = {
         if (notify) {
           showSuccessToast('Tag Created Successfully');
         }
-        logMessage(`Created tag "${insertTagsOne.name}" (ID=${insertTagsOne.id}).`);
+        logMessage('log', `Created tag "${insertTagsOne.name}" (ID=${insertTagsOne.id}).`);
         createTagErrorStore.set(null);
         return insertTagsOne;
       } else {
@@ -2434,7 +2468,7 @@ const effects = {
       }
     } catch (e) {
       createTagErrorStore.set((e as Error).message);
-      catchError('Create Tags Failed', e as Error);
+      catchError('log', 'Create Tags Failed', e as Error);
       showFailureToast('Create Tags Failed');
       return null;
     }
@@ -2462,14 +2496,14 @@ const effects = {
           showSuccessToast('Tags Created Successfully');
         }
         returning.forEach(tag => {
-          logMessage(`Created tag "${tag.name}" (ID=${tag.id}).`);
+          logMessage('log', `Created tag "${tag.name}" (ID=${tag.id}).`);
         });
         return returning;
       } else {
         throw Error('Unable to create tags');
       }
     } catch (e) {
-      catchError('Create Tags Failed', e as Error);
+      catchError('log', 'Create Tags Failed', e as Error);
       showFailureToast('Create Tags Failed');
       return null;
     }
@@ -2493,14 +2527,14 @@ const effects = {
           viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
           showSuccessToast('View Created Successfully');
-          logMessage(`Created view "${name}" (ID=${newView.id}).`);
+          logMessage('log', `Created view "${name}" (ID=${newView.id}).`);
           return true;
         } else {
           throw Error(`Unable to create view "${viewInsertInput.name}"`);
         }
       }
     } catch (e) {
-      catchError('View Create Failed', e as Error);
+      catchError('log', 'View Create Failed', e as Error);
       showFailureToast('View Create Failed');
     }
 
@@ -2527,6 +2561,7 @@ const effects = {
       if (newWorkspaceId != null) {
         showSuccessToast('Workspace Created Successfully');
         logMessage(
+          'log',
           `Created ${name ? `workspace "${name}"` : 'unnamed workspace'} (ID=${newWorkspaceId}) in ${location} for parcel ID=${parcelId}.`,
         );
         return newWorkspaceId;
@@ -2534,8 +2569,8 @@ const effects = {
         throw Error(`Unable to create workspace at "${location}"`);
       }
     } catch (e) {
-      catchError('Workspace Create Failed', e as Error);
-      showFailureToast('Workspace Create Failed');
+      catchError('log', 'Workspace Create Failed', e as Error);
+      showFailureToast('Workspace Create Failed', e);
     }
 
     return null;
@@ -2561,6 +2596,7 @@ const effects = {
           throw Error('Some workspace collaborators were not successfully added');
         }
         logMessage(
+          'log',
           `Added workspace collaborator${pluralize(collaborators.length)} "${collaborators.map(c => c.collaborator).join(', ')}" to workspace ID=${workspace.id}.`,
         );
         showSuccessToast('Workspace Collaborators Updated');
@@ -2569,8 +2605,8 @@ const effects = {
         throw Error('Unable to create workspace collaborators');
       }
     } catch (e) {
-      catchError('Workspace Collaborator Create Failed', e as Error);
-      showFailureToast('Workspace Collaborator Create Failed');
+      catchError('log', 'Workspace Collaborator Create Failed', e as Error);
+      showFailureToast('Workspace Collaborator Create Failed', e);
       return;
     }
   },
@@ -2590,7 +2626,7 @@ const effects = {
 
       return effects.deleteActivityDirectives([id], plan, user);
     } catch (e) {
-      catchError('Activity Directive Delete Failed', e as Error);
+      catchError('log', 'Activity Directive Delete Failed', e as Error);
     }
 
     return false;
@@ -2614,13 +2650,13 @@ const effects = {
       );
       if (data.delete_activity_directive_tags_by_pk != null) {
         showSuccessToast('Activity Directive Updated Successfully');
-        logMessage(`Removed tag ID=${tagId} from activity directive ID=${directiveId}.`);
+        logMessage('log', `Removed tag ID=${tagId} from activity directive ID=${directiveId}.`);
         return data.delete_activity_directive_tags_by_pk.tag_id;
       } else {
         throw Error('Unable to delete activity directive tag');
       }
     } catch (e) {
-      catchError('Delete Activity Directive Tag Failed', e as Error);
+      catchError('log', 'Delete Activity Directive Tag Failed', e as Error);
       showFailureToast('Delete Activity Directive Tag Failed');
       return null;
     }
@@ -2812,14 +2848,13 @@ const effects = {
         }
 
         showSuccessToast('Activity Directives Deleted Successfully');
-        logMessage(
-          `Deleted ${ids.length} activity directive${pluralize(ids.length)}.`,
-          `ID${pluralize(ids.length)}: ${ids.join(', ')}`,
-        );
+        logMessage('log', `Deleted ${ids.length} activity directive${pluralize(ids.length)}.`, {
+          details: `ID${pluralize(ids.length)}: ${ids.join(', ')}`,
+        });
         return true;
       }
     } catch (e) {
-      catchError('Activity Directives Delete Failed', e as Error);
+      catchError('log', 'Activity Directives Delete Failed', e as Error);
       showFailureToast('Activity Directives Delete Failed');
     }
 
@@ -2841,7 +2876,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_ACTIVITY_PRESET, { id: activityPreset.id }, user);
         if (data.deleteActivityPreset != null) {
-          logMessage(`Deleted activity preset "${activityPreset.name}" (ID=${activityPreset.id}).`);
+          logMessage('log', `Deleted activity preset "${activityPreset.name}" (ID=${activityPreset.id}).`);
           showSuccessToast('Activity Preset Deleted Successfully');
           return true;
         } else {
@@ -2849,7 +2884,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Activity Preset Delete Failed', e as Error);
+      catchError('log', 'Activity Preset Delete Failed', e as Error);
       showFailureToast('Activity Preset Delete Failed');
     }
 
@@ -2871,7 +2906,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_CHANNEL_DICTIONARY, { id }, user);
         if (data.deleteChannelDictionary != null) {
-          logMessage(`Deleted channel dictionary ID=${id}.`);
+          logMessage('log', `Deleted channel dictionary ID=${id}.`);
           showSuccessToast('Channel Dictionary Deleted Successfully');
           channelDictionariesStore.filterValueById(id);
         } else {
@@ -2879,7 +2914,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Channel Dictionary Delete Failed', e as Error);
+      catchError('log', 'Channel Dictionary Delete Failed', e as Error);
       showFailureToast('Channel Dictionary Delete Failed');
     }
   },
@@ -2899,7 +2934,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_COMMAND_DICTIONARY, { id }, user);
         if (data.deleteCommandDictionary != null) {
-          logMessage(`Deleted command dictionary ID=${id}.`);
+          logMessage('log', `Deleted command dictionary ID=${id}.`);
           showSuccessToast('Command Dictionary Deleted Successfully');
           commandDictionariesStore.filterValueById(id);
         } else {
@@ -2907,7 +2942,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Command Dictionary Delete Failed', e as Error);
+      catchError('log', 'Command Dictionary Delete Failed', e as Error);
       showFailureToast('Command Dictionary Delete Failed');
     }
   },
@@ -2927,7 +2962,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_CONSTRAINT_METADATA, { id: constraint.id }, user);
         if (data.deleteConstraintMetadata != null) {
-          logMessage(`Deleted constraint "${constraint.name}" (ID=${constraint.id}).`);
+          logMessage('log', `Deleted constraint "${constraint.name}" (ID=${constraint.id}).`);
           showSuccessToast('Constraint Deleted Successfully');
           return true;
         } else {
@@ -2935,7 +2970,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Constraint Delete Failed', e as Error);
+      catchError('log', 'Constraint Delete Failed', e as Error);
       showFailureToast('Constraint Delete Failed');
     }
 
@@ -2960,13 +2995,13 @@ const effects = {
       );
 
       if (deleteConstraintPlanSpecifications !== null) {
-        logMessage(`Deleted constraint invocations IDs=${constraintInvocationIdsToDelete.join(', ')}.`);
+        logMessage('log', `Deleted constraint invocations IDs=${constraintInvocationIdsToDelete.join(', ')}.`);
         showSuccessToast(`Constraints Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');
       }
     } catch (e) {
-      catchError('Constraint Plan Specifications Update Failed', e as Error);
+      catchError('log', 'Constraint Plan Specifications Update Failed', e as Error);
       showFailureToast('Constraint Plan Specifications Update Failed');
     }
   },
@@ -2992,13 +3027,13 @@ const effects = {
           if (data.deleteDerivationGroup === null) {
             throw Error('Unable to delete derivation group');
           } else {
-            logMessage(`Deleted derivation groups "${derivationGroupNames.join(', ')}".`);
+            logMessage('log', `Deleted derivation groups "${derivationGroupNames.join(', ')}".`);
             showSuccessToast('Derivation Group Deleted Successfully');
           }
         }
       }
     } catch (e) {
-      catchError('Derivation Group Deletion Failed', e as Error);
+      catchError('log', 'Derivation Group Deletion Failed', e as Error);
       showFailureToast('Derivation Group Deletion Failed');
     }
   },
@@ -3035,7 +3070,7 @@ const effects = {
           const sourceDissociation = data.modelDerivationGroupLink?.returning[0];
           // If the return was null, do nothing - only act on success or non-null
           if (sourceDissociation) {
-            logMessage(`Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
+            logMessage('log', `Deleted derivation group "${derivation_group_name}" for Model ID=${model.id}.`);
             showSuccessToast('Derivation Group Disassociated Successfully');
           }
         } else {
@@ -3043,7 +3078,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Derivation Group De-linking Failed', e as Error);
+      catchError('log', 'Derivation Group De-linking Failed', e as Error);
       showFailureToast('Derivation Group De-linking Failed');
       derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
@@ -3082,14 +3117,14 @@ const effects = {
         const sourceDissociation = data.planDerivationGroupLink?.returning[0];
         // If the return was null, do nothing - only act on success or non-null
         if (sourceDissociation) {
-          logMessage(`Deleted derivation group "${derivation_group_name}" for plan ID=${plan.id}.`);
+          logMessage('log', `Deleted derivation group "${derivation_group_name}" for plan ID=${plan.id}.`);
           showSuccessToast('Derivation Group Disassociated Successfully');
         }
       } else {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError('Derivation Group De-linking Failed', e as Error);
+      catchError('log', 'Derivation Group De-linking Failed', e as Error);
       showFailureToast('Derivation Group De-linking Failed');
       derivationGroupPlanLinkErrorStore.set((e as Error).message);
     }
@@ -3111,7 +3146,7 @@ const effects = {
         const data = await reqHasura(gql.DELETE_EXPANSION_RULE, { id: rule.id }, user);
 
         if (data.deleteExpansionRule != null) {
-          logMessage(`Deleted expansion rule "${rule.name}" (ID=${rule.id}).`);
+          logMessage('log', `Deleted expansion rule "${rule.name}" (ID=${rule.id}).`);
           showSuccessToast('Expansion Rule Deleted Successfully');
           return true;
         } else {
@@ -3119,7 +3154,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Expansion Rule Delete Failed', e as Error);
+      catchError('log', 'Expansion Rule Delete Failed', e as Error);
       showFailureToast('Expansion Rule Delete Failed');
     }
 
@@ -3141,14 +3176,14 @@ const effects = {
       if (deleteExpansionRuleTags != null) {
         const { affected_rows: affectedRows } = deleteExpansionRuleTags;
         tagIds.forEach(tagId => {
-          logMessage(`Removed tag ID=${tagId} from expansion rule ID=${ruleId}.`);
+          logMessage('log', `Removed tag ID=${tagId} from expansion rule ID=${ruleId}.`);
         });
         return affectedRows;
       } else {
         throw Error('Unable to delete expansion rule tags');
       }
     } catch (e) {
-      catchError('Delete Expansion Rule Tags Failed', e as Error);
+      catchError('log', 'Delete Expansion Rule Tags Failed', e as Error);
       showFailureToast('Delete Expansion Rule Tags Failed');
       return null;
     }
@@ -3170,14 +3205,17 @@ const effects = {
         const { seq_id: seqId, simulation_dataset_id: simulationDatasetId } = sequence;
         const data = await reqHasura<SeqId>(gql.DELETE_EXPANSION_SEQUENCE, { seqId, simulationDatasetId }, user);
         if (data.deleteExpansionSequence != null) {
-          logMessage(`Deleted expansion sequence ID=${seqId} from simulation dataset ID=${simulationDatasetId}.`);
+          logMessage(
+            'log',
+            `Deleted expansion sequence ID=${seqId} from simulation dataset ID=${simulationDatasetId}.`,
+          );
           showSuccessToast('Expansion Sequence Deleted Successfully');
         } else {
           throw Error(`Unable to delete expansion sequence with ID: "${seqId}"`);
         }
       }
     } catch (e) {
-      catchError('Expansion Sequence Delete Failed', e as Error);
+      catchError('log', 'Expansion Sequence Delete Failed', e as Error);
       showFailureToast('Expansion Sequence Delete Failed');
     }
   },
@@ -3202,6 +3240,7 @@ const effects = {
       );
       if (data.expansionSequence != null) {
         logMessage(
+          'log',
           `Removed expansion sequence in simulation dataset ID=${simulationDatasetId} from activity directive ID=${simulatedActivityId}.`,
         );
         showSuccessToast('Expansion Sequence Deleted From Activity Successfully');
@@ -3212,7 +3251,7 @@ const effects = {
         );
       }
     } catch (e) {
-      catchError('Delete Expansion Sequence From Activity Failed', e as Error);
+      catchError('log', 'Delete Expansion Sequence From Activity Failed', e as Error);
       showFailureToast('Delete Expansion Sequence From Activity Failed');
       return false;
     }
@@ -3233,7 +3272,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_EXPANSION_SET, { id: set.id }, user);
         if (data.deleteExpansionSet != null) {
-          logMessage(`Deleted expansion set "${set.name}" (ID=${set.id}).`);
+          logMessage('log', `Deleted expansion set "${set.name}" (ID=${set.id}).`);
           showSuccessToast('Expansion Set Deleted Successfully');
           return true;
         } else {
@@ -3243,7 +3282,7 @@ const effects = {
 
       return false;
     } catch (e) {
-      catchError('Expansion Set Delete Failed', e as Error);
+      catchError('log', 'Expansion Set Delete Failed', e as Error);
       showFailureToast('Expansion Set Delete Failed');
       return false;
     }
@@ -3277,13 +3316,14 @@ const effects = {
             throw Error('Unable to delete external event type');
           }
           logMessage(
+            'log',
             `Deleted external event type${pluralize(externalEventTypes.length)} "${externalEventTypes.join(', ')}".`,
           );
           showSuccessToast('External Event Type Deleted Successfully');
         }
       }
     } catch (e) {
-      catchError('External Event Type Deletion Failed', e as Error);
+      catchError('log', 'External Event Type Deletion Failed', e as Error);
       showFailureToast('External Event Type Deletion Failed');
     }
   },
@@ -3351,13 +3391,14 @@ const effects = {
           }
           showSuccessToast('External Source Deleted Successfully');
           logMessage(
+            'log',
             `Deleted external source${pluralize(externalSources.length)} "${externalSources.map(s => s.source_type_name).join(', ')}".`,
           );
           return true;
         }
       }
     } catch (e) {
-      catchError('External Source Deletion Failed', e as Error);
+      catchError('log', 'External Source Deletion Failed', e as Error);
       showFailureToast('External Source Deletion Failed');
       return false;
     }
@@ -3394,6 +3435,7 @@ const effects = {
             throw Error('Unable to delete external source type');
           } else {
             logMessage(
+              'log',
               `Deleted external source type${pluralize(externalSourceTypes.length)} "${externalSourceTypes.join(', ')}".`,
             );
             showSuccessToast('External Source Type Deletion Successful');
@@ -3401,7 +3443,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('External Source Type Deletion Failed', e as Error);
+      catchError('log', 'External Source Type Deletion Failed', e as Error);
       showFailureToast('External Source Type Deletion Failed');
     }
   },
@@ -3409,10 +3451,10 @@ const effects = {
   async deleteFile(id: number, user: User | null): Promise<boolean> {
     try {
       await reqGateway(`/file/${id}`, 'DELETE', null, user, false);
-      logMessage(`Deleted file ID=${id}.`);
+      logMessage('log', `Deleted file ID=${id}.`);
       return true;
     } catch (e) {
-      catchError(`Delete file ID=${id} failed.`, e as Error);
+      catchError('log', `Delete file ID=${id} failed.`, e as Error);
       return false;
     }
   },
@@ -3435,14 +3477,14 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
-          logMessage(`Deleted model "${model.name}" (ID=${model.id}).`);
+          logMessage('log', `Deleted model "${model.name}" (ID=${model.id}).`);
           modelsStore.filterValueById(id);
         } else {
           throw Error(`Unable to delete model "${model.name}"`);
         }
       }
     } catch (e) {
-      catchError('Model Delete Failed', e as Error);
+      catchError('log', 'Model Delete Failed', e as Error);
       showFailureToast('Model Delete Failed');
     }
   },
@@ -3462,7 +3504,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_PARAMETER_DICTIONARY, { id }, user);
         if (data.deleteParameterDictionary != null) {
-          logMessage(`Deleted parameter dictionary ID=${id}.`);
+          logMessage('log', `Deleted parameter dictionary ID=${id}.`);
           showSuccessToast('Parameter Dictionary Deleted Successfully');
           parameterDictionariesStore.filterValueById(id);
         } else {
@@ -3470,7 +3512,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Parameter Dictionary Delete Failed', e as Error);
+      catchError('log', 'Parameter Dictionary Delete Failed', e as Error);
       showFailureToast('Parameter Dictionary Delete Failed');
     }
   },
@@ -3494,14 +3536,14 @@ const effects = {
           throw Error(`Unable to delete parcel "${parcel.name}"`);
         }
 
-        logMessage(`Deleted parcel "${parcel.name}" (ID=${parcel.id}).`);
+        logMessage('log', `Deleted parcel "${parcel.name}" (ID=${parcel.id}).`);
         showSuccessToast('Parcel Deleted Successfully');
         return true;
       }
 
       return false;
     } catch (e) {
-      catchError('Parcel Delete Failed', e as Error);
+      catchError('log', 'Parcel Delete Failed', e as Error);
       showFailureToast('Parcel Delete Failed');
       return false;
     }
@@ -3536,6 +3578,7 @@ const effects = {
 
         parcelToParameterDictionariesToDelete.forEach(association => {
           logMessage(
+            'log',
             `Deleted association between parcel ID=${association.parcel_id} and parameter dictionary ID=${association.parameter_dictionary_id}.`,
           );
         });
@@ -3546,7 +3589,7 @@ const effects = {
         throw Error('Unable to delete parcel to dictionary associations');
       }
     } catch (e) {
-      catchError('Delete parcel to dictionary associations failed', e as Error);
+      catchError('log', 'Delete parcel to dictionary associations failed', e as Error);
       showFailureToast('Delete parcel to dictionary associations failed');
       return null;
     }
@@ -3568,7 +3611,7 @@ const effects = {
         const data = await reqHasura(gql.DELETE_PLAN, { id: plan.id }, user);
         if (data.deletePlan != null) {
           showSuccessToast('Plan Deleted Successfully');
-          logMessage(`Deleted plan "${plan.name}" (ID=${plan.id}).`);
+          logMessage('log', `Deleted plan "${plan.name}" (ID=${plan.id}).`);
           return true;
         } else {
           throw Error(`Unable to delete the plan with "${plan.name}"`);
@@ -3577,7 +3620,7 @@ const effects = {
 
       return false;
     } catch (e) {
-      catchError('Plan Delete Failed', e as Error);
+      catchError('log', 'Plan Delete Failed', e as Error);
       showFailureToast('Plan Delete Failed');
       return false;
     }
@@ -3591,14 +3634,14 @@ const effects = {
 
       const data = await reqHasura(gql.DELETE_PLAN_COLLABORATOR, { collaborator, planId: plan.id }, user);
       if (data.deletePlanCollaborator != null) {
-        logMessage(`Removed collaborator "${collaborator}" from plan ID=${plan.id}.`);
+        logMessage('log', `Removed collaborator "${collaborator}" from plan ID=${plan.id}.`);
         showSuccessToast('Plan Collaborator Removed Successfully');
         return true;
       } else {
         throw Error('Unable to remove plan collaborator');
       }
     } catch (e) {
-      catchError('Remove Plan Collaborator Failed', e as Error);
+      catchError('log', 'Remove Plan Collaborator Failed', e as Error);
       showFailureToast('Remove Plan Collaborator Failed');
       return false;
     }
@@ -3619,7 +3662,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura(gql.DELETE_PLAN_SNAPSHOT, { snapshot_id: snapshot.snapshot_id }, user);
         if (data.deletePlanSnapshot != null) {
-          logMessage(`Deleted plan snapshot "${snapshot.snapshot_name}" (ID=${snapshot.snapshot_id}).`);
+          logMessage('log', `Deleted plan snapshot "${snapshot.snapshot_name}" (ID=${snapshot.snapshot_id}).`);
           showSuccessToast('Plan Snapshot Deleted Successfully');
           return true;
         } else {
@@ -3629,7 +3672,7 @@ const effects = {
 
       return false;
     } catch (e) {
-      catchError('Delete Plan Snapshot Failed', e as Error);
+      catchError('log', 'Delete Plan Snapshot Failed', e as Error);
       showFailureToast('Delete Plan Snapshot Failed');
       return false;
     }
@@ -3643,14 +3686,14 @@ const effects = {
 
       const data = await reqHasura<{ tag_id: number }>(gql.DELETE_PLAN_TAG, { plan_id: planId, tag_id: tagId }, user);
       if (data.delete_plan_tags_by_pk != null) {
-        logMessage(`Removed tag ID=${tagId} from plan ID=${planId}.`);
+        logMessage('log', `Removed tag ID=${tagId} from plan ID=${planId}.`);
         showSuccessToast('Plan Updated Successfully');
         return data.delete_plan_tags_by_pk.tag_id;
       } else {
         throw Error('Unable to delete plan tag');
       }
     } catch (e) {
-      catchError('Delete Plan Tag Failed', e as Error);
+      catchError('log', 'Delete Plan Tag Failed', e as Error);
       showFailureToast('Delete Plan Tag Failed');
       return null;
     }
@@ -3675,7 +3718,7 @@ const effects = {
           user,
         );
         if (data.deleteSchedulingConditionMetadata != null) {
-          logMessage(`Deleted scheduling condition "${condition.name}" (ID=${condition.id}).`);
+          logMessage('log', `Deleted scheduling condition "${condition.name}" (ID=${condition.id}).`);
           showSuccessToast('Scheduling Condition Deleted Successfully');
           return true;
         } else {
@@ -3685,7 +3728,7 @@ const effects = {
         return false;
       }
     } catch (e) {
-      catchError('Scheduling Condition Delete Failed', e as Error);
+      catchError('log', 'Scheduling Condition Delete Failed', e as Error);
       showFailureToast('Scheduling Condition Delete Failed');
       return false;
     }
@@ -3707,7 +3750,7 @@ const effects = {
         const data = await reqHasura<{ id: number }>(gql.DELETE_SCHEDULING_GOAL_METADATA, { id: goal.id }, user);
 
         if (data.deleteSchedulingGoalMetadata) {
-          logMessage(`Deleted scheduling goal "${goal.name}" (ID=${goal.id}).`);
+          logMessage('log', `Deleted scheduling goal "${goal.name}" (ID=${goal.id}).`);
           showSuccessToast('Scheduling Goal Deleted Successfully');
           return true;
         } else {
@@ -3717,7 +3760,7 @@ const effects = {
         return false;
       }
     } catch (e) {
-      catchError('Scheduling Goal Delete Failed', e as Error);
+      catchError('log', 'Scheduling Goal Delete Failed', e as Error);
       showFailureToast('Scheduling Goal Delete Failed');
       return false;
     }
@@ -3744,6 +3787,7 @@ const effects = {
 
       if (deleteConstraintPlanSpecifications !== null) {
         logMessage(
+          'log',
           `Deleted ${goalInvocationIdsToDelete.length} scheduling goal invocation${pluralize(goalInvocationIdsToDelete.length)} from scheduling specification ID=${schedulingSpecificationId}.`,
         );
         showSuccessToast(`Scheduling Goals Updated Successfully`);
@@ -3751,7 +3795,7 @@ const effects = {
         throw Error('Unable to update the scheduling goal specifications for the plan');
       }
     } catch (e) {
-      catchError('Scheduling Goal Plan Specifications Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Plan Specifications Update Failed', e as Error);
       showFailureToast('Scheduling Goal Plan Specifications Update Failed');
     }
   },
@@ -3774,12 +3818,12 @@ const effects = {
           throw Error(`Unable to delete sequence adaptation with ID: "${id}"`);
         }
 
-        logMessage(`Deleted sequence adaptation ID=${id}.`);
+        logMessage('log', `Deleted sequence adaptation ID=${id}.`);
         showSuccessToast('Sequence Adaptation Deleted Successfully');
         sequenceAdaptationsStore.filterValueById(id);
       }
     } catch (e) {
-      catchError('Sequence Adaptation Delete Failed', e as Error);
+      catchError('log', 'Sequence Adaptation Delete Failed', e as Error);
       showFailureToast('Sequence Adaptation Delete Failed');
     }
   },
@@ -3803,14 +3847,14 @@ const effects = {
           user,
         );
         if (data.deleteSequenceFilters != null) {
-          logMessage(`Deleted sequence filters IDs=${sequenceFilterIds.join(', ')}.`);
+          logMessage('log', `Deleted sequence filters IDs=${sequenceFilterIds.join(', ')}.`);
           showSuccessToast('Sequence Filters Deleted Successfully');
         } else {
           throw Error(`Unable to delete sequence filters with IDs: "${sequenceFilterIds}"`);
         }
       }
     } catch (e) {
-      catchError('Sequence Filter Delete Failed', e as Error);
+      catchError('log', 'Sequence Filter Delete Failed', e as Error);
       showFailureToast('Sequence Filter Delete Failed');
     }
   },
@@ -3837,14 +3881,14 @@ const effects = {
         const { delete_sequence_template_by_pk: deleteSequenceTemplate } = data;
 
         if (deleteSequenceTemplate !== null) {
-          logMessage(`Deleted sequence template "${sequenceTemplate.name}" (ID=${sequenceTemplate.id}).`);
+          logMessage('log', `Deleted sequence template "${sequenceTemplate.name}" (ID=${sequenceTemplate.id}).`);
           showSuccessToast('Sequence Template Deleted Successfully');
         } else {
           throw Error(`Unable to delete sequence template with ID: "${sequenceTemplate.id}"`);
         }
       }
     } catch (e) {
-      catchError('Sequence Template Deletion Failed', e as Error);
+      catchError('log', 'Sequence Template Deletion Failed', e as Error);
       showFailureToast('Sequence Template Deletion Failed');
     }
   },
@@ -3872,7 +3916,7 @@ const effects = {
           user,
         );
         if (data.deleteSimulationTemplate != null) {
-          logMessage(`Deleted simulation template ID=${simulationTemplate.id}.`);
+          logMessage('log', `Deleted simulation template ID=${simulationTemplate.id}.`);
           showSuccessToast('Simulation Template Deleted Successfully');
           return true;
         } else {
@@ -3880,7 +3924,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Simulation Template Delete Failed', e as Error);
+      catchError('log', 'Simulation Template Delete Failed', e as Error);
       showFailureToast('Simulation Template Delete Failed');
     }
 
@@ -3894,11 +3938,11 @@ const effects = {
       }
 
       await reqHasura<{ id: number }>(gql.DELETE_TAG, { id: tag.id }, user);
-      logMessage(`Deleted tag "${tag.name}" (ID=${tag.id}).`);
+      logMessage('log', `Deleted tag "${tag.name}" (ID=${tag.id}).`);
       showSuccessToast('Tag Deleted Successfully');
       return true;
     } catch (e) {
-      catchError('Delete Tag Failed', e as Error);
+      catchError('log', 'Delete Tag Failed', e as Error);
       showFailureToast('Delete Tag Failed');
       return false;
     }
@@ -4007,7 +4051,7 @@ const effects = {
       if (confirm) {
         const data = await reqHasura<{ id: number }>(gql.DELETE_VIEW, { id: view.id }, user);
         if (data.deletedView != null) {
-          logMessage(`Deleted view "${view.name}" (ID=${view.id}).`);
+          logMessage('log', `Deleted view "${view.name}" (ID=${view.id}).`);
           showSuccessToast('View Deleted Successfully');
           return true;
         } else {
@@ -4016,7 +4060,7 @@ const effects = {
       }
     } catch (e) {
       showFailureToast('View Delete Failed');
-      catchError('View delete failed', e as Error);
+      catchError('log', 'View delete failed', e as Error);
     }
 
     return false;
@@ -4050,7 +4094,7 @@ const effects = {
             throw new Error(`Some views were not successfully deleted: ${leftoverViewIds.join(', ')}`);
           }
           views.forEach(view => {
-            logMessage(`Deleted view "${view.name}" (ID=${view.id}).`);
+            logMessage('log', `Deleted view "${view.name}" (ID=${view.id}).`);
           });
           showSuccessToast('Views Deleted Successfully');
           return true;
@@ -4060,7 +4104,7 @@ const effects = {
       }
     } catch (e) {
       showFailureToast('View Deletes Failed');
-      catchError('View deletes failed', e as Error);
+      catchError('log', 'View deletes failed', e as Error);
     }
 
     return false;
@@ -4080,13 +4124,13 @@ const effects = {
 
       if (confirm) {
         await WorkspaceApi.deleteWorkspace(workspace.id, user);
-        logMessage(`Deleted workspace "${workspace.name}" (ID=${workspace.id}).`);
+        logMessage('log', `Deleted workspace "${workspace.name}" (ID=${workspace.id}).`);
         showSuccessToast('Workspace Deleted Successfully');
         return true;
       }
     } catch (e) {
-      showFailureToast('Workspace Delete Failed');
-      catchError('Workspace delete failed', e as Error);
+      showFailureToast('Workspace Delete Failed', e);
+      catchError('log', 'Workspace delete failed', e as Error);
     }
 
     return false;
@@ -4104,15 +4148,15 @@ const effects = {
         user,
       );
       if (data.deleteWorkspaceCollaborator != null) {
-        logMessage(`Removed collaborator "${collaborator}" from workspace ID=${workspace.id}.`);
+        logMessage('log', `Removed collaborator "${collaborator}" from workspace ID=${workspace.id}.`);
         showSuccessToast('Workspace Collaborator Removed Successfully');
         return true;
       } else {
         throw Error('Unable to remove workspace collaborator');
       }
     } catch (e) {
-      catchError('Remove Workspace Collaborator Failed', e as Error);
-      showFailureToast('Remove Workspace Collaborator Failed');
+      catchError('log', 'Remove Workspace Collaborator Failed', e as Error);
+      showFailureToast('Remove Workspace Collaborator Failed', e);
       return false;
     }
   },
@@ -4149,22 +4193,19 @@ const effects = {
           }
         }
         if (failedFileOperations.length) {
-          throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to delete`, {
-            cause: JSON.stringify(
-              failedFileOperations.map(({ item, response }) => `${item}:${(response as unknown as LogMessage).cause}`),
-            ),
-          });
+          throw buildBulkOperationCompoundError(failedFileOperations, 'delete');
         }
 
         logMessage(
+          'log',
           `Deleted ${originalNodes.length} ${typeDisplayString.toLowerCase()} in "${workspace.name}" (ID=${workspace.id}).`,
         );
         showSuccessToast(`Workspace ${typeDisplayString} Deleted Successfully`);
       }
       return confirm;
     } catch (e) {
-      catchError(`Workspace ${typeDisplayString} was unable to be deleted`, e as Error);
-      showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`);
+      catchError('log', `Workspace ${typeDisplayString} was unable to be deleted`, e as Error);
+      showFailureToast(`Workspace ${typeDisplayString} Deletion Failed`, e);
     }
 
     return false;
@@ -4201,7 +4242,7 @@ const effects = {
         if (updatedView != null) {
           const { name: updatedName, updated_at } = updatedView;
           applyViewUpdate({ name: updatedName, updated_at });
-          logMessage(`Updated view "${view.name}" (ID=${view.id}).`);
+          logMessage('log', `Updated view "${view.name}" (ID=${view.id}).`);
           showSuccessToast('View Edited Successfully');
           return true;
         } else {
@@ -4209,7 +4250,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('View Edit Failed', e as Error);
+      catchError('log', 'View Edit Failed', e as Error);
       showFailureToast('View Edit Failed');
     }
 
@@ -4230,15 +4271,15 @@ const effects = {
         planExpansionStatusStore.set(Status.Complete);
         showSuccessToast('Plan Expanded Successfully');
         logMessage(
+          'log',
           `Expanded plan with expansion set ID=${expansionSetId} for simulation ID=${simulationDatasetId}.`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
       } else {
         throw Error('Unable to expand plan');
       }
     } catch (e) {
-      catchError('Plan Expansion Failed', e as Error);
+      catchError('log', 'Plan Expansion Failed', e as Error);
       planExpansionStatusStore.set(Status.Failed);
       showFailureToast('Plan Expansion Failed');
     }
@@ -4272,15 +4313,15 @@ const effects = {
         sequenceTemplateExpansionStatus.set(Status.Complete);
         showSuccessToast('Sequence Templating Succeeded');
         logMessage(
+          'log',
           `Expanded sequence templates for sequences IDs=${seqIds.join(', ')} for simulation ID=${simulationDatasetId}.`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
       } else {
         throw Error('Sequence Templating Failed');
       }
     } catch (e) {
-      catchError('Sequence Templating Failed', e as Error);
+      catchError('log', 'Sequence Templating Failed', e as Error);
       sequenceTemplateExpansionStatus.set(Status.Failed);
       sequenceTemplateExpansionError.set(e as string);
       showFailureToast('Sequence Templating Failed');
@@ -4293,13 +4334,13 @@ const effects = {
       const data = await reqHasura<ActionRun>(query, { actionRunId }, user);
       const { actionRun } = data;
       if (actionRun != null) {
-        logMessage(`Retrieved action run ID=${actionRunId}`);
+        logMessage('log', `Retrieved action run ID=${actionRunId}`);
         return actionRun;
       } else {
         throw Error('Unable to retrieve activity run');
       }
     } catch (e) {
-      catchError('Failed to get action run', e as Error);
+      catchError('log', 'Failed to get action run', e as Error);
       return null;
     }
   },
@@ -4313,16 +4354,16 @@ const effects = {
       const { activity_directives: activityDirectives } = data;
       if (activityDirectives != null) {
         logMessage(
+          'log',
           `Retrieved ${activityDirectives.length} activity directive${pluralize(activityDirectives.length)} for plan ID=${planId}`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
         return activityDirectives;
       } else {
         throw Error('No activities returned');
       }
     } catch (e) {
-      catchError('Failed to retrieve activities for plan', e as Error);
+      catchError('log', 'Failed to retrieve activities for plan', e as Error);
       return [];
     }
   },
@@ -4360,13 +4401,13 @@ const effects = {
           }
           return revision; // fallback if sourcePlan is undefined
         });
-        logMessage(`Retrieved activity directive changelog for activity ID=${activityId}.`);
+        logMessage('log', `Retrieved activity directive changelog for activity ID=${activityId}.`);
         return updatedRevisions;
       } else {
         throw Error('Activity directive changelog not found');
       }
     } catch (e) {
-      catchError('Failed to retrieve activity directive changelog', e as Error);
+      catchError('log', 'Failed to retrieve activity directive changelog', e as Error);
       return [];
     }
   },
@@ -4379,16 +4420,16 @@ const effects = {
       const { activity_type: activityTypes } = data;
       if (activityTypes != null) {
         logMessage(
+          'log',
           `Retrieved ${activityTypes.length} activity type${pluralize(activityTypes.length)} for model ID=${modelId}.`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
         return activityTypes;
       } else {
         throw Error('No activity types found');
       }
     } catch (e) {
-      catchError('Failed to retrieve activity types', e as Error);
+      catchError('log', 'Failed to retrieve activity types', e as Error);
       return [];
     }
   },
@@ -4406,13 +4447,13 @@ const effects = {
         );
         const { activity_types: activityTypes } = data;
         if (activityTypes != null) {
-          logMessage(`Retrieved expansion rule activity types for model ID=${modelId}.`);
+          logMessage('log', `Retrieved expansion rule activity types for model ID=${modelId}.`);
           return activityTypes;
         } else {
           throw Error('No activity types found');
         }
       } catch (e) {
-        catchError('Failed to retrieve expansion rule activity types', e as Error);
+        catchError('log', 'Failed to retrieve expansion rule activity types', e as Error);
         return [];
       }
     } else {
@@ -4425,11 +4466,11 @@ const effects = {
       const data = await reqHasura<ConstraintMetadata>(convertToQuery(gql.SUB_CONSTRAINT), { id }, user);
       const { constraint } = data;
       if (constraint) {
-        logMessage(`Retrieved constraint "${constraint.name}" (ID=${id}).`);
+        logMessage('log', `Retrieved constraint "${constraint.name}" (ID=${id}).`);
       }
       return constraint;
     } catch (e) {
-      catchError('Failed to retrieve constraint', e as Error);
+      catchError('log', 'Failed to retrieve constraint', e as Error);
       return null;
     }
   },
@@ -4455,12 +4496,12 @@ const effects = {
       );
       const { constraintProcedureEffectiveArgumentsBulk } = data;
       if (constraintProcedureEffectiveArgumentsBulk !== null) {
-        logMessage(`Retrieved effective arguments for ${constraints.length} procedural constraints.`);
+        logMessage('log', `Retrieved effective arguments for ${constraints.length} procedural constraints.`);
         return constraintProcedureEffectiveArgumentsBulk;
       }
       return [];
     } catch (e) {
-      catchError('Failed to retrieve procedural constraint effective arguments', e as Error);
+      catchError('log', 'Failed to retrieve procedural constraint effective arguments', e as Error);
       return [];
     }
   },
@@ -4482,12 +4523,12 @@ const effects = {
       );
       const { effectiveActivityArgumentsBulk } = data;
       if (effectiveActivityArgumentsBulk !== null) {
-        logMessage(`Retrieved default activity arguments for model ID=${modelId}.`);
+        logMessage('log', `Retrieved default activity arguments for model ID=${modelId}.`);
         return effectiveActivityArgumentsBulk;
       }
       return [];
     } catch (e) {
-      catchError('Failed to retrieve default activity arguments', e as Error);
+      catchError('log', 'Failed to retrieve default activity arguments', e as Error);
       return [];
     }
   },
@@ -4507,10 +4548,10 @@ const effects = {
         user,
       );
       const { effectiveModelArguments } = data;
-      logMessage(`Retrieved effective model arguments for model ID=${modelId}.`);
+      logMessage('log', `Retrieved effective model arguments for model ID=${modelId}.`);
       return effectiveModelArguments;
     } catch (e) {
-      catchError('Failed to retrieve effective model arguments', e as Error);
+      catchError('log', 'Failed to retrieve effective model arguments', e as Error);
       return null;
     }
   },
@@ -4547,13 +4588,13 @@ const effects = {
         });
       }
       logMessage(
+        'log',
         `Retrieved ${simulationEvents.length} simulation event${pluralize(simulationEvents.length)} for simulation ID=${datasetId}.`,
-        '',
-        performance.now() - startTime,
+        { duration: performance.now() - startTime },
       );
       return simulationEvents;
     } catch (e) {
-      catchError('Failed to retrieve simulation events', e as Error);
+      catchError('log', 'Failed to retrieve simulation events', e as Error);
       return [];
     }
   },
@@ -4563,11 +4604,11 @@ const effects = {
       const data = await reqHasura<ExpansionRule>(gql.GET_EXPANSION_RULE, { id }, user);
       const { expansionRule } = data;
       if (expansionRule) {
-        logMessage(`Retrieved expansion rule "${expansionRule.name}" (ID=${id}).`);
+        logMessage('log', `Retrieved expansion rule "${expansionRule.name}" (ID=${id}).`);
       }
       return expansionRule;
     } catch (e) {
-      catchError('Failed to get expansion rule', e as Error);
+      catchError('log', 'Failed to get expansion rule', e as Error);
       return null;
     }
   },
@@ -4581,7 +4622,7 @@ const effects = {
       const data = await reqHasura<ExpansionRun>(gql.GET_EXPANSION_RUN, { id }, user, signal);
       const { expansionRun } = data;
       if (expansionRun) {
-        logMessage(`Retrieved expansion run (ID=${id}).`);
+        logMessage('log', `Retrieved expansion run (ID=${id}).`);
         return { aborted: false, expansionRun };
       } else {
         return { aborted: false, expansionRun: null };
@@ -4590,7 +4631,7 @@ const effects = {
       if ((e as Error).name === 'AbortError') {
         return { aborted: true, expansionRun: null };
       }
-      catchError('Failed to get expansion run', e as Error);
+      catchError('log', 'Failed to get expansion run', e as Error);
       showFailureToast('Expansion Run Details Retrieval Failed');
       return { aborted: false, expansionRun: null };
     }
@@ -4601,13 +4642,13 @@ const effects = {
       const data = await reqHasura<ExpansionRunSlim[]>(gql.GET_EXPANSION_RUNS, {}, user);
       const { expansionRuns } = data;
       if (expansionRuns) {
-        logMessage(`Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
+        logMessage('log', `Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
         return expansionRuns;
       } else {
         return [];
       }
     } catch (e) {
-      catchError('Failed to get expansion runs', e as Error);
+      catchError('log', 'Failed to get expansion runs', e as Error);
       showFailureToast('Expansion Runs Retrieval Failed');
       return [];
     }
@@ -4632,6 +4673,7 @@ const effects = {
       if (expansionSequence) {
         const { seq_id: seqId } = expansionSequence;
         logMessage(
+          'log',
           `Retrieved expansion sequence "${seqId}" for simulated activity ID=${simulatedActivityId} in simulation ID=${simulationDatasetId}.`,
         );
         return seqId;
@@ -4639,7 +4681,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError('Failed to retrieve expansion sequence ID', e as Error);
+      catchError('log', 'Failed to retrieve expansion sequence ID', e as Error);
       return null;
     }
   },
@@ -4662,13 +4704,13 @@ const effects = {
       const { expanded_sequences } = data;
       if (expanded_sequences != null && expanded_sequences.length === 1) {
         const { expanded_sequence } = expanded_sequences[0];
-        logMessage(`Retrieved expansion sequence SeqJson for sequence "${seqId}".`);
+        logMessage('log', `Retrieved expansion sequence SeqJson for sequence "${seqId}".`);
         return JSON.stringify(expanded_sequence, null, 2);
       } else {
         throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
       }
     } catch (e) {
-      catchError('Failed to get expansion sequence seq json', e as Error);
+      catchError('log', 'Failed to get expansion sequence seq json', e as Error);
       return null;
     }
   },
@@ -4698,10 +4740,10 @@ const effects = {
         throw Error('Unable to gather all external event types for the source');
       }
 
-      logMessage(`Retrieved ${types.length} external event type${pluralize(types.length)}.`);
+      logMessage('log', `Retrieved ${types.length} external event type${pluralize(types.length)}.`);
       return types;
     } catch (e) {
-      catchError('Failed to retrieve external event types', e as Error);
+      catchError('log', 'Failed to retrieve external event types', e as Error);
       return [];
     }
   },
@@ -4739,6 +4781,7 @@ const effects = {
           }
         }
         logMessage(
+          'log',
           `Retrieved ${eventTypes.length} external event type${pluralize(eventTypes.length)} from external source "${externalSourceKey}" in derivation group "${externalSourceDerivationGroup}".`,
         );
         return eventTypes;
@@ -4746,7 +4789,7 @@ const effects = {
         throw Error('Unable to retrieve external event types for source');
       }
     } catch (e) {
-      catchError('Failed to retrieve external event types for source', e as Error);
+      catchError('log', 'Failed to retrieve external event types for source', e as Error);
       showFailureToast('External Event Type Retrieval Failed');
       return [];
     }
@@ -4790,13 +4833,47 @@ const effects = {
         });
       }
       logMessage(
+        'log',
         `Retrieved ${externalEvents.length} external event${pluralize(externalEvents.length)} from external source "${externalSourceKey}" in derivation group "${externalSourceDerivationGroup}".`,
       );
       return externalEvents;
     } catch (e) {
-      catchError('Failed to retrieve external events.', e as Error);
+      catchError('log', 'Failed to retrieve external events.', e as Error);
       showFailureToast('External Events Retrieval Failed');
       return [];
+    }
+  },
+
+  async getExternalProfileSegmentsSince(
+    datasetId: number,
+    profileId: number,
+    sinceOffset: string,
+    user: User | null,
+    signal: AbortSignal | undefined = undefined,
+  ): Promise<ProfileSegment[] | null> {
+    try {
+      const data = await reqHasura<{ profile_segments: ProfileSegment[] }[]>(
+        gql.GET_EXTERNAL_PROFILE_SEGMENTS_SINCE,
+        { datasetId, profileId, sinceOffset },
+        user,
+        signal,
+      );
+      const { profile: profiles } = data;
+      if (profiles && profiles.length === 1) {
+        return profiles[0].profile_segments;
+      }
+      return null;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      catchError(
+        'log',
+        `Failed to retrieve external profile segments (datasetId=${datasetId}, profileId=${profileId})`,
+        error,
+      );
+      throw error;
     }
   },
 
@@ -4807,13 +4884,13 @@ const effects = {
   ): Promise<{ aborted: boolean; file: string | null }> {
     try {
       const file = await reqGateway(`/file/${fileId}`, 'GET', null, user, true, signal, false);
-      logMessage(`Retrieved file "${fileId}".`);
+      logMessage('log', `Retrieved file "${fileId}".`);
       return { aborted: false, file };
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
         return { aborted: true, file: null };
       } else {
-        catchError(`Failed to get file with id: ${fileId}`, e as Error);
+        catchError('log', `Failed to get file with id: ${fileId}`, e as Error);
         showFailureToast(`Failed to get file with id: ${fileId}`);
         return { aborted: false, file: null };
       }
@@ -4830,12 +4907,12 @@ const effects = {
       if (data) {
         const { name } = data[0];
         const cleanedName = name.replace(/(?:-[a-zA-Z0-9]+){2}(\.[a-z]+)?$/, '$1');
-        logMessage(`Retrieved filename "${cleanedName}" for file "${fileId}".`);
+        logMessage('log', `Retrieved filename "${cleanedName}" for file "${fileId}".`);
         return cleanedName;
       }
       return null;
     } catch (e) {
-      catchError(`Failed to get filename for file id: ${fileId}`, e as Error);
+      catchError('log', `Failed to get filename for file id: ${fileId}`, e as Error);
       showFailureToast(`Failed to get filename for file id: ${fileId}`);
       return null;
     }
@@ -4847,13 +4924,13 @@ const effects = {
       const data = await reqHasura<Model>(query, { id: modelId }, user);
       const { model } = data;
       if (model != null) {
-        logMessage(`Retrieved model "${model.name}" v${model.version} (ID=${modelId})`);
+        logMessage('log', `Retrieved model "${model.name}" v${model.version} (ID=${modelId})`);
         return model;
       } else {
         throw Error('No model found');
       }
     } catch (e) {
-      catchError('Failed to retrieve model', e as Error);
+      catchError('log', 'Failed to retrieve model', e as Error);
       return null;
     }
   },
@@ -4864,13 +4941,13 @@ const effects = {
       const data = await reqHasura<ModelSlim[]>(query, {}, user);
       const { models = [] } = data;
       if (models != null) {
-        logMessage(`Retrieved ${models.length} model${pluralize(models.length)}`);
+        logMessage('log', `Retrieved ${models.length} model${pluralize(models.length)}`);
         return models;
       } else {
         throw Error('Models not found');
       }
     } catch (e) {
-      catchError('Failed to retrieve models', e as Error);
+      catchError('log', 'Failed to retrieve models', e as Error);
       return [];
     }
   },
@@ -4880,11 +4957,11 @@ const effects = {
       const data = await reqHasura<Parcel>(gql.GET_PARCEL, { id }, user);
       const { parcel } = data;
       if (parcel) {
-        logMessage(`Retrieved parcel "${parcel.name}" (ID=${parcel.id}).`);
+        logMessage('log', `Retrieved parcel "${parcel.name}" (ID=${parcel.id}).`);
       }
       return parcel;
     } catch (e) {
-      catchError('Failed to retrieve parcel', e as Error);
+      catchError('log', 'Failed to retrieve parcel', e as Error);
       return null;
     }
   },
@@ -4909,11 +4986,11 @@ const effects = {
         throw new Error(`Unable to find channel dictionary with id ${channelDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = channelDictionary;
-        logMessage(`Retrieved channel dictionary ID=${channelDictionaryId}.`);
+        logMessage('log', `Retrieved channel dictionary ID=${channelDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError('Failed to retrieve channel dictionary', e as Error);
+      catchError('log', 'Failed to retrieve channel dictionary', e as Error);
       return null;
     }
   },
@@ -4938,11 +5015,11 @@ const effects = {
         throw new Error(`Unable to find command dictionary with id ${commandDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = commandDictionary;
-        logMessage(`Retrieved command dictionary ID=${commandDictionaryId}.`);
+        logMessage('log', `Retrieved command dictionary ID=${commandDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError('Failed to retrieve command dictionary', e as Error);
+      catchError('log', 'Failed to retrieve command dictionary', e as Error);
       return null;
     }
   },
@@ -4967,11 +5044,11 @@ const effects = {
         throw new Error(`Unable to find parameter dictionary with id ${parameterDictionaryId}`);
       } else {
         const [{ parsed_json: parsedJson }] = parameterDictionary;
-        logMessage(`Retrieved parameter dictionary ID=${parameterDictionaryId}.`);
+        logMessage('log', `Retrieved parameter dictionary ID=${parameterDictionaryId}.`);
         return parsedJson;
       }
     } catch (e) {
-      catchError('Failed to retrieve parameter dictionary', e as Error);
+      catchError('log', 'Failed to retrieve parameter dictionary', e as Error);
       return null;
     }
   },
@@ -4989,13 +5066,13 @@ const effects = {
           end_time_doy: getDoyTimeFromInterval(start_time, duration),
           start_time_doy: getDoyTime(new Date(start_time)),
         };
-        logMessage(`Retrieved plan "${plan.name}" (ID=${id}).`, '', performance.now() - startTime);
+        logMessage('log', `Retrieved plan "${plan.name}" (ID=${id}).`, { duration: performance.now() - startTime });
         return plan;
       } else {
         return null;
       }
     } catch (e) {
-      catchError('Failed to retrieve plan', e as Error);
+      catchError('log', 'Failed to retrieve plan', e as Error);
       return null;
     }
   },
@@ -5007,7 +5084,7 @@ const effects = {
     const { simulation } = data;
 
     if (simulation) {
-      logMessage(`Retrieved latest simulation for plan ID=${planId}`);
+      logMessage('log', `Retrieved latest simulation for plan ID=${planId}`);
       return simulation[0];
     }
 
@@ -5024,6 +5101,7 @@ const effects = {
       const { conflictingActivities } = data;
       if (conflictingActivities != null) {
         logMessage(
+          'log',
           `Retrieved ${conflictingActivities.length} conflicting activit${conflictingActivities.length === 1 ? 'y' : 'ies'} for plan merge request ID=${mergeRequestId}.`,
         );
         return conflictingActivities;
@@ -5031,7 +5109,7 @@ const effects = {
         throw Error('Unable to retrieve conflicting activities');
       }
     } catch (e) {
-      catchError('Failed to retrieve conflicting activities', e as Error);
+      catchError('log', 'Failed to retrieve conflicting activities', e as Error);
       return [];
     }
   },
@@ -5051,6 +5129,7 @@ const effects = {
       const { nonConflictingActivities } = data;
       if (nonConflictingActivities != null) {
         logMessage(
+          'log',
           `Retrieved ${nonConflictingActivities.length} non-conflicting activit${nonConflictingActivities.length === 1 ? 'y' : 'ies'} for plan merge request ID=${mergeRequestId}.`,
         );
         return nonConflictingActivities;
@@ -5058,7 +5137,7 @@ const effects = {
         throw Error('Unable to retrieve non-conflicting activities');
       }
     } catch (e) {
-      catchError('Failed to retrieve non-conflicting activities', e as Error);
+      catchError('log', 'Failed to retrieve non-conflicting activities', e as Error);
       return [];
     }
   },
@@ -5070,13 +5149,13 @@ const effects = {
       const { merge_requests: mergeRequests } = data;
       if (mergeRequests != null) {
         const [mergeRequest] = mergeRequests; // Query uses 'limit: 1' so merge_requests.length === 1.
-        logMessage(`Retrieved in-progress plan merge request ID=${mergeRequest.id}.`);
+        logMessage('log', `Retrieved in-progress plan merge request ID=${mergeRequest.id}.`);
         return mergeRequest;
       } else {
         throw Error('Unable to get merge requests in progress');
       }
     } catch (e) {
-      catchError('Failed to retrieve in-progress plan merge request', e as Error);
+      catchError('log', 'Failed to retrieve in-progress plan merge request', e as Error);
       return null;
     }
   },
@@ -5088,13 +5167,13 @@ const effects = {
       const { plan } = data;
       if (plan != null) {
         const { revision } = plan;
-        logMessage(`Retrieved latest plan revision ID ${revision}.`);
+        logMessage('log', `Retrieved latest plan revision ID ${revision}.`);
         return revision;
       } else {
         throw Error('Plan revision not found');
       }
     } catch (e) {
-      catchError('Failed to get plan revision', e as Error);
+      catchError('log', 'Failed to get plan revision', e as Error);
       return null;
     }
   },
@@ -5113,6 +5192,7 @@ const effects = {
 
       if (planSnapshotActivityDirectives) {
         logMessage(
+          'log',
           `Retrieved ${planSnapshotActivityDirectives.length} plan snapshot activity directive${pluralize(planSnapshotActivityDirectives.length)}.`,
         );
         return planSnapshotActivityDirectives.map(({ snapshot_id: _snapshotId, ...planSnapshotActivityDirective }) => {
@@ -5125,7 +5205,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError('Unable to retrieve plan snapshot activity directives', e as Error);
+      catchError('log', 'Unable to retrieve plan snapshot activity directives', e as Error);
       return null;
     }
   },
@@ -5138,11 +5218,11 @@ const effects = {
         return [];
       }
       if (plan.tags.length) {
-        logMessage(`Retrieved ${plan.tags.length} plan tag${pluralize(plan.tags.length)}.`);
+        logMessage('log', `Retrieved ${plan.tags.length} plan tag${pluralize(plan.tags.length)}.`);
       }
       return plan.tags.map(({ tag }) => tag);
     } catch (e) {
-      catchError('Unable to retrieve plan tags', e as Error);
+      catchError('log', 'Unable to retrieve plan tags', e as Error);
       return [];
     }
   },
@@ -5156,9 +5236,9 @@ const effects = {
       };
       const { models, plans } = data;
       logMessage(
+        'log',
         `Retrieved ${models.length} model${pluralize(models.length)} and ${plans.length} plan${pluralize(plans.length)}.`,
-        '',
-        performance.now() - startTime,
+        { duration: performance.now() - startTime },
       );
 
       return {
@@ -5172,19 +5252,35 @@ const effects = {
         }),
       };
     } catch (e) {
-      catchError('Unable to retrieve plans and models', e as Error);
+      catchError('log', 'Unable to retrieve plans and models', e as Error);
       return { models: [], plans: [] };
     }
   },
 
-  getResource(
+  async getProfileSince(
     datasetId: number,
     name: string,
+    sinceOffset: string,
     user: User | null,
     signal: AbortSignal | undefined = undefined,
-  ): Promise<Record<string, Profile[] | null>> {
-    const data = reqHasura<Profile[]>(gql.GET_PROFILE, { datasetId, name }, user, signal);
-    return data;
+  ): Promise<Profile | null> {
+    try {
+      const data = await reqHasura<Profile[]>(gql.GET_PROFILE_SINCE, { datasetId, name, sinceOffset }, user, signal);
+      const { profile: profiles } = data;
+      if (profiles && profiles.length === 1) {
+        return profiles[0];
+      }
+      return null;
+    } catch (e) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      // Re-throw so the caller can surface the error in the timeline status
+      // indicator; catchError still routes it to the global log pipeline.
+      catchError('log', `Unable to retrieve profile ${name}`, error);
+      throw error;
+    }
   },
 
   async getResourceTypes(modelId: number, user: User | null, limit: number | null = null): Promise<ResourceType[]> {
@@ -5194,89 +5290,17 @@ const effects = {
       const { resource_types: resourceTypes } = data;
       if (resourceTypes != null) {
         logMessage(
+          'log',
           `Retrieved ${typeof limit === 'number' ? 'initial set of ' : 'all'} ${resourceTypes.length} resource type${pluralize(resourceTypes.length)} for model ID=${modelId}.`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
         return resourceTypes;
       } else {
         throw Error('No resource types found');
       }
     } catch (e) {
-      catchError('Unable to retrieve resource types', e as Error);
+      catchError('log', 'Unable to retrieve resource types', e as Error);
       return [];
-    }
-  },
-
-  async getResourcesExternal(
-    planId: number,
-    simulationDatasetId: number | null,
-    startTimeYmd: string,
-    user: User | null,
-    signal: AbortSignal | undefined = undefined,
-  ): Promise<{ aborted: boolean; resources: Resource[] }> {
-    try {
-      // Always fetch external resources that aren't tied to a simulation, optionally get the resources tied to one if we have a dataset ID.
-      const clauses: { simulation_dataset_id: { _is_null: boolean } | { _eq: number } }[] = [
-        { simulation_dataset_id: { _is_null: true } },
-      ];
-      if (simulationDatasetId !== null) {
-        clauses.push({ simulation_dataset_id: { _eq: simulationDatasetId } });
-      }
-
-      const data = await reqHasura<PlanDataset[]>(
-        gql.GET_PROFILES_EXTERNAL,
-        {
-          planId,
-          simulationDatasetFilter: clauses,
-        },
-        user,
-        signal,
-      );
-      const { plan_dataset: planDatasets } = data;
-      if (planDatasets != null) {
-        let resources: Resource[] = [];
-
-        const profileMap: Set<string> = new Set();
-        planDatasets.sort(({ dataset_id: datasetIdA }, { dataset_id: datasetIdB }) => {
-          return compare(datasetIdA, datasetIdB, false);
-        });
-
-        for (const dataset of planDatasets) {
-          const {
-            dataset: { profiles },
-            offset_from_plan_start,
-          } = dataset;
-          const uniqueProfiles: Profile[] = profiles.filter(profile => {
-            if (!profileMap.has(profile.name)) {
-              profileMap.add(profile.name);
-              return true;
-            }
-            return false;
-          });
-
-          uniqueProfiles.forEach(profile => {
-            logMessage(
-              `Retrieved external profile ${profile.name} (${profile.profile_segments} segment${profile.profile_segments.length}) for simulation ID=${simulationDatasetId}.`,
-            );
-          });
-
-          const sampledResources: Resource[] = sampleProfiles(uniqueProfiles, startTimeYmd, offset_from_plan_start);
-          resources = [...resources, ...sampledResources];
-        }
-        return { aborted: false, resources };
-      } else {
-        throw Error('Unable to get external resources');
-      }
-    } catch (e) {
-      let aborted = false;
-      const error = e as Error;
-      if (error.name !== 'AbortError') {
-        catchError('Unable to retrieve external profiles ', error);
-        showFailureToast('Failed to retrieve external profiles');
-        aborted = true;
-      }
-      return { aborted, resources: [] };
     }
   },
 
@@ -5293,7 +5317,7 @@ const effects = {
             const actionPermissions = permissions.action_permissions ?? [];
             const functionPermissions = permissions.function_permissions ?? [];
             const workspacePermissions = permissions.workspace_permissions ?? [];
-            logMessage(`Retrieved role permissions for user ID=${user?.id}.`);
+            logMessage('log', `Retrieved role permissions for user ID=${user?.id}.`);
             return {
               ...actionPermissions,
               ...functionPermissions,
@@ -5307,7 +5331,7 @@ const effects = {
 
       return {};
     } catch (e) {
-      catchError('Unable to retrieve role permissions', e as Error);
+      catchError('log', 'Unable to retrieve role permissions', e as Error);
       return null;
     }
   },
@@ -5323,12 +5347,12 @@ const effects = {
       const { condition } = data;
 
       if (condition) {
-        logMessage(`Retrieved scheduling condition "${condition.name}" (ID=${condition.id}).`);
+        logMessage('log', `Retrieved scheduling condition "${condition.name}" (ID=${condition.id}).`);
         return convertResponseToMetadata(condition, tags);
       }
       return condition;
     } catch (e) {
-      catchError('Unable to retrieve scheduling condition', e as Error);
+      catchError('log', 'Unable to retrieve scheduling condition', e as Error);
       return null;
     }
   },
@@ -5344,12 +5368,12 @@ const effects = {
       const { goal } = data;
 
       if (goal) {
-        logMessage(`Retrieved scheduling goal "${goal.name}" (ID=${goal.id}).`);
+        logMessage('log', `Retrieved scheduling goal "${goal.name}" (ID=${goal.id}).`);
         return convertResponseToMetadata(goal, tags);
       }
       return goal;
     } catch (e) {
-      catchError('Unable to retrieve scheduling goal', e as Error);
+      catchError('log', 'Unable to retrieve scheduling goal', e as Error);
       return null;
     }
   },
@@ -5375,12 +5399,12 @@ const effects = {
       );
       const { schedulingProcedureEffectiveArgumentsBulk } = data;
       if (schedulingProcedureEffectiveArgumentsBulk !== null) {
-        logMessage(`Retrieved effective arguments for ${goals.length} procedural scheduling goals.`);
+        logMessage('log', `Retrieved effective arguments for ${goals.length} procedural scheduling goals.`);
         return schedulingProcedureEffectiveArgumentsBulk;
       }
       return [];
     } catch (e) {
-      catchError('Failed to retrieve procedural scheduling goal effective arguments', e as Error);
+      catchError('log', 'Failed to retrieve procedural scheduling goal effective arguments', e as Error);
       return [];
     }
   },
@@ -5399,10 +5423,10 @@ const effects = {
           user,
         );
         const { scheduling_specification_conditions: schedulingSpecificationConditions } = data;
-        logMessage(`Retrieved scheduling conditions specification for condition ID=${conditionId}.`);
+        logMessage('log', `Retrieved scheduling conditions specification for condition ID=${conditionId}.`);
         return schedulingSpecificationConditions;
       } catch (e) {
-        catchError('Unable to retrieve scheduling conditions specification for condition', e as Error);
+        catchError('log', 'Unable to retrieve scheduling conditions specification for condition', e as Error);
         return null;
       }
     } else {
@@ -5422,10 +5446,10 @@ const effects = {
           user,
         );
         const { scheduling_specification_goals: schedulingSpecificationGoals } = data;
-        logMessage(`Retrieved scheduling goals specification for goal ID=${goalId}.`);
+        logMessage('log', `Retrieved scheduling goals specification for goal ID=${goalId}.`);
         return schedulingSpecificationGoals;
       } catch (e) {
-        catchError('Unable to retrieve scheduling goals specification for goal', e as Error);
+        catchError('log', 'Unable to retrieve scheduling goals specification for goal', e as Error);
         return null;
       }
     } else {
@@ -5446,11 +5470,14 @@ const effects = {
       const { sequence_adaptation: sequenceAdaptation } = data;
 
       if (sequenceAdaptation && sequenceAdaptation.length > 0) {
-        logMessage(`Retrieved sequence adaptation "${sequenceAdaptation[0].name}" (ID=${sequenceAdaptationId}).`);
+        logMessage(
+          'log',
+          `Retrieved sequence adaptation "${sequenceAdaptation[0].name}" (ID=${sequenceAdaptationId}).`,
+        );
         return sequenceAdaptation[0];
       }
     } catch (e) {
-      catchError('Unable to retrieve sequence adaptation', e as Error);
+      catchError('log', 'Unable to retrieve sequence adaptation', e as Error);
     }
 
     return null;
@@ -5468,9 +5495,9 @@ const effects = {
       const { span: spans } = data;
       if (spans != null) {
         logMessage(
+          'log',
           `Retrieved ${spans.length} simulated activit${spans.length === 1 ? 'y' : 'ies'} for simulation ID=${datasetId}.`,
-          '',
-          performance.now() - startTime,
+          { duration: performance.now() - startTime },
         );
         return spans.map(span => {
           const durationMs = getIntervalInMs(span.duration);
@@ -5486,7 +5513,7 @@ const effects = {
         throw Error('Spans not found');
       }
     } catch (e) {
-      catchError('Unable to retrieve spans', e as Error);
+      catchError('log', 'Unable to retrieve spans', e as Error);
       return [];
     }
   },
@@ -5497,13 +5524,13 @@ const effects = {
       const data = await reqHasura<Tag[]>(query, {}, user);
       const { tags } = data;
       if (tags != null) {
-        logMessage(`Retrieved ${tags.length} tag${pluralize(tags.length)}.`);
+        logMessage('log', `Retrieved ${tags.length} tag${pluralize(tags.length)}.`);
         return tags;
       } else {
         throw Error('Tags not found');
       }
     } catch (e) {
-      catchError('Unable to retrieve tags', e as Error);
+      catchError('log', 'Unable to retrieve tags', e as Error);
       return [];
     }
   },
@@ -5528,7 +5555,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
-            logMessage(`Retrieved TypeScript activity type "${activityTypeName}".`);
+            logMessage('log', `Retrieved TypeScript activity type "${activityTypeName}".`);
             return typescriptFiles;
           } else {
             throw new Error(reason);
@@ -5537,7 +5564,7 @@ const effects = {
           throw Error(`Unable to get TypeScript activity type "${activityTypeName}"`);
         }
       } catch (e) {
-        catchError('Unable to retrieve TypeScript activity type', e as Error);
+        catchError('log', 'Unable to retrieve TypeScript activity type', e as Error);
         return [];
       }
     } else {
@@ -5561,7 +5588,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
-            logMessage(`Retrieved TypeScript command dictionary "${commandDictionaryId}".`);
+            logMessage('log', `Retrieved TypeScript command dictionary "${commandDictionaryId}".`);
             return typescriptFiles;
           } else {
             throw new Error(reason);
@@ -5570,7 +5597,7 @@ const effects = {
           throw Error(`Unable to get TypeScript command dictionary with ID: "${commandDictionaryId}"`);
         }
       } catch (e) {
-        catchError('Unable to retrieve TypeScript command dictionary', e as Error);
+        catchError('log', 'Unable to retrieve TypeScript command dictionary', e as Error);
         return [];
       }
     } else {
@@ -5591,7 +5618,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
-            logMessage(`Retrieved TypeScript constraint files for model ID=${modelId}.`);
+            logMessage('log', `Retrieved TypeScript constraint files for model ID=${modelId}.`);
             return typescriptFiles;
           } else {
             throw new Error(reason);
@@ -5600,7 +5627,7 @@ const effects = {
           throw Error('Unable to retrieve TypeScript constraint files');
         }
       } catch (e) {
-        catchError('Unable to retrieve TypeScript constraint files', e as Error);
+        catchError('log', 'Unable to retrieve TypeScript constraint files', e as Error);
         return [];
       }
     } else {
@@ -5617,7 +5644,7 @@ const effects = {
           const { reason, status, typescriptFiles } = dslTypeScriptResponse;
 
           if (status === 'success') {
-            logMessage(`Retrieved TypeScript scheduling files for model ID=${modelId}.`);
+            logMessage('log', `Retrieved TypeScript scheduling files for model ID=${modelId}.`);
             return typescriptFiles;
           } else {
             throw new Error(reason);
@@ -5626,7 +5653,7 @@ const effects = {
           throw Error('Unable to retrieve TypeScript scheduling files');
         }
       } catch (e) {
-        catchError('Unable to retrieve TypeScript scheduling files', e as Error);
+        catchError('log', 'Unable to retrieve TypeScript scheduling files', e as Error);
         return [];
       }
     } else {
@@ -5644,7 +5671,7 @@ const effects = {
           const mutationQueries = queries.mutationType?.fields ?? [];
           const viewQueries = queries.queryType?.fields ?? [];
 
-          logMessage(`Retrieved user permissions for "${user?.id ?? 'unknown user'}".`);
+          logMessage('log', `Retrieved user permissions for "${user?.id ?? 'unknown user'}".`);
           return [...viewQueries, ...mutationQueries].reduce((queriesMap, permissibleQuery) => {
             return {
               ...queriesMap,
@@ -5658,7 +5685,7 @@ const effects = {
 
       return {};
     } catch (e) {
-      catchError('Unable to retrieve user permissions', e as Error);
+      catchError('log', 'Unable to retrieve user permissions', e as Error);
       return null;
     }
   },
@@ -5668,11 +5695,11 @@ const effects = {
       const data = await reqHasura<UserSequence>(gql.GET_USER_SEQUENCE, { id }, user);
       const { userSequence } = data;
       if (userSequence) {
-        logMessage(`Retrieved user sequence "${userSequence.name}" (ID=${id}).`);
+        logMessage('log', `Retrieved user sequence "${userSequence.name}" (ID=${id}).`);
       }
       return userSequence;
     } catch (e) {
-      catchError('Unable to retrieve user sequence', e as Error);
+      catchError('log', 'Unable to retrieve user sequence', e as Error);
       return null;
     }
   },
@@ -5682,7 +5709,7 @@ const effects = {
       const data = await reqHasura<string>(gql.GET_USER_SEQUENCE_FROM_SEQ_JSON, { seqJson }, user);
       const { sequence } = data;
       if (sequence != null) {
-        logMessage(`Retrieved user sequence "${sequence}" from SeqJson ID=${seqJson.id}.`);
+        logMessage('log', `Retrieved user sequence "${sequence}" from SeqJson ID=${seqJson.id}.`);
         return sequence;
       } else {
         throw Error('Unable to retrieve user sequence');
@@ -5710,7 +5737,7 @@ const effects = {
       if (getUserSequenceSeqJson != null) {
         const { errors, seqJson, status } = getUserSequenceSeqJson;
 
-        logMessage(`Retrieved user sequence JSON.`);
+        logMessage('log', `Retrieved user sequence JSON.`);
         if (status === 'FAILURE') {
           const [firstError] = errors;
           const { message } = firstError;
@@ -5731,7 +5758,7 @@ const effects = {
       const versionResponse = await fetch(`${base}/version.json`);
       return await versionResponse.json();
     } catch (e) {
-      catchError('Unable to retrieve application version', e as Error);
+      catchError('log', 'Unable to retrieve application version', e as Error);
       return {
         branch: 'unknown',
         commit: 'unknown',
@@ -5764,10 +5791,10 @@ const effects = {
           const data = await reqHasura<View>(gql.GET_VIEW, { id: viewIdAsNumber }, user);
           const { view: fetchedView } = data;
           view = fetchedView;
-          logMessage(`Retrieved view "${view?.name}" (ID=${view?.id}).`);
+          logMessage('log', `Retrieved view "${view?.name}" (ID=${view?.id}).`);
         } else if (defaultView !== null && defaultView !== undefined) {
           view = defaultView;
-          logMessage(`Using default view.`);
+          logMessage('log', `Using default view.`);
         }
 
         if (view) {
@@ -5779,7 +5806,7 @@ const effects = {
           // Otherwise perform any needed migrations
           const { migratedView, error, anyMigrationsApplied } = await applyViewMigrations(view);
           if (migratedView && anyMigrationsApplied) {
-            logMessage(`Applied migrations to view "${view.name}".`);
+            logMessage('log', `Applied migrations to view "${view.name}".`);
             await effects.updateView(
               migratedView.id,
               { definition: migratedView.definition },
@@ -5790,7 +5817,7 @@ const effects = {
 
           // If migration failed catch the error and return default view
           if (!migratedView) {
-            catchError('Unable to automatically migrate view', error as Error);
+            catchError('log', 'Unable to automatically migrate view', error as Error);
             showFailureToast(`Unable to automatically migrate view: ${view.name}`);
           } else {
             return migratedView;
@@ -5799,7 +5826,7 @@ const effects = {
       }
       return generateDefaultView(resourceTypes, externalEventTypes);
     } catch (e) {
-      catchError('Unable to retrieve view', e as Error);
+      catchError('log', 'Unable to retrieve view', e as Error);
       return null;
     }
   },
@@ -5811,13 +5838,13 @@ const effects = {
       const { workspace } = data;
 
       if (workspace) {
-        logMessage(`Retrieved workspace "${workspace.name}" (ID=${workspaceId}).`);
+        logMessage('log', `Retrieved workspace "${workspace.name}" (ID=${workspaceId}).`);
         return workspace;
       } else {
         return null;
       }
     } catch (e) {
-      catchError('Unable to retrieve retrieve workspace', e as Error);
+      catchError('log', 'Unable to retrieve retrieve workspace', e as Error);
       return null;
     }
   },
@@ -5833,35 +5860,36 @@ const effects = {
       const workspaceContents = await WorkspaceApi.getWorkspaceContents(workspaceId, path, user, withMetadata);
 
       if (workspaceContents != null) {
-        logMessage(`Retrieved workspace contents for workspace ID=${workspaceId}.`, '', performance.now() - startTime);
+        logMessage('log', `Retrieved workspace contents for workspace ID=${workspaceId}.`, {
+          duration: performance.now() - startTime,
+        });
         return workspaceContents;
       } else {
         throw Error(`Workspace contents not found`);
       }
     } catch (e) {
-      catchError('Unable to retrieve workspace', e as Error);
-      showFailureToast('Workspace Retrieval Failed');
+      catchError('log', 'Unable to retrieve workspace', e as Error);
+      showFailureToast('Workspace Retrieval Failed', e);
     }
 
     return null;
   },
 
-  async getWorkspaceFileContent(workspaceId: number, filePath: string, user: User | null): Promise<string | null> {
+  async getWorkspaceFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string | null; etag: string | null }> {
     try {
-      const fileContents = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
-
-      if (fileContents != null) {
-        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
-        return fileContents;
-      } else {
-        throw Error(`Workspace file contents not found`);
-      }
+      const { content, etag } = await WorkspaceApi.getFileContent(workspaceId, filePath, user);
+      logMessage('log', `Retrieved workspace file "${filePath}" for workspace ID=${workspaceId}.`);
+      return { content, etag };
     } catch (e) {
-      catchError('Unable to retrieve workspace file', e as Error);
-      showFailureToast('Workspace File Retrieval Failed');
+      catchError('log', 'Unable to retrieve workspace file', e as Error);
+      showFailureToast('Workspace File Retrieval Failed', e);
     }
 
-    return null;
+    return { content: null, etag: null };
   },
 
   async getWorkspaceFileContentBlob(workspace: Workspace, filePath: string, user: User | null): Promise<Blob | null> {
@@ -5873,14 +5901,14 @@ const effects = {
       const fileContents = await WorkspaceApi.getFileContentBlob(workspace.id, filePath, user);
 
       if (fileContents != null) {
-        logMessage(`Retrieved workspace file "${filePath}" for workspace ID=${workspace.id}.`);
+        logMessage('log', `Retrieved workspace file "${filePath}" for workspace ID=${workspace.id}.`);
         return fileContents;
       } else {
         throw Error(`Workspace file contents not found`);
       }
     } catch (e) {
-      catchError('Unable to retrieve workspace file', e as Error);
-      showFailureToast('Workspace File Retrieval Failed');
+      catchError('log', 'Unable to retrieve workspace file', e as Error);
+      showFailureToast('Workspace File Retrieval Failed', e);
     }
 
     return null;
@@ -5931,7 +5959,7 @@ const effects = {
         chunkedWorkspaceNodes[i].map(async ({ fullPath }) => {
           let sequenceDefinition = '';
           if (getFileContents) {
-            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)) ?? '';
+            sequenceDefinition = (await effects.getWorkspaceFileContent(workspaceId, fullPath, user)).content ?? '';
           }
           return {
             definition: sequenceDefinition,
@@ -6005,13 +6033,13 @@ const effects = {
 
       creatingPlanStore.set(false);
       if (createdPlan != null) {
-        logMessage(`Imported plan "${name}".`, '', performance.now() - requestStartTime);
+        logMessage('log', `Imported plan "${name}".`, { duration: performance.now() - requestStartTime });
         return { plan: createdPlan };
       } else {
         throw new Error('Plan import failed');
       }
     } catch (e) {
-      catchError('Unable to import plan', e as Error);
+      catchError('log', 'Unable to import plan', e as Error);
       creatingPlanStore.set(false);
       return { error: e as Error };
     }
@@ -6049,6 +6077,7 @@ const effects = {
       if (createdSequenceTemplate != null) {
         showSuccessToast('Sequence Template Imported Successfully');
         logMessage(
+          'log',
           `Imported ${language} sequence template "${name}" for activity type "${activityType}" for parcel ID=${parcelId}.`,
         );
         return createdSequenceTemplate;
@@ -6056,7 +6085,7 @@ const effects = {
 
       return null;
     } catch (e) {
-      catchError('Unable to import sequence template', e as Error);
+      catchError('log', 'Unable to import sequence template', e as Error);
       showFailureToast('Failed To Import Sequence Template');
       return null;
     }
@@ -6260,19 +6289,17 @@ const effects = {
           }
 
           if (failedFileOperations.length) {
-            throw new Error(`Some file${pluralize(failedFileOperations.length)} failed to upload`, {
-              cause: failedFileOperations,
-            });
+            throw buildBulkOperationCompoundError(failedFileOperations, 'upload');
           }
 
           showSuccessToast(`Workspace File${fileArray.length > 1 ? 's' : ''} Uploaded Successfully`);
-          logMessage(`Uploaded ${fileArray.length} workspace file${pluralize(fileArray.length)}.`);
+          logMessage('log', `Uploaded ${fileArray.length} workspace file${pluralize(fileArray.length)}.`);
         }
         return joinPath([cleanedTargetPath, fileArray[0].name]);
       }
     } catch (e) {
-      catchError(`Workspace file upload failed`, e as Error);
-      showFailureToast(`Workspace file upload failed`);
+      catchError('log', `Workspace file upload failed`, e as Error);
+      showFailureToast(`Workspace file upload failed`, e);
     }
 
     return null;
@@ -6307,7 +6334,7 @@ const effects = {
         throw Error('Simulation update not found');
       }
     } catch (e) {
-      catchError('Unable to update simulation', e as Error);
+      catchError('log', 'Unable to update simulation', e as Error);
       return false;
     }
   },
@@ -6337,14 +6364,17 @@ const effects = {
         const { modelExternalSourceLink: sourceAssociation } = data;
         // If the return was null, do nothing - only act on success or non-null
         if (sourceAssociation !== null) {
-          logMessage(`Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`);
+          logMessage(
+            'log',
+            `Linked derivation group "${derivationGroupName}" to model "${model.name}" (ID=${model.id}).`,
+          );
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
         throw new Error('Model is not defined.');
       }
     } catch (e) {
-      catchError('Derivation Group Linking Failed', e as Error);
+      catchError('log', 'Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
       derivationGroupModelLinkErrorStore.set((e as Error).message);
     }
@@ -6371,14 +6401,14 @@ const effects = {
         const { planExternalSourceLink: sourceAssociation } = data;
         // If the return was null, do nothing - only act on success or non-null
         if (sourceAssociation !== null) {
-          logMessage(`Linked derivation group "${derivationGroupName}" to plan "${plan.name}" (ID=${plan.id}).`);
+          logMessage('log', `Linked derivation group "${derivationGroupName}" to plan "${plan.name}" (ID=${plan.id}).`);
           showSuccessToast('Derivation Group Linked Successfully');
         }
       } else {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError('Derivation Group Linking Failed', e as Error);
+      catchError('log', 'Derivation Group Linking Failed', e as Error);
       showFailureToast('Derivation Group Linking Failed');
       derivationGroupPlanLinkErrorStore.set((e as Error).message);
     }
@@ -6406,6 +6436,7 @@ const effects = {
       if (sequence != null) {
         showSuccessToast('Expansion Sequence Added To Activity Successfully');
         logMessage(
+          'log',
           `Added expansion sequence "${seqId}" to simulated activity ID=${simulatedActivityId} for simulation ID=${simulationDatasetId}.`,
         );
         const { seq_id: newSeqId } = sequence;
@@ -6414,7 +6445,7 @@ const effects = {
         return null;
       }
     } catch (e) {
-      catchError('Add Expansion Sequence To Activity Failed', e as Error);
+      catchError('log', 'Add Expansion Sequence To Activity Failed', e as Error);
       showFailureToast('Add Expansion Sequence To Activity Failed');
       return null;
     }
@@ -6465,7 +6496,7 @@ const effects = {
         };
       }
     } catch (e) {
-      catchError('Unable to load view from file', e as Error);
+      catchError('log', 'Unable to load view from file', e as Error);
       return {
         definition: null,
         errors: [(e as Error).message],
@@ -6484,7 +6515,7 @@ const effects = {
       );
       return data;
     } catch (e) {
-      catchError('Unable to login', e as Error);
+      catchError('log', 'Unable to login', e as Error);
       return {
         message: 'An unexpected error occurred',
         success: false,
@@ -6497,7 +6528,7 @@ const effects = {
     try {
       await showManagePlanConstraintsModal(user);
     } catch (e) {
-      catchError('Constraint Unable To Be Applied To Plan', e as Error);
+      catchError('log', 'Constraint Unable To Be Applied To Plan', e as Error);
       showFailureToast('Constraint Application Failed');
     }
   },
@@ -6506,7 +6537,7 @@ const effects = {
     try {
       await showManagePlanDerivationGroups(user);
     } catch (e) {
-      catchError('Derivation Group Unable To Be Modified In Plan', e as Error);
+      catchError('log', 'Derivation Group Unable To Be Modified In Plan', e as Error);
       showFailureToast('Derivation Group Modification Failed');
     }
   },
@@ -6515,7 +6546,7 @@ const effects = {
     try {
       await showManagePlanSchedulingConditionsModal(user);
     } catch (e) {
-      catchError('Scheduling Condition Unable To Be Applied To Plan', e as Error);
+      catchError('log', 'Scheduling Condition Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Condition Application Failed');
     }
   },
@@ -6524,7 +6555,7 @@ const effects = {
     try {
       await showManagePlanSchedulingGoalsModal(user);
     } catch (e) {
-      catchError('Scheduling Goal Unable To Be Applied To Plan', e as Error);
+      catchError('log', 'Scheduling Goal Unable To Be Applied To Plan', e as Error);
       showFailureToast('Scheduling Goal Application Failed');
     }
   },
@@ -6552,31 +6583,25 @@ const effects = {
         const { shouldCopy, shouldOverwrite, targetPath } = value;
 
         const cleanedTargetPath = cleanPath(targetPath);
-        try {
-          const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
-            workspace,
-            originalNodes.map(({ fullPath }) => fullPath),
-            shouldCopy,
-            shouldOverwrite,
-            targetPath,
-            user,
-          );
+        const { renamedFiles, skippedFiles } = await bulkMoveWorkspaceItems(
+          workspace,
+          originalNodes.map(({ fullPath }) => fullPath),
+          shouldCopy,
+          shouldOverwrite,
+          targetPath,
+          user,
+        );
 
-          showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
-          logMessage(
-            `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
-          );
+        showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Copied' : 'Moved'} Successfully`);
+        logMessage(
+          'log',
+          `${shouldCopy ? 'Copied' : 'Moved'} workspace ${displayString.toLowerCase()} to "${cleanedTargetPath}".`,
+        );
 
-          return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
-        } catch (e) {
-          throw Error(
-            `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'copied' : 'moved'}`,
-            e as Error,
-          );
-        }
+        return { renamedFiles, skippedFiles, targetPath: cleanedTargetPath };
       }
     } catch (e) {
-      catchError('Unable to move workspace item', e as Error);
+      catchError('log', `Workspace ${displayString.toLowerCase()} could not be moved`, e as Error);
       showFailureToast((e as Error).message);
     }
 
@@ -6612,16 +6637,18 @@ const effects = {
 
         showSuccessToast(`Workspace ${displayString} ${shouldCopy ? 'Duplicated' : 'Moved'} Successfully`);
         logMessage(
+          'log',
           `${shouldCopy ? 'Duplicated' : 'Moved'} workspace ${displayString.toLowerCase()} from "${workspace.name}" to "${targetWorkspace.name}".`,
         );
 
         return cleanedTargetPath;
       } catch (e) {
         catchError(
+          'log',
           `Workspace ${displayString.toLowerCase()} unable to be ${shouldCopy ? 'duplicated' : 'moved'}`,
           e as Error,
         );
-        showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`);
+        showFailureToast(`Workspace ${displayString} ${shouldCopy ? 'Duplication' : 'Move'} Failed`, e);
       }
     }
 
@@ -6641,11 +6668,11 @@ const effects = {
         await WorkspaceApi.createFolder(workspace.id, folderPath, user);
 
         showSuccessToast('Workspace Folder Created Successfully');
-        logMessage(`Created new workspace folder "${workspace.id}/${folderPath}".`);
+        logMessage('log', `Created new workspace folder "${workspace.id}/${folderPath}".`);
         return folderPath;
       } catch (e) {
-        catchError('Workspace folder was unable to be created', e as Error);
-        showFailureToast('Workspace Folder Creation Failed');
+        catchError('log', 'Workspace folder was unable to be created', e as Error);
+        showFailureToast('Workspace Folder Creation Failed', e);
       }
     }
 
@@ -6666,12 +6693,12 @@ const effects = {
         await WorkspaceApi.saveFile(workspace.id, filePath, sequenceDefinition, false, user);
 
         showSuccessToast('Workspace File Created Successfully');
-        logMessage(`Created new workspace file "${workspace.id}/${filePath}".`);
+        logMessage('log', `Created new workspace file "${workspace.id}/${filePath}".`);
 
         return filePath;
       } catch (e) {
-        catchError('Workspace file was unable to be created', e as Error);
-        showFailureToast('Workspace File Creation Failed');
+        catchError('log', 'Workspace file was unable to be created', e as Error);
+        showFailureToast('Workspace File Creation Failed', e);
       }
     }
 
@@ -6724,7 +6751,7 @@ const effects = {
       return true;
     } catch (error) {
       showFailureToast((error as Error)?.message ?? error);
-      catchError('Pack Activities Failed', error as Error);
+      catchError('log', 'Pack Activities Failed', error as Error);
       return false;
     }
   },
@@ -6764,7 +6791,7 @@ const effects = {
       return true;
     } catch (error) {
       showFailureToast((error as Error)?.message ?? error);
-      catchError('Pack Activities Failed', error as Error);
+      catchError('log', 'Pack Activities Failed', error as Error);
       return false;
     }
   },
@@ -6786,14 +6813,14 @@ const effects = {
         user,
       );
       if (data.begin_merge != null) {
-        logMessage(`Began plan merge ID=${mergeRequestId}.`);
+        logMessage('log', `Began plan merge ID=${mergeRequestId}.`);
         return true;
       } else {
         throw Error('Unable to begin plan merge');
       }
     } catch (error) {
       showFailureToast((error as Error)?.message ?? error);
-      catchError('Begin Merge Failed', error as Error);
+      catchError('log', 'Begin Merge Failed', error as Error);
       return false;
     }
   },
@@ -6815,14 +6842,14 @@ const effects = {
         user,
       );
       if (data.cancel_merge != null) {
-        logMessage(`Canceled plan merge ID=${mergeRequestId}.`);
+        logMessage('log', `Canceled plan merge ID=${mergeRequestId}.`);
         showSuccessToast('Canceled Merge Request');
         return true;
       } else {
         throw Error('Unable to cancel merge request');
       }
     } catch (error) {
-      catchError('Cancel Merge Request Failed', error as Error);
+      catchError('log', 'Cancel Merge Request Failed', error as Error);
       showFailureToast('Cancel Merge Request Failed');
       return false;
     }
@@ -6845,14 +6872,14 @@ const effects = {
         user,
       );
       if (data.commit_merge != null) {
-        logMessage(`Approved changes for merge request ID=${mergeRequestId}.`);
+        logMessage('log', `Approved changes for merge request ID=${mergeRequestId}.`);
         showSuccessToast('Approved Merge Request Changes');
         return true;
       } else {
         throw Error('Unable to approve merge request');
       }
     } catch (error) {
-      catchError('Approve Merge Request Changes Failed', error as Error);
+      catchError('log', 'Approve Merge Request Changes Failed', error as Error);
       showFailureToast('Approve Merge Request Changes Failed');
       return false;
     }
@@ -6875,14 +6902,14 @@ const effects = {
         user,
       );
       if (data.deny_merge != null) {
-        logMessage(`Denied changes for merge request ID=${mergeRequestId}.`);
+        logMessage('log', `Denied changes for merge request ID=${mergeRequestId}.`);
         showSuccessToast('Denied Merge Request Changes');
         return true;
       } else {
         throw Error('Unable to deny merge request');
       }
     } catch (error) {
-      catchError('Deny Merge Request Changes Failed', error as Error);
+      catchError('log', 'Deny Merge Request Changes Failed', error as Error);
       showFailureToast('Deny Merge Request Changes Failed');
       return false;
     }
@@ -6905,7 +6932,7 @@ const effects = {
         user,
       );
       if (data.withdraw_merge_request != null) {
-        logMessage(`Withdrew merge request ID=${mergeRequestId}.`);
+        logMessage('log', `Withdrew merge request ID=${mergeRequestId}.`);
         showSuccessToast('Withdrew Merge Request');
         return true;
       } else {
@@ -6913,7 +6940,7 @@ const effects = {
       }
     } catch (error) {
       showFailureToast('Withdraw Merge Request Failed');
-      catchError('Withdraw Merge Request Failed', error as Error);
+      catchError('log', 'Withdraw Merge Request Failed', error as Error);
       return false;
     }
   },
@@ -6938,10 +6965,10 @@ const effects = {
       if (data.set_resolution_bulk == null) {
         throw Error('Unable to resolve all merge request conflicts');
       }
-      logMessage(`Resolved all conflicts for merge request ID=${mergeRequestId}.`);
+      logMessage('log', `Resolved all conflicts for merge request ID=${mergeRequestId}.`);
     } catch (e) {
       showFailureToast('Resolve All Merge Request Conflicts Failed');
-      catchError('Resolve All Merge Request Conflicts Failed', e as Error);
+      catchError('log', 'Resolve All Merge Request Conflicts Failed', e as Error);
     }
   },
 
@@ -6966,10 +6993,10 @@ const effects = {
       if (data.set_resolution == null) {
         throw Error('Unable to resolve merge request conflict');
       }
-      logMessage(`Resolved conflict for activity ID=${activityId} for merge request ID=${mergeRequestId}.`);
+      logMessage('log', `Resolved conflict for activity ID=${activityId} for merge request ID=${mergeRequestId}.`);
     } catch (e) {
       showFailureToast('Resolve Merge Request Conflict Failed');
-      catchError('Resolve Merge Request Conflict Failed', e as Error);
+      catchError('log', 'Resolve Merge Request Conflict Failed', e as Error);
     }
   },
 
@@ -6990,7 +7017,7 @@ const effects = {
         user,
       );
       if (data.delete_preset_to_directive_by_pk != null) {
-        logMessage(`Removed preset ID=${presetId} from activity directive ID=${activityDirectiveId}.`);
+        logMessage('log', `Removed preset ID=${presetId} from activity directive ID=${activityDirectiveId}.`);
         showSuccessToast('Removed Activity Preset Successfully');
         return true;
       } else {
@@ -6999,7 +7026,7 @@ const effects = {
         );
       }
     } catch (e) {
-      catchError('Activity Preset Removal Failed', e as Error);
+      catchError('log', 'Activity Preset Removal Failed', e as Error);
       showFailureToast('Activity Preset Removal Failed');
       return false;
     }
@@ -7024,12 +7051,15 @@ const effects = {
         await WorkspaceApi.moveFile(workspace.id, originalPath, `./${cleanedTargetPath}`, false, false, user);
 
         showSuccessToast(`Workspace ${typeString} Renamed Successfully`);
-        logMessage(`Renamed workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`);
+        logMessage(
+          'log',
+          `Renamed workspace ${typeString.toLowerCase()} from "${originalPath}" to "${cleanedTargetPath}".`,
+        );
         return cleanedTargetPath;
       }
     } catch (e) {
-      catchError(`Workspace ${typeString.toLowerCase()} was unable to be renamed`, e as Error);
-      showFailureToast(`Workspace ${typeString} Rename Failed`);
+      catchError('log', `Workspace ${typeString.toLowerCase()} was unable to be renamed`, e as Error);
+      showFailureToast(`Workspace ${typeString} Rename Failed`, e);
     }
 
     return null;
@@ -7053,14 +7083,14 @@ const effects = {
       );
 
       if (data.restoreActivityFromChangelog != null) {
-        logMessage(`Restored activity ID=${activityId} to revision ${revision} from changelog.`);
+        logMessage('log', `Restored activity ID=${activityId} to revision ${revision} from changelog.`);
         showSuccessToast('Restored Activity from Changelog');
         return true;
       } else {
         throw Error(`Unable to restore activity revision ${revision} from changelog`);
       }
     } catch (e) {
-      catchError('Restoring Activity From Changelog Failed', e as Error);
+      catchError('log', 'Restoring Activity From Changelog Failed', e as Error);
       showFailureToast('Restoring Activity from Changelog Failed');
       return false;
     }
@@ -7092,7 +7122,7 @@ const effects = {
         );
         if (data.restore_from_snapshot != null) {
           showSuccessToast('Plan Snapshot Restored Successfully');
-          logMessage(`Restored plan snapshot "${snapshot.snapshot_name}" (ID=${snapshot.snapshot_id}).`);
+          logMessage('log', `Restored plan snapshot "${snapshot.snapshot_name}" (ID=${snapshot.snapshot_id}).`);
 
           goto(`${base}/plans/${snapshot.plan_id}`);
           return true;
@@ -7101,7 +7131,7 @@ const effects = {
         }
       }
     } catch (e) {
-      catchError('Restore Plan Snapshot Failed', e as Error);
+      catchError('log', 'Restore Plan Snapshot Failed', e as Error);
       showFailureToast('Restore Plan Snapshot Failed');
       return false;
     }
@@ -7140,13 +7170,13 @@ const effects = {
         }
 
         showSuccessToast('Model Extraction Retriggered Successfully');
-        logMessage(`Retriggered model extraction for model ID=${id}.`);
+        logMessage('log', `Retriggered model extraction for model ID=${id}.`);
         return data;
       } else {
         throw Error(`Unable to retrigger model extraction with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Model Extraction Failed', e as Error);
+      catchError('log', 'Model Extraction Failed', e as Error);
       showFailureToast('Model Extraction Failed');
     }
     return null;
@@ -7176,31 +7206,51 @@ const effects = {
       if (confirm && value) {
         const { id } = value;
         logMessage(
+          'log',
           `Ran action "${actionDefinition.name}" (ID=${actionDefinition.id}) on sequence${pluralize(workspaceSequences.length)} "${workspaceSequences.map(w => w.name).join(', ')}" in workspace ID=${actionDefinition.workspace_id}.`,
         );
         return id;
       }
       return null;
     } catch (e) {
-      catchError('Run Action Failed', e as Error);
+      catchError('log', 'Run Action Failed', e as Error);
       showFailureToast('Run Action Failed');
       return null;
     }
   },
 
-  async saveWorkspaceFile(workspaceId: number, filePath: string, fileContent: string, user: User | null = null) {
+  /**
+   * Saves a workspace file. Pass `ifMatch` (the `baseEtag`) to run the concurrency check,
+   * or `'*'` to force. Returns `{ etag }` (the new etag) on success. Always throws on failure so
+   * callers have a single failure path: a {@link WorkspaceSaveConflictError} on `412` (the caller
+   * shows the conflict modal), or any other error (already surfaced as a failure toast here).
+   */
+  async saveWorkspaceFile(
+    workspaceId: number,
+    filePath: string,
+    fileContent: string,
+    user: User | null = null,
+    ifMatch?: string | '*',
+  ): Promise<{ etag: string | null }> {
     try {
-      await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user);
+      const etag = await WorkspaceApi.saveFile(workspaceId, filePath, fileContent, true, user, ifMatch);
 
       showSuccessToast('Workspace File Saved Successfully');
-      logMessage(`Saved workspace file "${filePath}".`);
+      logMessage('log', `Saved workspace file "${filePath}".`);
+      return { etag };
     } catch (e) {
-      catchError('Workspace file was unable to be saved', e as Error);
-      showFailureToast('Workspace File Save Failed');
+      // Conflict is the caller's to resolve (modal), so don't toast it. Everything else is a real
+      // failure we surface here before rethrowing, so callers just bail in their catch.
+      if (!(e instanceof WorkspaceSaveConflictError)) {
+        catchError('log', 'Workspace file was unable to be saved', e as Error);
+        showFailureToast('Workspace File Save Failed', e);
+      }
+      throw e;
     }
   },
 
   async schedule(analysisOnly: boolean = false, plan: Plan | null, user: User | null): Promise<void> {
+    clearConsoleEntries('scheduling');
     try {
       if (plan) {
         if (
@@ -7230,7 +7280,7 @@ const effects = {
           if (schedule) {
             const { reason, analysisId } = schedule;
             if (reason) {
-              catchSchedulingError(reason);
+              catchError('scheduling', '', reason);
               showFailureToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Failed`);
               return;
             }
@@ -7261,15 +7311,13 @@ const effects = {
                     }
                   }
                   showSuccessToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Complete`);
-                  logMessage(
-                    `Completed scheduling${analysisOnly ? ' analysis' : ''}.`,
-                    '',
-                    performance.now() - startTime,
-                  );
+                  logMessage('log', `Completed scheduling${analysisOnly ? ' analysis' : ''}.`, {
+                    duration: performance.now() - startTime,
+                  });
                   unsubscribe();
                 } else if (matchingRequest.status === 'failed') {
                   if (matchingRequest.reason) {
-                    catchSchedulingError(matchingRequest.reason);
+                    catchError('scheduling', '', matchingRequest.reason);
                   }
                   showFailureToast(`Scheduling ${analysisOnly ? 'Analysis ' : ''}Failed`);
                   unsubscribe();
@@ -7290,8 +7338,8 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError('Unable to schedule', e as Error);
-      showFailureToast('Scheduling failed');
+      catchError('scheduling', 'Unable to schedule', e as Error);
+      showFailureToast('Scheduling failed', e);
     }
   },
 
@@ -7330,7 +7378,7 @@ const effects = {
       if ((e as Error)?.name === 'AbortError') {
         return null;
       }
-      catchError('Search Failed', e as Error);
+      catchError('log', 'Search Failed', e as Error);
       showFailureToast('Search Failed');
     }
     return null;
@@ -7353,7 +7401,7 @@ const effects = {
       };
       await reqActionServer<any>('/secrets', 'POST', JSON.stringify(body), user);
     } catch (e) {
-      catchError('Sending Action Secret Parameters Failed', e as Error);
+      catchError('log', 'Sending Action Secret Parameters Failed', e as Error);
       showFailureToast('Sending Action Secret Parameters Failed');
     }
   },
@@ -7410,8 +7458,8 @@ const effects = {
         throw new Error('Workspace File Creation Failed');
       }
     } catch (e) {
-      catchError('Workspace file was unable to be created', e as Error);
-      showFailureToast('Workspace File Creation Failed');
+      catchError('log', 'Workspace file was unable to be created', e as Error);
+      showFailureToast('Workspace File Creation Failed', e);
     }
     return null;
   },
@@ -7421,7 +7469,7 @@ const effects = {
       const data = await reqGateway<ReqSessionResponse>('/auth/session', 'GET', null, user, false);
       return data;
     } catch (e) {
-      catchError('Unable to retrieve session data', e as Error);
+      catchError('log', 'Unable to retrieve session data', e as Error);
       return { message: 'An unexpected error occurred', success: false };
     }
   },
@@ -7468,13 +7516,14 @@ const effects = {
       return false;
     } catch (error) {
       showFailureToast((error as Error)?.message ?? error);
-      catchError('Shift Activities Failed', error as Error);
+      catchError('log', 'Shift Activities Failed', error as Error);
       return false;
     }
   },
 
   async simulate(plan: Plan | null, force: boolean = false, user: User | null): Promise<void> {
-    let simulateResponse: SimulateResponse | null = null;
+    clearConsoleEntries('simulation');
+    clearConsoleEntries('constraint');
     try {
       if (plan !== null) {
         if (!queryPermissions.SIMULATE(user, plan, plan.model)) {
@@ -7486,20 +7535,15 @@ const effects = {
         const data = await reqHasura<SimulateResponse>(gql.SIMULATE, { force, planId: plan.id }, user);
         const { simulate } = data;
         if (simulate != null) {
-          simulateResponse = simulate;
           const { simulationDatasetId: newSimulationDatasetId } = simulate;
           simulationDatasetIdStore.set(newSimulationDatasetId);
-          // React if the simulation immediately fails
           if (simulate.status === 'failed') {
-            throw new CompoundError(`Unable to run simulation ID=${newSimulationDatasetId}`, {
-              data: simulateResponse.reason.data,
-              level: 'error',
-              message: `Unable to run simulation ID=${newSimulationDatasetId}. ${simulateResponse.reason.message}.`,
-              timestamp: new Date().toISOString(),
-              type: ErrorTypes.CAUGHT_ERROR,
-            });
+            // simulationDataset subscription surfaces simulate.reason in the Simulation
+            // tab via the fromDataset branch in console.ts — no catchError needed here.
+            showFailureToast('Simulation failed');
+            return;
           }
-          logMessage(`Running simulation ID=${newSimulationDatasetId} ${force ? ' (force)' : ''}.`);
+          logMessage('log', `Running simulation ID=${newSimulationDatasetId} ${force ? ' (force)' : ''}.`);
         } else {
           throw Error('Unable to simulate this plan');
         }
@@ -7507,8 +7551,8 @@ const effects = {
         throw Error('Plan is not defined.');
       }
     } catch (e) {
-      catchError('Simulation failed', e as Error);
-      showFailureToast('Simulation failed');
+      catchError('simulation', 'Simulation failed', e as Error);
+      showFailureToast('Simulation failed', e);
     }
   },
 
@@ -7533,12 +7577,12 @@ const effects = {
 
       if (updateActionDefinitionByPk != null) {
         showSuccessToast(`Action Updated Successfully`);
-        logMessage(`Updated definition for action ID=${id}.`);
+        logMessage('log', `Updated definition for action ID=${id}.`);
       } else {
         throw Error(`Unable to update action with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Action Update Failed', e as Error);
+      catchError('log', 'Action Update Failed', e as Error);
       showFailureToast('Action Update Failed');
     }
   },
@@ -7562,7 +7606,7 @@ const effects = {
         throw Error('Unable to update action definition version');
       }
     } catch (e) {
-      catchError('Version Update Failed', e as Error);
+      catchError('log', 'Version Update Failed', e as Error);
       showFailureToast('Version Update Failed');
     }
   },
@@ -7635,12 +7679,12 @@ const effects = {
           });
         });
         showSuccessToast('Activity Directive Updated Successfully');
-        logMessage(`Updated activity directive ID=${id}.`);
+        logMessage('log', `Updated activity directive ID=${id}.`);
       } else {
         throw Error(`Unable to update directive with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Activity Directive Update Failed', e as Error);
+      catchError('log', 'Activity Directive Update Failed', e as Error);
       showFailureToast(`Activity Directive Update Failed: \n${(e as Error).message}`);
     }
   },
@@ -7664,12 +7708,12 @@ const effects = {
       if (updateActivityPresetsByPk != null) {
         const { name: presetName } = updateActivityPresetsByPk;
         showSuccessToast(`Activity Preset ${presetName} Updated Successfully`);
-        logMessage(`Updated activity preset "${presetName}".`);
+        logMessage('log', `Updated activity preset "${presetName}".`);
       } else {
         throw Error(`Unable to update activity preset with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Activity Preset Update Failed', e as Error);
+      catchError('log', 'Activity Preset Update Failed', e as Error);
       showFailureToast('Activity Preset Update Failed');
     }
   },
@@ -7696,7 +7740,7 @@ const effects = {
       if (insertConstraintDefinitionTags != null && deleteConstraintDefinitionTags != null) {
         const { affected_rows: affectedRows } = insertConstraintDefinitionTags;
 
-        logMessage(`Updated constraint tags for constraint ID=${constraintId}.`);
+        logMessage('log', `Updated constraint tags for constraint ID=${constraintId}.`);
         showSuccessToast('Constraint Updated Successfully');
 
         return affectedRows;
@@ -7704,7 +7748,7 @@ const effects = {
         throw Error('Unable to create constraint definition tags');
       }
     } catch (e) {
-      catchError('Create Constraint Definition Tags Failed', e as Error);
+      catchError('log', 'Create Constraint Definition Tags Failed', e as Error);
       showFailureToast('Create Constraint Definition Tags Failed');
       return null;
     }
@@ -7737,10 +7781,10 @@ const effects = {
       }
 
       showSuccessToast('Constraint Updated Successfully');
-      logMessage(`Updated constraint metadata for constraint ID=${id}.`);
+      logMessage('log', `Updated constraint metadata for constraint ID=${id}.`);
       return true;
     } catch (e) {
-      catchError('Constraint Metadata Update Failed', e as Error);
+      catchError('log', 'Constraint Metadata Update Failed', e as Error);
       showFailureToast('Constraint Metadata Update Failed');
       return false;
     }
@@ -7765,13 +7809,16 @@ const effects = {
       );
 
       if (updateConstraintModelSpecification !== null) {
-        logMessage(`Updated model specification for constraint invocation ID=${constraintSpecToUpdate.invocation_id}.`);
+        logMessage(
+          'log',
+          `Updated model specification for constraint invocation ID=${constraintSpecToUpdate.invocation_id}.`,
+        );
         showSuccessToast(`Constraint Model Specification Updated Successfully`);
       } else {
         throw Error('Unable to update the constraint specification for the model');
       }
     } catch (e) {
-      catchError('Constraint Model Specification Update Failed', e as Error);
+      catchError('log', 'Constraint Model Specification Update Failed', e as Error);
       showFailureToast('Constraint Model Specification Update Failed');
     }
   },
@@ -7794,12 +7841,12 @@ const effects = {
 
       if (addConstraintModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Constraint Model Specifications Updated Successfully`);
-        logMessage(`Updated constraint model specifications.`);
+        logMessage('log', `Updated constraint model specifications.`);
       } else {
         throw Error('Unable to update the constraint specifications for the model');
       }
     } catch (e) {
-      catchError('Constraint Model Specifications Update Failed', e as Error);
+      catchError('log', 'Constraint Model Specifications Update Failed', e as Error);
       showFailureToast('Constraint Model Specifications Update Failed');
     }
   },
@@ -7835,12 +7882,12 @@ const effects = {
 
       if (updateConstraintPlanSpecification !== null) {
         showSuccessToast(`Constraint Plan Specification Updated Successfully`);
-        logMessage(`Updated constraint plan specification.`);
+        logMessage('log', `Updated constraint plan specification.`);
       } else {
         throw Error('Unable to update the constraint specification for the plan');
       }
     } catch (e) {
-      catchError('Constraint Plan Specification Update Failed', e as Error);
+      catchError('log', 'Constraint Plan Specification Update Failed', e as Error);
       showFailureToast('Constraint Plan Specification Update Failed');
     }
   },
@@ -7864,12 +7911,12 @@ const effects = {
 
       if (insertConstraintPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Constraint Plan Specifications Updated Successfully`);
-        logMessage(`Updated constraint plan specifications.`);
+        logMessage('log', `Updated constraint plan specifications.`);
       } else {
         throw Error('Unable to update the constraint specifications for the plan');
       }
     } catch (e) {
-      catchError('Constraint Plan Specifications Update Failed', e as Error);
+      catchError('log', 'Constraint Plan Specifications Update Failed', e as Error);
       showFailureToast('Constraint Plan Specifications Update Failed');
     }
   },
@@ -7893,7 +7940,7 @@ const effects = {
         throw Error(`Unable to log derivation group update recognition`);
       }
     } catch (e) {
-      catchError('Derivation Group Update Visibility Recognition Failed', e as Error);
+      catchError('log', 'Derivation Group Update Visibility Recognition Failed', e as Error);
     }
   },
 
@@ -7911,14 +7958,14 @@ const effects = {
       if (updateExpansionRule != null) {
         const { updated_at: updatedAt } = updateExpansionRule;
         showSuccessToast('Expansion Rule Updated Successfully');
-        logMessage(`Updated expansion rule "${rule.name}" (ID=${id}).`);
+        logMessage('log', `Updated expansion rule "${rule.name}" (ID=${id}).`);
         savingExpansionRuleStore.set(false);
         return updatedAt;
       } else {
         throw Error(`Unable to update expansion rule with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Expansion Rule Update Failed', e as Error);
+      catchError('log', 'Expansion Rule Update Failed', e as Error);
       showFailureToast('Expansion Rule Update Failed');
       savingExpansionRuleStore.set(false);
       createExpansionRuleErrorStore.set((e as Error).message);
@@ -7944,13 +7991,13 @@ const effects = {
 
       if (data != null) {
         showSuccessToast('Model Updated Successfully');
-        logMessage(`Updated model ID=${id}.`);
+        logMessage('log', `Updated model ID=${id}.`);
         return data.updateModel;
       } else {
         throw Error(`Unable to update model with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Model Update Failed', e as Error);
+      catchError('log', 'Model Update Failed', e as Error);
       showFailureToast('Model Update Failed');
     }
     return null;
@@ -7975,16 +8022,16 @@ const effects = {
       }
 
       showSuccessToast('Parcel Updated Successfully');
-      logMessage(`Updated parcel ID=${id}.`);
+      logMessage('log', `Updated parcel ID=${id}.`);
       return '';
     } catch (e) {
-      catchError('Parcel Update Failed', e as Error);
+      catchError('log', 'Parcel Update Failed', e as Error);
       showFailureToast('Parcel Update Failed');
       return null;
     }
   },
 
-  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<void> {
+  async updatePlan(plan: Plan, planMetadata: Partial<PlanMetadata>, user: User | null): Promise<boolean> {
     try {
       if (!queryPermissions.UPDATE_PLAN(user, plan)) {
         throwPermissionError('update plan');
@@ -7995,15 +8042,15 @@ const effects = {
 
       if (updatePlan.id != null) {
         showSuccessToast('Plan Updated Successfully');
-        logMessage(`Updated plan "${plan.name}" (ID=${plan.id}).`);
-        return;
+        logMessage('log', `Updated plan "${plan.name}" (ID=${plan.id}).`);
+        return true;
       } else {
         throw Error(`Unable to update plan with ID: "${plan.id}"`);
       }
     } catch (e) {
-      catchError('Plan Update Failed', e as Error);
+      catchError('log', 'Plan Update Failed', e as Error);
       showFailureToast('Plan Update Failed');
-      return;
+      return false;
     }
   },
 
@@ -8021,14 +8068,14 @@ const effects = {
         const data = await reqHasura(gql.MIGRATE_PLAN_TO_MODEL, { new_model_id: value.id, plan_id: plan.id }, user);
         if (data.migrate_plan_to_model?.result === 'success') {
           showSuccessToast('Model Migration Success');
-          logMessage(`Migrated plan from model ID=${plan.model_id} to model ID=${value.id}.`);
+          logMessage('log', `Migrated plan from model ID=${plan.model_id} to model ID=${value.id}.`);
           return true;
         } else {
           throw Error(data.migrate_plan_to_model?.result);
         }
       }
     } catch (e) {
-      catchError('Model Migration Failed', e as Error);
+      catchError('log', 'Model Migration Failed', e as Error);
       showFailureToast('Model Migration Failed');
     }
     return false;
@@ -8045,16 +8092,30 @@ const effects = {
 
       if (updatedPlanSnapshotId != null) {
         showSuccessToast('Plan Snapshot Updated Successfully');
-        logMessage(`Updated plan snapshot ID=${id}.`);
+        logMessage('log', `Updated plan snapshot ID=${id}.`);
         return;
       } else {
         throw Error(`Unable to update plan snapshot with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Plan Snapshot Update Failed', e as Error);
+      catchError('log', 'Plan Snapshot Update Failed', e as Error);
       showFailureToast('Plan Snapshot Update Failed');
       return;
     }
+  },
+
+  /**
+   * Applies a plan time-bounds update (new `start_time` + `duration`) and returns whether it
+   * succeeded. The confirmation/warning UX and the start/end editing now live in
+   * ChangePlanBoundsModal, which calls this; callers compute `planTimeUpdate` with
+   * `computePlanTimeUpdate` (kept pure in utilities/plan.ts to avoid an effects <-> plan cycle).
+   */
+  async updatePlanTimeBounds(
+    plan: Plan | PlanSlim,
+    planTimeUpdate: { duration: string; start_time: string },
+    user: User | null,
+  ): Promise<boolean> {
+    return effects.updatePlan(plan as Plan, planTimeUpdate, user);
   },
 
   async updateSchedulingConditionDefinitionTags(
@@ -8079,7 +8140,7 @@ const effects = {
       if (insertSchedulingConditionDefinitionTags != null && deleteSchedulingConditionDefinitionTags != null) {
         const { affected_rows: affectedRows } = insertSchedulingConditionDefinitionTags;
 
-        logMessage(`Updated tags for scheduling condition ID=${conditionId}.`);
+        logMessage('log', `Updated tags for scheduling condition ID=${conditionId}.`);
         showSuccessToast('Scheduling Condition Updated Successfully');
 
         return affectedRows;
@@ -8087,7 +8148,7 @@ const effects = {
         throw Error('Unable to create scheduling condition definition tags');
       }
     } catch (e) {
-      catchError('Create Scheduling Condition Definition Tags Failed', e as Error);
+      catchError('log', 'Create Scheduling Condition Definition Tags Failed', e as Error);
       showFailureToast('Create Scheduling Condition Definition Tags Failed');
       return null;
     }
@@ -8120,10 +8181,10 @@ const effects = {
       }
 
       showSuccessToast('Scheduling Condition Updated Successfully');
-      logMessage(`Updated metadata for scheduling condition ID=${id}.`);
+      logMessage('log', `Updated metadata for scheduling condition ID=${id}.`);
       return true;
     } catch (e) {
-      catchError('Scheduling Condition Metadata Update Failed', e as Error);
+      catchError('log', 'Scheduling Condition Metadata Update Failed', e as Error);
       showFailureToast('Scheduling Condition Metadata Update Failed');
       return false;
     }
@@ -8154,12 +8215,15 @@ const effects = {
 
       if (updateSchedulingConditionModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Scheduling Conditions Updated Successfully`);
-        logMessage(`Updated scheduling condition model specification for model "${model.name}" (ID=${model.id}).`);
+        logMessage(
+          'log',
+          `Updated scheduling condition model specification for model "${model.name}" (ID=${model.id}).`,
+        );
       } else {
         throw Error('Unable to update the scheduling condition specifications for the model');
       }
     } catch (e) {
-      catchError('Scheduling Condition Model Specifications Update Failed', e as Error);
+      catchError('log', 'Scheduling Condition Model Specifications Update Failed', e as Error);
       showFailureToast('Scheduling Condition Model Specifications Update Failed');
     }
   },
@@ -8184,12 +8248,12 @@ const effects = {
 
       if (updateSchedulingConditionPlanSpecification !== null) {
         showSuccessToast(`Scheduling Condition Plan Specification Updated Successfully`);
-        logMessage(`Updated scheduling condition plan specification for plan "${plan.name}" (ID=${plan.id}).`);
+        logMessage('log', `Updated scheduling condition plan specification for plan "${plan.name}" (ID=${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling condition specification for the plan');
       }
     } catch (e) {
-      catchError('Scheduling Condition Plan Specification Update Failed', e as Error);
+      catchError('log', 'Scheduling Condition Plan Specification Update Failed', e as Error);
       showFailureToast('Scheduling Condition Plan Specification Update Failed');
     }
   },
@@ -8217,12 +8281,12 @@ const effects = {
 
       if (updateSchedulingConditionPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Scheduling Conditions Updated Successfully`);
-        logMessage(`Updated scheduling condition plan specifications for plan "${plan.name}" (ID=${plan.id}).`);
+        logMessage('log', `Updated scheduling condition plan specifications for plan "${plan.name}" (ID=${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling condition specifications for the plan');
       }
     } catch (e) {
-      catchError('Scheduling Condition Plan Specifications Update Failed', e as Error);
+      catchError('log', 'Scheduling Condition Plan Specifications Update Failed', e as Error);
       showFailureToast('Scheduling Condition Plan Specifications Update Failed');
     }
   },
@@ -8250,13 +8314,13 @@ const effects = {
         const { affected_rows: affectedRows } = insertSchedulingGoalDefinitionTags;
 
         showSuccessToast('Scheduling Goal Updated Successfully');
-        logMessage(`Updated tags for scheduling goal ID=${goalId}.`);
+        logMessage('log', `Updated tags for scheduling goal ID=${goalId}.`);
         return affectedRows;
       } else {
         throw Error('Unable to create scheduling goal definition tags');
       }
     } catch (e) {
-      catchError('Create Scheduling Goal Definition Tags Failed', e as Error);
+      catchError('log', 'Create Scheduling Goal Definition Tags Failed', e as Error);
       showFailureToast('Create Scheduling Goal Definition Tags Failed');
       return null;
     }
@@ -8289,9 +8353,9 @@ const effects = {
       }
 
       showSuccessToast('Scheduling Goal Updated Successfully');
-      logMessage(`Updated metadata for scheduling goal ID=${id}.`);
+      logMessage('log', `Updated metadata for scheduling goal ID=${id}.`);
     } catch (e) {
-      catchError('Scheduling Goal Metadata Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Metadata Update Failed', e as Error);
       showFailureToast('Scheduling Goal Metadata Update Failed');
     }
   },
@@ -8319,12 +8383,12 @@ const effects = {
 
       if (updateSchedulingGoalModelSpecification !== null) {
         showSuccessToast(`Scheduling Goal Model Specification Updated Successfully`);
-        logMessage(`Updated scheduling goal model specification.`);
+        logMessage('log', `Updated scheduling goal model specification.`);
       } else {
         throw Error('Unable to update the scheduling goal specification for the model');
       }
     } catch (e) {
-      catchError('Scheduling Goal Model Specification Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Model Specification Update Failed', e as Error);
       showFailureToast('Scheduling Goal Model Specification Update Failed');
     }
   },
@@ -8349,12 +8413,12 @@ const effects = {
 
       if (addSchedulingGoalModelSpecifications !== null || deleteConstraintModelSpecifications !== null) {
         showSuccessToast(`Scheduling Goals Updated Successfully`);
-        logMessage(`Updated scheduling goal model specifications.`);
+        logMessage('log', `Updated scheduling goal model specifications.`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the model');
       }
     } catch (e) {
-      catchError('Scheduling Goal Model Specifications Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Model Specifications Update Failed', e as Error);
       showFailureToast('Scheduling Goal Model Specifications Update Failed');
     }
   },
@@ -8405,12 +8469,12 @@ const effects = {
 
       if (updateSchedulingGoalPlanSpecification !== null) {
         showSuccessToast(`Scheduling Goal Plan Specification Updated Successfully`);
-        logMessage(`Updated scheduling goal plan specification for plan "${plan.name}" (ID=${plan.id}).`);
+        logMessage('log', `Updated scheduling goal plan specification for plan "${plan.name}" (ID=${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling goal specification for the plan');
       }
     } catch (e) {
-      catchError('Scheduling Goal Plan Specification Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Plan Specification Update Failed', e as Error);
       showFailureToast('Scheduling Goal Plan Specification Update Failed');
     }
   },
@@ -8436,12 +8500,12 @@ const effects = {
 
       if (insertSchedulingGoalPlanSpecifications !== null || deleteConstraintPlanSpecifications !== null) {
         showSuccessToast(`Scheduling Goals Updated Successfully`);
-        logMessage(`Updated scheduling goal plan specifications for plan "${plan.name}" (ID=${plan.id}).`);
+        logMessage('log', `Updated scheduling goal plan specifications for plan "${plan.name}" (ID=${plan.id}).`);
       } else {
         throw Error('Unable to update the scheduling goal specifications for the plan');
       }
     } catch (e) {
-      catchError('Scheduling Goal Plan Specifications Update Failed', e as Error);
+      catchError('log', 'Scheduling Goal Plan Specifications Update Failed', e as Error);
       showFailureToast('Scheduling Goal Plan Specifications Update Failed');
     }
   },
@@ -8461,9 +8525,9 @@ const effects = {
       if (data.updateSchedulingSpec == null) {
         throw Error(`Scheduling spec with ID: "${id}" not found`);
       }
-      logMessage(`Updated scheduling specification ID=${id} for plan "${plan.name}" (ID=${plan.id}).`);
+      logMessage('log', `Updated scheduling specification ID=${id} for plan "${plan.name}" (ID=${plan.id}).`);
     } catch (e) {
-      catchError('Unable to update scheduling specification', e as Error);
+      catchError('log', 'Unable to update scheduling specification', e as Error);
     }
   },
 
@@ -8481,13 +8545,13 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SEQUENCE_FILTER, { filter, filterId, filterName }, user);
       if (data.updateSequenceFilter !== null) {
-        logMessage(`Updated sequence filter "${filterName}" (ID=${filterId}).`);
+        logMessage('log', `Updated sequence filter "${filterName}" (ID=${filterId}).`);
         showSuccessToast('Updated Sequence Filter');
       } else {
         throw Error(`Unable to update sequence filter with ID: "${filterId}"`);
       }
     } catch (e) {
-      catchError('Failed to Update Sequence Filter', e as Error);
+      catchError('log', 'Failed to Update Sequence Filter', e as Error);
       showFailureToast('Failed To Update Sequence Template');
     }
   },
@@ -8504,13 +8568,13 @@ const effects = {
 
       const data = await reqHasura(gql.UPDATE_SEQUENCE_TEMPLATE, { definition, id: sequenceTemplate.id }, user);
       if (data.updateSequenceTemplate !== null) {
-        logMessage(`Updated sequence template "${sequenceTemplate.name}" (ID=${sequenceTemplate.id}).`);
+        logMessage('log', `Updated sequence template "${sequenceTemplate.name}" (ID=${sequenceTemplate.id}).`);
         showSuccessToast('Updated Sequence Template');
       } else {
         throw Error(`Unable to update sequence template with ID: "${sequenceTemplate.id}"`);
       }
     } catch (e) {
-      catchError('Failed To Update Sequence Template', e as Error);
+      catchError('log', 'Failed To Update Sequence Template', e as Error);
       showFailureToast('Failed To Update Sequence Template');
     }
   },
@@ -8543,13 +8607,13 @@ const effects = {
         user,
       );
       if (data.updateSimulation !== null) {
-        logMessage(`Updated simulation ID=${simulationSetInput.id}.`);
+        logMessage('log', `Updated simulation ID=${simulationSetInput.id}.`);
         showSuccessToast('Simulation Updated Successfully');
       } else {
         throw Error(`Unable to update simulation with ID: "${simulationSetInput.id}"`);
       }
     } catch (e) {
-      catchError('Simulation Update Failed', e as Error);
+      catchError('log', 'Simulation Update Failed', e as Error);
       showFailureToast('Simulation Update Failed');
     }
   },
@@ -8583,12 +8647,12 @@ const effects = {
       if (updateSimulationTemplateByPk != null) {
         const { description: templateDescription } = updateSimulationTemplateByPk;
         showSuccessToast(`Simulation Template ${templateDescription} Updated Successfully`);
-        logMessage(`Updated simulation template "${templateDescription}" (ID=${id}).`);
+        logMessage('log', `Updated simulation template "${templateDescription}" (ID=${id}).`);
       } else {
         throw Error(`Unable to update simulation template with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('Simulation Template Update Failed', e as Error);
+      catchError('log', 'Simulation Template Update Failed', e as Error);
       showFailureToast('Simulation Template Update Failed');
     }
   },
@@ -8610,13 +8674,13 @@ const effects = {
         showSuccessToast('Tag Updated Successfully');
       }
       if (updatedTag) {
-        logMessage(`Updated tag "${updatedTag.name}" (ID=${updatedTag.id}).`);
+        logMessage('log', `Updated tag "${updatedTag.name}" (ID=${updatedTag.id}).`);
       }
       createTagErrorStore.set(null);
       return updatedTag;
     } catch (e) {
       createTagErrorStore.set((e as Error).message);
-      catchError('Update Tags Failed', e as Error);
+      catchError('log', 'Update Tags Failed', e as Error);
       showFailureToast('Update Tags Failed');
       return null;
     }
@@ -8630,14 +8694,14 @@ const effects = {
 
       const data = await reqHasura<View>(gql.UPDATE_VIEW, { id, view }, user);
       if (data.updatedView) {
-        logMessage(`Updated view "${data.updatedView.name}" (ID=${data.updatedView.id}).`);
+        logMessage('log', `Updated view "${data.updatedView.name}" (ID=${data.updatedView.id}).`);
         showSuccessToast(message ?? 'View Updated Successfully');
         return true;
       } else {
         throw Error(`Unable to update view with ID: "${id}"`);
       }
     } catch (e) {
-      catchError('View Update Failed', e as Error);
+      catchError('log', 'View Update Failed', e as Error);
       showFailureToast('View Update Failed');
       return false;
     }
@@ -8661,15 +8725,15 @@ const effects = {
       const { updatedWorkspace } = data;
 
       if (updatedWorkspace != null) {
-        logMessage(`Updated workspace "${workspace.name}" (ID=${workspace.id}).`);
+        logMessage('log', `Updated workspace "${workspace.name}" (ID=${workspace.id}).`);
         showSuccessToast('Workspace Updated Successfully');
         return updatedWorkspace;
       } else {
         throw Error(`Unable to update workspace "${workspace.name}"`);
       }
     } catch (e) {
-      catchError('Workspace Update Failed', e as Error);
-      showFailureToast('Workspace Update Failed');
+      catchError('log', 'Workspace Update Failed', e as Error);
+      showFailureToast('Workspace Update Failed', e);
     }
 
     return null;
@@ -8691,12 +8755,12 @@ const effects = {
 
       if (uploadedActivities != null) {
         showSuccessToast('Activities Uploaded Successfully');
-        logMessage(`Uploaded ${uploadedActivities} activites from file '${file.name}'`);
+        logMessage('log', `Uploaded ${uploadedActivities} activites from file '${file.name}'`);
         return uploadedActivities;
       }
       throw Error('Uploaded activities not found');
     } catch (e) {
-      catchError('Unable to upload activities', e as Error);
+      catchError('log', 'Unable to upload activities', e as Error);
       showFailureToast('Activity Upload Failed');
       return null;
     }
@@ -8734,10 +8798,10 @@ const effects = {
         throw Error(`Unable to upload Dictionary`);
       }
 
-      logMessage(`Uploaded dictionary.`);
+      logMessage('log', `Uploaded dictionary.`);
       return newDictionaries;
     } catch (e) {
-      catchError(`Dictionary Upload Failed`, e as Error);
+      catchError('log', `Dictionary Upload Failed`, e as Error);
       return null;
     }
   },
@@ -8821,13 +8885,13 @@ const effects = {
 
       if (uploadedDatasetId != null) {
         showSuccessToast('External Dataset Uploaded Successfully');
-        logMessage(`Uploaded external dataset ID=${uploadedDatasetId}.`);
+        logMessage('log', `Uploaded external dataset ID=${uploadedDatasetId}.`);
         return uploadedDatasetId;
       }
 
       throw Error('Uploaded dataset not found');
     } catch (e) {
-      catchError('Unable to upload external dataset', e as Error);
+      catchError('log', 'Unable to upload external dataset', e as Error);
       showFailureToast('External Dataset Upload Failed');
       return null;
     }
@@ -8841,7 +8905,7 @@ const effects = {
       const { id } = data;
       return id;
     } catch (e) {
-      catchError('Unable to upload file', e as Error);
+      catchError('log', 'Unable to upload file', e as Error);
       return null;
     }
   },
@@ -8873,7 +8937,7 @@ const effects = {
 
       return generatedFilenames;
     } catch (e) {
-      catchError('Unable to upload files', e as Error);
+      catchError('log', 'Unable to upload files', e as Error);
       return {};
     }
   },
@@ -8895,14 +8959,14 @@ const effects = {
         if (newView != null) {
           viewStore.update(() => newView);
           setQueryParam(SearchParameters.VIEW_ID, `${newView.id}`);
-          logMessage(`Uploaded view "${newView.name}" (ID=${newView.id}).`);
+          logMessage('log', `Uploaded view "${newView.name}" (ID=${newView.id}).`);
           return true;
         } else {
           throw Error('Unable to upload view');
         }
       }
     } catch (e) {
-      catchError('View Upload Failed', e as Error);
+      catchError('log', 'View Upload Failed', e as Error);
       showFailureToast('View Upload Failed');
     }
 
@@ -8911,11 +8975,11 @@ const effects = {
 
   async validateActivityArguments(
     activityTypeName: string,
-    activityId: number,
+    activityId: number | undefined,
     modelId: number,
     argumentsMap: ArgumentsMap,
     user: User | null,
-  ): Promise<ParameterValidationResponse> {
+  ): Promise<ErrorMap> {
     try {
       const data = await reqHasura<ParameterValidationResponse>(
         gql.VALIDATE_ACTIVITY_ARGUMENTS,
@@ -8929,14 +8993,32 @@ const effects = {
 
       const { validateActivityArguments } = data;
       if (validateActivityArguments != null) {
-        logMessage(`Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
-        return validateActivityArguments;
+        if (activityId !== undefined) {
+          logMessage('log', `Validated activity arguments for "${activityTypeName}" (ID=${activityId}).`);
+        } else {
+          logMessage('log', `Validated activity arguments for pending directive of "${activityTypeName}"`);
+        }
+
+        // If there were errors, create and return a map of them
+        if (!validateActivityArguments.success && validateActivityArguments.errors) {
+          const errorsMap = validateActivityArguments.errors.reduce((map: Record<string, string[]>, error) => {
+            error.subjects?.forEach(subject => {
+              if (!map[subject]) {
+                map[subject] = [];
+              }
+              map[subject].push(error.message);
+            });
+            return map;
+          }, {});
+          return errorsMap;
+        } else {
+          return {};
+        }
       } else {
         throw Error('Unable to validate activity arguments');
       }
     } catch (e) {
-      const { message } = e as Error;
-      return { errors: [{ message } as ParameterValidationError], success: false };
+      return {};
     }
   },
 
@@ -8954,7 +9036,7 @@ const effects = {
         valid,
       };
     } catch (e) {
-      catchError('Unable to validate view JSON', e as Error);
+      catchError('log', 'Unable to validate view JSON', e as Error);
       const { message } = e as Error;
       return { errors: [message], valid: false };
     }

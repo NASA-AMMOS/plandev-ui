@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys */
 import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
-import { WorkspaceContentType } from '../enums/workspace';
+import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import * as requests from './requests';
@@ -19,8 +19,10 @@ import {
   getWorkspaceFileFolderDisplay,
   hasReadonlyInTree,
   incrementFilename,
+  isPathInBreadcrumb,
   joinPath,
   mapWorkspaceTreePaths,
+  parseUrlState,
   removeFirstPathSegment,
   removeRedundantNodes,
   replaceFileExtension,
@@ -36,6 +38,9 @@ const mockNavigator = {
 
 const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({});
 const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
+const reqWorkspaceWithEtagMock = vi
+  .spyOn(requests, 'reqWorkspaceWithEtag')
+  .mockResolvedValue({ data: '', etag: null, status: 200 });
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -265,7 +270,14 @@ describe('Workspace utility function tests', () => {
 
     test('getFileContent', async () => {
       await WorkspaceApi.getFileContent(1, 'foo/bar/bazz.seq', null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith('1/foo/bar/bazz.seq', 'GET', null, null, undefined, false);
+      expect(reqWorkspaceWithEtagMock).toHaveBeenLastCalledWith(
+        '1/foo/bar/bazz.seq',
+        'GET',
+        null,
+        null,
+        undefined,
+        false,
+      );
     });
 
     test('deleteFileMetadata', async () => {
@@ -575,13 +587,14 @@ describe('Workspace utility function tests', () => {
       body.append('file', file, file.name);
 
       await WorkspaceApi.saveFile(1, 'foo/bar/bazz.seq', 'sequence contents', true, null);
-      expect(reqWorkspaceMock).toHaveBeenLastCalledWith(
+      expect(reqWorkspaceWithEtagMock).toHaveBeenLastCalledWith(
         '1/foo/bar/bazz.seq?type=file&overwrite=true',
         'PUT',
         body,
         null,
         undefined,
         false,
+        {},
       );
     });
 
@@ -1824,6 +1837,123 @@ describe('Workspace utility function tests', () => {
       };
 
       expect(hasReadonlyInTree(node)).toBe(true);
+    });
+  });
+
+  describe('parseUrlState', () => {
+    const url = (query: string = ''): URL => new URL(`http://localhost/workspaces/1${query ? `?${query}` : ''}`);
+
+    test('bare workspace URL → File mode, files tab, all nullable fields null', () => {
+      expect(parseUrlState(url())).toEqual({
+        actionId: null,
+        actionRunId: null,
+        filePath: null,
+        mode: WorkspaceContentMode.File,
+        sidebarTab: 'files',
+      });
+    });
+
+    test('sequenceId param → File mode with filePath set', () => {
+      expect(parseUrlState(url('sequenceId=folder/file.seq'))).toEqual({
+        actionId: null,
+        actionRunId: null,
+        filePath: 'folder/file.seq',
+        mode: WorkspaceContentMode.File,
+        sidebarTab: 'files',
+      });
+    });
+
+    test('actionRunId param → ActionRunDetail mode, actions tab', () => {
+      expect(parseUrlState(url('actionRunId=42'))).toEqual({
+        actionId: null,
+        actionRunId: 42,
+        filePath: null,
+        mode: WorkspaceContentMode.ActionRunDetail,
+        sidebarTab: 'actions',
+      });
+    });
+
+    test('actionRunId + actionId → ActionRunDetail with both ids', () => {
+      expect(parseUrlState(url('actionRunId=42&actionId=7'))).toEqual({
+        actionId: 7,
+        actionRunId: 42,
+        filePath: null,
+        mode: WorkspaceContentMode.ActionRunDetail,
+        sidebarTab: 'actions',
+      });
+    });
+
+    test('actionId alone → ActionDetail mode', () => {
+      expect(parseUrlState(url('actionId=7'))).toEqual({
+        actionId: 7,
+        actionRunId: null,
+        filePath: null,
+        mode: WorkspaceContentMode.ActionDetail,
+        sidebarTab: 'actions',
+      });
+    });
+
+    test('sidebarTab=actions alone → ActionRunsList mode', () => {
+      expect(parseUrlState(url('sidebarTab=actions'))).toEqual({
+        actionId: null,
+        actionRunId: null,
+        filePath: null,
+        mode: WorkspaceContentMode.ActionRunsList,
+        sidebarTab: 'actions',
+      });
+    });
+
+    test('id of 0 is preserved (regression: parseInt(...) || null mapped 0 → null)', () => {
+      const state = parseUrlState(url('actionId=0'));
+      expect(state.actionId).toBe(0);
+      expect(state.mode).toBe(WorkspaceContentMode.ActionDetail);
+    });
+
+    test('non-numeric id → null and falls through to File mode', () => {
+      const state = parseUrlState(url('actionId=not-a-number'));
+      expect(state.actionId).toBeNull();
+      expect(state.mode).toBe(WorkspaceContentMode.File);
+    });
+
+    test('action params win over sidebarTab=actions', () => {
+      expect(parseUrlState(url('actionId=7&sidebarTab=actions')).mode).toBe(WorkspaceContentMode.ActionDetail);
+    });
+
+    test('action params win over sequenceId, but filePath is still returned', () => {
+      const state = parseUrlState(url('actionId=7&sequenceId=keep-me.seq'));
+      expect(state.mode).toBe(WorkspaceContentMode.ActionDetail);
+      expect(state.actionId).toBe(7);
+      expect(state.filePath).toBe('keep-me.seq');
+    });
+  });
+
+  describe('isPathInBreadcrumb', () => {
+    test('root breadcrumb contains every path', () => {
+      expect(isPathInBreadcrumb('', '')).toBe(true);
+      expect(isPathInBreadcrumb('file', '')).toBe(true);
+      expect(isPathInBreadcrumb('a/b/c', '')).toBe(true);
+    });
+
+    test('strict descendant is in breadcrumb', () => {
+      expect(isPathInBreadcrumb('a/b', 'a')).toBe(true);
+      expect(isPathInBreadcrumb('a/b/c', 'a')).toBe(true);
+      expect(isPathInBreadcrumb('a/b/c', 'a/b')).toBe(true);
+    });
+
+    test('breadcrumb path itself is NOT in breadcrumb (file browser does not render the cwd folder as a row)', () => {
+      expect(isPathInBreadcrumb('a', 'a')).toBe(false);
+      expect(isPathInBreadcrumb('a/b', 'a/b')).toBe(false);
+    });
+
+    test('sibling or unrelated path is not in breadcrumb', () => {
+      expect(isPathInBreadcrumb('b', 'a')).toBe(false);
+      expect(isPathInBreadcrumb('a/b', 'x')).toBe(false);
+      expect(isPathInBreadcrumb('ab/c', 'a')).toBe(false); // prefix-without-slash trap
+    });
+
+    test('path above breadcrumb is not in breadcrumb', () => {
+      expect(isPathInBreadcrumb('a', 'a/b')).toBe(false);
+      expect(isPathInBreadcrumb('a/b', 'a/b/c')).toBe(false);
     });
   });
 });

@@ -2,6 +2,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../../types/activity';
 import type { ModelSlim } from '../../types/model';
 import type { Plan, PlanMergeRequest, PlanMetadata } from '../../types/plan';
+import type { PlanDataset } from '../../types/simulation';
 import type { Tag } from '../../types/tags';
 import type { TimeRange } from '../../types/timeline';
 
@@ -24,6 +25,8 @@ export const planStartTimeMs: Writable<number> = writable(0);
 export const maxTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
 
 export const viewTimeRange: Writable<TimeRange> = writable({ end: 0, start: 0 });
+
+export const planBoundsPreviewOverride: Writable<{ duration: string; start_time: string } | null> = writable(null);
 
 /* "plan" store dependencies */
 export const initialPlan: Writable<Plan | null> = writable(null);
@@ -48,9 +51,15 @@ export const planModelId: Readable<number> = derived(initialPlan, $plan => $plan
 
 export const planModelRevision: Readable<number> = derived(initialPlan, $plan => $plan?.model?.revision ?? -1);
 
+export const planStartTimeYmd: Readable<string> = derived(plan, $plan => $plan?.start_time ?? '');
+
+export const planEndTimeDoy: Readable<string> = derived(plan, $plan => $plan?.end_time_doy ?? '');
+
 /* Subscriptions. */
 
 export const activityTypes = writable<ActivityType[]>([]);
+
+export const planDatasets = writable<PlanDataset[]>([]);
 
 export const planTags = writable<Tag[]>([]);
 
@@ -73,9 +82,6 @@ export function resetPlanStores() {
   createPlanError.set(null);
   creatingPlan.set(false);
   initialPlan.set(null);
-  planEndTimeMs.set(0);
-  planStartTimeMs.set(0);
-  maxTimeRange.set({ end: 0, start: 0 });
   viewTimeRange.set({ end: 0, start: 0 });
 }
 

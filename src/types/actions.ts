@@ -46,6 +46,7 @@ export type ActionRun = {
   requested_by: string | null;
   results: {
     data: any;
+    report?: string;
     status: 'FAILED' | 'SUCCESS';
     [key: string]: any;
   } | null;

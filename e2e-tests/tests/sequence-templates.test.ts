@@ -47,7 +47,7 @@ test.beforeAll(async ({ baseURL, browser }) => {
   await plans.goto();
   await plans.createPlan();
   await plan.goto();
-  await plan.addActivity('PeelBanana');
+  await plan.addActivityByDragAndDrop('PeelBanana');
   await plan.showPanel(PanelNames.SIMULATION, true);
   await plan.runSimulation();
 
@@ -91,6 +91,10 @@ test.describe.serial('Sequence Templates', () => {
     await sequenceTemplates.updateSequenceTemplate(sequenceTemplateName, sequenceTemplateContent);
   });
   test('Sequence Templating can be run', async () => {
+    // Backend JAR-based sequence expansion is legitimately slow; the toast below waits up to 30s,
+    // which cannot fit inside the 30s default test budget once the setup steps are counted. Give
+    // this test its own generous budget so the slow-but-valid expansion has room to complete.
+    test.setTimeout(90000);
     await plan.goto();
     await plan.showPanel(PanelNames.EXPANSION);
     await plan.createSequenceFilter(sequenceFilterName);

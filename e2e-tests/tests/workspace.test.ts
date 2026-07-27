@@ -6,14 +6,22 @@ import { Parcels } from '../fixtures/Parcels.js';
 import { User } from '../fixtures/User.js';
 import { Workspace } from '../fixtures/Workspace.js';
 import { Workspaces } from '../fixtures/Workspaces.js';
-import { setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
+import {
+  createAuthenticatedApi,
+  setupTest,
+  teardownTest,
+  type AerieApi,
+  type BrowserSetupResult,
+} from '../utilities/api.js';
 import { generateRandomName } from '../utilities/helpers.js';
 
 // Main setup (uses default 'test' user)
 let setup: BrowserSetupResult;
+let api: AerieApi;
 let dictionaries: Dictionaries;
 let parcels: Parcels;
 let sequence: { sequenceName: string; sequencePath: string };
+let sequenceB: { sequenceName: string; sequencePath: string };
 let workspace: Workspace;
 let workspaces: Workspaces;
 let workspaceId: string;
@@ -24,12 +32,26 @@ let workspaceForUnauthorized: Workspace;
 let setupAuthorized: BrowserSetupResult; // userA - will be added as collaborator
 let setupUnauthorized: BrowserSetupResult; // userB - not a collaborator
 
+/**
+ * Asserts the three invariants of "this sequence is the active workspace file":
+ * URL matches, the file's row is selected in the tree, and the editor pane has
+ * rendered the file's section title. Used by the back/forward navigation tests.
+ */
+async function expectSequenceActive(seq: { sequenceName: string; sequencePath: string }): Promise<void> {
+  await expect(setup.page).toHaveURL(
+    getWorkspacesUrl(workspace.baseURL, parseInt(workspaceId), `${seq.sequencePath}/${seq.sequenceName}`),
+  );
+  await expect(workspace.getFileRow(seq.sequenceName)).toHaveAttribute('aria-selected', 'true');
+  await expect(setup.page.getByTitle(`${seq.sequencePath}/${seq.sequenceName}`).first()).toBeVisible();
+}
+
 test.beforeAll(async ({ baseURL, browser }) => {
   // Increase global timeout to prevent early test termination
-  test.setTimeout(60000); // 60 seconds
+  test.setTimeout(120000); // 120 seconds
 
   // TODO need to accept downloads in context, used to be await browser.newContext({ acceptDownloads: true });
   setup = await setupTest(browser, { model: false });
+  api = await createAuthenticatedApi();
 
   dictionaries = new Dictionaries(setup.page);
   parcels = new Parcels(setup.page);
@@ -130,6 +152,49 @@ test.describe.serial('Workspace', () => {
         `${sequence.sequencePath}/${sequence.sequenceName}`,
       ),
     );
+  });
+
+  // The next six tests exercise the workspace's browser-history state machine:
+  // open a second file, walk back/forward, switch to the actions tab and back.
+  // Each transition is verified against three invariants — URL, tree selection,
+  // and the editor pane's rendered section title — via expectSequenceActive.
+  test('Back/forward: create a second sequence and open it builds the back stack', async () => {
+    sequenceB = await workspace.createSequence();
+    await workspace.clearSearch();
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.clickFile(sequenceB.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: browser back returns to the previously opened sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequence);
+  });
+
+  test('Back/forward: browser forward returns to the more recent sequence', async () => {
+    await setup.page.goForward();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: switching to the actions tab updates the URL', async () => {
+    await setup.page.getByLabel('Actions', { exact: true }).click();
+    await expect(setup.page).toHaveURL(/sidebarTab=actions/);
+  });
+
+  test('Back/forward: browser back from actions tab returns to the previously open sequence', async () => {
+    await setup.page.goBack();
+    await expectSequenceActive(sequenceB);
+  });
+
+  test('Back/forward: restore state for downstream tests (sequence A active, B deleted)', async () => {
+    await workspace.searchForFileAndWait(sequence.sequenceName);
+    await workspace.clickFile(sequence.sequenceName);
+    await workspace.clearSearch();
+    await expectSequenceActive(sequence);
+    await workspace.searchForFileAndWait(sequenceB.sequenceName);
+    await workspace.deleteSequence(sequenceB.sequenceName);
+    await workspace.clearSearch();
   });
 
   test('Update the selected sequence content', async () => {
@@ -289,10 +354,13 @@ test.describe.serial('Workspace', () => {
     await workspace.searchForFileAndWait(file2);
     await workspace.clickFile(file2, { force: true });
 
-    // Should show confirmation modal
+    // Should show confirmation modal with all three outcomes
     const modal = setup.page.locator('#modal-container');
     await modal.waitFor({ state: 'attached' });
     await expect(modal).toContainText('unsaved changes');
+    await expect(modal.getByRole('button', { name: 'Save and Navigate' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Discard and Navigate' })).toBeVisible();
+    await expect(modal.getByRole('button', { name: 'Keep Editing' })).toBeVisible();
 
     // Cancel navigation
     await setup.page.getByRole('button', { name: 'Keep Editing' }).click();
@@ -306,6 +374,167 @@ test.describe.serial('Workspace', () => {
     await workspace.deleteFile(file1);
     await workspace.searchForFileAndWait(file2);
     await workspace.deleteFile(file2);
+  });
+
+  test('Save and Navigate persists edits and lands on the target file', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file1 } = await workspace.createSequence();
+    const { sequenceName: file2, sequencePath: path2 } = await workspace.createSequence();
+
+    // Edit file1 so it has unsaved changes
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Navigate to file2 and choose "Save and Navigate"
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2, { force: true });
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.waitForToast('Workspace File Saved Successfully');
+
+    // Landed on the target file
+    await expect(setup.page).toHaveURL(
+      getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path2}/${file2}`),
+    );
+
+    // Reopening file1 shows the persisted edit
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
+
+  test('Discard and Navigate drops edits and lands on the target file', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file1 } = await workspace.createSequence();
+    const { sequenceName: file2, sequencePath: path2 } = await workspace.createSequence();
+
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Navigate to file2 and choose "Discard and Navigate"
+    await workspace.searchForFileAndWait(file2);
+    await workspace.clickFile(file2, { force: true });
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Discard and Navigate' }).click();
+
+    await expect(setup.page).toHaveURL(
+      getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path2}/${file2}`),
+    );
+
+    // Reopening file1 shows the original (edit was discarded, never saved)
+    await workspace.searchForFileAndWait(file1);
+    await workspace.clickFile(file1);
+    await expect(workspace.sequenceEditorContent).not.toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file1);
+    await workspace.deleteFile(file1);
+    await workspace.searchForFileAndWait(file2);
+    await workspace.deleteFile(file2);
+  });
+
+  test('Save and Navigate to the actions view saves the file and keeps it in the URL', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file, sequencePath: path } = await workspace.createSequence();
+    const fileUrl = getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path}/${file}`);
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Save and Navigate
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.waitForToast('Workspace File Saved Successfully');
+
+    // Back to the Files tab: the file is still open, saved, and present in the URL
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(setup.page).toHaveURL(fileUrl);
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
+  });
+
+  test('Discard and Navigate to the actions view reverts unsaved edits', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const { sequenceName: file } = await workspace.createSequence();
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Discard and Navigate
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Discard and Navigate' }).click();
+
+    // Back to the Files tab: edits reverted, file is clean
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(workspace.saveSequenceButton).toBeDisabled();
+    await expect(workspace.sequenceEditorContent).not.toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
+  });
+
+  test('Saving an unsaved draft via navigation creates the file and keeps it in the URL', async () => {
+    const marker = `MARKER_${generateRandomName()}`;
+    const draftName = `${generateRandomName()}.seq`;
+
+    // Reset to a no-file (draft) state, then make the draft dirty
+    await workspace.goto();
+    await workspace.fillSequenceContent(marker);
+    await expect(workspace.saveSequenceButton).toBeEnabled();
+
+    // Switch to the Actions view -> dirty guard -> Save and Navigate -> name prompt
+    await workspace.actionsTabButton.click();
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Save and Navigate' }).click();
+    await workspace.sequenceNameInput.fill(draftName);
+    await setup.page.locator('#modal-container').getByRole('button', { name: 'Confirm' }).click();
+    await workspace.waitForToast('Workspace File Created Successfully');
+
+    // Back to the Files tab: the draft is now a real file, selected, and in the URL
+    // (regression: previously it returned as a path-less blank document)
+    await workspace.workspaceFileBrowserButton.click();
+    await expect(setup.page).toHaveURL(getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), draftName));
+    await expect(workspace.sequenceEditorContent).toContainText(marker);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(draftName);
+    await workspace.deleteFile(draftName);
+  });
+
+  test('Returning to the Files tab preserves the open file in the URL', async () => {
+    const { sequenceName: file, sequencePath: path } = await workspace.createSequence();
+    const fileUrl = getWorkspacesUrl(workspace.baseURL, parseInt(workspace.workspaceId), `${path}/${file}`);
+
+    await workspace.searchForFileAndWait(file);
+    await workspace.clickFile(file);
+    await expect(setup.page).toHaveURL(fileUrl);
+
+    // Switch to Actions and back to Files (no unsaved changes, so no modal)
+    await workspace.actionsTabButton.click();
+    await workspace.workspaceFileBrowserButton.click();
+
+    // The open file must still be reflected in the URL (regression for the dropped file param)
+    await expect(setup.page).toHaveURL(fileUrl);
+
+    // Cleanup
+    await workspace.searchForFileAndWait(file);
+    await workspace.deleteFile(file);
   });
 
   test('Move file to folder', async () => {
@@ -462,101 +691,124 @@ test.describe.serial('Workspace', () => {
   });
 
   test('Bulk workspace file operations', async () => {
+    test.setTimeout(60000);
+
+    // Seed the files and folders via the workspace API rather than the UI (the UI creation path is
+    // covered by "Create workspace sequence" / "Create and delete workspace folder"). Every item
+    // shares a unique tag so the file browser can be filtered to just this test's items: the
+    // workspace is shared across the suite, and the ~10 files left by earlier tests otherwise make
+    // the grid large enough to virtualize, leaving target rows unstable/off-screen and hanging the
+    // selections. Filtering to the tag keeps the grid small regardless of what else exists.
+    const workspaceIdNum = Number(workspace.workspaceId);
+    const tag = generateRandomName();
+    const file1 = `${tag}-file1.seq`;
+    const file2 = `${tag}-file2.seq`;
+    const file3 = `${tag}-file3.seq`;
+    const file4 = `${tag}-file4.seq`;
+    const file5 = `${tag}-file5.seq`;
+    const folder1 = `${tag}-folderA`;
+    const folder2 = `${tag}-folderB`;
+    for (const file of [file1, file2, file3, file4, file5]) {
+      await api.createWorkspaceItem(workspaceIdNum, file, '// seeded');
+    }
+    await api.createWorkspaceItem(workspaceIdNum, folder1);
+    await api.createWorkspaceItem(workspaceIdNum, folder2);
+
+    // Open the Files tab and refresh the listing so it reflects the API-seeded items. (A full page
+    // goto would reset the resizable-pane layout and briefly overlay the grid, intercepting clicks.)
+    // Then filter to this test's tag: searchForFile only fills the box (a tag matches many rows, so
+    // we can't waitFor it); the getFileRow calls below wait for their specific row in the small grid.
     await workspace.workspaceFileBrowserButton.click();
+    await workspace.workspaceRefreshButton.click();
+    await workspace.searchForFile(tag);
+    const sidebar = workspace.workspaceFileGrid;
 
-    // Create test files and folders
-    const { sequenceName: file1 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file2 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file3 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file4 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const { sequenceName: file5 } = await workspace.createSequence('', `${generateRandomName()}.seq`);
-    const folder1 = await workspace.createFolder(generateRandomName());
-    const folder2 = await workspace.createFolder(generateRandomName());
-
-    // Clear search to see all files
-    await workspace.clearSearch();
-
-    // Select 2 files for moving using Ctrl+click
+    // Bulk move: select file1 + file2 (Ctrl+click) and move them into folder1
     await workspace.getFileRow(file1).click();
     await workspace.getFileRow(file2).click({ modifiers: ['ControlOrMeta'] });
-
-    // Open context menu and move files
     await workspace.openFileContextMenu(file1);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await setup.page.getByRole('menuitem', { name: folder1 }).click();
     await setup.page.getByRole('button', { name: 'Move Files' }).click();
 
-    // Verify files were moved (no longer in root, now in folder1)
-    await workspace.clearSearch();
-    const sidebar = workspace.workspaceFileGrid;
-    // Files should NOT be at root path (just filename)
+    // Both files should have left root and now live under folder1
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file1, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file2, { exact: true })).not.toBeVisible();
-    // Files SHOULD be at folder1 path
     await expect(sidebar.getByTitle(`${folder1}/${file1}`, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(`${folder1}/${file2}`, { exact: true })).toBeVisible();
 
-    // Select 2 other files for copying
+    // Bulk copy: select file3 + file4 and copy them into folder2 (originals stay in root)
     await workspace.getFileRow(file3).click();
     await workspace.getFileRow(file4).click({ modifiers: ['ControlOrMeta'] });
-
-    // Open context menu and copy files
     await workspace.openFileContextMenu(file3);
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { exact: true, name: 'Move/Copy' }).click();
     await setup.page.getByRole('menuitem', { name: workspace.workspaceName }).click();
     await setup.page.getByRole('menuitem', { name: folder2 }).click();
     await setup.page.getByRole('button', { name: 'Copy Files' }).click();
 
-    // Verify files still exist in root (copy, not move)
-    await workspace.clearSearch();
-    // Files SHOULD still be at root path (just filename)
+    // Both files should remain in root AND now also exist under folder2
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file3, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(file4, { exact: true })).toBeVisible();
-    // Copies SHOULD also exist at folder2 path
     await expect(sidebar.getByTitle(`${folder2}/${file3}`, { exact: true })).toBeVisible();
     await expect(sidebar.getByTitle(`${folder2}/${file4}`, { exact: true })).toBeVisible();
 
-    // Select 2 files for deletion (use row-id to select specifically the root files, not the copies)
-    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click();
-    await workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`).click({ modifiers: ['ControlOrMeta'] });
-
-    // Open context menu and delete files
-    await workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`).click({ button: 'right' });
+    // Bulk delete: select the root file3 + file5 by row-id (so we target the root files, not the
+    // folder2 copies) and delete them. toHaveCount(1) guards against a transient duplicate row-id.
+    const file3Row = workspace.workspaceFileGrid.locator(`[row-id="${file3}"]`);
+    const file5Row = workspace.workspaceFileGrid.locator(`[row-id="${file5}"]`);
+    await expect(file3Row).toHaveCount(1);
+    await file3Row.click();
+    await expect(file5Row).toHaveCount(1);
+    await file5Row.click({ modifiers: ['ControlOrMeta'] });
+    await file3Row.click({ button: 'right' });
     await workspace.workspaceFileContextMenu.getByRole('menuitem', { name: 'Delete' }).click();
     await setup.page.getByRole('button', { name: 'Delete' }).click();
 
-    // Verify files were deleted from root
-    await workspace.clearSearch();
+    // Both should be gone from root
+    await workspace.searchForFile(tag);
     await expect(sidebar.getByTitle(file3, { exact: true })).not.toBeVisible();
     await expect(sidebar.getByTitle(file5, { exact: true })).not.toBeVisible();
 
-    // Cleanup remaining files and folders
-    // Delete folders first (which deletes their contents including copied files)
+    // Cleanup: delete the folders (removes their contents) then the remaining root file4
     await workspace.searchForFileAndWait(folder1);
     await workspace.deleteFolder(folder1);
     await workspace.searchForFileAndWait(folder2);
     await workspace.deleteFolder(folder2);
-    // Wait for the folder2 row to fully disappear from the grid before searching for file4,
-    // otherwise the grid may still show the copy (folder2/file4) alongside the root file4
-    await workspace.clearSearch();
+    await workspace.searchForFile(tag);
     await expect(workspace.getFileRow(folder2)).not.toBeVisible();
     await workspace.searchForFileAndWait(file4);
     await workspace.deleteFile(file4);
   });
 
   test('Toggle file read-only and verify editor is locked', async () => {
-    // Create a sequence file to test with
-    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seq`);
+    // Use the adaptation's input-sequence extension so the file opens as a sequence with the
+    // Selected Command panel (a plain `.seq` would open as generic text — no command panel).
+    const { sequenceName } = await workspace.createSequence(undefined, `${generateRandomName()}.seqN.txt`);
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
     // Wait for the editor to load and the file metadata banner to appear
     await expect(workspace.readOnlyCheckbox).toBeVisible({ timeout: 10000 });
 
+    // Add a command so the Selected Command panel renders editable argument inputs.
+    await workspace.fillSequenceContent('C FSW_CMD_0 "ON" true 0.5');
+
+    // The Selected Command panel (right side) shows the command's argument editors;
+    // float_arg_0 renders as a numeric input (spinbutton) labeled by its arg name.
+    const commandArgInput = setup.page.getByRole('spinbutton', { name: 'float_arg_0' });
+    await expect(commandArgInput).toBeVisible({ timeout: 10000 });
+
     // Verify the file is initially editable — title should NOT contain "(Read only)"
     await expect(setup.page.getByText('(Read only)')).not.toBeVisible();
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive.
+    await expect(commandArgInput).toBeEnabled();
+
+    // Persist so the document is clean before toggling read-only / deleting later.
+    await workspace.saveSequence();
 
     // Toggle read-only ON
     await workspace.readOnlyCheckbox.click();
@@ -567,6 +819,10 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button is hidden (read-only files can't be saved)
     await expect(workspace.saveSequenceButton).not.toBeVisible();
+
+    // Verify the Selected Command panel argument inputs are disabled while read-only —
+    // `EditorState.readOnly` alone wouldn't stop the form-builder from editing the document.
+    await expect(commandArgInput).toBeDisabled();
 
     // Verify the editor rejects input — type something and confirm content didn't change
     await workspace.sequenceEditor.click();
@@ -582,6 +838,8 @@ test.describe.serial('Workspace', () => {
 
     // Verify the Save button reappears
     await expect(workspace.saveSequenceButton).toBeVisible();
+    // ...and the command argument inputs are interactive again.
+    await expect(commandArgInput).toBeEnabled();
 
     // Cleanup
     await workspace.searchForFileAndWait(sequenceName);

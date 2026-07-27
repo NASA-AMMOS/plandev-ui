@@ -216,6 +216,48 @@ export class Action {
     this.page = page;
   }
 
+  async verifyReport(): Promise<void> {
+    const report = this.page.getByTestId('action-run-report');
+    await expect(report).toBeVisible();
+
+    // Markdown renders: a heading, bold text, and a GFM table.
+    await expect(report.getByRole('heading', { name: 'What you can use' })).toBeVisible();
+    await expect(report.locator('strong', { hasText: 'Markdown' })).toBeVisible();
+    await expect(report.getByRole('cell', { name: 'Power margin' })).toBeVisible();
+    await expect(report.getByRole('cell', { name: 'Violated at 04:12Z' })).toBeVisible();
+
+    // The link renders, is hardened, and is actually openable in a new tab.
+    const link = report.getByRole('link', { name: 'Links' });
+    await expect(link).toHaveAttribute('href', 'https://nasa-ammos.github.io/plandev-docs/');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+    // Stub the external host so opening the link doesn't depend on the network.
+    await this.page
+      .context()
+      .route('https://nasa-ammos.github.io/**', route =>
+        route.fulfill({ body: 'stub', contentType: 'text/html', status: 200 }),
+      );
+    const popupPromise = this.page.waitForEvent('popup');
+    await link.click();
+    const popup = await popupPromise;
+    await popup.waitForURL(/nasa-ammos\.github\.io\/plandev-docs/, { timeout: 10000 });
+    await popup.close();
+    await this.page.context().unroute('https://nasa-ammos.github.io/**');
+
+    // Inline color is allowed — colored text, colored GFM cells, and raw HTML
+    // tables with full-cell background colors all render.
+    await expect(report.getByText('CRITICAL')).toBeVisible();
+    await expect(report.locator('td span[style*="color"]').first()).toBeVisible();
+    await expect(report.locator('td[style*="background-color"]').first()).toBeVisible();
+
+    // ...but scripts, images, and unsafe CSS properties are still stripped.
+    await expect(report.locator('script')).toHaveCount(0);
+    await expect(report.locator('img')).toHaveCount(0);
+    await expect(report.locator('[style*="position"]')).toHaveCount(0);
+    await expect(report).not.toContainText('alert(');
+  }
+
   async waitForToast(message: string) {
     await this.page.waitForSelector(`.toastify:has-text("${message}")`, { timeout: 10000 });
   }

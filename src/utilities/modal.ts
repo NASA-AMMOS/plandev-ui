@@ -1,8 +1,10 @@
 import { browser } from '$app/environment';
+import type { Extension } from '@codemirror/state';
 import AboutModal from '../components/modals/AboutModal.svelte';
 import ActionCreationModal from '../components/modals/ActionCreationModal.svelte';
 import ApplySequenceFilterModal from '../components/modals/ApplySequenceFilterModal.svelte';
 import CancelActionRunModal from '../components/modals/CancelActionRunModal.svelte';
+import ChangePlanBoundsModal from '../components/modals/ChangePlanBoundsModal.svelte';
 import ConfirmActivityCreationModal from '../components/modals/ConfirmActivityCreationModal.svelte';
 import ConfirmModal from '../components/modals/ConfirmModal.svelte';
 import CreatePlanBranchModal from '../components/modals/CreatePlanBranchModal.svelte';
@@ -37,10 +39,13 @@ import RunActionModal from '../components/modals/RunActionModal.svelte';
 import RunActionResultsModal from '../components/modals/RunActionResultsModal.svelte';
 import SavedViewsModal from '../components/modals/SavedViewsModal.svelte';
 import TransformActivitiesModal from '../components/modals/TransformActivitiesModal.svelte';
+import UnsavedChangesModal from '../components/modals/UnsavedChangesModal.svelte';
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
+import WorkspaceSaveConflictModal from '../components/modals/WorkspaceSaveConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
+import type { WorkspaceContentType } from '../enums/workspace';
 import { type ActionDefinition } from '../types/actions';
 import type { ActivityDirectiveDeletionMap, ActivityDirectiveId } from '../types/activity';
 import type { User } from '../types/app';
@@ -55,6 +60,7 @@ import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import type { WorkspaceSaveConflictReason } from './requests';
 
 /**
  * Closes the active modal if found and resolve nothing
@@ -154,6 +160,56 @@ export async function showConfirmModal(
           target.resolve = null;
           resolve({ confirm: true });
           confirmModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Shows an UnsavedChangesModal offering three outcomes: save and proceed, discard and
+ * proceed, or stay. Resolves with `confirm` (false = stay) and, when confirming, a
+ * `shouldSave` flag distinguishing the save button from the discard button.
+ */
+export async function showUnsavedChangesModal(
+  message: string,
+  title: string,
+  saveText: string,
+  discardText: string,
+  cancelText: string,
+): Promise<ModalElementValue<{ shouldSave: boolean }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const unsavedChangesModal = new UnsavedChangesModal({
+          props: { cancelText, discardText, message, saveText, title },
+          target,
+        });
+        target.resolve = resolve;
+
+        unsavedChangesModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          unsavedChangesModal.$destroy();
+        });
+
+        unsavedChangesModal.$on('discard', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { shouldSave: false } });
+          unsavedChangesModal.$destroy();
+        });
+
+        unsavedChangesModal.$on('save', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: { shouldSave: true } });
+          unsavedChangesModal.$destroy();
         });
       }
     } else {
@@ -1611,6 +1667,42 @@ export async function showNewSequenceModal(): Promise<ModalElementValue<{ newSeq
   });
 }
 
+/**
+ * Shows a ChangePlanBoundsModal for editing a plan's start/end. The modal owns the warning,
+ * the mutation, and the in-flight/retry UX, so it resolves { confirm: true } only once the
+ * update has succeeded (or { confirm: false } if the user cancels).
+ */
+export async function showChangePlanBoundsModal(plan: Plan | PlanSlim, user: User | null): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+      if (target) {
+        const modal = new ChangePlanBoundsModal({
+          props: { plan, user },
+          target,
+        });
+        target.resolve = resolve;
+
+        modal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          modal.$destroy();
+        });
+
+        modal.$on('confirm', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true });
+          modal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
 export async function showUpdatePlanMissionModelModal(plan: PlanSlim, user: User | null): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
@@ -1667,6 +1759,60 @@ export async function showExpansionPanelModal(user: User | null): Promise<ModalE
           resolve({ confirm: true, value: e.detail });
           expansionPanelModal.$destroy();
         });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * The action a user chose in the workspace save-conflict modal. "Cancel" resolves
+ * the modal with `confirm: false` and no value, so it is not represented here.
+ */
+type WorkspaceSaveConflictResolution =
+  | { action: 'take-mine'; content: string; etag: string | null }
+  | { action: 'take-theirs'; content: string; etag: string | null }
+  | { action: 'recreate' }
+  | { action: 'discard' };
+
+export async function showWorkspaceSaveConflictModal(props: {
+  allowMerge?: boolean;
+  fileName: string;
+  languageExtension?: Extension | null;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+  mineContent: string;
+  path: string;
+  reason: WorkspaceSaveConflictReason;
+  type: WorkspaceContentType | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue<WorkspaceSaveConflictResolution>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const conflictModal = new WorkspaceSaveConflictModal({ props, target });
+        target.resolve = resolve;
+
+        const finish = (value?: WorkspaceSaveConflictResolution) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: value !== undefined, value });
+          conflictModal.$destroy();
+        };
+
+        conflictModal.$on('close', () => finish());
+        conflictModal.$on('takeMine', (e: CustomEvent<{ content: string; etag: string | null }>) =>
+          finish({ action: 'take-mine', content: e.detail.content, etag: e.detail.etag }),
+        );
+        conflictModal.$on('takeTheirs', (e: CustomEvent<{ content: string; etag: string | null }>) =>
+          finish({ action: 'take-theirs', content: e.detail.content, etag: e.detail.etag }),
+        );
+        conflictModal.$on('recreate', () => finish({ action: 'recreate' }));
+        conflictModal.$on('discard', () => finish({ action: 'discard' }));
       }
     } else {
       resolve({ confirm: false });

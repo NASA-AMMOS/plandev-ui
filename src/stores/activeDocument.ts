@@ -4,6 +4,11 @@ import type { WorkspaceContentType } from '../enums/workspace';
 /* Types */
 
 export interface ActiveDocumentState {
+  /**
+   * The server's ETag for the version the editor is based on. Sent back on save so the
+   * server can reject it if the file changed underneath. Opaque — only stored and echoed.
+   */
+  baseEtag: string | null;
   currentContent: string;
   fileName: string | null;
   isLoading: boolean;
@@ -20,15 +25,23 @@ export interface ActiveDocumentStore {
   /** Close the current document. */
   close: () => void;
 
-  /** Mark the document as clean (after save). Syncs originalContent with currentContent. */
-  markClean: (savedContent?: string) => void;
+  /**
+   * Mark the document clean after save (syncs originalContent). Pass `newEtag` to also
+   * advance `baseEtag`.
+   */
+  markClean: (savedContent?: string, newEtag?: string | null) => void;
 
   /**
-   * Open a document after content has been loaded.
-   * Only updates if the path matches loadingPath (stale check).
-   * Returns true if the document was opened, false if stale.
+   * Open a loaded document and store its `etag` as `baseEtag`. Skips stale loads (only
+   * applies when `path` matches `loadingPath`). Returns false if stale.
    */
-  open: (path: string, content: string) => boolean;
+  open: (path: string, content: string, etag: string | null) => boolean;
+
+  /**
+   * Rebase the document onto `content` + `etag` and mark it clean (e.g. "take theirs", or
+   * after a merged save). Only applies if `path` is still active. Returns false otherwise.
+   */
+  replaceWithServer: (path: string, content: string, etag: string | null) => boolean;
 
   /** Reset the store to initial state. */
   reset: () => void;
@@ -52,6 +65,7 @@ export interface ActiveDocumentStore {
 /* Constants */
 
 const initialState: ActiveDocumentState = {
+  baseEtag: null,
   currentContent: '',
   fileName: null,
   isLoading: false,
@@ -83,14 +97,15 @@ function createActiveDocumentStore(): ActiveDocumentStore {
       set(initialState);
     },
 
-    markClean(savedContent?: string): void {
+    markClean(savedContent?: string, newEtag?: string | null): void {
       update(state => ({
         ...state,
+        baseEtag: newEtag !== undefined ? newEtag : state.baseEtag,
         originalContent: savedContent ?? state.currentContent,
       }));
     },
 
-    open(path: string, content: string): boolean {
+    open(path: string, content: string, etag: string | null): boolean {
       const currentState = get(internalStore);
 
       // Stale response check: only proceed if this is the path we're expecting
@@ -100,6 +115,27 @@ function createActiveDocumentStore(): ActiveDocumentStore {
 
       update(state => ({
         ...state,
+        baseEtag: etag,
+        currentContent: content,
+        isLoading: false,
+        loadingPath: null,
+        originalContent: content,
+      }));
+
+      return true;
+    },
+
+    replaceWithServer(path: string, content: string, etag: string | null): boolean {
+      const currentState = get(internalStore);
+
+      // Only replace if this is still the active document (no in-flight load to guard on).
+      if (currentState.path !== path) {
+        return false;
+      }
+
+      update(state => ({
+        ...state,
+        baseEtag: etag,
         currentContent: content,
         isLoading: false,
         loadingPath: null,
@@ -115,6 +151,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
 
     startLoad(path: string, fileName: string | null, type: WorkspaceContentType | null): void {
       set({
+        baseEtag: null,
         currentContent: '',
         fileName,
         isLoading: true,

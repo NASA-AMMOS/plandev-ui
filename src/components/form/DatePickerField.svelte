@@ -21,6 +21,7 @@
   export let minDate: Date | undefined = undefined;
   export let use: ActionArray = [];
   export let useFallback: boolean = false;
+  export let hideTodayButton: boolean = false;
 
   $: id = uniqueId(name);
 
@@ -61,6 +62,7 @@
         {minDate}
         {maxDate}
         {use}
+        {hideTodayButton}
       >
         <slot />
       </DatePicker>

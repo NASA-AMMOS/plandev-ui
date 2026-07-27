@@ -746,7 +746,10 @@ export function getIntervalUnixEpochTime(startTimeMs: number, endTimeMs: number)
   const differenceMs = endTimeMs - startTimeMs;
 
   const isNegative = differenceMs < 0;
-  const absoluteDifferenceMs = Math.abs(differenceMs);
+  // Round to whole milliseconds — this interval string only carries ms precision, and a fractional
+  // input (e.g. an offset with sub-ms precision) would otherwise stringify a non-integer ms with its
+  // own decimal point, producing an invalid Postgres interval like "11:26:49.216.0100".
+  const absoluteDifferenceMs = Math.round(Math.abs(differenceMs));
 
   const seconds = Math.floor(absoluteDifferenceMs / 1000);
   const hours = Math.floor(seconds / 3600);

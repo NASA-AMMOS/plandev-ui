@@ -127,7 +127,7 @@ test.describe.serial('Plan', () => {
 
   test(`Changing to a new plan should clear the selected activity`, async ({ baseURL }) => {
     // Create an activity which will be auto selected
-    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
 
     // Switch to a new branch and ensure no activity is selected
     await setup.plan.createBranch(baseURL);
@@ -137,7 +137,7 @@ test.describe.serial('Plan', () => {
     await expect(setup.plan.panelActivityDirectivesTable).toBeVisible();
 
     // Add a new activity
-    await setup.plan.addActivity('GrowBanana');
+    await setup.plan.addActivityByDragAndDrop('GrowBanana');
 
     const branchPlanUrlRegex = new RegExp(`${baseURL}/plans/(?<planId>\\d+)`);
     const matches = setup.page.url().match(branchPlanUrlRegex);

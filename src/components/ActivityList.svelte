@@ -1,8 +1,11 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
+  import { CirclePlus } from 'lucide-svelte';
+  import { directiveBuilderIsVisible } from '../stores/directiveBuilder';
   import { plan, planModelActivityTypes, subsystemTags } from '../stores/plan';
   import type { ActivityType } from '../types/activity';
   import type { User } from '../types/app';
@@ -17,14 +20,15 @@
   export let user: User | null;
 
   const uploadPermissionError: string = 'You do not have permission to upload activities.';
+  const createPermissionError: string = 'You do not have permission to create activities.';
 
-  let hasUploadPermission: boolean = false;
+  let hasCreatePermission: boolean = false;
   let isUploadVisible: boolean = false;
   let uploadFiles: FileList | undefined;
   let uploadFileInput: HTMLInputElement;
 
   $: if (user !== null && $plan !== null) {
-    hasUploadPermission = featurePermissions.activityDirective.canCreate(user, $plan);
+    hasCreatePermission = featurePermissions.activityDirective.canCreate(user, $plan);
   }
 
   function getFilterValueFromItem(item: TimelineItemType) {
@@ -59,6 +63,7 @@
   {getFilterValueFromItem}
   filterOptions={$subsystemTags.map(s => ({ color: s.color || '', label: s.name, value: s.id }))}
   filterName="Subsystem"
+  {hasCreatePermission}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
     <button class="close-upload" type="button" on:click={onHideUpload}>
@@ -74,7 +79,7 @@
         bind:files={uploadFiles}
         bind:this={uploadFileInput}
         use:permissionHandler={{
-          hasPermission: hasUploadPermission,
+          hasPermission: hasCreatePermission,
           permissionError: uploadPermissionError,
         }}
       />
@@ -85,8 +90,8 @@
         disabled={!uploadFiles?.length}
         on:click={onUpload}
         use:permissionHandler={{
-          hasPermission: hasUploadPermission,
-          permissionError: uploadPermissionError,
+          hasPermission: hasCreatePermission,
+          permissionError: createPermissionError,
         }}
       >
         Upload
@@ -98,13 +103,28 @@
       class="st-button secondary"
       on:click={onShowUpload}
       use:permissionHandler={{
-        hasPermission: hasUploadPermission,
+        hasPermission: hasCreatePermission,
         permissionError: uploadPermissionError,
       }}
       use:tooltip={{ content: 'Upload Activities' }}
     >
       <UploadIcon />
     </button>
+    <div
+      use:permissionHandler={{
+        hasPermission: hasCreatePermission,
+        permissionError: createPermissionError,
+      }}
+    >
+      <Button
+        variant="outline"
+        aria-label="Add Activity"
+        disabled={!hasCreatePermission}
+        on:click={() => ($directiveBuilderIsVisible = true)}
+      >
+        <CirclePlus size={16} />
+      </Button>
+    </div>
   </svelte:fragment>
 </TimelineItemList>
 

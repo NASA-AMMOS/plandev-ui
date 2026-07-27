@@ -14,7 +14,7 @@
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { activityErrorRollupsMap } from '../../stores/errors';
+  import { activityErrorRollupsMap } from '../../stores/console';
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { spansMap, spanUtilityMaps } from '../../stores/simulation';

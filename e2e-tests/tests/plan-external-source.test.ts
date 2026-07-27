@@ -1,6 +1,7 @@
 import test, { expect } from '@playwright/test';
 import { ExternalSources } from '../fixtures/ExternalSources.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
+import { anyCanvasHasContent } from '../utilities/canvas.js';
 import {
   cleanupApiResources,
   closeBrowserResources,
@@ -142,7 +143,7 @@ test.describe.serial('Plan External Sources', () => {
     await setupA.page.getByRole('tab', { exact: true, name: 'Events' }).click();
     await expect(setupA.page.locator('.list-item').getByText(externalSources.exampleEventType)).toBeVisible();
     await setupA.page.locator('.list-item').getByText(externalSources.exampleEventType).first().hover();
-    await setupA.page.getByLabel(`AddExternalevent-${externalSources.exampleEventType}`).click();
+    await setupA.page.getByLabel(`FilterExternalevent-${externalSources.exampleEventType}`).click();
     await setupA.page.getByRole('menuitem', { name: 'New Row +' }).click();
     await expect(
       setupA.page.locator('#timeline-0').getByRole('button', { name: externalSources.exampleEventType }),
@@ -157,22 +158,7 @@ test.describe.serial('Plan External Sources', () => {
   });
 
   test('Zero-duration events are properly drawn in the timeline', async () => {
-    // Get the current timeline canvas' pixels - use a set to just determine that non-0 RGB values exist
-    const doPixelsExist: boolean = await setup.page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (canvas !== null && canvas !== undefined) {
-        const context = canvas.getContext('2d');
-        if (context !== null && context !== undefined) {
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const pixelData = Array.from(imageData.data);
-          return pixelData.length > 0 ? true : false;
-          // Assert that the number of unique RGB pixel values for the canvas is more than 0 (i.e., not empty)
-        }
-      }
-      return false;
-    });
-
-    expect(doPixelsExist).toBeTruthy();
+    expect(await anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas')).toBeTruthy();
   });
 
   test('Linked derivation groups should be expandable in panel', async () => {

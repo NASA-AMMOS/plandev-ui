@@ -4,7 +4,7 @@
   import WarningExtraIcon from '@nasa-jpl/stellar/icons/warning_extra.svg?component';
   import { Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivityErrorCategories } from '../../types/errors';
+  import type { ActivityErrorCategories } from '../../types/console';
   import type { ArgumentsMap } from '../../types/parameter';
   import { isMacOs } from '../../utilities/browser';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';

@@ -48,8 +48,8 @@ test.describe.serial('Timeline View Editing', () => {
 
   test('Add an activity to the parent plan', async () => {
     await setup.plan.showPanel(PanelNames.TIMELINE_ITEMS);
-    await setup.plan.addActivity('PickBanana');
-    await setup.plan.addActivity('PeelBanana');
+    await setup.plan.addActivityByDragAndDrop('PickBanana');
+    await setup.plan.addActivityByDragAndDrop('PeelBanana');
   });
 
   test('Change the start time of the activity', async () => {

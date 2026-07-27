@@ -1,14 +1,14 @@
 import type { ActivityDirectiveId } from './activity';
 import type { UserId } from './app';
-import type { BaseError, SimulationDatasetError } from './errors';
+import type { ConsoleEntry } from './console';
 import type { ArgumentsMap } from './parameter';
 import type { ValueSchema } from './schema';
-import type { Subscription } from './subscribable';
 
 export type PlanDataset = {
   dataset: { profiles: Profile[] };
   dataset_id: number;
   offset_from_plan_start: string;
+  simulation_dataset_id: number | null;
 };
 
 export type PlanDatasetNames = {
@@ -45,13 +45,12 @@ export type Resource = {
 };
 
 export type ResourceRequest = {
-  controller?: AbortController;
   error: string;
   loading: boolean;
   resource: Resource | null;
   simulationDatasetId: number;
-  subscription?: Subscription<Resource>;
   type: 'internal' | 'external';
+  unsubscribe?: () => void;
 };
 
 export type ResourceType = {
@@ -83,7 +82,7 @@ export type SimulationEvent = {
 };
 
 export type SimulateResponse = {
-  reason: SimulationDatasetError;
+  reason: ConsoleEntry;
   simulationDatasetId: number;
   status: 'complete' | 'failed' | 'incomplete' | 'pending';
 };
@@ -106,7 +105,7 @@ export type SimulationDataset = {
   model_id: number;
   model_revision: number;
   plan_revision: number;
-  reason: SimulationDatasetError | null;
+  reason: ConsoleEntry | null;
   requested_at: string;
   requested_by: string;
   simulation_end_time: string | null;
@@ -141,7 +140,7 @@ export type SimulationTemplateSetInput = Partial<SimulationTemplateInsertInput>;
 
 export type SimulationDatasetReason = {
   errors: {
-    [activityId: string]: BaseError;
+    [activityId: string]: ConsoleEntry;
   };
   success: boolean;
 };

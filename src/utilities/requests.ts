@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
 import type { BaseUser, User } from '../types/app';
-import type { BaseError, LogMessage } from '../types/errors';
+import type { ConsoleEntry, LogMessage } from '../types/console';
 import type { ExtensionPayload, ExtensionResponse } from '../types/extension';
 import type { QueryVariables } from '../types/subscribable';
 import { logout } from '../utilities/login';
@@ -206,13 +206,13 @@ export async function reqHasura<T = any>(
 
     const defaultErrorMessage = 'An unexpected error occurred';
     json.errors.forEach((error: any) => {
-      const extensions: (Omit<BaseError, 'message'> & { code: string; internal?: any }) | undefined = error?.extensions;
+      const extensions:
+        | (Omit<ConsoleEntry, 'message' | 'type'> & { code?: string; internal?: any; type?: string })
+        | undefined = error?.extensions;
 
-      // Extract legacy and current fields from extensions if they exist
-      const { data, service, timestamp, trace, cause, code } = extensions ?? {};
+      const { data, service, timestamp, trace, cause, code, type } = extensions ?? {};
       const baseErrorFields = { data, service, timestamp: timestamp ?? defaultError.timestamp, trace };
 
-      // May need a custom error or piggyback cause
       const errorMessage = extensions?.internal?.error?.message ?? error?.message ?? defaultErrorMessage;
 
       if (code === 'unexpected' || code === 'postgres-error') {
@@ -247,8 +247,9 @@ export async function reqHasura<T = any>(
         errors.push({
           ...defaultError,
           ...baseErrorFields,
+          cause,
           message: error?.message ?? defaultErrorMessage,
-          trace: cause,
+          type: (type as ErrorTypes) ?? ErrorTypes.CAUGHT_ERROR,
         });
       }
     });
@@ -261,6 +262,30 @@ export async function reqHasura<T = any>(
 
   const { data } = json;
   return data;
+}
+
+// Workspace endpoints respond with a raw FormattedError JSON body on non-OK responses
+// (USE_HASURA_FORMATTING=false in WorkspaceBindings — no Hasura `extensions` wrapper).
+// Wraps it as a CompoundError so callers' `catchError(...)` dispatches via the typed-ConsoleEntry
+// branch and the rich metadata (type, service, data, trace) reaches the Console.
+async function throwWorkspaceError(response: Response): Promise<never> {
+  let body: any = null;
+  try {
+    body = await response.json();
+  } catch {
+    // Body wasn't JSON (e.g. proxy HTML, empty body).
+  }
+  if (body && typeof body === 'object' && typeof body.message === 'string' && typeof body.type === 'string') {
+    throw new CompoundError(body.message, [
+      {
+        ...body,
+        level: 'error',
+        timestamp: typeof body.timestamp === 'string' ? body.timestamp : new Date().toISOString(),
+      },
+    ]);
+  }
+  // todo: improve this fallback case, add more error details even if body is missing/wrong format
+  throw new Error(response.statusText);
 }
 
 /**
@@ -297,7 +322,7 @@ export async function reqWorkspace<T = any>(
   const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    await throwWorkspaceError(response);
   }
 
   if (asBlob) {
@@ -309,6 +334,112 @@ export async function reqWorkspace<T = any>(
   }
 
   return (await response.text()) as T;
+}
+
+/** Why a workspace save was rejected: the file changed, or it was deleted/moved. */
+export type WorkspaceSaveConflictReason = 'conflict' | 'deleted';
+
+/**
+ * Thrown on a `412` save rejection (the file changed underneath since it was opened).
+ * Carries the who/when fields from the response body for the conflict modal.
+ */
+export class WorkspaceSaveConflictError extends Error {
+  currentETag: string | null;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+  name: string;
+  reason: WorkspaceSaveConflictReason;
+
+  constructor(
+    data: {
+      currentETag: string | null;
+      lastEditedAt?: string;
+      lastEditedBy?: string;
+      reason: WorkspaceSaveConflictReason;
+    },
+    message?: string,
+  ) {
+    super(message ?? 'The file was changed by someone else since you opened it.');
+    this.currentETag = data.currentETag;
+    this.lastEditedAt = data.lastEditedAt;
+    this.lastEditedBy = data.lastEditedBy;
+    this.name = 'WorkspaceSaveConflictError';
+    this.reason = data.reason;
+  }
+}
+
+/** A workspace response plus its `ETag` and HTTP status. */
+export interface WorkspaceResponseWithEtag<T> {
+  data: T;
+  etag: string | null;
+  status: number;
+}
+
+/**
+ * Like {@link reqWorkspace}, but returns the response `ETag` + status and, on `412`,
+ * throws a typed {@link WorkspaceSaveConflictError}. Used for the editor's file GET/save
+ * so the save etag can be threaded through; `reqWorkspace` is left unchanged.
+ */
+export async function reqWorkspaceWithEtag<T = any>(
+  url: string,
+  method: string,
+  body: any | null,
+  user: BaseUser | User | null,
+  signal?: AbortSignal,
+  asJson: boolean = false,
+  headerOverrides: HeadersInit = {},
+): Promise<WorkspaceResponseWithEtag<T>> {
+  const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${user?.token ?? ''}`,
+    'x-hasura-role': (user as User)?.activeRole ?? '',
+    'x-hasura-user-id': user?.id ?? '',
+    ...headerOverrides,
+  };
+  const options: RequestInit = {
+    headers,
+    method,
+    signal,
+  };
+
+  if (body !== null) {
+    options.body = body;
+  }
+
+  const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
+  // Null unless the server exposes ETag via CORS; protection degrades gracefully if so.
+  const etag = response.headers.get('ETag');
+
+  if (response.status === 412) {
+    // save was rejected specifically because the etag didn't match - ie. the file has changed since last save
+    // throw a WorkspaceSaveConflictError (instead of usual CompoundError) so we can catch it and show modal
+    let parsed: { data?: Record<string, any>; message?: string } | null = null;
+    try {
+      parsed = await response.json();
+    } catch {
+      // Body wasn't valid JSON — fall back to the defaults below.
+    }
+    const conflictData = parsed?.data ?? {};
+    throw new WorkspaceSaveConflictError(
+      {
+        currentETag: conflictData.currentETag ?? null,
+        lastEditedAt: conflictData.lastEditedAt,
+        lastEditedBy: conflictData.lastEditedBy,
+        reason: conflictData.reason === 'deleted' ? 'deleted' : 'conflict',
+      },
+      parsed?.message,
+    );
+  }
+
+  if (!response.ok) {
+    // wrap response details in a CompoundError and throw it so it can be properly logged
+    await throwWorkspaceError(response);
+  }
+
+  const data = (asJson ? await response.json() : await response.text()) as T;
+
+  return { data, etag, status: response.status };
 }
 
 export async function reqWorkspaceMetadata<T = any>(
@@ -341,7 +472,7 @@ export async function reqWorkspaceMetadata<T = any>(
   const response = await fetch(`${WORKSPACE_URL}/metadata/${url}${postSearchParameters}`, options);
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    await throwWorkspaceError(response);
   }
 
   if (asJson) {

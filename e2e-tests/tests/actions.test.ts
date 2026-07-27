@@ -114,6 +114,16 @@ test.describe.serial('Actions', () => {
     await action.switchToActionsTab();
   });
 
+  test('Action report renders sanitized Markdown with an openable link', async () => {
+    await action.selectActionInSidebar();
+    await action.runAction({
+      expectedStatus: 'Complete',
+      mode: 'report',
+      stringParameters: { required: 'test-required-value', requiredNoDefault: 'test-no-default-value' },
+    });
+    await action.verifyReport();
+  });
+
   test('Archive an action prevents running', async () => {
     // Go back to the action detail view by clicking action name in sidebar
     await action.selectActionInSidebar();

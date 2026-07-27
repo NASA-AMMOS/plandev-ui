@@ -1,0 +1,28 @@
+{
+    "source": {
+        "key": "MDGExternalSource:mdg-external-source.json",
+        "source_type_name": "MDG External Source",
+        "derivation_group_name": "MDG External Source Default",
+        "valid_at": "2022-001T00:00:00Z",
+        "period": {
+            "start_time": "2022-001T00:00:00Z",
+            "end_time": "2022-002T00:00:00Z"
+        },
+        "attributes": {
+            "version": 1,
+            "spacecraft": "sc1"
+        }
+    },
+    "events": [
+        {
+            "key": "MDGEvent:1/sc/sc1:1:X/1",
+            "event_type_name": "MDGEvent",
+            "start_time": "2022-001T12:00:00Z",
+            "duration": "00:00:00",
+            "attributes": {
+                "example1": "value",
+                "example2": 1
+            }
+        }
+    ]
+}

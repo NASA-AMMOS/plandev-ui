@@ -52,7 +52,7 @@ test.describe.serial('Plan Expansion', () => {
     await setup.plan.createSequenceFilter(sequenceFilterName);
   });
   test('Sequence Filter can be applied to a plan', async () => {
-    await setup.plan.addActivity('PeelBanana');
+    await setup.plan.addActivityByDragAndDrop('PeelBanana');
     await setup.plan.showPanel(PanelNames.SIMULATION, true);
     await setup.plan.runSimulation();
     await setup.plan.showPanel(PanelNames.EXPANSION);

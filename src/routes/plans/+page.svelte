@@ -7,7 +7,7 @@
   import { Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
-  import { ArrowLeftRight, FileUp, Import, X } from 'lucide-svelte';
+  import { FileUp, Import, Pencil, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
@@ -16,6 +16,7 @@
   import Field from '../../components/form/Field.svelte';
   import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
+  import PlanTimeBounds from '../../components/plan/PlanTimeBounds.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
@@ -44,14 +45,12 @@
   import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
+  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
-    convertUsToDurationString,
     formatDate,
     getDoyTime,
     getDoyTimeFromInterval,
-    getIntervalInMs,
     getShortISOForDate,
   } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
@@ -191,6 +190,7 @@
 
   let canCreate: boolean = false;
   let canChangePlanModel: boolean = false;
+  let canUpdatePlan: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
@@ -204,8 +204,6 @@
   let selectedPlan: PlanSlim | undefined;
   let selectedPlanId: number | null = null;
   let selectedPlanModelName: string | null = null;
-  let selectedPlanStartTime: string | null = null;
-  let selectedPlanEndTime: string | null = null;
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -222,6 +220,8 @@
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel($user, selectedPlan);
+  $: canUpdatePlan =
+    selectedPlan !== undefined && $user ? featurePermissions.plan.canUpdate($user, selectedPlan) : false;
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -234,18 +234,6 @@
 
     selectedPlan = $plans.find(({ id }) => id === selectedPlanId);
     if (selectedPlan) {
-      try {
-        const parsedPlanStartTime = $plugins.time.primary.parse(selectedPlan?.start_time_doy);
-        const parsedPlanEndTime = $plugins.time.primary.parse(selectedPlan?.end_time_doy);
-        if (parsedPlanStartTime) {
-          selectedPlanStartTime = formatDate(parsedPlanStartTime, $plugins.time.primary.format);
-        }
-        if (parsedPlanEndTime) {
-          selectedPlanEndTime = formatDate(parsedPlanEndTime, $plugins.time.primary.format);
-        }
-      } catch (e) {
-        console.log(e);
-      }
       selectedPlanModelName = $models.find(model => model.id === selectedPlan?.model_id)?.name ?? null;
     }
   }
@@ -537,21 +525,9 @@
   }
 
   function updateDurationString() {
-    if ($startTimeField.valid && $endTimeField.valid) {
-      let startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
-      let endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
-      if (typeof startTimeMs === 'number' && typeof endTimeMs === 'number') {
-        durationString = convertUsToDurationString((endTimeMs - startTimeMs) * 1000);
-
-        if (!durationString) {
-          durationString = 'None';
-        }
-      } else {
-        durationString = 'Invalid';
-      }
-    } else {
-      durationString = 'None';
-    }
+    const startTimeMs = $plugins.time.primary.parse($startTimeField.value)?.getTime();
+    const endTimeMs = $plugins.time.primary.parse($endTimeField.value)?.getTime();
+    durationString = computeDurationString(startTimeMs, endTimeMs, $startTimeField.valid && $endTimeField.valid);
   }
 
   async function parsePlanFileStream(stream: ReadableStream) {
@@ -721,7 +697,7 @@
                     <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
                       <InputStellar
                         sizeVariant="xs"
-                        disabled
+                        readonly
                         class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
                         name="name"
                         value={selectedPlanModelName ?? 'Model not found'}
@@ -741,7 +717,7 @@
                         on:click={openChangePlanMissionModelModal}
                         aria-label="Change mission model"
                       >
-                        <ArrowLeftRight size={16} />
+                        <Pencil size={16} />
                       </Button>
                     </div>
                   </div>
@@ -751,36 +727,12 @@
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
                 <InputStellar sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
               </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="start-time">
-                  Start Time - {$plugins.time.primary.label}
-                </Label>
-                <InputStellar
-                  sizeVariant="xs"
-                  disabled
-                  class="w-full"
-                  name="start-time"
-                  value={selectedPlanStartTime}
-                />
-              </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="end-time">
-                  End Time - {$plugins.time.primary.label}
-                </Label>
-                <InputStellar sizeVariant="xs" disabled class="w-full" name="end-time" value={selectedPlanEndTime} />
-              </Input>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="duration">
-                  Plan Duration
-                </Label>
-                <InputStellar
-                  sizeVariant="xs"
-                  disabled
-                  class="w-full"
-                  name="duration"
-                  value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000)}
-                />
-              </Input>
+              <PlanTimeBounds
+                plan={selectedPlan}
+                user={$user}
+                hasUpdatePermission={canUpdatePlan}
+                permissionError="You do not have permission to edit this plan."
+              />
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
                 <TagsInput

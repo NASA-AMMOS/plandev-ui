@@ -19,6 +19,7 @@
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
+  import ActivityDirectiveBuilder from '../../../components/activity/ActivityDirectiveBuilder.svelte';
   import Nav from '../../../components/app/Nav.svelte';
   import PageTitle from '../../../components/app/PageTitle.svelte';
   import Console from '../../../components/console/Console.svelte';
@@ -59,19 +60,20 @@
     resetPlanConstraintStores,
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
+  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
     allProblems,
     clearLogs,
     clearSchedulingErrors,
-    constraintRunErrors,
+    constraintErrors,
     errorLogs,
     modelErrors,
     resetErrorStores,
     schedulingErrors,
-    simulationDatasetErrors,
-  } from '../../../stores/errors';
+    simulationErrors,
+  } from '../../../stores/console';
   import {
     lastExpandedSimulationDatasetId,
     planExpansionStatus,
@@ -85,15 +87,15 @@
     initialPlan,
     maxTimeRange,
     plan,
+    planBoundsPreviewOverride,
     planDatasets,
-    planEndTimeMs,
     planId,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
-    planStartTimeMs,
+    planStartTimeYmd,
     planTags,
     resetPlanStores,
     viewTimeRange,
@@ -104,6 +106,7 @@
     planSnapshotId,
     resetPlanSnapshotStores,
   } from '../../../stores/planSnapshots';
+  import { plugins } from '../../../stores/plugins';
   import {
     enableScheduling,
     latestSchedulingRequest,
@@ -117,8 +120,6 @@
   import {
     enableSimulation,
     externalResourceNames,
-    externalResources,
-    fetchingResourcesExternal,
     initialSpansLoading,
     resetSimulationStores,
     resourceTypes,
@@ -141,7 +142,8 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
-  import type { ActivityErrorCounts, LogLevel } from '../../../types/errors';
+  import type { ActivityDirectiveInsertInput } from '../../../types/activity';
+  import type { ActivityErrorCounts, LogLevel } from '../../../types/console';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -162,7 +164,7 @@
   } from '../../../utilities/simulation';
   import { getHumanReadableStatus, statusColors } from '../../../utilities/status';
   import { pluralize } from '../../../utilities/text';
-  import { getUnixEpochTime } from '../../../utilities/time';
+  import { formatDate, getUnixEpochTimeFromInterval } from '../../../utilities/time';
   import { showSuccessToast } from '../../../utilities/toast';
   import { tooltip } from '../../../utilities/tooltip';
   import { getSearchParameterNumber, removeQueryParam, setQueryParam } from '../../../utilities/url';
@@ -201,7 +203,6 @@
   let selectedSimulationStatus: Status | null;
   let windowWidth = 1600;
   let simulationDataAbortController: AbortController;
-  let resourcesExternalAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
   let consolePaneApi: PaneAPI;
@@ -292,9 +293,6 @@
   }
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
-    $planEndTimeMs = getUnixEpochTime(data.initialPlan.end_time_doy);
-    $planStartTimeMs = getUnixEpochTime(data.initialPlan.start_time_doy);
-    $maxTimeRange = { end: $planEndTimeMs, start: $planStartTimeMs };
     $simulationDatasetId = -1;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
@@ -366,6 +364,9 @@
     $planSnapshotId = data.initialPlanSnapshotId;
     $planReadOnlySnapshot = true;
   }
+  // While previewing a snapshot, render against the snapshot's own plan bounds and snap the timeline
+  // viewport to them; revert to the live plan and the pre-preview viewport on exit.
+  $: applySnapshotPreviewBounds($planSnapshot);
   $: if ($planSnapshot !== null) {
     effects.getPlanSnapshotActivityDirectives($planSnapshot, $user).then(directives => {
       if (directives !== null) {
@@ -395,35 +396,17 @@
   // before the view loads would read `$view === null` and stay false until the next view change.
   $: hasUpdateViewPermission = $view !== null ? featurePermissions.view.canUpdate($user, $view) : false;
 
-  $: if ($initialPlan && $planDatasets) {
-    const datasetNames = [];
-
+  // External profile names. The actual profile data is fetched on demand
+  // per visible row by createExternalResourceSubscription (see
+  // stores/externalResource.ts), driven off the same planDatasets sub.
+  $: if ($planDatasets) {
+    const names = new Set<string>();
     for (const dataset of $planDatasets) {
       for (const profile of dataset.dataset.profiles) {
-        datasetNames.push(profile.name);
+        names.add(profile.name);
       }
     }
-
-    $externalResourceNames = [...new Set(datasetNames)];
-
-    resourcesExternalAbortController?.abort();
-    resourcesExternalAbortController = new AbortController();
-    $fetchingResourcesExternal = true;
-    $externalResources = [];
-    effects
-      .getResourcesExternal(
-        $initialPlan.id,
-        $simulationDatasetId > -1 ? $simulationDatasetId : null,
-        $initialPlan.start_time,
-        get(user),
-        resourcesExternalAbortController.signal,
-      )
-      .then(({ aborted, resources }) => {
-        if (!aborted) {
-          $externalResources = resources;
-          $fetchingResourcesExternal = false;
-        }
-      });
+    $externalResourceNames = [...names];
   }
 
   $: if ($planId > -1) {
@@ -431,7 +414,11 @@
     selectActivity(null, null);
   }
 
-  $: if ($initialPlan && $simulationDataset !== null && getSimulationStatus($simulationDataset) === Status.Complete) {
+  $: if (
+    $planStartTimeYmd &&
+    $simulationDataset !== null &&
+    getSimulationStatus($simulationDataset) === Status.Complete
+  ) {
     const datasetId = $simulationDataset.dataset_id;
     simulationDataAbortController?.abort();
     simulationDataAbortController = new AbortController();
@@ -439,7 +426,7 @@
     effects
       .getSpans(
         datasetId,
-        $simulationDataset.simulation_start_time ?? $initialPlan.start_time,
+        $simulationDataset.simulation_start_time ?? $planStartTimeYmd,
         get(user),
         simulationDataAbortController.signal,
       )
@@ -454,6 +441,9 @@
     simulationDataAbortController?.abort();
     $spans = null;
     $simulationEvents = null;
+    // Only the Complete branch fetches spans; clear the flag in every other
+    // branch so the global indicator doesn't spin forever on failed/no-sim.
+    $initialSpansLoading = false;
   }
 
   $: compactNavMode = windowWidth < 1200;
@@ -494,8 +484,8 @@
   $: if (typeof $planModelId === 'number' && browser) {
     // Asynchronously fetch resource types
     $resourceTypesLoading = true;
-    effects.getResourceTypes($planModelId, get(user)).then(initialResourceTypes => {
-      $resourceTypes = initialResourceTypes;
+    effects.getResourceTypes($planModelId, get(user)).then(modelResourceTypes => {
+      $resourceTypes = modelResourceTypes;
       $resourceTypesLoading = false;
     });
   }
@@ -536,6 +526,40 @@
     $planSnapshotId = null;
     $planReadOnlySnapshot = false;
     $simulationDatasetId = $simulationDatasetLatest?.id ?? -1;
+  }
+
+  // Tracks snapshot-preview transitions (enter/exit/switch) so we only snap the viewport on a real
+  // change — not on every snapshot subscription emission or while the user pans during preview.
+  let previewedSnapshotId: number | null = null;
+  let preSnapshotViewTimeRange: { end: number; start: number } | null = null;
+
+  function applySnapshotPreviewBounds(snapshot: PlanSnapshot | null) {
+    const newSnapshotId = snapshot?.snapshot_id ?? null;
+    if (newSnapshotId === previewedSnapshotId) {
+      return;
+    }
+
+    const snapshotBounds =
+      snapshot?.plan_start_time && snapshot?.plan_duration
+        ? { duration: snapshot.plan_duration, start_time: snapshot.plan_start_time }
+        : null;
+
+    // Remember the live viewport when first entering preview so it can be restored on exit.
+    if (previewedSnapshotId === null) {
+      preSnapshotViewTimeRange = get(viewTimeRange);
+    }
+    previewedSnapshotId = newSnapshotId;
+
+    // Setting the override updates the derived plan bounds synchronously, so maxTimeRange below
+    // already reflects the snapshot's bounds.
+    planBoundsPreviewOverride.set(snapshotBounds);
+
+    if (snapshotBounds) {
+      viewTimeRange.set(get(maxTimeRange));
+    } else if (newSnapshotId === null && preSnapshotViewTimeRange) {
+      viewTimeRange.set(preSnapshotViewTimeRange);
+      preSnapshotViewTimeRange = null;
+    }
   }
 
   function onClearConsole() {
@@ -717,11 +741,43 @@
       }
     }
   }
+
+  async function onCreateActivityDirective(directive: ActivityDirectiveInsertInput) {
+    if ($plan !== null && $plan.model) {
+      // Convert offset to absolute start with plan as anchor
+      const offsetAsMs = getUnixEpochTimeFromInterval($plan.start_time, directive.start_offset);
+      const formattedStart = formatDate(new Date(offsetAsMs), $plugins.time.primary.format);
+      const directiveName =
+        typeof directive.name === 'undefined' || directive.name === '' ? directive.type : directive.name;
+      const newDirectiveId: number | null = await effects.createActivityDirective(
+        directive.arguments,
+        formattedStart,
+        directive.type,
+        directiveName,
+        directive.metadata,
+        $plan,
+        $user,
+      );
+      if (newDirectiveId !== null) {
+        resetDirectiveBuilder();
+      }
+    }
+  }
 </script>
 
 <svelte:window on:keydown={onKeydown} bind:innerWidth={windowWidth} />
 
 <PageTitle subTitle={$plan?.name} title="Plans" />
+
+{#if $directiveBuilderIsVisible}
+  <ActivityDirectiveBuilder
+    plan={$plan}
+    on:createActivityDirective={event => {
+      onCreateActivityDirective(event.detail.directive);
+    }}
+    user={$user}
+  />
+{/if}
 
 <div class="plan-container">
   <Resizable.PaneGroup direction="vertical" autoSaveId="console">
@@ -1066,8 +1122,8 @@
               </div>
               <div class="flex items-center py-0.5">
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
-                <ConsoleTab value="simulation" numberOfErrors={$simulationDatasetErrors?.length}>Simulation</ConsoleTab>
-                <ConsoleTab value="constraints" numberOfErrors={$constraintRunErrors?.length}>Constraints</ConsoleTab>
+                <ConsoleTab value="simulation" numberOfErrors={$simulationErrors?.length}>Simulation</ConsoleTab>
+                <ConsoleTab value="constraints" numberOfErrors={$constraintErrors?.length}>Constraints</ConsoleTab>
                 <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
                 <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
                 <div
@@ -1094,10 +1150,10 @@
           <ConsoleLogs value="scheduling" showTimestamp={false} logs={$schedulingErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
-          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationDatasetErrors}>
+          <ConsoleLogs value="simulation" showTimestamp={false} logs={$simulationErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
-          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintRunErrors}>
+          <ConsoleLogs value="constraints" showTimestamp={false} logs={$constraintErrors}>
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
           <ConsoleActivityErrors

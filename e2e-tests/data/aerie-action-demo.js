@@ -15,6 +15,7 @@ const parameterDefinitions = {
       { key: 'adaptation', label: 'Translate File using Adaptation' },
       { key: 'files', label: 'List & Read Files' },
       { key: 'write', label: 'Write a File' },
+      { key: 'report', label: 'Render a Report' },
       { key: 'error', label: 'Throw an Error' },
       { key: 'slow', label: 'Slow (5s delay)' },
       { key: 'api-test', label: 'API Integration Tests' },
@@ -106,6 +107,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
       break;
     case 'write':
       result = await runWriteMode(actionsAPI, outputFile, outputContent, verbose);
+      break;
+    case 'report':
+      result = runReportMode(mode);
       break;
     case 'error':
       result = runErrorMode();
@@ -643,6 +647,72 @@ async function runWriteMode(actionsAPI, filename, content, verbose) {
   }
 }
 
+
+function runReportMode(mode) {
+  console.log('Building a Markdown report...');
+
+  // Demonstrates the supported Markdown subset rendered in the "Report" block,
+  // including inline color (in text and table cells), plus a few constructs the
+  // UI sanitizer intentionally strips.
+  const report = [
+    'This run rendered a **Markdown** `report` — the human-readable summary',
+    'shown above the raw Results.',
+    '',
+    '### What you can use',
+    '',
+    '- **Bold**, *italic*, ~~strikethrough~~, and `inline code`',
+    '- Inline color, e.g. <span style="color: #c00">CRITICAL</span> / <span style="color: green">NOMINAL</span>',
+    '- [Links](https://nasa-ammos.github.io/plandev-docs/) that open in a new tab',
+    '- Ordered/unordered lists, tables, blockquotes, and code blocks',
+    '',
+    '1. First step',
+    '2. Second step',
+    '3. Third step',
+    '',
+    '| Check | Result |',
+    '| --- | --- |',
+    '| Power margin | <span style="color: green">OK</span> |',
+    '| Thermal window | <span style="color: #c00">**Violated** at 04:12Z</span> |',
+    '| Data volume | 87% |',
+    '',
+    '> Note: report content is sanitized before it is rendered.',
+    '',
+    '### Cell background colors (HTML table)',
+    '',
+    'GFM pipe tables cannot style cells, so use a raw HTML table for full-cell backgrounds:',
+    '',
+    '<table>',
+    '<thead>',
+    '<tr><th>Subsystem</th><th>Status</th></tr>',
+    '</thead>',
+    '<tbody>',
+    '<tr><td>Power</td><td style="background-color: #d7f5dd">Nominal</td></tr>',
+    '<tr><td>Thermal</td><td style="background-color: #fbdcdc; color: #900">Violation</td></tr>',
+    '<tr><td>Comms</td><td style="background-color: #fff3cd">Degraded</td></tr>',
+    '</tbody>',
+    '</table>',
+    '',
+    '```js',
+    'const example = "fenced code blocks render too";',
+    '```',
+    '',
+    '---',
+    '',
+    '### Sanitization',
+    '',
+    'Scripts, images, and unsafe CSS are removed — only safe text color survives:',
+    '',
+    '<script>alert("xss")</script>',
+    '<img src="https://example.com/tracker.png" alt="tracker" />',
+    '<span style="color: #06c; position: fixed">stays blue, but never fixed-positioned</span>',
+  ].join('\n');
+
+  return {
+    status: 'SUCCESS',
+    data: { mode, sections: ['headings', 'lists', 'tables', 'links', 'code', 'blockquote'] },
+    report,
+  };
+}
 
 async function runAdaptationMode(actionsAPI, sequence) {
   console.log('Loading adaptation');

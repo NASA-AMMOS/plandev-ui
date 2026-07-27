@@ -10,9 +10,9 @@
     HwCommand,
   } from '@nasa-jpl/aerie-ampcs';
   import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
-  import { ArrowUpRight } from 'lucide-svelte';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
+  import { ArrowUpRight } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { addDefaultArgs, getMissingArgDefs } from '../../../utilities/sequence-editor/sequence-utils';
   import { tooltip } from '../../../utilities/tooltip';
@@ -28,6 +28,7 @@
   export let commandNameNode: SyntaxNode | null = null;
   export let commandNode: SyntaxNode | null = null;
   export let editorSequenceView: EditorView;
+  export let readOnly: boolean = false;
   export let timeTagNode: TimeTagInfo = null;
   export let variablesInScope: string[] = [];
 
@@ -117,65 +118,68 @@
     </fieldset>
   {/if}
   {#if !!commandNode}
-    {#if commandInfoMapper.nodeTypeHasArguments(commandNode)}
-      {#if !!commandDef}
-        {#each editorArgInfoArray as argInfo}
-          <ArgEditor
-            {argInfo}
-            {commandDictionary}
-            {commandInfoMapper}
-            {variablesInScope}
-            setInEditor={debounce((token, val) => setInEditor(editorSequenceView, token, val), 250)}
-            addDefaultArgs={(commandNodeToAddArgs, missingArgDefs) =>
-              addDefaultArgs(
-                commandDictionary,
-                editorSequenceView,
-                commandNodeToAddArgs,
-                missingArgDefs,
-                commandInfoMapper,
-              )}
-          />
-        {/each}
-
-        {#if missingArgDefArray.length}
-          <fieldset>
-            <AddMissingArgsButton
-              setInEditor={() => {
-                if (commandNode) {
-                  addDefaultArgs(
-                    commandDictionary,
-                    editorSequenceView,
-                    commandNode,
-                    missingArgDefArray,
-                    commandInfoMapper,
-                  );
-                }
-              }}
+    <fieldset class="m-0 min-w-0 border-0 p-0" disabled={readOnly}>
+      {#if commandInfoMapper.nodeTypeHasArguments(commandNode)}
+        {#if !!commandDef}
+          {#each editorArgInfoArray as argInfo}
+            <ArgEditor
+              {argInfo}
+              {commandDictionary}
+              {commandInfoMapper}
+              {variablesInScope}
+              disabled={readOnly}
+              setInEditor={debounce((token, val) => setInEditor(editorSequenceView, token, val), 250)}
+              addDefaultArgs={(commandNodeToAddArgs, missingArgDefs) =>
+                addDefaultArgs(
+                  commandDictionary,
+                  editorSequenceView,
+                  commandNodeToAddArgs,
+                  missingArgDefs,
+                  commandInfoMapper,
+                )}
             />
+          {/each}
+
+          {#if missingArgDefArray.length}
+            <fieldset>
+              <AddMissingArgsButton
+                setInEditor={() => {
+                  if (commandNode) {
+                    addDefaultArgs(
+                      commandDictionary,
+                      editorSequenceView,
+                      commandNode,
+                      missingArgDefArray,
+                      commandInfoMapper,
+                    );
+                  }
+                }}
+              />
+            </fieldset>
+          {/if}
+        {:else}
+          <fieldset>
+            <div class="label-row">{commandName ?? ''}</div>
           </fieldset>
+          <div class="empty-state st-typography-label">Command type is not present in dictionary</div>
         {/if}
       {:else}
         <fieldset>
-          <div class="label-row">{commandName ?? ''}</div>
+          <div class="label-row">{`${formatTypeName(commandNode.name)} Name`}</div>
+          <div>
+            <StringEditor
+              argDef={nameArgumentDef}
+              initVal={commandName ?? ''}
+              setInEditor={val => {
+                if (commandNameNode) {
+                  setInEditor(editorSequenceView, commandNameNode, val);
+                }
+              }}
+            />
+          </div>
         </fieldset>
-        <div class="empty-state st-typography-label">Command type is not present in dictionary</div>
       {/if}
-    {:else}
-      <fieldset>
-        <div class="label-row">{`${formatTypeName(commandNode.name)} Name`}</div>
-        <div>
-          <StringEditor
-            argDef={nameArgumentDef}
-            initVal={commandName ?? ''}
-            setInEditor={val => {
-              if (commandNameNode) {
-                setInEditor(editorSequenceView, commandNameNode, val);
-              }
-            }}
-          />
-        </div>
-      </fieldset>
-    {/if}
+    </fieldset>
   {:else}
     <div class="empty-state st-typography-label">
       Select a command or open the

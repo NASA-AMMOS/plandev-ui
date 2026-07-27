@@ -11,9 +11,10 @@
   import { File } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
-  import type { LintDiagnostic } from '../../types/errors';
+  import type { LintDiagnostic } from '../../types/console';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
+  import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
@@ -62,6 +63,8 @@
       editorView.dispatch({
         annotations: [Transaction.addToHistory.of(false)], // Prevent this change from being added to the undo history
         changes: { from: 0, insert: textFileContent, to: editorView.state.doc.length },
+        // Tagged so the read-only change guard lets this content sync through.
+        userEvent: 'file.open',
       });
     }
   }
@@ -71,6 +74,8 @@
       effects: compartmentReadonly.reconfigure([
         EditorState.readOnly.of(!isEditable),
         EditorView.editable.of(isEditable),
+        // Block programmatic edits readOnly misses (e.g. lint fixes), but allow 'file.open' sync.
+        ...(isEditable ? [] : [readOnlyChangeGuard(['file.open'])]),
       ]),
     });
   }
@@ -109,7 +114,11 @@
               textContentUpdateListener(viewUpdate);
             }
           }),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+          compartmentReadonly.of(
+            readOnly || previewOnly || isLoading
+              ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+              : [EditorState.readOnly.of(false)],
+          ),
         ],
         parent: editorDiv,
       });
@@ -130,7 +139,11 @@
               textContentUpdateListener(viewUpdate);
             }
           }),
-          compartmentReadonly.of([EditorState.readOnly.of(readOnly || previewOnly || isLoading)]),
+          compartmentReadonly.of(
+            readOnly || previewOnly || isLoading
+              ? [EditorState.readOnly.of(true), readOnlyChangeGuard(['file.open'])]
+              : [EditorState.readOnly.of(false)],
+          ),
         ],
         parent: editorDiv,
       });
@@ -151,6 +164,20 @@
     disableCopyAndExport = updatedText === '';
     updatedTextContent = updatedText;
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
+  }
+
+  /**
+   * Replace the editor content and DO record it in the undo history — unlike the file-open sync,
+   * which is excluded from history. Used by "take theirs" so the user can Cmd-Z back to the edits
+   * they discarded (the full-doc replace and its inverse are exact, so undo/redo stay clean).
+   */
+  export function rebaseContent(content: string): void {
+    if (editorView && editorView.state.doc.toString() !== content) {
+      editorView.dispatch({
+        changes: { from: 0, insert: content, to: editorView.state.doc.length },
+        userEvent: 'file.rebase',
+      });
+    }
   }
 
   function downloadInputFormat(): void {

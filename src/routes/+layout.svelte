@@ -11,7 +11,7 @@
   import ConnectionStatusBanner from '../components/app/ConnectionStatusBanner.svelte';
   import Nav from '../components/app/Nav.svelte';
   import Loading from '../components/Loading.svelte';
-  import { clearLogs } from '../stores/errors';
+  import { clearLogs } from '../stores/console';
   import { restartSharedClient } from '../stores/gqlClient';
   import { plugins, pluginsError, pluginsLoaded } from '../stores/plugins';
   import type { UserStore } from '../types/app';

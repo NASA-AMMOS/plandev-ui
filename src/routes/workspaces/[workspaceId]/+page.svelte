@@ -2,10 +2,11 @@
 
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { beforeNavigate, goto, replaceState } from '$app/navigation';
+  import { beforeNavigate, goto, pushState, replaceState } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
+  import type { Extension } from '@codemirror/state';
   import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
   import type {
     CommandInfoMapper,
@@ -43,7 +44,7 @@
     activeDocumentIsLoading,
     activeDocumentPath,
   } from '../../../stores/activeDocument';
-  import { allLogs, catchError, clearLogs, errorLogs, logMessage } from '../../../stores/errors';
+  import { allLogs, catchError, clearLogs, errorLogs, logMessage } from '../../../stores/console';
   import { sequenceAdaptation, setSequenceLanguages } from '../../../stores/sequence-adaptation';
   import {
     channelDictionaries,
@@ -81,7 +82,7 @@
   } from '../../../stores/workspaces';
   import type { ActionDefinition, ActionRunSlim } from '../../../types/actions';
   import type { UserStore } from '../../../types/app';
-  import type { LintDiagnostic, LogLevel } from '../../../types/errors';
+  import type { LintDiagnostic, LogLevel } from '../../../types/console';
   import type { ArgumentsMap } from '../../../types/parameter';
   import type {
     ChannelDictionaryMetadata,
@@ -109,9 +110,16 @@
   import { ErrorTypes } from '../../../utilities/errors';
   import { downloadBlob, filterEmpty } from '../../../utilities/generic';
   import { isSaveEvent } from '../../../utilities/keyboardEvents';
-  import { showConfirmModal, showRunActionResultsModal } from '../../../utilities/modal';
+  import {
+    showConfirmModal,
+    showRunActionResultsModal,
+    showUnsavedChangesModal,
+    showWorkspaceSaveConflictModal,
+  } from '../../../utilities/modal';
   import { featurePermissions } from '../../../utilities/permissions';
+  import { WorkspaceSaveConflictError } from '../../../utilities/requests';
   import { getWorkspacesUrl } from '../../../utilities/routes';
+  import { phoenixResources } from '../../../utilities/sequence-editor/adaptation-resources';
   import * as adaptationUtils from '../../../utilities/sequence-editor/adaptation-utils';
   import { pluralize } from '../../../utilities/text';
   import { showFailureToast, showSuccessToast } from '../../../utilities/toast';
@@ -122,7 +130,9 @@
     findNodeAffectingPath,
     flattenWorkspaceTreeWithPaths,
     getAvailableActionsForNodes,
+    isPathInBreadcrumb,
     mapWorkspaceTreePaths,
+    parseUrlState,
     removeRedundantNodes,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -133,10 +143,11 @@
 
   type WorkspaceConsoleTab = 'actions' | 'adaptation' | 'linting' | 'logs';
 
-  // Initialize sidebar tab and content mode from URL params before first render to avoid flash
-  const initialActionRunIdParam = $page.url.searchParams.get(SearchParameters.ACTION_RUN_ID);
-  const initialActionIdParam = $page.url.searchParams.get(SearchParameters.ACTION_ID);
-  const initialSidebarTab = $page.url.searchParams.get(SearchParameters.SIDEBAR_TAB);
+  // Initialize state from URL before first render to avoid flash
+  const initialUrlState = parseUrlState($page.url);
+  $workspaceContentMode = initialUrlState.mode;
+  $selectedActionRunId = initialUrlState.actionRunId;
+  $selectedActionDefinitionId = initialUrlState.actionId;
 
   const { initialWorkspace } = data;
   const actionRunsLoading = actionRuns.loading;
@@ -148,7 +159,6 @@
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
   let activeFileIsInputSequence: boolean = false;
-  let actionDetailIsDirty: boolean = false;
   let activeFileMetadata: WorkspaceFileMetadata | null = null;
   let activeFileIsSequence: boolean = false;
   let availableActionsForActiveFile: ActionParameterPair[] = [];
@@ -159,8 +169,7 @@
   let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let leftPaneApi: PaneAPI;
-  let leftPanelActiveTab: string =
-    initialActionRunIdParam || initialActionIdParam || initialSidebarTab === 'actions' ? 'actions' : 'files';
+  let leftPanelActiveTab: string = initialUrlState.sidebarTab;
   let rightPaneApi: PaneAPI;
   let rightPanelActiveTab: string = 'metadata';
   let rightPanelCommandNodeName: string | null = null;
@@ -182,6 +191,7 @@
   let selectedConsoleTab: WorkspaceConsoleTab = 'actions';
   let activeEditorView: EditorView | null = null;
   let sequenceEditorRef: SequenceEditor;
+  let textEditorRef: TextEditor;
   let showLoadingSpinner: boolean = false;
   let librarySequences: LibrarySequenceSignature[] = [];
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -193,28 +203,8 @@
   let workspaceTree: WorkspaceTreeNode | null = null;
   let workspaceTreeMap: WorkspaceTreeMap = {};
   let workspaceFileList: WorkspaceTreeNodeWithFullPath[] = [];
-
-  if (initialActionRunIdParam) {
-    const runId = parseInt(initialActionRunIdParam, 10);
-    if (!isNaN(runId)) {
-      $selectedActionRunId = runId;
-      $workspaceContentMode = WorkspaceContentMode.ActionRunDetail;
-      if (initialActionIdParam) {
-        const actionId = parseInt(initialActionIdParam, 10);
-        if (!isNaN(actionId)) {
-          $selectedActionDefinitionId = actionId;
-        }
-      }
-    }
-  } else if (initialActionIdParam) {
-    const actionId = parseInt(initialActionIdParam, 10);
-    if (!isNaN(actionId)) {
-      $selectedActionDefinitionId = actionId;
-      $workspaceContentMode = WorkspaceContentMode.ActionDetail;
-    }
-  } else if (initialSidebarTab === 'actions') {
-    $workspaceContentMode = WorkspaceContentMode.ActionRunsList;
-  }
+  let isHandlingPopstate: boolean = false;
+  let lastKnownUrl: string = '';
 
   // Programmatic collapse/expand of left sidebar content pane
   $: if (leftPaneApi) {
@@ -373,47 +363,148 @@
     parameterDictionaries = [];
   }
 
-  // Prevent in-app navigation to other routes when there are unsaved changes
+  // Prevent in-app navigation to other routes when there are unsaved changes.
+  // Browser back/forward inside the workspace is handled by the window popstate
+  // listener in onMount; this hook only fires for cross-route navigations and
+  // intra-route shallow pushState (which is initiated by our own click handlers
+  // that already prompt themselves).
   beforeNavigate(({ cancel, to }) => {
     if (!$activeDocumentIsDirty) {
-      return;
-    }
-    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
-    if (to?.route.id === $page.route.id) {
       return;
     }
     // Skip for external navigation (tab close, refresh) - handled by beforeunload
     if (to === null) {
       return;
     }
+    // Allow navigation within the same workspace page (file selection is handled by confirmAndNavigate)
+    if (to.route.id === $page.route.id) {
+      return;
+    }
     // Cancel navigation first, then show async modal and navigate if confirmed
     cancel();
-    showConfirmModal(
-      'Leave Page',
-      'There are unsaved changes. Are you sure you want to leave this page?',
-      'Leave Page',
-      true,
+    resolveUnsavedChanges(
+      'There are unsaved changes. What would you like to do before leaving this page?',
+      'Save and Leave',
+      'Discard and Leave',
       'Stay on Page',
-    ).then(({ confirm }) => {
-      if (confirm && to?.url) {
-        // Reset content to allow navigation without re-triggering the modal
-        activeDocument.markClean();
-        goto(to.url);
+    ).then(decision => {
+      if (decision === 'stay' || !to?.url) {
+        return;
       }
+      // Reset content to allow navigation without re-triggering the modal
+      activeDocument.markClean();
+      goto(to.url);
     });
   });
 
+  // Centralize URL mutation so the lastKnownUrl bookkeeping (used by the popstate
+  // rollback path) can't get out of sync with the pushed URL.
+  function pushUrl(url: string): void {
+    pushState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+  function replaceUrl(url: string): void {
+    replaceState(url, {});
+    lastKnownUrl = window.location.href;
+  }
+
+  // Prompts the user about unsaved file changes before navigating. Offers Save, Discard, or
+  // Keep Editing. Resolves true if navigation should proceed (the doc was saved or discarded
+  // and marked clean); false if the user kept editing or the save failed/was cancelled.
+  async function confirmNavigateAway(): Promise<boolean> {
+    if (!$activeDocumentIsDirty) {
+      return true;
+    }
+    const decision = await resolveUnsavedChangesBeforeFileSwitch();
+    if (decision === 'stay') {
+      return false;
+    }
+    if (decision === 'proceed-discarded') {
+      // Discard: mark clean so navigation proceeds without re-prompting.
+      activeDocument.markClean();
+    }
+    return true;
+  }
+
+  function syncStateFromUrl(url: URL) {
+    const { actionId, actionRunId, filePath, mode, sidebarTab } = parseUrlState(url);
+
+    // Reset the flag defensively in case the previous popstate set it but the
+    // selectedFilePath reactive never fired to consume it (e.g., the workspace
+    // was reloading at that moment, or the file path already matched). Without
+    // this, a stale flag would suppress the next user-initiated pushUrl.
+    isHandlingPopstate = false;
+
+    $workspaceContentMode = mode;
+    $selectedActionRunId = actionRunId;
+    $selectedActionDefinitionId = actionId;
+    leftPanelActiveTab = sidebarTab;
+
+    // Only touch the active file when we're in File mode. Other modes preserve the
+    // previously-loaded file so switching back to File mode shows it again.
+    if (mode === WorkspaceContentMode.File && filePath !== selectedFilePath) {
+      if (filePath === null) {
+        // URL no longer references a file; unload directly to avoid maybeNavigate's
+        // null-path revert behavior.
+        activeDocument.close();
+        selectedFilePath = null;
+      } else {
+        // Flag tells confirmAndNavigate to skip its pushState (URL is already correct).
+        isHandlingPopstate = true;
+        selectedFilePath = filePath;
+
+        // If the new path lives above or outside the current breadcrumb view,
+        // the file browser would filter it out (it only renders descendants of
+        // currentBreadcrumbPath). Pull the breadcrumb up to the file's parent
+        // so the row is visible. Paths *below* the current view are fine — the
+        // tree auto-expands to them via expandToPath in the file browser.
+        if (!isPathInBreadcrumb(filePath, sidebarBreadcrumbPath)) {
+          sidebarBreadcrumbPath = separateFilenameFromPath(filePath).path ?? '';
+        }
+      }
+    }
+  }
+
   onMount(() => {
+    lastKnownUrl = window.location.href;
+
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if ($activeDocumentIsDirty) {
         event.preventDefault(); // Triggers the native browser confirmation
         event.returnValue = ''; // Required for some older browser compatibility
       }
     };
+
+    // Browser back/forward inside the workspace. SvelteKit's lifecycle hooks don't
+    // fire reliably for shallow pushState entries, so we handle these directly.
+    // Cross-route popstates (back/forward out of this workspace) are handled by
+    // beforeNavigate above — we early-return here to avoid stacking two modals.
+    const handlePopstate = () => {
+      const newUrl = window.location.href;
+      const expectedPathname = `${base}/workspaces/${$workspaceId}`;
+      if (new URL(newUrl).pathname !== expectedPathname) {
+        return;
+      }
+      const previousUrl = lastKnownUrl;
+
+      confirmNavigateAway().then(confirmed => {
+        if (confirmed) {
+          syncStateFromUrl(new URL(newUrl));
+          lastKnownUrl = newUrl;
+        } else {
+          // Roll back the URL change so the user stays on the dirty page.
+          window.history.pushState({}, '', previousUrl);
+          lastKnownUrl = previousUrl;
+        }
+      });
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopstate);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopstate);
     };
   });
 
@@ -425,24 +516,24 @@
       selectedFilePath = $activeDocumentPath;
       return;
     }
-    // If we're in a non-file mode, guard against dirty action detail before switching
-    if ($workspaceContentMode !== WorkspaceContentMode.File && actionDetailIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        'There are unsaved action changes. Are you sure you want to navigate away?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-      if (!confirm) {
-        selectedFilePath = $activeDocumentPath;
-        return;
-      }
-      actionDetailIsDirty = false;
-    }
     // Switch back to file mode
     $workspaceContentMode = WorkspaceContentMode.File;
     $selectedActionDefinitionId = null;
+
+    // If the target isn't in the tree (typo'd URL, deleted, etc.), replace the
+    // current entry directly. Going through confirmAndNavigate would pushUrl
+    // first and then replace on top — leaving a stale "non-existent file" entry
+    // on top of whatever the browser already added (e.g., a typed URL), which
+    // would intercept the next back-press and make it feel like history is lost.
+    if (!workspaceTreeMap[nextPath]) {
+      activeDocument.close();
+      showFailureToast('The selected file does not exist in the workspace.');
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
+      // Consume the popstate flag explicitly since we skipped confirmAndNavigate.
+      isHandlingPopstate = false;
+      return;
+    }
 
     const didNavigate = await confirmAndNavigate(nextPath);
     if (!didNavigate) {
@@ -458,18 +549,10 @@
 
     // successfully navigated, start loading the file contents
     selectedSequenceOutput = undefined;
-    if (nextPath && workspaceTreeMap[nextPath]) {
-      const { filename } = separateFilenameFromPath(nextPath);
-      const fileType = workspaceTreeMap[nextPath]?.type ?? null;
-      activeDocument.startLoad(nextPath, filename ?? null, fileType);
-      await getSelectedFileContent(nextPath);
-    } else {
-      // navigated to a null/empty file, reset the editor contents
-      activeDocument.close();
-      if (nextPath && !workspaceTreeMap[nextPath]) {
-        showFailureToast('The selected file does not exist in the workspace.');
-      }
-    }
+    const { filename } = separateFilenameFromPath(nextPath);
+    const fileType = workspaceTreeMap[nextPath]?.type ?? null;
+    activeDocument.startLoad(nextPath, filename ?? null, fileType);
+    await getSelectedFileContent(nextPath);
   }
 
   function resetRefreshInterval() {
@@ -559,23 +642,32 @@
 
   async function getSelectedFileContent(filePath: string) {
     let content: string | null = '';
+    let etag: string | null = null;
 
     if ($user) {
       const node = workspaceTreeMap[filePath];
       if (node?.type !== WorkspaceContentType.Directory) {
-        content = await effects.getWorkspaceFileContent($workspaceId, filePath, $user);
+        const result = await effects.getWorkspaceFileContent($workspaceId, filePath, $user);
+        content = result.content;
+        etag = result.etag;
       }
     }
 
     if (content === null) {
-      // File may have been deleted or renamed — refresh tree so the UI self-corrects
+      // File may have been deleted or renamed — refresh tree so the UI self-corrects.
+      // Also clear selectedFilePath + the stale URL inline (same reason as the
+      // "doesn't exist in tree" branch in maybeNavigate): otherwise the
+      // selectedFilePath reactive re-fires after close() sets $activeDocumentPath
+      // to null, which would push a duplicate entry and clobber the forward stack.
       activeDocument.close();
+      selectedFilePath = null;
+      replaceUrl(getWorkspacesUrl(base, $workspaceId, null));
       refreshWorkspaceContents();
       return;
     }
 
-    // activeDocument.open handles the stale check internally (compares filePath with loadingPath)
-    activeDocument.open(filePath, content);
+    // open() does the stale check and stores the ETag as baseEtag for the next save.
+    activeDocument.open(filePath, content, etag);
 
     // Fetch fresh metadata so readOnly/user fields are current when the user opens the file
     const fileNode = workspaceTreeMap[filePath];
@@ -612,7 +704,9 @@
         addWorkspaceAdaptationLog(log.level as LogLevel, log.args);
       });
       setSequenceLanguages(adaptation);
-      logMessage(`Loaded adaptation "${metadata.name}" (ID=${id}).`, '', performance.now() - startTime);
+      logMessage('log', `Loaded adaptation "${metadata.name}" (ID=${id}).`, {
+        duration: performance.now() - startTime,
+      });
     } catch (e) {
       console.error(e);
       showFailureToast('Invalid sequence adaptation');
@@ -660,23 +754,90 @@
     setSequenceLanguages(undefined);
   }
 
-  async function confirmAndNavigate(filePath: string | null) {
-    if ($activeDocumentIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        `There are unsaved changes. Are you sure you want navigate away from the current file?`,
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-
-      if (!confirm) {
+  /**
+   * Saves the active document, handling both existing files and brand-new drafts (which
+   * have no path yet and are routed through the new-sequence flow, prompting for a name).
+   * Returns true only if the save actually persisted; marks the document clean on success.
+   */
+  async function saveActiveDocument(): Promise<boolean> {
+    const content = $activeDocument.currentContent;
+    if ($activeDocumentPath) {
+      const path = $activeDocumentPath;
+      const ifMatch = $activeDocument.baseEtag ?? '*';
+      try {
+        const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+        activeDocument.markClean(content, etag);
+        return true;
+      } catch (e) {
+        if (e instanceof WorkspaceSaveConflictError) {
+          // Proceed only if the conflict resolution actually saved.
+          return await resolveSaveConflict(e, path, content);
+        }
+        // Any other failure was already toasted by the effect — just don't proceed.
         return false;
       }
     }
-    // Use replaceState to update URL immediately without triggering SvelteKit navigation
-    replaceState(getWorkspacesUrl(base, $workspaceId, filePath), {});
+    if ($workspace && workspaceTree && content) {
+      const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, $user);
+      if (newFilePath !== null) {
+        const { filename } = separateFilenameFromPath(newFilePath);
+        // Re-associate the buffer with the newly created file. Without this the document
+        // keeps its null path, so returning to the editor shows the content as a path-less
+        // "blank" draft instead of the saved file. (The URL is kept in sync separately by
+        // the caller — updateContentModeUrl on File mode, or confirmAndNavigate's replaceState.)
+        activeDocument.updatePath(newFilePath, filename ?? undefined, WorkspaceContentType.Sequence);
+        activeDocument.markClean(content);
+        refreshWorkspaceContents();
+        return true;
+      }
+    }
+    return false;
+  }
 
+  /** Shared core for the unsaved-changes prompt; prefer the context-specific wrappers below. */
+  async function resolveUnsavedChanges(
+    message: string,
+    confirmSaveLabel: string,
+    confirmDiscardLabel: string,
+    cancelLabel: string,
+  ): Promise<'stay' | 'proceed-saved' | 'proceed-discarded'> {
+    const { confirm, value } = await showUnsavedChangesModal(
+      message,
+      'Unsaved Changes',
+      confirmSaveLabel,
+      confirmDiscardLabel,
+      cancelLabel,
+    );
+    if (!confirm) {
+      return 'stay';
+    }
+    if (value?.shouldSave) {
+      // Save failed or was cancelled — stay so edits aren't lost.
+      return (await saveActiveDocument()) ? 'proceed-saved' : 'stay';
+    }
+    return 'proceed-discarded';
+  }
+
+  /** Unsaved-changes prompt for navigating away from the current file (in-page file/mode switch). */
+  function resolveUnsavedChangesBeforeFileSwitch() {
+    return resolveUnsavedChanges(
+      'There are unsaved changes. What would you like to do before navigating away from the current file?',
+      'Save and Navigate',
+      'Discard and Navigate',
+      'Keep Editing',
+    );
+  }
+
+  async function confirmAndNavigate(filePath: string | null) {
+    if (!(await confirmNavigateAway())) {
+      return false;
+    }
+    if (isHandlingPopstate) {
+      // URL was already updated by browser back/forward; don't push a duplicate entry
+      isHandlingPopstate = false;
+    } else {
+      pushUrl(getWorkspacesUrl(base, $workspaceId, filePath));
+    }
     return true;
   }
 
@@ -690,7 +851,7 @@
     activeDocument.updatePath(newFilePath, filename ?? undefined, newType);
     selectedFilePath = newFilePath;
     // Manually update URL since reactive statement won't trigger (selectedFilePath === $activeDocumentPath)
-    replaceState(getWorkspacesUrl(base, $workspaceId, newFilePath), {});
+    replaceUrl(getWorkspacesUrl(base, $workspaceId, newFilePath));
   }
 
   async function saveBeforeOperation(
@@ -717,9 +878,21 @@
     }
 
     // Save the file before the operation
-    await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath!, $activeDocument.currentContent, $user);
-    activeDocument.markClean($activeDocument.currentContent);
-    return true;
+    const path = $activeDocumentPath!;
+    const content = $activeDocument.currentContent;
+    const ifMatch = $activeDocument.baseEtag ?? '*';
+    try {
+      const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      activeDocument.markClean(content, etag);
+      return true;
+    } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        // Proceed with the operation only if the conflict resolution actually saved.
+        return await resolveSaveConflict(e, path, content);
+      }
+      // Any other failure was already toasted by the effect — just don't proceed.
+      return false;
+    }
   }
 
   async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
@@ -929,9 +1102,18 @@
 
   async function saveCurrentFile(content: string) {
     if ($activeDocumentPath) {
-      await effects.saveWorkspaceFile($workspaceId, $activeDocumentPath, content, $user);
-      activeDocument.markClean(content);
-      refreshWorkspaceContents();
+      const path = $activeDocumentPath;
+      // baseEtag runs the concurrency check; '*' forces (when no etag was captured).
+      const ifMatch = $activeDocument.baseEtag ?? '*';
+      try {
+        const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+        activeDocument.markClean(content, etag);
+        refreshWorkspaceContents();
+      } catch (e) {
+        if (e instanceof WorkspaceSaveConflictError) {
+          await resolveSaveConflict(e, path, content);
+        }
+      }
     } else if ($workspace && workspaceTree && content) {
       const newFilePath = await effects.newWorkspaceSequence($workspace, workspaceTree, '', content, $user);
       if (newFilePath !== null) {
@@ -940,6 +1122,109 @@
         refreshWorkspaceContents();
       }
     }
+  }
+
+  /**
+   * Shows the conflict modal and applies the user's choice. Returns whether the file was
+   * saved (so save-before-an-operation callers know it's safe to proceed).
+   */
+  async function resolveSaveConflict(
+    error: WorkspaceSaveConflictError,
+    path: string,
+    content: string,
+  ): Promise<boolean> {
+    const node = workspaceTreeMap[path];
+    const { confirm, value } = await showWorkspaceSaveConflictModal({
+      fileName: separateFilenameFromPath(path).filename,
+      languageExtension: getActiveFileLanguageExtension(path),
+      lastEditedAt: error.lastEditedAt,
+      lastEditedBy: error.lastEditedBy,
+      mineContent: content,
+      path,
+      reason: error.reason,
+      type: $activeDocument.type ?? node?.type ?? null,
+      user: $user,
+      workspaceId: $workspaceId,
+    });
+
+    // Cancel: leave the doc dirty with its stale token so the next save re-checks.
+    if (!confirm || !value) {
+      return false;
+    }
+
+    if (value.action === 'take-theirs') {
+      // Push the rebase INTO the editor's undo history (before replaceWithServer updates
+      // originalContent, so the non-undoable prop-sync then no-ops) so the user can Cmd-Z back to
+      // the edits they discarded.
+      const editorRef = activeFileIsSequence ? sequenceEditorRef : textEditorRef;
+      editorRef?.rebaseContent(value.content);
+      activeDocument.replaceWithServer(path, value.content, value.etag);
+      showSuccessToast('Loaded the latest version of the file');
+      return true;
+    }
+
+    if (value.action === 'take-mine') {
+      // Save against the version shown; '*' forces if no token. A re-conflict reopens the diff.
+      return persistMine(path, value.content, value.etag ?? '*');
+    }
+
+    if (value.action === 'recreate') {
+      // File was deleted underneath — force-create it.
+      return persistMine(path, content, '*');
+    }
+
+    if (value.action === 'discard') {
+      if ($activeDocumentPath === path) {
+        activeDocument.close();
+        selectedFilePath = null;
+        confirmAndNavigate(null);
+        refreshWorkspaceContents();
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Saves with the given `If-Match` and rebases the editor on success. If it still conflicts
+   * (file moved again), reopens the modal instead of overwriting. Returns whether it saved.
+   */
+  async function persistMine(path: string, content: string, ifMatch: string): Promise<boolean> {
+    try {
+      const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
+      // Rebase the editor on the saved content (no-ops if the user navigated away).
+      activeDocument.replaceWithServer(path, content, etag);
+      refreshWorkspaceContents();
+      return true;
+    } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        return resolveSaveConflict(e, path, content);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * The active file's language extension (same one the sequence editor uses) so the diff
+   * highlights consistently. Null when there's no adaptation or it isn't a sequence.
+   */
+  function getActiveFileLanguageExtension(path: string): Extension | null {
+    const adaptation = $sequenceAdaptation;
+    if (!phoenixContext || !adaptation || path !== $activeDocumentPath) {
+      return null;
+    }
+    const sequenceName = $activeDocument.fileName ?? '';
+    if (activeFileIsInputSequence && adaptation.input.getEditorExtension) {
+      return adaptation.input.getEditorExtension(phoenixContext, phoenixResources);
+    }
+    if (adaptation.outputs.length > 0) {
+      const matchingOutput = adaptation.outputs.find(output =>
+        doesFilenameMatchExtension(output.fileExtension, sequenceName),
+      );
+      return matchingOutput?.getEditorExtension?.(phoenixContext, phoenixResources) ?? null;
+    }
+    return null;
   }
 
   async function onReadOnlyChange(readOnly: boolean) {
@@ -957,7 +1242,7 @@
       }
       showSuccessToast(`File marked as ${readOnly ? 'read only' : 'editable'}`);
     } catch (e) {
-      catchError('Failed to update read-only status', e as Error);
+      catchError('log', 'Failed to update read-only status', e as Error);
       showFailureToast('Failed to update read-only status');
     }
   }
@@ -976,7 +1261,7 @@
       }
       showSuccessToast('User metadata updated');
     } catch (e) {
-      catchError('Failed to update user metadata', e as Error);
+      catchError('log', 'Failed to update user metadata', e as Error);
       showFailureToast('Failed to update user metadata');
     }
   }
@@ -1018,24 +1303,15 @@
   ) {
     // Guard against switching away from dirty file
     if ($workspaceContentMode === WorkspaceContentMode.File && $activeDocumentIsDirty) {
-      const { confirm } = await showConfirmModal(
-        'Navigate Away',
-        'There are unsaved changes. Are you sure you want to navigate away from the current file?',
-        'Navigate Away',
-        true,
-        'Keep Editing',
-      );
-      if (!confirm) {
+      const decision = await resolveUnsavedChangesBeforeFileSwitch();
+      if (decision === 'stay') {
         return;
       }
-      // Revert content to last-saved state and mark clean
-      activeDocument.updateContent($activeDocument.originalContent);
-      activeDocument.markClean();
-    }
-
-    // Silently reset dirty action detail state on navigate away
-    if ($workspaceContentMode === WorkspaceContentMode.ActionDetail && actionDetailIsDirty) {
-      actionDetailIsDirty = false;
+      if (decision === 'proceed-discarded') {
+        // Discard: revert content to last-saved state and mark clean
+        activeDocument.updateContent($activeDocument.originalContent);
+        activeDocument.markClean();
+      }
     }
 
     $workspaceContentMode = mode;
@@ -1075,10 +1351,14 @@
       params.set(SearchParameters.ACTION_ID, String($selectedActionDefinitionId));
     } else if (mode === WorkspaceContentMode.ActionRunsList) {
       params.set(SearchParameters.SIDEBAR_TAB, 'actions');
+    } else if (mode === WorkspaceContentMode.File && $activeDocumentPath) {
+      // Preserve the currently-open file in the URL so a reload (or browser
+      // back to this entry) still shows it.
+      params.set(SearchParameters.SEQUENCE_ID, $activeDocumentPath);
     }
 
     const query = params.toString();
-    replaceState(query ? `${baseUrl}?${query}` : baseUrl, {});
+    pushUrl(query ? `${baseUrl}?${query}` : baseUrl);
   }
 
   function onSelectAction(event: CustomEvent<{ id: number }>) {
@@ -1102,16 +1382,17 @@
     sidebarPanelOpen = true;
   }
 
-  function onActionDetailDirty(event: CustomEvent<boolean>) {
-    actionDetailIsDirty = event.detail;
-  }
-
   function onViewActionRun(event: CustomEvent<{ runId: number }>) {
     switchToContentMode(WorkspaceContentMode.ActionRunDetail, { runId: event.detail.runId });
   }
 
   function onActionRunBack() {
-    // Navigate back to the previous action view
+    // Navigate back to the previous action view. We intentionally use
+    // switchToContentMode (which pushes a forward history entry) rather than
+    // history.back(). The action-run-detail → action-detail transition is a
+    // forward action conceptually, not a reversal of a browser navigation, so
+    // pushing keeps the back stack consistent across users who arrived here
+    // via a deep link vs. a click.
     if ($selectedActionDefinitionId !== null) {
       switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: $selectedActionDefinitionId });
     } else {
@@ -1277,6 +1558,10 @@
   function onGlobalKeydown(event: KeyboardEvent) {
     if (isSaveEvent(event)) {
       event.preventDefault();
+      // Don't save while a modal is open — Ctrl/Cmd+S would stack another save under it.
+      if (browser && document.querySelector('#svelte-modal')?.childElementCount) {
+        return;
+      }
       if (hasEditFilePermission && $activeDocumentIsDirty) {
         saveCurrentFile($activeDocument.currentContent);
       }
@@ -1333,7 +1618,7 @@
   onMount(async () => {
     if (initialWorkspace) {
       $workspaceId = initialWorkspace.id;
-      selectedFilePath = $page.url.searchParams.get(SearchParameters.SEQUENCE_ID);
+      selectedFilePath = initialUrlState.filePath;
       getWorkspaceContents(initialWorkspace);
     }
     // Wait a tick for paneforge to restore saved sizes from localStorage before showing panels
@@ -1436,7 +1721,6 @@
               workspace={$workspace}
               workspaceFiles={workspaceFileList}
               on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
-              on:dirty={onActionDetailDirty}
               on:runAction={onRunActionFromDetailView}
               on:viewRun={onViewActionRun}
             />
@@ -1500,6 +1784,7 @@
               {:else if isTextOrEmpty}
                 <div class="flex h-full">
                   <TextEditor
+                    bind:this={textEditorRef}
                     availableActions={availableActionsForActiveFile}
                     fileMetadata={activeFileMetadata}
                     includeActions={true}
