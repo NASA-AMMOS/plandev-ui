@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
@@ -260,7 +261,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { convertToQuery } from './generic';
+import { convertToQuery, downloadBlob } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showApplySequenceFilterModal,
@@ -8860,6 +8861,36 @@ const effects = {
       catchError('Unable to upload simulation dataset', e as Error);
       showFailureToast('Simulation Dataset Upload Failed');
       return null;
+    }
+  },
+
+  async downloadSimulationDataset(plan: Plan, simulationDatasetId: number, user: User | null): Promise<void> {
+    try {
+      const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
+      const url = `${GATEWAY_URL}/downloadSimulationDataset?plan_id=${plan.id}&simulation_dataset_id=${simulationDatasetId}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${user?.token ?? ''}`,
+          'x-hasura-role': (user as User)?.activeRole ?? '',
+          'x-hasura-user-id': user?.id ?? '',
+        },
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      const blob = await response.blob();
+      downloadBlob(blob, `simulation_dataset_${simulationDatasetId}.json`);
+
+      showSuccessToast('Simulation Dataset Downloaded Successfully');
+      logMessage('log', `Downloaded simulation dataset ID=${simulationDatasetId}.`);
+    } catch (e) {
+      catchError('Unable to download simulation dataset', e as Error);
+      showFailureToast('Simulation Dataset Download Failed');
     }
   },
 

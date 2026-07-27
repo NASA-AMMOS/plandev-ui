@@ -344,6 +344,12 @@
     effects.cancelSimulation(event.detail.id, user);
   }
 
+  function onDownloadSimulationDataset(event: CustomEvent<{ id: number }>) {
+    if ($plan) {
+      effects.downloadSimulationDataset($plan, event.detail.id, user);
+    }
+  }
+
   let simulationUploadInput: HTMLInputElement;
 
   async function onUploadSimulationResults(event: Event) {
@@ -539,6 +545,7 @@
                   viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
                 }}
                 on:cancel={onCancelSimulation}
+              on:download={onDownloadSimulationDataset}
               />
             {/each}
           </AsyncContentState>

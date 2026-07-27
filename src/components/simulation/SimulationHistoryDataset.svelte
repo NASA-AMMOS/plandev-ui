@@ -3,6 +3,7 @@
 <script lang="ts">
   import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
+  import { Download } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { InvalidDate } from '../../constants/time';
   import { Status } from '../../enums/status';
@@ -40,6 +41,7 @@
   const dispatch = createEventDispatcher<{
     cancel: { id: number };
     click: void;
+    download: { id: number };
   }>();
   const planDuration = planEndTimeMs - planStartTimeMs;
 
@@ -152,6 +154,16 @@
 >
   <div slot="right">
     <div class="simulation-dataset-status-chip-container">
+      {#if status === Status.Complete}
+        <button
+          use:tooltip={{ content: 'Download Simulation Dataset', placement: 'top' }}
+          class="st-button icon simulation-dataset-download"
+          type="button"
+          on:click|stopPropagation={() => dispatch('download', { id: simulationDataset.id })}
+        >
+          <Download size={16} />
+        </button>
+      {/if}
       {#if status === Status.Complete || status === Status.Failed}
         <StatusBadge status={getSimulationStatus(simulationDataset)} {progress} />
       {:else}
@@ -414,7 +426,18 @@
 
   .simulation-dataset-status-chip-container {
     display: flex;
+    align-items: center;
     gap: 4px;
+  }
+
+  .simulation-dataset-download {
+    border-radius: 16px;
+    color: var(--st-gray-60);
+  }
+
+  .simulation-dataset-download:hover {
+    background: var(--st-gray-30);
+    color: var(--st-gray-80);
   }
 
   .message {
