@@ -545,7 +545,7 @@
                   viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
                 }}
                 on:cancel={onCancelSimulation}
-              on:download={onDownloadSimulationDataset}
+                on:download={onDownloadSimulationDataset}
               />
             {/each}
           </AsyncContentState>

@@ -8852,7 +8852,7 @@ const effects = {
 
       if (simulationDatasetId != null) {
         showSuccessToast('Simulation Dataset Uploaded Successfully');
-        logMessage(`Uploaded simulation dataset ID=${simulationDatasetId}.`);
+        logMessage('log', `Uploaded simulation dataset ID=${simulationDatasetId}.`);
         return simulationDatasetId;
       }
 
