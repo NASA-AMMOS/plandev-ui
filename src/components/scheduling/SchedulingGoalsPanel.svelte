@@ -18,6 +18,7 @@
     schedulingGoalsLoading,
     schedulingGoalsMap,
     schedulingPlanSpecification,
+    schedulingUnavailableReason,
     setSchedulingGoalArgumentDefaults,
   } from '../../stores/scheduling';
   import type { User } from '../../types/app';
@@ -277,10 +278,12 @@
           [
             permissionHandler,
             {
-              hasPermission: hasAnalyzePermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to run a scheduling analysis',
+              hasPermission: $schedulingUnavailableReason === null && hasAnalyzePermission,
+              permissionError:
+                $schedulingUnavailableReason ??
+                ($planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to run a scheduling analysis'),
             },
           ],
         ]}
@@ -295,10 +298,12 @@
           [
             permissionHandler,
             {
-              hasPermission: hasRunPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to run scheduling',
+              hasPermission: $schedulingUnavailableReason === null && hasRunPermission,
+              permissionError:
+                $schedulingUnavailableReason ??
+                ($planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to run scheduling'),
             },
           ],
         ]}
@@ -327,6 +332,12 @@
         </button>
       </svelte:fragment>
     </CollapsibleListControls>
+    {#if $schedulingUnavailableReason}
+      <div class="scheduling-unavailable st-typography-body">
+        <strong>Scheduling does not apply to this model.</strong>
+        {$schedulingUnavailableReason}
+      </div>
+    {/if}
     <div class="pt-2">
       <AsyncContentState
         loading={$schedulingGoalsLoading}
@@ -381,6 +392,14 @@
 </Panel>
 
 <style>
+  .scheduling-unavailable {
+    background: var(--st-gray-10);
+    border-left: 2px solid var(--st-gray-40);
+    color: var(--st-gray-70);
+    margin: 8px 0 0;
+    padding: 8px 12px;
+  }
+
   .private-label {
     color: #e6b300;
   }

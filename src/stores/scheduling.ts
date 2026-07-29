@@ -17,6 +17,7 @@ import type {
   SchedulingRequest,
 } from '../types/scheduling';
 import gql from '../utilities/gql';
+import { PLANDEV_SCHEDULING, capabilityUnavailableReason } from '../utilities/modelCapabilities';
 import { convertResponseToMetadata } from '../utilities/scheduling';
 import { derivedDeeply } from './derivedDeeply';
 import { simulationDatasetsPlan } from './simulation';
@@ -277,9 +278,30 @@ export const schedulingAnalysisStatus = derived(
   },
 );
 
+/**
+ * Why PlanDev's scheduler cannot run against this plan's model, or null when it can.
+ *
+ * A model served by an external backend may be a framework that places its own activities during
+ * simulation, in which case its schedule is an OUTPUT and running PlanDev's scheduler as well would
+ * put two schedulers on one plan. Only the backend knows, so it declares it and merlin stores it.
+ *
+ * The store holds the backend's own SENTENCE rather than a boolean, so the UI can say why without
+ * containing a branch that names a framework -- which is the whole reason capabilities are a
+ * document and not a column per feature.
+ */
+export const schedulingUnavailableReason: Readable<string | null> = derived([plan], ([$plan]) =>
+  capabilityUnavailableReason(PLANDEV_SCHEDULING, $plan?.model),
+);
+
 export const enableScheduling: Readable<boolean> = derived(
-  [schedulingGoalSpecifications],
-  ([$schedulingGoalSpecifications]) => {
+  [schedulingGoalSpecifications, schedulingUnavailableReason],
+  ([$schedulingGoalSpecifications, $schedulingUnavailableReason]) => {
+    // Two independent reasons to be disabled, kept separate on purpose: having no enabled goals is
+    // a state the planner can fix from this panel, while the model not supporting scheduling at all
+    // is not. The tooltip distinguishes them; this only has to be the conjunction.
+    if ($schedulingUnavailableReason !== null) {
+      return false;
+    }
     return (
       $schedulingGoalSpecifications.filter(
         (schedulingSpecGoal: SchedulingGoalPlanSpecification) => schedulingSpecGoal.enabled,

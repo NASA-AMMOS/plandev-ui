@@ -77,6 +77,8 @@ export type ModelSchema = {
   derivation_group_specification: ModelDerivationGroup[];
   description?: string;
   external_backend?: string | null;
+  /** What the backend says PlanDev may DO with this model. See utilities/modelCapabilities. */
+  external_capabilities?: Record<string, unknown> | null;
   external_model_key?: string | null;
   id: number;
   jar_id: number | null;
