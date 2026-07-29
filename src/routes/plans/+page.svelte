@@ -38,13 +38,14 @@
   import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
+  import type { ExternalPlanNotice } from '../../types/model';
   import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
-  import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
+  import { planImportFormats } from '../../utilities/modelCapabilities';
   import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
@@ -213,6 +214,9 @@
     ),
   ]);
   let planUploadFiles: FileList | undefined;
+  /** What the backend wanted to say about a foreign plan it converted -- dropped activities,
+   *  a derived plan window, an argument that will not typecheck. Shown, not swallowed. */
+  let externalImportNotices: ExternalPlanNotice[] = [];
   let planUploadFilesError: string | null = null;
   let planUploadFileInput: HTMLInputElement;
   let simTemplateField = field<number | null>(null);
@@ -530,14 +534,50 @@
     durationString = computeDurationString(startTimeMs, endTimeMs, $startTimeField.valid && $endTimeField.valid);
   }
 
-  async function parsePlanFileStream(stream: ReadableStream) {
+  /**
+   * Whether a parsed file is one of PlanDev's own transfer documents.
+   *
+   * `start_time` is the discriminator because PlanDev's format always carries the plan's window and
+   * a foreign framework's need not -- a Blackbird plan file has no header at all, which is why its
+   * window has to be derived from the activities. Keying off `activities` instead would not work:
+   * both formats have one.
+   */
+  function isPlanDevTransfer(parsed: unknown): boolean {
+    return typeof (parsed as PlanTransfer | DeprecatedPlanTransfer)?.start_time === 'string';
+  }
+
+  async function parsePlanFile(text: string) {
     planUploadFilesError = null;
+    externalImportNotices = [];
     try {
       let planJSON: PlanTransfer | DeprecatedPlanTransfer;
       try {
-        planJSON = await parseJSONStream<PlanTransfer | DeprecatedPlanTransfer>(stream);
+        planJSON = JSON.parse(text);
       } catch (e) {
         throw new Error('Plan file is not valid JSON');
+      }
+
+      // Not one of ours. If the selected model's backend can read its framework's own format, hand
+      // the bytes over and carry on with what comes back -- a PlanTransfer, so everything below is
+      // unchanged. Attempted only when the model DECLARES the capability, so a genuinely malformed
+      // PlanDev file still fails as one instead of being sent somewhere that cannot read it either.
+      if (!isPlanDevTransfer(planJSON)) {
+        const formats = planImportFormats(selectedModel);
+        if (!formats.length) {
+          throw new Error(
+            'Plan file is not a PlanDev plan, and this model’s backend does not support importing ' +
+              'plans in another format',
+          );
+        }
+        const imported = await effects.importExternalPlan(
+          $modelIdField.value,
+          formats[0].key,
+          text,
+          $nameField.value || 'Imported plan',
+          $user,
+        );
+        externalImportNotices = imported.notices ?? [];
+        planJSON = imported.plan as unknown as PlanTransfer;
       }
 
       nameField.validateAndSet(planJSON.name);
@@ -610,7 +650,7 @@
     if (files !== null && files.length) {
       const file = files[0];
       if (/\.json$/.test(file.name)) {
-        parsePlanFileStream(file.stream());
+        file.text().then(parsePlanFile);
       } else {
         planUploadFilesError = 'Plan file is not a .json file';
       }
@@ -788,6 +828,32 @@
                 >
                   <div slot="title">Plan import failed</div>
                   {planUploadFilesError}
+                </Collapse>
+              {/if}
+              {#if externalImportNotices.length}
+                <!-- A converted plan is not a copy. Activities are dropped (a decomposition child is
+                     not a directive), the plan window is DERIVED when the source format carries no
+                     header, and an argument may not survive re-encoding. Each of those is something
+                     the planner has to know before pressing Create, so the notices are shown rather
+                     than swallowed. -->
+                <Collapse
+                  ariaTitle="Plan conversion notices"
+                  defaultExpanded={externalImportNotices.some(({ severity }) => severity === 'error')}
+                >
+                  <div slot="title">
+                    Converted by the model's backend &mdash; {externalImportNotices.length} note{externalImportNotices.length ===
+                    1
+                      ? ''
+                      : 's'}
+                  </div>
+                  <ul class="flex max-h-48 list-none flex-col gap-1 overflow-y-auto p-0">
+                    {#each externalImportNotices as notice}
+                      <li class={notice.severity === 'error' ? 'text-destructive' : ''}>
+                        <span class="mr-1.5 opacity-60 [font-variant:small-caps]">{notice.severity}</span>
+                        {notice.message}
+                      </li>
+                    {/each}
+                  </ul>
                 </Collapse>
               {/if}
             </fieldset>

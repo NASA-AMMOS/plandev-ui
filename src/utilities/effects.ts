@@ -140,17 +140,7 @@ import type {
   ModelDerivationGroup,
   PlanDerivationGroup,
 } from '../types/external-source';
-import type {
-  DiscoveredExternalModel,
-  ExternalBackendCatalog,
-  ExternalModelInsertInput,
-  Model,
-  ModelInsertInput,
-  ModelLog,
-  ModelSchema,
-  ModelSetInput,
-  ModelSlim,
-} from '../types/model';
+import type { DiscoveredExternalModel, ExternalBackendCatalog, ExternalModelInsertInput, ImportedExternalPlan, Model, ModelInsertInput, ModelLog, ModelSchema, ModelSetInput, ModelSlim } from '../types/model';
 import type { DslTypeScriptResponse, TypeScriptFile } from '../types/monaco';
 import type {
   Argument,
@@ -4868,6 +4858,40 @@ const effects = {
       showFailureToast('External Events Retrieval Failed');
       return [];
     }
+  },
+
+  /**
+   * Convert a plan written in a foreign framework's own format into a PlanDev plan.
+   *
+   * The backend does the conversion, because it is the only thing that knows both encodings and the
+   * only thing holding the model whose schemas the arguments must be re-encoded against. What comes
+   * back is a PlanTransfer document -- the same shape the ordinary "Import Plan" flow already reads
+   * -- so this adds a SOURCE of plans rather than a second way to import one.
+   *
+   * Throws rather than returning null on failure: the caller is mid-upload with a file in hand and
+   * needs the backend's own sentence about why it could not be read, not a silent empty result.
+   */
+  async importExternalPlan(
+    modelId: number,
+    format: string,
+    content: string,
+    planName: string,
+    user: User | null,
+  ): Promise<ImportedExternalPlan> {
+    if (!queryPermissions.IMPORT_EXTERNAL_PLAN(user)) {
+      throwPermissionError('import a plan from an external backend');
+    }
+
+    const data = await reqHasura<ImportedExternalPlan>(
+      gql.IMPORT_EXTERNAL_PLAN,
+      { content, format, missionModelId: `${modelId}`, planName },
+      user,
+    );
+    const { importExternalPlan: imported } = data;
+    if (imported == null) {
+      throw Error('The backend returned no plan');
+    }
+    return imported;
   },
 
   async getExternalModelCatalog(user: User | null): Promise<ExternalBackendCatalog[]> {

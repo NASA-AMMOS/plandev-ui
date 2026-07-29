@@ -103,8 +103,10 @@ export type ModelSlim = Pick<
   | 'activity_types'
   | 'created_at'
   | 'description'
+  | 'external_capabilities'
   | 'id'
   | 'jar_id'
+  | 'model_type'
   | 'name'
   | 'owner'
   | 'plans'
@@ -113,3 +115,20 @@ export type ModelSlim = Pick<
   | 'refresh_resource_type_logs'
   | 'version'
 > & { view: ViewSlim | null };
+
+/** One thing the backend wants to say about a plan it converted. */
+export type ExternalPlanNotice = {
+  message: string;
+  severity: string;
+  subjects?: string[] | null;
+};
+
+/**
+ * The result of converting a foreign plan file. `plan` is a PlanTransfer document -- deliberately
+ * the format PlanDev's existing import already reads, so nothing downstream needs to know a foreign
+ * framework was involved.
+ */
+export type ImportedExternalPlan = {
+  notices: ExternalPlanNotice[];
+  plan: Record<string, unknown>;
+};

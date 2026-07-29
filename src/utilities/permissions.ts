@@ -821,6 +821,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_EXTERNAL_MODEL_CATALOG: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.GET_EXTERNAL_MODEL_CATALOG], user);
   },
+  IMPORT_EXTERNAL_PLAN: (user: User | null): boolean => {
+    return isUserAdmin(user) || getPermission([Queries.IMPORT_EXTERNAL_PLAN], user);
+  },
   GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
   GET_MODELS: () => true,
   GET_PARCEL: () => true,

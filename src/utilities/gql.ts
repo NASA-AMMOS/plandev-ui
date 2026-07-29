@@ -1415,6 +1415,24 @@ const gql = {
     }
   `,
 
+  IMPORT_EXTERNAL_PLAN: `#graphql
+    mutation ImportExternalPlan($missionModelId: String!, $format: String!, $content: String!, $planName: String) {
+      importExternalPlan: ${Queries.IMPORT_EXTERNAL_PLAN}(
+        missionModelId: $missionModelId
+        format: $format
+        content: $content
+        planName: $planName
+      ) {
+        plan
+        notices {
+          severity
+          message
+          subjects
+        }
+      }
+    }
+  `,
+
   GET_EXTERNAL_MODEL_CATALOG: `#graphql
     query GetExternalModelCatalog {
       getExternalModelCatalog: ${Queries.GET_EXTERNAL_MODEL_CATALOG} {
@@ -1629,8 +1647,10 @@ const gql = {
       models: ${Queries.MISSION_MODELS}(order_by: { id: desc }) {
         created_at
         description
+        external_capabilities
         id
         jar_id
+        model_type
         name
         owner
         plans {
