@@ -8866,24 +8866,8 @@ const effects = {
 
   async downloadSimulationDataset(plan: Plan, simulationDatasetId: number, user: User | null): Promise<void> {
     try {
-      const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
-      const url = `${GATEWAY_URL}/downloadSimulationDataset?plan_id=${plan.id}&simulation_dataset_id=${simulationDatasetId}`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${user?.token ?? ''}`,
-          'x-hasura-role': (user as User)?.activeRole ?? '',
-          'x-hasura-user-id': user?.id ?? '',
-        },
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-
-      const blob = await response.blob();
+      const url = `/downloadSimulationDataset?plan_id=${plan.id}&simulation_dataset_id=${simulationDatasetId}`;
+      const blob = await reqGateway<Blob>(url, 'GET', null, user, false, undefined, false, true);
       downloadBlob(blob, `simulation_dataset_${simulationDatasetId}.json`);
 
       showSuccessToast('Simulation Dataset Downloaded Successfully');
