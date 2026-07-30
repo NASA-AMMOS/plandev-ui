@@ -377,18 +377,6 @@
         showLabel
         on:click={() => simulationUploadInput.click()}
       />
-      <input
-        bind:this={simulationUploadInput}
-        class="hidden"
-        type="file"
-        accept=".json"
-        on:change={onUploadSimulationResults}
-      />
-      <PanelHeaderActionButton
-        title="Upload Simulation Results"
-        showLabel
-        on:click={() => simulationUploadInput.click()}
-      />
       {#if enableReSimulation}
         <PanelHeaderActionButton
           disabled={!enableReSimulation || $startTimeField.invalid || $endTimeField.invalid}
@@ -568,10 +556,6 @@
 </Panel>
 
 <style>
-  .hidden {
-    display: none;
-  }
-
   .hidden {
     display: none;
   }
