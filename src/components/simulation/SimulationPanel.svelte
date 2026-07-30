@@ -72,6 +72,7 @@
   let startTimeField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
+  let simulationUploadInput: HTMLInputElement;
   let { loading: simulationDatasetsPlanLoading, error: simulationDatasetsPlanError } = simulationDatasetsPlan;
 
   function validateStartTimeField(startTime: string) {
@@ -349,8 +350,6 @@
       effects.downloadSimulationDataset($plan, event.detail.id, user);
     }
   }
-
-  let simulationUploadInput: HTMLInputElement;
 
   async function onUploadSimulationResults(event: Event) {
     const target = event.target as HTMLInputElement;
