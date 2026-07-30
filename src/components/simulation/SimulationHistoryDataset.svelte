@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import CancelIcon from '@nasa-jpl/stellar/icons/prohibited.svg?component';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { Download } from 'lucide-svelte';
@@ -25,6 +26,7 @@
   import { formatDate, getUnixEpochTimeFromInterval, removeDateStringMilliseconds } from '../../utilities/time';
   import { tooltip } from '../../utilities/tooltip';
   import Collapse from '../Collapse.svelte';
+  import Tooltip from '../ui/Tooltip.svelte';
   import Parameters from '../parameters/Parameters.svelte';
   import Card from '../ui/Card.svelte';
   import StatusBadge from '../ui/StatusBadge.svelte';
@@ -155,14 +157,11 @@
   <div slot="right">
     <div class="simulation-dataset-status-chip-container">
       {#if status === Status.Complete}
-        <button
-          use:tooltip={{ content: 'Download Simulation Dataset', placement: 'top' }}
-          class="st-button icon simulation-dataset-download"
-          type="button"
-          on:click|stopPropagation={() => dispatch('download', { id: simulationDataset.id })}
-        >
-          <Download size={16} />
-        </button>
+        <Tooltip content="Download Simulation Dataset">
+          <Button variant="outline" on:click={(e) => { e.stopPropagation(); dispatch('download', { id: simulationDataset.id }); }}>
+            <Download size={16} />
+          </Button>
+        </Tooltip>
       {/if}
       {#if status === Status.Complete || status === Status.Failed}
         <StatusBadge status={getSimulationStatus(simulationDataset)} {progress} />
@@ -428,16 +427,6 @@
     display: flex;
     align-items: center;
     gap: 4px;
-  }
-
-  .simulation-dataset-download {
-    border-radius: 16px;
-    color: var(--st-gray-60);
-  }
-
-  .simulation-dataset-download:hover {
-    background: var(--st-gray-30);
-    color: var(--st-gray-80);
   }
 
   .message {
