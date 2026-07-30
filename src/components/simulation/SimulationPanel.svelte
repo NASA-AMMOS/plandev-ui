@@ -556,10 +556,6 @@
 </Panel>
 
 <style>
-  .hidden {
-    display: none;
-  }
-
   .simulation-history {
     display: flex;
     flex-direction: column;
