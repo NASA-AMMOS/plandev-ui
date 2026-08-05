@@ -300,8 +300,49 @@ test.describe.serial('Timeline View Editing', () => {
     expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
   });
 
-  test('Change resource layer settings', async () => {
-    const resourceLayerEditor = await setup.page.getByLabel('Resource Layer-editor');
+  test('Change resource layer line and point styles', async () => {
+    const resourceLayerEditor = setup.page.getByLabel('Resource Layer-editor');
+    const layer = resourceLayerEditor.locator('.timeline-layer-editor').first();
+
+    // Open the layer settings menu
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+
+    const lineStyle = layer.getByRole('combobox', { name: 'Line Style' });
+    const lineOpacity = layer.getByRole('spinbutton', { name: 'Line Opacity' });
+    const pointShape = layer.getByRole('combobox', { name: 'Point Shape' });
+    const showPoints = layer.getByRole('combobox', { name: 'Show Points' });
+
+    // Expect the defaults to match how the layer rendered before these options existed
+    await expect(lineStyle).toHaveValue('solid');
+    await expect(lineOpacity).toHaveValue('1');
+    await expect(pointShape).toHaveValue('circle');
+    await expect(showPoints).toHaveValue('auto');
+    await expect(layer.getByRole('button', { name: 'Point Color' })).toBeVisible();
+
+    // Change every style option and expect each to stick
+    await lineStyle.selectOption('dashed');
+    await pointShape.selectOption('diamond');
+    await showPoints.selectOption('never');
+    await lineOpacity.fill('0.5');
+
+    await expect(lineStyle).toHaveValue('dashed');
+    await expect(pointShape).toHaveValue('diamond');
+    await expect(showPoints).toHaveValue('never');
+    await expect(lineOpacity).toHaveValue('0.5');
+
+    // The row still renders after restyling -- a bad globalAlpha or dash pattern would throw during
+    // the canvas draw and leave the row blank. Clamping and NaN handling are unit tested.
+    await expect(setup.page.locator('.timeline-row-wrapper', { hasText: rowName })).toBeVisible();
+
+    await lineStyle.selectOption('solid');
+    await showPoints.selectOption('auto');
+    await lineOpacity.fill('1');
+
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+  });
+
+  test('Change resource layer area fill settings', async () => {
+    const resourceLayerEditor = setup.page.getByLabel('Resource Layer-editor');
     const layer = resourceLayerEditor.locator('.timeline-layer-editor').first();
 
     await layer.getByRole('button', { name: 'Layer Settings' }).click();

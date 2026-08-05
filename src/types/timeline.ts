@@ -130,13 +130,24 @@ export interface Layer {
   yAxisId: number | null;
 }
 
+export type LineStyle = 'solid' | 'dashed' | 'dotted';
+
+export type PointShape = 'circle' | 'square' | 'diamond' | 'triangle' | 'cross';
+
+export type ShowPointsMode = 'auto' | 'always' | 'never';
+
 export interface LineLayer extends Layer {
   fillColor?: string; // When undefined the area fill uses lineColor
   fillOpacity: number;
   lineColor: string;
+  lineOpacity?: number;
+  lineStyle?: LineStyle;
   lineWidth: number;
+  pointColor?: string; // When undefined the points use lineColor
   pointRadius: number;
+  pointShape?: PointShape;
   showFill: boolean;
+  showPoints?: ShowPointsMode;
 }
 
 export interface LinePoint extends Point {

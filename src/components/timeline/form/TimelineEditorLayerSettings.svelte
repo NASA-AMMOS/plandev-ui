@@ -8,7 +8,11 @@
   import { getTarget } from '../../../utilities/generic';
   import {
     DEFAULT_LINE_FILL_OPACITY,
-    clampLineFillOpacity,
+    DEFAULT_LINE_OPACITY,
+    DEFAULT_LINE_STYLE,
+    DEFAULT_POINT_SHAPE,
+    DEFAULT_SHOW_POINTS_MODE,
+    clampOpacity,
     isLineLayer,
     isXRangeLayer,
   } from '../../../utilities/timeline';
@@ -40,6 +44,15 @@
       value: string | number | boolean | null;
     };
   }>();
+  /**
+   * Fields that must be clamped into 0-1 before being persisted, with the value to fall back to.
+   * Canvas silently ignores an out-of-range globalAlpha, so an unclamped value renders as fully
+   * opaque instead of visibly wrong, and the view schema rejects it on export.
+   */
+  const OPACITY_FIELD_DEFAULTS: Record<string, number> = {
+    fillOpacity: DEFAULT_LINE_FILL_OPACITY,
+    lineOpacity: DEFAULT_LINE_OPACITY,
+  };
 
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
@@ -50,8 +63,8 @@
     if (typeof value === 'number' && !Number.isFinite(value)) {
       return;
     }
-    if (name === 'fillOpacity') {
-      dispatch('input', { name, value: clampLineFillOpacity(value as number) });
+    if (name in OPACITY_FIELD_DEFAULTS) {
+      dispatch('input', { name, value: clampOpacity(value as number, OPACITY_FIELD_DEFAULTS[name]) });
       return;
     }
     dispatch('input', { name, value });
@@ -110,9 +123,38 @@
           <input
             min={0}
             class="st-input w-full"
+            id="lineWidth"
             name="lineWidth"
             type="number"
             value={layerAsLine.lineWidth}
+            on:input={onInput}
+          />
+        </Input>
+        <Input layout="inline">
+          <label for="lineStyle">Line Style</label>
+          <select
+            class="st-select w-full"
+            id="lineStyle"
+            name="lineStyle"
+            value={layerAsLine.lineStyle ?? DEFAULT_LINE_STYLE}
+            on:change={onInput}
+          >
+            <option value="solid">Solid</option>
+            <option value="dashed">Dashed</option>
+            <option value="dotted">Dotted</option>
+          </select>
+        </Input>
+        <Input layout="inline">
+          <label for="lineOpacity">Line Opacity</label>
+          <input
+            min={0}
+            max={1}
+            step={0.1}
+            class="st-input w-full"
+            id="lineOpacity"
+            name="lineOpacity"
+            type="number"
+            value={layerAsLine.lineOpacity ?? DEFAULT_LINE_OPACITY}
             on:input={onInput}
           />
         </Input>
@@ -121,11 +163,52 @@
           <input
             min={0}
             class="st-input w-full"
+            id="pointRadius"
             name="pointRadius"
             type="number"
             value={layerAsLine.pointRadius}
             on:input={onInput}
           />
+        </Input>
+        <Input layout="inline">
+          <label for="pointShape">Point Shape</label>
+          <select
+            class="st-select w-full"
+            id="pointShape"
+            name="pointShape"
+            value={layerAsLine.pointShape ?? DEFAULT_POINT_SHAPE}
+            on:change={onInput}
+          >
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+            <option value="diamond">Diamond</option>
+            <option value="triangle">Triangle</option>
+            <option value="cross">Cross</option>
+          </select>
+        </Input>
+        <Input layout="inline">
+          <label for="pointColor">Point Color</label>
+          <ColorPresetsPicker
+            presetColors={ViewLineLayerColorPresets}
+            tooltipText="Point Color"
+            type="input"
+            value={layerAsLine.pointColor ?? layerAsLine.lineColor}
+            on:input={({ detail: { value } }) => dispatch('input', { name: 'pointColor', value })}
+          />
+        </Input>
+        <Input layout="inline">
+          <label for="showPoints">Show Points</label>
+          <select
+            class="st-select w-full"
+            id="showPoints"
+            name="showPoints"
+            value={layerAsLine.showPoints ?? DEFAULT_SHOW_POINTS_MODE}
+            on:change={onInput}
+          >
+            <option value="auto">Auto</option>
+            <option value="always">Always</option>
+            <option value="never">Never</option>
+          </select>
         </Input>
         <Input layout="inline">
           <label for="showFill">Fill Area</label>
