@@ -317,6 +317,7 @@ test.describe.serial('Timeline View Editing', () => {
     await expect(lineOpacity).toHaveValue('1');
     await expect(pointShape).toHaveValue('circle');
     await expect(showPoints).toHaveValue('auto');
+    await expect(layer.getByRole('button', { name: 'Line Color' })).toBeVisible();
     await expect(layer.getByRole('button', { name: 'Point Color' })).toBeVisible();
 
     // Change every style option and expect each to stick

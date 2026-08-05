@@ -2,13 +2,13 @@
 
 <script lang="ts">
   import { select } from 'd3-selection';
-  import type { Axis, HorizontalGuide } from '../../types/timeline';
+  import type { ComputedAxis, HorizontalGuide } from '../../types/timeline';
   import { getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let horizontalGuides: HorizontalGuide[] = [];
-  export let yAxes: Axis[] = [];
+  export let yAxes: ComputedAxis[] = [];
 
   let g: SVGGElement;
 
@@ -29,7 +29,7 @@
         const domain = yAxis?.scaleDomain;
 
         if (domain && domain.length) {
-          const yScale = getYScale(domain, drawHeight);
+          const yScale = getYScale(domain, drawHeight, yAxis?.scaleType, yAxis?.logConstant);
           const y = yScale(guide.y);
 
           const lineGroup = gSelection.append('g').attr('class', horizontalGuideClass);

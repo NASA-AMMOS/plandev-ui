@@ -51,7 +51,7 @@
    */
   const OPACITY_FIELD_DEFAULTS: Record<string, number> = {
     fillOpacity: DEFAULT_LINE_FILL_OPACITY,
-    lineOpacity: DEFAULT_LINE_OPACITY,
+    opacity: DEFAULT_LINE_OPACITY,
   };
 
   function onInput(event: Event) {
@@ -86,7 +86,7 @@
   >
     <div class="button-inner"><SettingsIcon /></div>
   </button>
-  <Menu bind:this={layerMenu} hideAfterClick={false} placement="bottom-end" width={300}>
+  <Menu allowOverflow bind:this={layerMenu} hideAfterClick={false} placement="bottom-end" width={300}>
     <MenuHeader title={`${layer.chartType} Layer Settings`} />
     <div class="body st-typography-body">
       {#if isLineLayer(layer)}
@@ -119,6 +119,20 @@
           </select>
         </Input>
         <Input layout="inline">
+          <!-- Duplicated from the layer row's swatch on purpose. Point Color and Fill Color both fall
+               back to this value, so leaving it out of the menu meant the two derived colors showed an
+               inherited color with no way to see or change what they inherited from. Both controls
+               write the same lineColor field, so they cannot disagree. -->
+          <label for="lineColor">Line Color</label>
+          <ColorPresetsPicker
+            presetColors={ViewLineLayerColorPresets}
+            tooltipText="Line Color"
+            type="input"
+            value={layerAsLine.lineColor}
+            on:input={({ detail: { value } }) => dispatch('input', { name: 'lineColor', value })}
+          />
+        </Input>
+        <Input layout="inline">
           <label for="lineWidth">Line Width</label>
           <input
             min={0}
@@ -145,16 +159,16 @@
           </select>
         </Input>
         <Input layout="inline">
-          <label for="lineOpacity">Line Opacity</label>
+          <label for="opacity">Opacity</label>
           <input
             min={0}
             max={1}
             step={0.1}
             class="st-input w-full"
-            id="lineOpacity"
-            name="lineOpacity"
+            id="opacity"
+            name="opacity"
             type="number"
-            value={layerAsLine.lineOpacity ?? DEFAULT_LINE_OPACITY}
+            value={layerAsLine.opacity ?? DEFAULT_LINE_OPACITY}
             on:input={onInput}
           />
         </Input>
@@ -327,6 +341,11 @@
     cursor: auto;
     display: grid;
     gap: 8px;
+    /* Scrolls internally rather than growing past the window, following the same pattern as
+       PlanNavButton's .menu-body. Viewport-relative rather than a fixed pixel cap so the menu still
+       fits on a short window, where a tall fixed cap would overflow whichever side it flipped to. */
+    max-height: 60vh;
+    overflow: auto;
     padding: 8px;
     text-align: left;
   }

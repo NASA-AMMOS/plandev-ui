@@ -532,7 +532,7 @@
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
-                              "lineOpacity": {
+                              "opacity": {
                                 "description": "Opacity of the line and its points",
                                 "maximum": 1,
                                 "minimum": 0,
@@ -693,6 +693,11 @@
                           "label": {
                             "$ref": "#/definitions/label"
                           },
+                          "logBase": {
+                            "description": "Base for log axis tick labels. Affects which values are labelled only -- tick positions are unchanged by the base",
+                            "exclusiveMinimum": 1,
+                            "type": "number"
+                          },
                           "renderTickLines": {
                             "description": "If true render horizontal lines for each y axis tick, if false do not render them",
                             "type": "boolean"
@@ -703,6 +708,11 @@
                               "type": "number"
                             },
                             "type": "array"
+                          },
+                          "scaleType": {
+                            "description": "How the axis maps values to pixels. 'log' is backed by a symmetric log scale so that zero and negative values still have a position",
+                            "enum": ["linear", "log"],
+                            "type": "string"
                           },
                           "tickCount": {
                             "description": "Number of ticks on the axis",

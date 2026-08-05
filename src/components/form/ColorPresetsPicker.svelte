@@ -60,7 +60,7 @@
   style={`background: ${value}`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
-  <Menu bind:this={pickerMenu} hideAfterClick={false} {placement} {type}>
+  <Menu escapeScrollBoundary bind:this={pickerMenu} hideAfterClick={false} {placement} {type}>
     <div class="colors bg-popover">
       {#each presetColors as color}
         <button

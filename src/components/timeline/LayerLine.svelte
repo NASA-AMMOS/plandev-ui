@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { scalePoint, type ScaleLinear, type ScalePoint, type ScaleTime } from 'd3-scale';
+  import { scalePoint, type ScalePoint, type ScaleTime } from 'd3-scale';
   import {
     area as d3Area,
     curveLinear,
@@ -15,7 +15,7 @@
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type {
-    Axis,
+    ComputedAxis,
     LinePoint,
     LineStyle,
     MouseOver,
@@ -24,6 +24,7 @@
     RowMouseOverEvent,
     ShowPointsMode,
     TimeRange,
+    YScale,
   } from '../../types/timeline';
   import { filterNullish } from '../../utilities/generic';
   import {
@@ -56,7 +57,7 @@
   export let interpolateHoverValue: boolean = false;
   export let limitTooltipToLine: boolean = false;
   export let lineColor: string = '';
-  export let lineOpacity: number = DEFAULT_LINE_OPACITY;
+  export let opacity: number = DEFAULT_LINE_OPACITY;
   export let lineStyle: LineStyle = DEFAULT_LINE_STYLE;
   export let lineWidth: number = 1;
   export let mousemove: MouseEvent | undefined;
@@ -70,7 +71,7 @@
   export let ordinalScale: boolean = false;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
-  export let yAxes: Axis[] = [];
+  export let yAxes: ComputedAxis[] = [];
   export let yAxisId: number | null = null;
 
   const dispatch = createEventDispatcher<{
@@ -115,7 +116,7 @@
     dashArray: getLineDashArray(lineStyle),
     fillColor: fillColor || lineColor,
     fillOpacity: clampOpacity(fillOpacity, DEFAULT_LINE_FILL_OPACITY),
-    opacity: clampOpacity(lineOpacity),
+    opacity: clampOpacity(opacity),
     pointColor: pointColor || lineColor,
     pointRadius: clampLineSize(pointRadius, 2),
     pointShape,
@@ -163,7 +164,7 @@
     mounted = true;
   });
 
-  function computeYScale(yAxes: Axis[]): ScaleLinear<number, number> | ScalePoint<string> {
+  function computeYScale(yAxes: ComputedAxis[]): YScale | ScalePoint<string> {
     const [yAxis] = yAxes.filter(axis => yAxisId === axis.id);
     if (ordinalScale) {
       const domain = Array.from(ordinalScaleDomain);
@@ -171,10 +172,10 @@
         .domain(domain.filter(filterNullish))
         .range([drawHeight - CANVAS_PADDING_Y, CANVAS_PADDING_Y]) as ScalePoint<string>;
     }
-    return getYScale(yAxis?.scaleDomain || [], drawHeight);
+    return getYScale(yAxis?.scaleDomain || [], drawHeight, yAxis?.scaleType, yAxis?.logConstant);
   }
 
-  function processPoint(point: LinePoint, yScale: ScaleLinear<number, number> | ScalePoint<string>): LinePoint {
+  function processPoint(point: LinePoint, yScale: YScale | ScalePoint<string>): LinePoint {
     const { id, name, type } = point;
     const x = (xScaleView as ScaleTime<number, number, never>)(point.x);
     let y = null;
@@ -295,7 +296,7 @@
       // Draw the fill under the line before the line itself so that the line remains crisp on top.
       // Ordinal scales have no numeric zero and therefore no meaningful baseline to fill to.
       if (lineDrawOptions.showFill && !ordinalScale) {
-        const baselineY = getLineFillBaselineY(yScale as ScaleLinear<number, number>, drawHeight);
+        const baselineY = getLineFillBaselineY(yScale as YScale, drawHeight);
         if (baselineY !== null) {
           const area = d3Area<LinePoint>()
             .defined(d => d.y !== null) // Match the line so gaps become holes in the fill
@@ -316,29 +317,33 @@
         }
       }
 
-      // Draw the line
-      line = d3Line<LinePoint>()
-        .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
-        .x(d => d.x)
-        .y(d => d.y as number)
-        .curve(curveLinear);
-      ctx.save();
-      ctx.lineWidth = lineDrawOptions.width;
-      ctx.strokeStyle = lineColor;
-      // Sanitized in lineDrawOptions rather than read raw, since canvas silently ignores a
-      // non-finite globalAlpha and would leave the previous value in place
-      ctx.globalAlpha = lineDrawOptions.opacity;
-      // Dotted uses zero-length dashes in some renderers, so a round cap is what makes them
-      // visible; it also keeps dashes from looking clipped at their ends
-      ctx.lineCap = lineDrawOptions.dashArray.length > 0 ? 'round' : 'butt';
-      ctx.setLineDash(lineDrawOptions.dashArray);
-      ctx.beginPath();
-      line.context(ctx)(finalPoints);
-      ctx.stroke();
-      ctx.closePath();
-      // restore() resets lineDash/lineCap/globalAlpha together, so the next layer sharing this
-      // context cannot inherit this layer's stroke pattern
-      ctx.restore();
+      // Draw the line. A width of zero means "hide the line" (points only) -- it has to short
+      // circuit here rather than rely on ctx.lineWidth = 0, which canvas ignores outright, leaving
+      // whatever width was set previously and making the line look like it has a minimum of 1.
+      if (lineDrawOptions.width > 0) {
+        line = d3Line<LinePoint>()
+          .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
+          .x(d => d.x)
+          .y(d => d.y as number)
+          .curve(curveLinear);
+        ctx.save();
+        ctx.lineWidth = lineDrawOptions.width;
+        ctx.strokeStyle = lineColor;
+        // Sanitized in lineDrawOptions rather than read raw, since canvas silently ignores a
+        // non-finite globalAlpha and would leave the previous value in place
+        ctx.globalAlpha = lineDrawOptions.opacity;
+        // Dotted uses zero-length dashes in some renderers, so a round cap is what makes them
+        // visible; it also keeps dashes from looking clipped at their ends
+        ctx.lineCap = lineDrawOptions.dashArray.length > 0 ? 'round' : 'butt';
+        ctx.setLineDash(lineDrawOptions.dashArray);
+        ctx.beginPath();
+        line.context(ctx)(finalPoints);
+        ctx.stroke();
+        ctx.closePath();
+        // restore() resets lineDash/lineCap/globalAlpha together, so the next layer sharing this
+        // context cannot inherit this layer's stroke pattern
+        ctx.restore();
+      }
     }
   }
 
@@ -372,7 +377,7 @@
     x: number,
     y: number,
     points: LinePoint[],
-    yScale: ScaleLinear<number, number> | ScalePoint<string>,
+    yScale: YScale | ScalePoint<string>,
   ): LinePoint | null {
     /* TODO this could potentially include some pixel buffer around x? */
     const pointsAtX = points.filter(p => p.y !== null && p.x === x);
@@ -390,10 +395,7 @@
     return closest;
   }
 
-  function getScaledYValue(
-    y: number | string | null,
-    yScale: ScaleLinear<number, number> | ScalePoint<string>,
-  ): number | undefined {
+  function getScaledYValue(y: number | string | null, yScale: YScale | ScalePoint<string>): number | undefined {
     if (y === null) {
       return undefined;
     }
@@ -407,7 +409,12 @@
     if (ordinalScale) {
       scaledY = (yScale as ScalePoint<string>)(y as string);
     } else {
-      scaledY = (yScale as ScaleLinear<number, number>)(y as number);
+      scaledY = (yScale as YScale)(y as number);
+      // Defensive: symlog places every real value, so this should not trigger. Kept so a malformed
+      // domain can never blit a point at a non-finite coordinate or stretch the line off-canvas.
+      if (scaledY !== undefined && !Number.isFinite(scaledY)) {
+        scaledY = undefined;
+      }
     }
     scaledYCache[y] = scaledY;
     return scaledY;
