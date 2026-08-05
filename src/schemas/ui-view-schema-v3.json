@@ -532,21 +532,47 @@
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
+                              "lineOpacity": {
+                                "description": "Opacity of the line and its points",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
+                              },
+                              "lineStyle": {
+                                "description": "Stroke pattern of the line",
+                                "enum": ["solid", "dashed", "dotted"],
+                                "type": "string"
+                              },
                               "lineWidth": {
                                 "description": "Width of the line",
+                                "minimum": 0,
                                 "type": "number"
                               },
                               "name": {
                                 "description": "Name of the layer",
                                 "type": "string"
                               },
+                              "pointColor": {
+                                "$ref": "#/definitions/color"
+                              },
                               "pointRadius": {
                                 "description": "Radius of the points",
+                                "minimum": 0,
                                 "type": "number"
+                              },
+                              "pointShape": {
+                                "description": "Shape of the points, drawn at equal visual area across shapes",
+                                "enum": ["circle", "square", "diamond", "triangle", "cross"],
+                                "type": "string"
                               },
                               "showFill": {
                                 "description": "Whether or not to fill the area between the line and the zero baseline",
                                 "type": "boolean"
+                              },
+                              "showPoints": {
+                                "description": "When to render points. 'auto' hides them once the line is decimated",
+                                "enum": ["auto", "always", "never"],
+                                "type": "string"
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
@@ -598,6 +624,9 @@
                                 "type": "string"
                               },
                               "opacity": {
+                                "description": "Opacity of the range rectangles",
+                                "maximum": 1,
+                                "minimum": 0,
                                 "type": "number"
                               },
                               "showAsLinePlot": {

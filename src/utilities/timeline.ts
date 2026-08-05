@@ -41,9 +41,12 @@ import type {
   HorizontalGuide,
   Layer,
   LineLayer,
+  LineStyle,
+  PointShape,
   QuadtreePoint,
   QuadtreeRect,
   Row,
+  ShowPointsMode,
   TimeRange,
   Timeline,
   VerticalGuide,
@@ -170,6 +173,29 @@ export function formatTickLocalTZ(date: Date, viewDurationMs: number, tickCount:
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
+export const DEFAULT_LINE_OPACITY = 1;
+export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
+export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
+export const DEFAULT_SHOW_POINTS_MODE: ShowPointsMode = 'auto';
+
+/**
+ * Canvas dash patterns in CSS pixels, keyed by line style. Deliberately absolute rather than
+ * scaled by lineWidth so that a pattern stays recognizable as the same style across widths --
+ * scaling makes a thick dashed line indistinguishable from a thick solid one at typical zooms.
+ */
+const LINE_DASH_ARRAYS: Record<LineStyle, number[]> = {
+  dashed: [6, 4],
+  dotted: [1, 3],
+  solid: [],
+};
+
+/**
+ * Extra room around a point sprite, as a multiple of the circle diameter. Every shape is drawn at
+ * equal visual area, so the taller ones (triangle, diamond, cross) overflow a tight radius-sized
+ * box and would be clipped by the sprite canvas without this padding.
+ */
+const POINT_SPRITE_PADDING = 1.6;
+
 /**
  * Default opacity for a line layer's area fill. Kept translucent so that layers beneath it
  * (activities, x-ranges, other lines) remain readable, since line layers are drawn last.
@@ -202,14 +228,14 @@ export function getYScale(domain: (number | null)[], height: number): ScaleLinea
 }
 
 /**
- * Clamps a line layer's area fill opacity into the 0-1 range the view schema allows, falling back
- * to the default for non-finite input (e.g. a cleared number input yields NaN). Canvas silently
- * ignores a non-finite or out-of-range globalAlpha and keeps the previous value, which would leave
- * the fill fully opaque, so callers must sanitize rather than pass a raw value through.
+ * Clamps an opacity into the 0-1 range the view schema allows, falling back to `fallback` for
+ * non-finite input (e.g. a cleared number input yields NaN). Canvas silently ignores a non-finite
+ * or out-of-range globalAlpha and keeps whatever was set previously, so callers must sanitize
+ * rather than pass a raw view value through.
  */
-export function clampLineFillOpacity(opacity: number): number {
-  if (!Number.isFinite(opacity)) {
-    return DEFAULT_LINE_FILL_OPACITY;
+export function clampOpacity(opacity: number | undefined, fallback: number = DEFAULT_LINE_OPACITY): number {
+  if (opacity === undefined || !Number.isFinite(opacity)) {
+    return fallback;
   }
   return Math.max(0, Math.min(1, opacity));
 }
@@ -226,6 +252,44 @@ export function getLineFillBaselineY(yScale: ScaleLinear<number, number>, height
     return null;
   }
   return Math.max(0, Math.min(height, zeroY));
+}
+
+/**
+ * Clamps a stroke or radius size to a non-negative finite number. A negative or NaN lineWidth makes
+ * canvas drop the stroke entirely and a negative radius makes the point sprite canvas throw, so
+ * hand-edited and imported views have to be sanitized at the draw site.
+ */
+export function clampLineSize(size: number | undefined, fallback: number): number {
+  if (size === undefined || !Number.isFinite(size) || size < 0) {
+    return fallback;
+  }
+  return size;
+}
+
+/**
+ * Returns the canvas setLineDash pattern for a line style. Unknown styles (from a hand-edited or
+ * future-versioned view) fall back to solid rather than leaving the previous layer's pattern set.
+ */
+export function getLineDashArray(lineStyle: LineStyle | undefined): number[] {
+  return LINE_DASH_ARRAYS[lineStyle as LineStyle] ?? LINE_DASH_ARRAYS.solid;
+}
+
+/**
+ * Returns the CSS-pixel dimension of the square sprite used to draw a point of the given radius.
+ * Rounded up so the sprite's backing canvas lands on whole pixels.
+ */
+export function getPointSpriteSize(pointRadius: number): number {
+  return Math.ceil(pointRadius * 2 * POINT_SPRITE_PADDING);
+}
+
+/**
+ * Returns the d3-shape symbol `size` (an *area* in square pixels, not a radius) that draws the given
+ * shape at the same visual weight as a circle of `pointRadius`. d3 normalizes every symbol to the
+ * requested area, so passing the circle's area keeps shapes interchangeable without the diamond
+ * reading as smaller than the square.
+ */
+export function getPointSymbolSize(pointRadius: number): number {
+  return Math.PI * pointRadius * pointRadius;
 }
 
 export function isActivityLayer(layer: Layer): layer is ActivityLayer {
@@ -699,10 +763,14 @@ export function createTimelineLineLayer(
     filter: {},
     id,
     lineColor: ViewLineLayerColorPresets[0],
+    lineOpacity: DEFAULT_LINE_OPACITY,
+    lineStyle: DEFAULT_LINE_STYLE,
     lineWidth: 1,
     name: '',
     pointRadius: 2,
+    pointShape: DEFAULT_POINT_SHAPE,
     showFill: false,
+    showPoints: DEFAULT_SHOW_POINTS_MODE,
     yAxisId,
     ...args,
   };

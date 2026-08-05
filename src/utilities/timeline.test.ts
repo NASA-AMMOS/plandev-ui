@@ -16,12 +16,17 @@ import { convertUTCToMs } from './time';
 import {
   DEFAULT_LINE_FILL_OPACITY,
   applyActivityLayerFilter,
-  clampLineFillOpacity,
   createHorizontalGuide,
   createRow,
   createTimeline,
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
+  DEFAULT_LINE_OPACITY,
+  DEFAULT_LINE_STYLE,
+  DEFAULT_POINT_SHAPE,
+  DEFAULT_SHOW_POINTS_MODE,
+  clampLineSize,
+  clampOpacity,
   createTimelineLineLayer,
   createTimelineXRangeLayer,
   createVerticalGuide,
@@ -30,8 +35,11 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getLineDashArray,
   getLineFillBaselineY,
   getMatchingTypesForActivityLayerFilter,
+  getPointSpriteSize,
+  getPointSymbolSize,
   getResourceForLayer,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
@@ -439,23 +447,23 @@ test('createTimelineLineLayer', () => {
   expect(createTimelineLineLayer([], [], { fillOpacity: 0 }).fillOpacity).toBe(0);
 });
 
-describe('clampLineFillOpacity', () => {
+describe('clampOpacity with the area fill default', () => {
   test('Should pass through values already within 0-1', () => {
-    expect(clampLineFillOpacity(0)).toBe(0);
-    expect(clampLineFillOpacity(0.25)).toBe(0.25);
-    expect(clampLineFillOpacity(1)).toBe(1);
+    expect(clampOpacity(0, DEFAULT_LINE_FILL_OPACITY)).toBe(0);
+    expect(clampOpacity(0.25, DEFAULT_LINE_FILL_OPACITY)).toBe(0.25);
+    expect(clampOpacity(1, DEFAULT_LINE_FILL_OPACITY)).toBe(1);
   });
 
   test('Should clamp values outside 0-1 since canvas ignores an out of range globalAlpha', () => {
-    expect(clampLineFillOpacity(1.5)).toBe(1);
-    expect(clampLineFillOpacity(-1)).toBe(0);
+    expect(clampOpacity(1.5, DEFAULT_LINE_FILL_OPACITY)).toBe(1);
+    expect(clampOpacity(-1, DEFAULT_LINE_FILL_OPACITY)).toBe(0);
   });
 
-  test('Should fall back to the default for non-finite values', () => {
+  test('Should fall back to the supplied default for non-finite values', () => {
     // A cleared number input reports NaN, which canvas would ignore and leave the fill opaque
-    expect(clampLineFillOpacity(NaN)).toBe(DEFAULT_LINE_FILL_OPACITY);
-    expect(clampLineFillOpacity(Infinity)).toBe(DEFAULT_LINE_FILL_OPACITY);
-    expect(clampLineFillOpacity(-Infinity)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampOpacity(NaN, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampOpacity(Infinity, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampOpacity(-Infinity, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
   });
 });
 
@@ -1713,4 +1721,109 @@ test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
   // @ts-expect-error forcing the case where an invalid operator is specified
   expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
+});
+
+describe('clampOpacity', () => {
+  test('leaves in-range values untouched', () => {
+    expect(clampOpacity(0)).toEqual(0);
+    expect(clampOpacity(0.35)).toEqual(0.35);
+    expect(clampOpacity(1)).toEqual(1);
+  });
+
+  test('clamps out-of-range values into 0-1', () => {
+    expect(clampOpacity(-2)).toEqual(0);
+    expect(clampOpacity(4)).toEqual(1);
+  });
+
+  test('falls back for non-finite input, since canvas ignores a bad globalAlpha', () => {
+    expect(clampOpacity(NaN)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(Infinity)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(undefined)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(NaN, 0.5)).toEqual(0.5);
+  });
+});
+
+describe('clampLineSize', () => {
+  test('leaves valid sizes untouched', () => {
+    expect(clampLineSize(0, 1)).toEqual(0);
+    expect(clampLineSize(3.5, 1)).toEqual(3.5);
+  });
+
+  test('falls back for negative or non-finite sizes', () => {
+    expect(clampLineSize(-1, 1)).toEqual(1);
+    expect(clampLineSize(NaN, 1)).toEqual(1);
+    expect(clampLineSize(undefined, 2)).toEqual(2);
+  });
+});
+
+describe('getLineDashArray', () => {
+  test('returns an empty pattern for solid lines', () => {
+    expect(getLineDashArray('solid')).toEqual([]);
+  });
+
+  test('returns a pattern for dashed and dotted lines', () => {
+    expect(getLineDashArray('dashed').length).toBeGreaterThan(0);
+    expect(getLineDashArray('dotted').length).toBeGreaterThan(0);
+    expect(getLineDashArray('dashed')).not.toEqual(getLineDashArray('dotted'));
+  });
+
+  test('falls back to solid for an unknown style so a stale pattern is not reused', () => {
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown style
+    expect(getLineDashArray('squiggly')).toEqual([]);
+    expect(getLineDashArray(undefined)).toEqual([]);
+  });
+});
+
+describe('getPointSpriteSize', () => {
+  test('leaves room around the point so taller shapes are not clipped', () => {
+    expect(getPointSpriteSize(2)).toBeGreaterThan(4);
+    expect(getPointSpriteSize(10)).toBeGreaterThan(20);
+  });
+
+  test('returns whole pixels so the sprite canvas is not fractionally sized', () => {
+    expect(Number.isInteger(getPointSpriteSize(2))).toBe(true);
+    expect(Number.isInteger(getPointSpriteSize(3))).toBe(true);
+  });
+
+  test('grows with the radius', () => {
+    expect(getPointSpriteSize(4)).toBeGreaterThan(getPointSpriteSize(2));
+  });
+});
+
+describe('getPointSymbolSize', () => {
+  test('returns the area of the equivalent circle, since d3 symbols are sized by area', () => {
+    expect(getPointSymbolSize(2)).toBeCloseTo(Math.PI * 4);
+    expect(getPointSymbolSize(0)).toEqual(0);
+  });
+});
+
+describe('createTimelineLineLayer', () => {
+  test('defaults every style option to the current rendering so saved views are unchanged', () => {
+    const layer = createTimelineLineLayer([], []);
+    expect(layer.lineStyle).toEqual(DEFAULT_LINE_STYLE);
+    expect(layer.lineStyle).toEqual('solid');
+    expect(layer.lineOpacity).toEqual(DEFAULT_LINE_OPACITY);
+    expect(layer.lineOpacity).toEqual(1);
+    expect(layer.pointShape).toEqual(DEFAULT_POINT_SHAPE);
+    expect(layer.pointShape).toEqual('circle');
+    expect(layer.showPoints).toEqual(DEFAULT_SHOW_POINTS_MODE);
+    expect(layer.showPoints).toEqual('auto');
+    // Left unset so points and fill track lineColor until the user overrides them, matching how the
+    // layer rendered when point and fill color were not separately configurable
+    expect(layer.pointColor).toBeUndefined();
+    expect(layer.fillColor).toBeUndefined();
+  });
+
+  test('allows the style options to be overridden', () => {
+    const layer = createTimelineLineLayer([], [], {
+      lineOpacity: 0.5,
+      lineStyle: 'dashed',
+      pointShape: 'diamond',
+      showPoints: 'never',
+    });
+    expect(layer.lineOpacity).toEqual(0.5);
+    expect(layer.lineStyle).toEqual('dashed');
+    expect(layer.pointShape).toEqual('diamond');
+    expect(layer.showPoints).toEqual('never');
+  });
 });

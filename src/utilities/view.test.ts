@@ -139,3 +139,88 @@ describe('migrateViewDefinition', () => {
     expect(migratedViewDefinition).toBeNull();
   });
 });
+
+describe('line layer style validation', () => {
+  /**
+   * Returns the v3 mock view with the given properties merged into its first line layer. The mock's
+   * line layer carries none of the style fields, so it doubles as the "view saved before these
+   * options existed" case.
+   */
+  function viewWithLineLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const layer = view.plan.timelines[0].rows[1].layers[0];
+    view.plan.timelines[0].rows[1].layers[0] = { ...layer, ...props };
+    return view;
+  }
+
+  function viewWithXRangeLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const layer = view.plan.timelines[0].rows[2].layers[0];
+    view.plan.timelines[0].rows[2].layers[0] = { ...layer, ...props };
+    return view;
+  }
+
+  test('A view saved before the style options existed is still valid', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewV3 as any);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should accept every style option', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      viewWithLineLayerProps({
+        lineOpacity: 0.5,
+        lineStyle: 'dashed',
+        pointShape: 'diamond',
+        showPoints: 'always',
+      }),
+    );
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test.each(['solid', 'dashed', 'dotted'])('Should accept lineStyle "%s"', style => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineStyle: style })).valid).toBe(true);
+  });
+
+  test.each(['circle', 'square', 'diamond', 'triangle', 'cross'])('Should accept pointShape "%s"', shape => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointShape: shape })).valid).toBe(true);
+  });
+
+  test.each(['auto', 'always', 'never'])('Should accept showPoints "%s"', mode => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: mode })).valid).toBe(true);
+  });
+
+  test('Should accept a pointColor and reject a malformed one', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointColor: '#ff0000' })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointColor: 'red' })).valid).toBe(false);
+  });
+
+  test('Should reject unknown enum values', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineStyle: 'squiggly' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointShape: 'hexagon' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: 'sometimes' })).valid).toBe(false);
+  });
+
+  test('Should reject a lineOpacity outside 0-1', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineOpacity: -0.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineOpacity: 1.5 })).valid).toBe(false);
+  });
+
+  test('Should reject a negative lineWidth or pointRadius', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineWidth: -1 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointRadius: -1 })).valid).toBe(false);
+  });
+
+  test('Should reject an x-range opacity outside 0-1', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ opacity: 1.5 })).valid).toBe(false);
+  });
+
+  test('Should reject a NaN opacity, which serializes to null rather than a number', () => {
+    // A cleared number input yields NaN, and JSON.stringify turns NaN into null, so an unsanitized
+    // form value makes the whole view unexportable rather than just rendering oddly.
+    const view = JSON.parse(JSON.stringify(viewWithLineLayerProps({ lineOpacity: NaN })));
+    expect(view.plan.timelines[0].rows[1].layers[0].lineOpacity).toBeNull();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+});

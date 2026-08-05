@@ -2,23 +2,43 @@
 
 <script lang="ts">
   import { scalePoint, type ScaleLinear, type ScalePoint, type ScaleTime } from 'd3-scale';
-  import { area as d3Area, curveLinear, line as d3Line } from 'd3-shape';
+  import {
+    area as d3Area,
+    curveLinear,
+    line as d3Line,
+    symbolCross,
+    symbolDiamond,
+    symbolSquare,
+    symbolTriangle,
+    type SymbolType,
+  } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type {
     Axis,
     LinePoint,
+    LineStyle,
     MouseOver,
+    PointShape,
     ResourceLayerFilter,
     RowMouseOverEvent,
+    ShowPointsMode,
     TimeRange,
   } from '../../types/timeline';
   import { filterNullish } from '../../utilities/generic';
   import {
     CANVAS_PADDING_Y,
     DEFAULT_LINE_FILL_OPACITY,
-    clampLineFillOpacity,
+    DEFAULT_LINE_OPACITY,
+    DEFAULT_LINE_STYLE,
+    DEFAULT_POINT_SHAPE,
+    DEFAULT_SHOW_POINTS_MODE,
+    clampLineSize,
+    clampOpacity,
+    getLineDashArray,
     getLineFillBaselineY,
+    getPointSpriteSize,
+    getPointSymbolSize,
     getYScale,
     minMaxDecimation,
   } from '../../utilities/timeline';
@@ -36,12 +56,17 @@
   export let interpolateHoverValue: boolean = false;
   export let limitTooltipToLine: boolean = false;
   export let lineColor: string = '';
+  export let lineOpacity: number = DEFAULT_LINE_OPACITY;
+  export let lineStyle: LineStyle = DEFAULT_LINE_STYLE;
   export let lineWidth: number = 1;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
+  export let pointColor: string | undefined = undefined;
   export let pointRadius: number = 2;
+  export let pointShape: PointShape = DEFAULT_POINT_SHAPE;
   export let resources: Resource[] = [];
   export let showFill: boolean = false;
+  export let showPoints: ShowPointsMode = DEFAULT_SHOW_POINTS_MODE;
   export let ordinalScale: boolean = false;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -53,6 +78,16 @@
     mouseOver: RowMouseOverEvent;
   }>();
   const WORK_TIME_THRESHOLD = 32; // ms to allow for processing time, beyond which remaining work will be split to a new frame
+  /**
+   * d3 symbol for each point shape. 'circle' is absent on purpose -- it keeps its original
+   * Path2D.arc path so the default shape is unchanged by this map existing.
+   */
+  const POINT_SYMBOLS: Record<Exclude<PointShape, 'circle'>, SymbolType> = {
+    cross: symbolCross,
+    diamond: symbolDiamond,
+    square: symbolSquare,
+    triangle: symbolTriangle,
+  };
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D | null;
@@ -68,9 +103,26 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
-  // fillColor is undefined unless the layer overrides the line color, so it cannot be checked
-  // directly in the draw condition below without permanently blocking every draw
-  $: resolvedFillColor = fillColor || lineColor;
+  /**
+   * Every style input the canvas draw depends on, resolved and sanitized in one place. draw() reads
+   * this rather than the raw props because Svelte does not track a function body's dependencies --
+   * referencing this single object in the reactive guard below is what makes any style change trigger
+   * a redraw, without listing each prop there individually. Note that fillColor and pointColor are
+   * undefined unless the layer overrides lineColor, so they could not be depended on directly in the
+   * guard without permanently blocking every draw; resolving them here sidesteps that.
+   */
+  $: lineDrawOptions = {
+    dashArray: getLineDashArray(lineStyle),
+    fillColor: fillColor || lineColor,
+    fillOpacity: clampOpacity(fillOpacity, DEFAULT_LINE_FILL_OPACITY),
+    opacity: clampOpacity(lineOpacity),
+    pointColor: pointColor || lineColor,
+    pointRadius: clampLineSize(pointRadius, 2),
+    pointShape,
+    showFill,
+    showPoints,
+    width: clampLineSize(lineWidth, 1),
+  };
   $: if (
     decimate !== undefined &&
     interpolateHoverValue !== undefined &&
@@ -83,13 +135,7 @@
     // TODO swap filter out for resources which are recomputed when the view changes (i.e. filter changes)
     filter &&
     lineColor !== undefined &&
-    // Always true once lineColor is defined. Present only so the condition re-runs when
-    // fillColor changes -- do not remove it as dead code or the fill stops tracking the color.
-    resolvedFillColor !== undefined &&
-    typeof fillOpacity === 'number' &&
-    typeof showFill === 'boolean' &&
-    typeof lineWidth === 'number' &&
-    typeof pointRadius === 'number' &&
+    lineDrawOptions &&
     mounted &&
     ordinalScale !== undefined &&
     points &&
@@ -104,7 +150,8 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: processResourcesToLinePoints(resources);
-  $: offscreenPoint = ctx && generateOffscreenPoint(lineColor, pointRadius);
+  $: offscreenPoint =
+    ctx && generateOffscreenPoint(lineDrawOptions.pointColor, lineDrawOptions.pointRadius, lineDrawOptions.pointShape);
 
   onMount(() => {
     if (canvas) {
@@ -153,8 +200,8 @@
 
       const yScale = computeYScale(yAxes);
 
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = lineColor;
+      // Stroke state is set just before the stroke below rather than here, so that the sanitized
+      // width and the dash pattern are applied in one place
       let line;
       let finalPoints: LinePoint[] = [];
       // Collect points and gaps within view
@@ -235,13 +282,19 @@
       // Account for up to 3 extra points added to finalPoints: left, right, and last point
       // Also account for gap points that have not been included in pointsInView
       // TODO could also just do this when finalPoints < drawWidth but might be less performant?
-      if (!decimate || Math.abs(finalPoints.length - gapPoints.length - pointsInView.length) < 4) {
+      // 'auto' keeps the historical behavior of dropping points once decimation has actually thinned
+      // the set, since one sprite per pixel column reads as noise rather than as data.
+      const decimationKeptEveryPoint =
+        !decimate || Math.abs(finalPoints.length - gapPoints.length - pointsInView.length) < 4;
+      const shouldDrawPoints =
+        lineDrawOptions.showPoints === 'always' || (lineDrawOptions.showPoints !== 'never' && decimationKeptEveryPoint);
+      if (shouldDrawPoints) {
         drawPointsRequest = window.requestAnimationFrame(() => drawPoints(finalPoints));
       }
 
       // Draw the fill under the line before the line itself so that the line remains crisp on top.
       // Ordinal scales have no numeric zero and therefore no meaningful baseline to fill to.
-      if (showFill && !ordinalScale) {
+      if (lineDrawOptions.showFill && !ordinalScale) {
         const baselineY = getLineFillBaselineY(yScale as ScaleLinear<number, number>, drawHeight);
         if (baselineY !== null) {
           const area = d3Area<LinePoint>()
@@ -251,10 +304,10 @@
             .y1(d => d.y as number)
             .curve(curveLinear);
           ctx.save();
-          // Sanitized here too, not just at the input, so a hand edited or imported view cannot
-          // produce an opaque fill that hides the layers underneath
-          ctx.globalAlpha = clampLineFillOpacity(fillOpacity);
-          ctx.fillStyle = resolvedFillColor;
+          // Sanitized in lineDrawOptions, not just at the input, so a hand edited or imported view
+          // cannot produce an opaque fill that hides the layers underneath
+          ctx.globalAlpha = lineDrawOptions.fillOpacity;
+          ctx.fillStyle = lineDrawOptions.fillColor;
           ctx.beginPath();
           area.context(ctx)(finalPoints);
           // Nonzero winding (the default) keeps self intersections from decimated points solid
@@ -269,12 +322,23 @@
         .x(d => d.x)
         .y(d => d.y as number)
         .curve(curveLinear);
-      ctx.lineWidth = lineWidth;
+      ctx.save();
+      ctx.lineWidth = lineDrawOptions.width;
       ctx.strokeStyle = lineColor;
+      // Sanitized in lineDrawOptions rather than read raw, since canvas silently ignores a
+      // non-finite globalAlpha and would leave the previous value in place
+      ctx.globalAlpha = lineDrawOptions.opacity;
+      // Dotted uses zero-length dashes in some renderers, so a round cap is what makes them
+      // visible; it also keeps dashes from looking clipped at their ends
+      ctx.lineCap = lineDrawOptions.dashArray.length > 0 ? 'round' : 'butt';
+      ctx.setLineDash(lineDrawOptions.dashArray);
       ctx.beginPath();
       line.context(ctx)(finalPoints);
       ctx.stroke();
       ctx.closePath();
+      // restore() resets lineDash/lineCap/globalAlpha together, so the next layer sharing this
+      // context cannot inherit this layer's stroke pattern
+      ctx.restore();
     }
   }
 
@@ -283,12 +347,19 @@
       return;
     }
 
+    // The sprite is padded beyond the point radius so taller shapes are not clipped, so it has to be
+    // both positioned and sized by the sprite box rather than by the radius
+    const spriteSize = getPointSpriteSize(lineDrawOptions.pointRadius);
+    const spriteOffset = spriteSize / 2;
+    ctx.save();
+    ctx.globalAlpha = lineDrawOptions.opacity;
     for (const point of points) {
       const { x, y } = point;
       if (y !== null) {
-        ctx.drawImage(offscreenPoint, x - pointRadius, (y as number) - pointRadius, pointRadius * 2, pointRadius * 2);
+        ctx.drawImage(offscreenPoint, x - spriteOffset, (y as number) - spriteOffset, spriteSize, spriteSize);
       }
     }
+    ctx.restore();
   }
 
   function onContextMenu(e: MouseEvent | undefined): void {
@@ -641,22 +712,30 @@
     points = tempPoints;
   }
 
-  function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | HTMLCanvasElement | null {
+  function generateOffscreenPoint(
+    color: string,
+    radius: number,
+    shape: PointShape,
+  ): OffscreenCanvas | HTMLCanvasElement | null {
     if (!radius) {
       return null;
     }
+
+    // Padded past the radius so equal-area shapes taller than a circle (triangle, diamond, cross)
+    // are not clipped. drawPoints derives the same box from getPointSpriteSize.
+    const size = getPointSpriteSize(radius);
 
     let tempCanvas: OffscreenCanvas | HTMLCanvasElement;
     let tempCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
 
     if ('OffscreenCanvas' in window) {
-      tempCanvas = new OffscreenCanvas(radius * 2 * dpr, radius * 2 * dpr);
+      tempCanvas = new OffscreenCanvas(size * dpr, size * dpr);
     } else {
       tempCanvas = document.createElement('canvas');
-      tempCanvas.height = radius * 2 * dpr;
-      tempCanvas.width = radius * 2 * dpr;
-      tempCanvas.style.height = `${radius * 2}px`;
-      tempCanvas.style.width = `${radius * 2}px`;
+      tempCanvas.height = size * dpr;
+      tempCanvas.width = size * dpr;
+      tempCanvas.style.height = `${size}px`;
+      tempCanvas.style.width = `${size}px`;
     }
 
     tempCtx = tempCanvas.getContext('2d');
@@ -667,11 +746,22 @@
 
     tempCtx.resetTransform();
     tempCtx.scale(dpr, dpr);
-    tempCtx.fillStyle = lineColor;
+    tempCtx.fillStyle = color;
 
-    const circle = new Path2D();
-    circle.arc(radius, radius, radius, 0, 2 * Math.PI);
-    tempCtx.fill(circle);
+    // Circle keeps its original Path2D.arc rather than going through d3Symbol so that the default
+    // shape renders byte-identically to how it did before shapes were configurable
+    if (shape === 'circle') {
+      const circle = new Path2D();
+      circle.arc(size / 2, size / 2, radius, 0, 2 * Math.PI);
+      tempCtx.fill(circle);
+      return tempCanvas;
+    }
+
+    // d3 symbols draw centered on the origin, so translate to the sprite center first
+    tempCtx.translate(size / 2, size / 2);
+    tempCtx.beginPath();
+    POINT_SYMBOLS[shape].draw(tempCtx as CanvasRenderingContext2D, getPointSymbolSize(radius));
+    tempCtx.fill();
 
     return tempCanvas;
   }
