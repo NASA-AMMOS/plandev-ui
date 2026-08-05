@@ -6,7 +6,7 @@
     FswCommandArgumentInteger,
     FswCommandArgumentNumeric,
     FswCommandArgumentUnsigned,
-  } from '@nasa-jpl/aerie-ampcs';
+  } from '@nasa-jpl/plandev-ampcs';
   import {
     isFswCommandArgumentFloat,
     isFswCommandArgumentInteger,

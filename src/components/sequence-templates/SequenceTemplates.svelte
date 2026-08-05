@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/plandev-ampcs';
   import { X } from 'lucide-svelte';
   import { sequenceAdaptation, setSequenceLanguages } from '../../stores/sequence-adaptation';
   import { selectedSequenceTemplateId, sequenceTemplates } from '../../stores/sequence-template';

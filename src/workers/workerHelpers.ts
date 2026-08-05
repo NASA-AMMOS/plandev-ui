@@ -4,7 +4,7 @@ import type {
   FswCommandArgumentNumeric,
   FswCommandArgumentRepeat,
   NumericRange,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import tsc, { SyntaxKind } from 'typescript';
 import type { Diagnostic as ResponseDiagnostic } from '../types/monaco-internal';
 import type { ErrorCode } from './customCodes';

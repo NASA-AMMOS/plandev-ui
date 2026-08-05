@@ -4,8 +4,8 @@
   import { syntaxTree } from '@codemirror/language';
   import { StateEffect } from '@codemirror/state';
   import type { SyntaxNode, Tree } from '@lezer/common';
-  import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
-  import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
+  import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/plandev-ampcs';
+  import type { CommandInfoMapper, PhoenixContext } from '@nasa-jpl/plandev-sequence-languages';
   import { EditorView } from 'codemirror';
   import { unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
   import Tab from '../../ui/Tabs/Tab.svelte';

@@ -1,6 +1,6 @@
 import type { SyntaxNode } from '@lezer/common';
 import { Tree } from '@lezer/common';
-import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/plandev-ampcs';
 import { TimeTypes } from '../../../../enums/time';
 import { getBalancedDuration, getDurationTimeComponents, parseDurationString, validateTime } from '../../../time';
 import { unquoteUnescape } from '../../sequence-utils';

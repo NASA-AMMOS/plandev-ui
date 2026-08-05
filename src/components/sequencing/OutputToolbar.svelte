@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { OutputLanguage } from '@nasa-jpl/aerie-sequence-languages';
+  import type { OutputLanguage } from '@nasa-jpl/plandev-sequence-languages';
 
   import { Button, Label } from '@nasa-jpl/stellar-svelte';
   import { Clipboard, Download, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';

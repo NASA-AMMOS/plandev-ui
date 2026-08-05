@@ -1,4 +1,4 @@
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import type { ArgumentsMap, ParameterName } from './parameter';
 
 export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };

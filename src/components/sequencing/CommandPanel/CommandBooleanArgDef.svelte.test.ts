@@ -1,4 +1,4 @@
-import type { FswCommandArgumentBoolean } from '@nasa-jpl/aerie-ampcs';
+import type { FswCommandArgumentBoolean } from '@nasa-jpl/plandev-ampcs';
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import CommandBooleanArgDef from './CommandBooleanArgDef.svelte';

@@ -8,7 +8,7 @@ import type {
   FswCommandArgumentRepeat,
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import { cleanup, render } from '@testing-library/svelte';
 import { keyBy } from 'lodash-es';
 import { afterEach, describe, expect, it } from 'vitest';

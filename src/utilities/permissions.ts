@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+import type { UserSequence } from '@nasa-jpl/plandev-sequence-languages';
 import { Queries } from '../enums/gql';
 import type { ActionDefinition, ActionRun } from '../types/actions';
 import type { ActivityDirective, ActivityPreset } from '../types/activity';

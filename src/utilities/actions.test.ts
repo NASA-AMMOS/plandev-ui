@@ -1,4 +1,4 @@
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import { describe, expect, test } from 'vitest';
 import { Status } from '../enums/status';
 import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../types/actions';

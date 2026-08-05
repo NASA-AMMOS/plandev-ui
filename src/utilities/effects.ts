@@ -1,19 +1,19 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import {
   parseCdlDictionary,
   toAmpcsXml,
   type PhoenixAdaptation,
   type PhoenixContext,
   type UserSequence,
-} from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';

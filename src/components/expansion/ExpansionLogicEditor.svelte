@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary as AmpcsCommandDictionary } from '@nasa-jpl/plandev-ampcs';
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { parcelBundles } from '../../stores/sequencing';
   import type { User } from '../../types/app';

@@ -12,7 +12,7 @@
     OutputLanguage,
     PhoenixAdaptation,
     PhoenixContext,
-  } from '@nasa-jpl/aerie-sequence-languages';
+  } from '@nasa-jpl/plandev-sequence-languages';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { FileBracesCorner } from 'lucide-svelte';

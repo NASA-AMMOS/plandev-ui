@@ -13,8 +13,8 @@ import type {
   FswCommandArgumentUnsigned,
   FswCommandArgumentVarString,
   HwCommand,
-} from '@nasa-jpl/aerie-ampcs';
-import type { ArgTextDef, CommandInfoMapper, StringArg } from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-ampcs';
+import type { ArgTextDef, CommandInfoMapper, StringArg } from '@nasa-jpl/plandev-sequence-languages';
 import type { VariableDeclaration } from '@nasa-jpl/seq-json-schema/types';
 import type { EditorView } from 'codemirror';
 import type { NumberArg } from '../../types/sequencing';

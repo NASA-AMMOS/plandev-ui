@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FswCommandArgumentFixedString, FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
+  import type { FswCommandArgumentFixedString, FswCommandArgumentVarString } from '@nasa-jpl/plandev-ampcs';
   import { isFswCommandArgumentVarString } from '../../../utilities/sequence-editor/sequence-utils';
   import Collapse from '../../Collapse.svelte';
   import CommandArgUnit from './CommandArgUnit.svelte';
