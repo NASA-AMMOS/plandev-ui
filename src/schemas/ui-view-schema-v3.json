@@ -435,6 +435,10 @@
                           "type": "number",
                           "minimum": 16
                         },
+                        "instantStyle": {
+                          "description": "Marker shape for activity directives and for spans and external events with no duration. Items with a duration keep their bar",
+                          "enum": ["line", "dot", "diamond"]
+                        },
                         "labelVisibility": {
                           "description": "External event text label behavior",
                           "enum": ["on", "off", "auto"]

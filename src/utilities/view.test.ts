@@ -195,6 +195,14 @@ describe('line layer style validation', () => {
     return view;
   }
 
+  /** Merges the given properties into the discreteOptions of the mock view's activity row. */
+  function viewWithDiscreteOptions(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows[0];
+    row.discreteOptions = { ...row.discreteOptions, ...props };
+    return view;
+  }
+
   function viewWithXRangeLayerProps(props: Record<string, unknown>) {
     const view = structuredClone(viewV3) as any;
     const layer = view.plan.timelines[0].rows[2].layers[0];
@@ -224,6 +232,24 @@ describe('line layer style validation', () => {
 
   test.each(['step', 'linear', 'smooth'])('Should accept interpolation "%s"', mode => {
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: mode })).valid).toBe(true);
+  });
+
+  test.each(['line', 'dot', 'diamond'])('Should accept a row instantStyle of "%s"', style => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: style }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject an unknown instantStyle', () => {
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'triangle' })).valid).toBe(false);
+  });
+
+  // The mock's rows carry no instantStyle, so this is also the "row saved before instant markers
+  // existed" case -- it has to keep validating and fall back to 'line' at render time.
+  test('A row with no instantStyle is still valid', () => {
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[0].discreteOptions.instantStyle).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
   });
 
   test.each(['solid', 'dashed', 'dotted'])('Should accept lineStyle "%s"', style => {
