@@ -8,12 +8,13 @@ import {
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
-import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
+  DEFAULT_INTERPOLATION,
   DEFAULT_LINE_FILL_OPACITY,
   applyActivityLayerFilter,
   createHorizontalGuide,
@@ -35,6 +36,7 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getLineCurve,
   getLineDashArray,
   getLogConstant,
   getLogTickValues,
@@ -51,6 +53,7 @@ import {
   getYAxisBounds,
   getYScale,
   isActivityLayer,
+  isDroppableHoldPoint,
   isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
@@ -1778,6 +1781,52 @@ describe('getLineDashArray', () => {
   });
 });
 
+describe('getLineCurve', () => {
+  test('step and linear share a curve, since the staircase comes from the data', () => {
+    expect(getLineCurve('step')).toBe(getLineCurve('linear'));
+  });
+
+  test('smooth uses a different curve than the other modes', () => {
+    expect(getLineCurve('smooth')).not.toBe(getLineCurve('linear'));
+  });
+
+  test('falls back to the default curve for a missing or unknown mode', () => {
+    expect(getLineCurve(undefined)).toBe(getLineCurve(DEFAULT_INTERPOLATION));
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown mode
+    expect(getLineCurve('bezier')).toBe(getLineCurve(DEFAULT_INTERPOLATION));
+  });
+});
+
+describe('isDroppableHoldPoint', () => {
+  const holdA = { is_hold: true, x: 20, y: 1 };
+  const holdB = { is_hold: true, x: 40, y: 2 };
+  const values: ResourceValue[] = [{ x: 10, y: 1 }, holdA, { x: 20, y: 2 }, holdB];
+
+  test('drops a hold value that is not the last', () => {
+    expect(isDroppableHoldPoint(values, 1)).toBe(true);
+  });
+
+  test('keeps values that are not holds', () => {
+    expect(isDroppableHoldPoint(values, 0)).toBe(false);
+    expect(isDroppableHoldPoint(values, 2)).toBe(false);
+  });
+
+  // Without this the plotted line would stop at the last segment's start rather than the profile's
+  // end, visibly truncating every interpolated layer by one segment.
+  test('keeps the final value even when it is a hold', () => {
+    expect(isDroppableHoldPoint(values, 3)).toBe(false);
+  });
+
+  test('keeps a lone hold value, which is also a profile end', () => {
+    expect(isDroppableHoldPoint([holdA], 0)).toBe(false);
+  });
+
+  test('is false out of range rather than throwing', () => {
+    expect(isDroppableHoldPoint(values, 99)).toBe(false);
+    expect(isDroppableHoldPoint([], 0)).toBe(false);
+  });
+});
+
 describe('getPointSpriteSize', () => {
   test('leaves room around the point so taller shapes are not clipped', () => {
     expect(getPointSpriteSize(2)).toBeGreaterThan(4);
@@ -1804,6 +1853,8 @@ describe('getPointSymbolSize', () => {
 describe('createTimelineLineLayer', () => {
   test('defaults every style option to the current rendering so saved views are unchanged', () => {
     const layer = createTimelineLineLayer([], []);
+    expect(layer.interpolation).toEqual(DEFAULT_INTERPOLATION);
+    expect(layer.interpolation).toEqual('step');
     expect(layer.lineStyle).toEqual(DEFAULT_LINE_STYLE);
     expect(layer.lineStyle).toEqual('solid');
     expect(layer.opacity).toEqual(DEFAULT_LINE_OPACITY);
@@ -1820,12 +1871,14 @@ describe('createTimelineLineLayer', () => {
 
   test('allows the style options to be overridden', () => {
     const layer = createTimelineLineLayer([], [], {
+      interpolation: 'linear',
       lineStyle: 'dashed',
       opacity: 0.5,
       pointShape: 'diamond',
       showPoints: 'never',
     });
     expect(layer.opacity).toEqual(0.5);
+    expect(layer.interpolation).toEqual('linear');
     expect(layer.lineStyle).toEqual('dashed');
     expect(layer.pointShape).toEqual('diamond');
     expect(layer.showPoints).toEqual('never');

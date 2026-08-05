@@ -211,6 +211,7 @@ describe('line layer style validation', () => {
   test('Should accept every style option', () => {
     const { valid, errors } = validateViewJSONAgainstSchema(
       viewWithLineLayerProps({
+        interpolation: 'linear',
         lineStyle: 'dashed',
         opacity: 0.5,
         pointShape: 'diamond',
@@ -219,6 +220,10 @@ describe('line layer style validation', () => {
     );
     expect(errors).to.deep.equal([]);
     expect(valid).toBe(true);
+  });
+
+  test.each(['step', 'linear', 'smooth'])('Should accept interpolation "%s"', mode => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: mode })).valid).toBe(true);
   });
 
   test.each(['solid', 'dashed', 'dotted'])('Should accept lineStyle "%s"', style => {
@@ -239,6 +244,7 @@ describe('line layer style validation', () => {
   });
 
   test('Should reject unknown enum values', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: 'stepBefore' })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineStyle: 'squiggly' })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointShape: 'hexagon' })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: 'sometimes' })).valid).toBe(false);

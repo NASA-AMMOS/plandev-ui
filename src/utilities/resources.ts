@@ -44,6 +44,10 @@ export function sampleProfiles(
           });
           values.push({
             is_gap,
+            // Tagged rather than inferred: a real segment with a rate of 0 also produces two values
+            // with the same y, and dropping *its* closing value would turn a flat run followed by a
+            // jump into a ramp. Only the profile type knows the difference, and only here.
+            is_hold: true,
             x: start + nextSegmentOffset,
             y: dynamics,
           });

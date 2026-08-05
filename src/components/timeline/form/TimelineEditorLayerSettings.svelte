@@ -7,6 +7,7 @@
   import type { Axis, Layer, LineLayer, XRangeLayer } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import {
+    DEFAULT_INTERPOLATION,
     DEFAULT_LINE_FILL_OPACITY,
     DEFAULT_LINE_OPACITY,
     DEFAULT_LINE_STYLE,
@@ -116,6 +117,20 @@
                 {axis.label.text}
               </option>
             {/each}
+          </select>
+        </Input>
+        <Input layout="inline">
+          <label for="interpolation">Interpolation</label>
+          <select
+            class="st-select w-full"
+            id="interpolation"
+            name="interpolation"
+            value={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
+            on:change={onInput}
+          >
+            <option value="step">Step</option>
+            <option value="linear">Linear</option>
+            <option value="smooth">Smooth</option>
           </select>
         </Input>
         <Input layout="inline">

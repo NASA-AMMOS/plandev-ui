@@ -529,6 +529,11 @@
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
+                              "interpolation": {
+                                "description": "How the line between two sampled values is drawn. Only affects discretely-sampled resources, which are piecewise constant",
+                                "enum": ["step", "linear", "smooth"],
+                                "type": "string"
+                              },
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
