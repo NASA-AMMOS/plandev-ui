@@ -72,6 +72,13 @@
   export let resources: Resource[] = [];
   export let showFill: boolean = false;
   export let showPoints: ShowPointsMode = DEFAULT_SHOW_POINTS_MODE;
+  /**
+   * Cumulative total of the layers beneath this one, one entry per resource value, when this layer is
+   * part of a stack. Index-aligned to the stacked resource's values by construction -- both come from
+   * the same shared x grid -- which is why it can be attached per point while that alignment still
+   * holds, before decimation reorders anything. Null when the layer is not stacked.
+   */
+  export let stackBaseline: (number | null)[] | null = null;
   export let ordinalScale: boolean = false;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -199,7 +206,10 @@
     if (point.y !== null) {
       y = getScaledYValue(point.y, yScale) ?? null;
     }
-    return { id, name, type, x, y };
+    // Scaled alongside y so the fill's lower edge survives decimation and gap insertion on the point
+    // itself, rather than having to be looked up by an index that those steps invalidate
+    const y0 = point.y0 === null || point.y0 === undefined ? point.y0 : (getScaledYValue(point.y0, yScale) ?? null);
+    return { id, name, type, x, y, y0 };
   }
 
   async function draw(): Promise<void> {
@@ -318,7 +328,9 @@
           const area = d3Area<LinePoint>()
             .defined(d => d.y !== null) // Match the line so gaps become holes in the fill
             .x(d => d.x)
-            .y0(baselineY)
+            // A stacked layer fills down to the total beneath it, which varies along x; everything else
+            // fills to the one baseline for the whole series
+            .y0(d => (typeof d.y0 === 'number' ? d.y0 : baselineY))
             .y1(d => d.y as number)
             // Same curve as the line so the fill's top edge cannot disagree with the line drawn on it
             .curve(lineDrawOptions.curve);
@@ -706,6 +718,9 @@
             type: 'line',
             x,
             y,
+            // Read by resource-value index, which is only valid here: this loop pushes one point per
+            // value for a stacked layer, since the stacking pass leaves its output untagged
+            y0: stackBaseline ? stackBaseline[valueIndex] : undefined,
           });
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {

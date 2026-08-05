@@ -723,6 +723,10 @@
                             "enum": ["linear", "log"],
                             "type": "string"
                           },
+                          "stack": {
+                            "description": "If true, sum this axis's line layers bottom-up in layer order so the topmost layer's line is the total. Layers whose resource is not numeric are left unstacked",
+                            "type": "boolean"
+                          },
                           "tickCount": {
                             "description": "Number of ticks on the axis",
                             "minimum": 0,

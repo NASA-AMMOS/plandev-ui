@@ -71,6 +71,7 @@
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
+    getLineLayerStacks,
     getMatchingTypesForActivityLayerFilter,
     getYAxesWithScaleDomains,
     isActivityLayer,
@@ -357,9 +358,14 @@
     anyResourcesLoading = anyLoading;
   }
 
+  // Stacking is the one thing a layer cannot compute for itself, since it depends on every other layer
+  // on the same axis. Empty unless an axis opts in.
+  $: lineLayerStacks = loadedResources && yAxes ? getLineLayerStacks(yAxes, layers, loadedResources) : {};
+
   // Compute scale domains for axes since it is optionally defined in the view
   $: if (loadedResources && yAxes) {
-    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange);
+    // Stacks are passed in so a stacked axis is sized to the stack total rather than its largest series
+    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange, lineLayerStacks);
     dispatch('updateYAxes', { axes: yAxesWithScaleDomains, id });
   }
 
@@ -1055,7 +1061,10 @@
             filter={layer.filter.resource}
             {mousemove}
             {mouseout}
-            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            resources={lineLayerStacks[layer.id]
+              ? [lineLayerStacks[layer.id].resource]
+              : getResourcesForLayer(layer, resourceRequestMap)}
+            stackBaseline={lineLayerStacks[layer.id]?.baseline ?? null}
             {viewTimeRange}
             {xScaleView}
             yAxes={yAxesWithScaleDomains}

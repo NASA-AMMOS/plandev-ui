@@ -61,6 +61,7 @@ import {
   matchesDynamicFilter,
   paginateNodes,
   spanInView,
+  stackLineLayerValues,
   thinTicksByPixelSpacing,
 } from './timeline';
 
@@ -1842,6 +1843,328 @@ describe('getInstantGlyphExtents', () => {
     for (const height of [16, 17, 18, 21, 24, 33]) {
       expect(Number.isInteger(getInstantGlyphExtents('dot', height).size)).toBe(true);
     }
+  });
+});
+
+describe('stackLineLayerValues', () => {
+  function series(layerId: number, values: [number, number | null][], interpolation: 'step' | 'linear' = 'step') {
+    return {
+      interpolation,
+      layerId,
+      resourceName: `r${layerId}`,
+      values: values.map(([x, y]) => ({ x, y })),
+    };
+  }
+
+  test('stacks in the order supplied, so the first series is the bottom', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    expect(bottom.values.map(v => [v.y0, v.y])).toEqual([
+      [0, 1],
+      [0, 1],
+    ]);
+    expect(top.values.map(v => [v.y0, v.y])).toEqual([
+      [1, 3],
+      [1, 3],
+    ]);
+  });
+
+  test('each layer fills between the total below it and the total through it, leaving no seams', () => {
+    const stacked = stackLineLayerValues([
+      series(0, [
+        [0, 5],
+        [10, 5],
+      ]),
+      series(1, [
+        [0, 3],
+        [10, 3],
+      ]),
+      series(2, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    for (let i = 1; i < stacked.length; i++) {
+      expect(stacked[i].values.map(v => v.y0)).toEqual(stacked[i - 1].values.map(v => v.y));
+    }
+    // Topmost series is the stack total
+    expect(stacked[2].values[0].y).toEqual(10);
+  });
+
+  // The union grid is what makes this exact. On any other spacing the sum of two piecewise-linear
+  // series is only an approximation of the true sum.
+  test('resamples onto the union of every x, and sums linear series exactly there', () => {
+    const [, top] = stackLineLayerValues([
+      series(
+        0,
+        [
+          [0, 0],
+          [10, 10],
+        ],
+        'linear',
+      ),
+      series(
+        1,
+        [
+          [0, 100],
+          [4, 100],
+          [10, 100],
+        ],
+        'linear',
+      ),
+    ]);
+    expect(top.values.map(v => v.x)).toEqual([0, 4, 10]);
+    // Bottom series ramps 0->10 over 0..10, so it is exactly 4 at x=4
+    expect(top.values[1].y).toEqual(104);
+  });
+
+  test('a step series holds its value across another series x values', () => {
+    const [bottom] = stackLineLayerValues([
+      series(0, [
+        [0, 7],
+        [10, 7],
+      ]),
+      series(1, [
+        [0, 0],
+        [5, 0],
+        [10, 0],
+      ]),
+    ]);
+    expect(bottom.values.map(v => [v.x, v.y])).toEqual([
+      [0, 7],
+      [5, 7],
+      [10, 7],
+    ]);
+  });
+
+  // A discrete segment boundary has two values at the same x. Taking the incoming segment's value is
+  // what matches the drawn staircase; taking the outgoing one would lag the stack by a segment.
+  test('at a shared x a step series takes the incoming segment value', () => {
+    const [bottom] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [5, 9],
+        [10, 9],
+      ]),
+    ]);
+    expect(bottom.values.find(v => v.x === 5)?.y).toEqual(9);
+  });
+
+  test('a gap low in the stack makes every total above it unknown, rather than closing up', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, null],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 4],
+        [5, 4],
+        [10, 4],
+      ]),
+    ]);
+    expect(bottom.values.find(v => v.x === 5)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 5)?.y).toBeNull();
+    // and recovers once the lower series is defined again
+    expect(top.values.find(v => v.x === 10)?.y).toEqual(5);
+  });
+
+  test('a gap high in the stack leaves the totals below it intact', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 4],
+        [5, null],
+        [10, 4],
+      ]),
+    ]);
+    expect(bottom.values.every(v => v.y === 1)).toBe(true);
+    expect(top.values.find(v => v.x === 5)?.y).toBeNull();
+  });
+
+  test('is undefined outside a series own time range rather than extrapolating', () => {
+    const [, top] = stackLineLayerValues([
+      series(0, [
+        [5, 1],
+        [8, 1],
+      ]),
+      series(1, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    expect(top.values.find(v => v.x === 0)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 10)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 5)?.y).toEqual(3);
+  });
+
+  test('negative values reduce the running total so the top reads as the net sum', () => {
+    const [, top] = stackLineLayerValues([
+      series(0, [
+        [0, 10],
+        [10, 10],
+      ]),
+      series(1, [
+        [0, -4],
+        [10, -4],
+      ]),
+    ]);
+    expect(top.values[0].y).toEqual(6);
+  });
+
+  test('drops hold values for an interpolating series before summing', () => {
+    // Same data, read two ways: as a staircase it is 1 until x=5, as a ramp it is 3 at x=5
+    const stepped = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [5, 5],
+        [10, 5],
+      ]),
+    ]);
+    const ramped = stackLineLayerValues([
+      series(
+        0,
+        [
+          [0, 1],
+          [5, 1],
+          [5, 5],
+          [10, 5],
+        ],
+        'linear',
+      ),
+    ]);
+    expect(stepped[0].values.find(v => v.x === 0)?.y).toEqual(1);
+    expect(ramped[0].values.find(v => v.x === 0)?.y).toEqual(1);
+    // The staircase holds 1 right up to the boundary; the ramp is already climbing before it
+    const steppedMid = stepped[0].values.filter(v => v.x > 0 && v.x < 5).every(v => v.y === 1);
+    expect(steppedMid).toBe(true);
+    expect(ramped[0].values.find(v => v.x === 10)?.y).toEqual(5);
+  });
+
+  test('a single series stacks to itself, so enabling stacking on one layer changes nothing', () => {
+    const values: [number, number][] = [
+      [0, 3],
+      [5, 7],
+      [10, 2],
+    ];
+    const [only] = stackLineLayerValues([series(0, values)]);
+    expect(only.values.map(v => v.y)).toEqual([3, 7, 2]);
+    expect(only.values.every(v => v.y0 === 0)).toBe(true);
+  });
+
+  test('returns an empty list for no series and empty values for an empty series', () => {
+    expect(stackLineLayerValues([])).toEqual([]);
+    expect(stackLineLayerValues([series(0, [])])[0].values).toEqual([]);
+  });
+
+  test('every series shares the same grid, which is what keeps y0 index-aligned to y', () => {
+    const stacked = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [3, 1],
+      ]),
+      series(1, [
+        [1, 1],
+        [4, 1],
+      ]),
+      series(2, [
+        [2, 1],
+        [5, 1],
+      ]),
+    ]);
+    const grid = stacked[0].values.map(v => v.x);
+    expect(grid).toEqual([0, 1, 2, 3, 4, 5]);
+    for (const s of stacked) {
+      expect(s.values.map(v => v.x)).toEqual(grid);
+    }
+  });
+});
+
+describe('getYAxisBounds with a stacked axis', () => {
+  const resource: Resource = {
+    name: 'r',
+    schema: { type: 'real' },
+    values: [
+      { x: 0, y: 200 },
+      { x: 10, y: 230 },
+    ],
+  };
+  const layer = { chartType: 'line', filter: { resource: 'r' }, id: 1, name: '', yAxisId: 7 } as any;
+  const stacks = {
+    1: {
+      baseline: [0, 0],
+      resource: {
+        ...resource,
+        values: [
+          { x: 0, y: 200 },
+          { x: 10, y: 230 },
+        ],
+      },
+    },
+  };
+
+  test('measures a stacked layer by its cumulative series, not its own values', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    const bounds = getYAxisBounds(axis, [layer], [resource], undefined, {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          ...resource,
+          values: [
+            { x: 0, y: 999 },
+            { x: 10, y: 999 },
+          ],
+        },
+      },
+    });
+    expect(bounds[1]).toEqual(999);
+  });
+
+  // A stacked band covering 95% of the total renders as a sliver of it if the baseline is off-axis
+  test('pulls zero into the domain so the bands encode proportion', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, stacks)).toEqual([0, 230]);
+  });
+
+  test('leaves a manual domain alone, since that is the operator overriding the fit', () => {
+    const axis = { domainFitMode: 'manual', id: 7, scaleDomain: [200, 230], stack: true } as any;
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, stacks)).toEqual([200, 230]);
+  });
+
+  test('keeps zero as the upper bound when a stack total is negative', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    const negative = {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          ...resource,
+          values: [
+            { x: 0, y: -5 },
+            { x: 10, y: -20 },
+          ],
+        },
+      },
+    };
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, negative)).toEqual([-20, 0]);
+  });
+
+  test('does not pull zero in for an unstacked axis', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7 } as any;
+    expect(getYAxisBounds(axis, [layer], [resource])).toEqual([200, 230]);
   });
 });
 

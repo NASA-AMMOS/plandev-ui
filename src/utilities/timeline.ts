@@ -26,6 +26,7 @@ import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent, ExternalEventType } from '../types/external-event';
 import type { DynamicFilter } from '../types/filter';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
+import type { ValueSchema } from '../types/schema';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type {
   ActivityLayer,
@@ -52,6 +53,7 @@ import type {
   QuadtreeRect,
   Row,
   ShowPointsMode,
+  StackedSeries,
   TimeRange,
   Timeline,
   VerticalGuide,
@@ -468,6 +470,193 @@ export function getInstantGlyphExtents(
   );
   const half = size / 2;
   return { left: half, right: half, size };
+}
+
+/**
+ * Sorted, deduplicated union of every x across the given series.
+ *
+ * Stacking needs one shared x grid because the layers being summed are sampled at unrelated times.
+ * The *union* specifically, rather than a fixed-step grid: summing piecewise-linear functions is exact
+ * when they are sampled at the union of their own breakpoints, and approximate at any other spacing.
+ */
+function getStackXGrid(series: StackInputSeries[]): number[] {
+  const seen = new Set<number>();
+  for (const { values } of series) {
+    for (const value of values) {
+      seen.add(value.x);
+    }
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
+/**
+ * Resamples one series onto `grid`, returning null wherever the series has no defined value: outside
+ * its own time range, or at a gap.
+ *
+ * Null rather than zero on purpose. Zero would read as "this contributed nothing", which for a power
+ * or data-volume budget is a claim the data does not make -- the honest reading of a gap is that the
+ * total is unknown there.
+ */
+function resampleOntoStackGrid(values: ResourceValue[], grid: number[], stepwise: boolean): (number | null)[] {
+  const out: (number | null)[] = new Array(grid.length).fill(null);
+  if (values.length === 0) {
+    return out;
+  }
+  const lastX = values[values.length - 1].x;
+  // Monotone cursor rather than a search per grid point, so the whole pass stays linear in grid size
+  let i = 0;
+  for (let g = 0; g < grid.length; g++) {
+    const x = grid[g];
+    if (x < values[0].x || x > lastX) {
+      continue;
+    }
+    // Land on the *last* value at or before x. Last, not first, so that a discrete segment boundary --
+    // where two values share an x -- takes the incoming segment's value, matching how the step is drawn
+    while (i + 1 < values.length && values[i + 1].x <= x) {
+      i++;
+    }
+    const left = values[i];
+    const leftY = typeof left.y === 'number' ? left.y : null;
+    if (stepwise || left.x === x) {
+      out[g] = leftY;
+      continue;
+    }
+    const right = values[i + 1];
+    const rightY = right && typeof right.y === 'number' ? right.y : null;
+    if (leftY === null || rightY === null || !right) {
+      continue;
+    }
+    out[g] = leftY + ((x - left.x) / (right.x - left.x)) * (rightY - leftY);
+  }
+  return out;
+}
+
+export type StackInputSeries = {
+  interpolation: InterpolationMode | undefined;
+  layerId: number;
+  resourceName: string;
+  values: ResourceValue[];
+};
+
+/**
+ * Stacks the given series in the order supplied, resampled onto their shared x grid.
+ *
+ * Order is the layer order on the axis, so the first series is the bottom of the stack. Each series
+ * is resampled with *its own* interpolation mode, so a step resource and a linear one stack correctly
+ * together rather than one being forced into the other's shape.
+ *
+ * Once any series is undefined at an x, every series above it is undefined there too: a total is only
+ * as knowable as its least known term. That is why a gap low in the stack punches through the layers
+ * above it rather than quietly closing up.
+ *
+ * Negative values reduce the running total rather than being stacked separately, so the top of the
+ * stack always reads as the net sum.
+ */
+export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[] {
+  const grid = getStackXGrid(series);
+  const running: number[] = new Array(grid.length).fill(0);
+  const broken: boolean[] = new Array(grid.length).fill(false);
+
+  return series.map(({ interpolation, layerId, resourceName, values }) => {
+    const stepwise = (interpolation ?? DEFAULT_INTERPOLATION) === 'step';
+    // Hold values are dropped for an interpolating layer before resampling, exactly as LayerLine drops
+    // them before drawing -- otherwise the stack would sum a shape the layer does not draw
+    const prepared = stepwise ? values : values.filter((_value, index) => !isDroppableHoldPoint(values, index));
+    const resampled = resampleOntoStackGrid(prepared, grid, stepwise);
+    return {
+      layerId,
+      resourceName,
+      values: grid.map((x, index) => {
+        if (broken[index] || resampled[index] === null) {
+          broken[index] = true;
+          return { x, y: null, y0: null };
+        }
+        const y0 = running[index];
+        running[index] = y0 + (resampled[index] as number);
+        return { x, y: running[index], y0 };
+      }),
+    };
+  });
+}
+
+/**
+ * Whether a resource schema describes a numeric magnitude, and therefore plots against a numeric y
+ * scale rather than an ordinal one.
+ *
+ * This is also the test for whether a resource can be *summed* with another, which is what stacking
+ * needs. A boolean's 0/1 encodes false/true and an enum's y position is an arbitrary rung, so adding
+ * either to anything produces a number that means nothing -- the same reason those types refuse
+ * interpolation.
+ */
+export function isNumericResourceSchema(schema: ValueSchema): boolean {
+  const { type } = schema;
+  return (
+    type === 'int' ||
+    type === 'real' ||
+    type === 'duration' ||
+    (type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
+  );
+}
+
+/** What a stacked layer needs in order to draw: its cumulative series, and the total beneath it. */
+export type StackedLayerRender = { baseline: (number | null)[]; resource: Resource };
+
+/**
+ * Builds the stacked series for every line layer on a stacked axis, keyed by layer id. Layers on
+ * unstacked axes, and layers whose resource cannot be summed, are absent -- they draw normally.
+ *
+ * This is the cross-layer pass stacking needs, and it belongs at the row level because that is the
+ * only place that sees every layer and every loaded resource at once. `getYAxesWithScaleDomains`
+ * already ran there for the same reason.
+ */
+export function getLineLayerStacks(
+  yAxes: Axis[],
+  layers: Layer[],
+  resources: Resource[],
+): Record<number, StackedLayerRender> {
+  const byLayerId: Record<number, StackedLayerRender> = {};
+  for (const yAxis of yAxes) {
+    if (!yAxis.stack) {
+      continue;
+    }
+    const schemasByLayerId: Record<number, Resource> = {};
+    const input: StackInputSeries[] = [];
+    // Layer order is stack order, bottom up
+    for (const layer of layers) {
+      if (layer.yAxisId !== yAxis.id || !isLineLayer(layer)) {
+        continue;
+      }
+      const resource = getResourceForLayer(layer, resources) as Resource | undefined;
+      if (!resource || !isNumericResourceSchema(resource.schema)) {
+        continue;
+      }
+      schemasByLayerId[layer.id] = resource;
+      input.push({
+        interpolation: layer.interpolation,
+        layerId: layer.id,
+        resourceName: resource.name,
+        values: resource.values,
+      });
+    }
+    // A single series stacks to itself, so there is nothing to gain from the extra resampling
+    if (input.length < 2) {
+      continue;
+    }
+    for (const series of stackLineLayerValues(input)) {
+      byLayerId[series.layerId] = {
+        baseline: series.values.map(value => value.y0),
+        resource: {
+          name: series.resourceName,
+          schema: schemasByLayerId[series.layerId].schema,
+          // Untagged on purpose: these values are already resampled to the shape the layer draws, so a
+          // second round of hold dropping downstream would thin the stack out of alignment with its
+          // own baseline
+          values: series.values.map(value => ({ x: value.x, y: value.y })),
+        },
+      };
+    }
+  }
+  return byLayerId;
 }
 
 /**
@@ -935,11 +1124,7 @@ export function createTimelineResourceLayer(timelines: Timeline[], resourceType:
 
   const unit = schema.metadata?.unit?.value;
   const isDiscreteSchema = schemaType === 'boolean' || schemaType === 'string' || schemaType === 'variant';
-  const isNumericSchema =
-    schemaType === 'int' ||
-    schemaType === 'real' ||
-    schemaType === 'duration' ||
-    (schemaType === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real');
+  const isNumericSchema = isNumericResourceSchema(schema);
 
   const yAxis = createYAxis(timelines, {
     label: { text: `${name}${unit ? ` (${unit})` : ''}` },
@@ -1018,6 +1203,7 @@ export function getYAxisBounds(
   layers: Layer[],
   resources: Resource[],
   viewTimeRange?: TimeRange,
+  stacks: Record<number, StackedLayerRender> = {},
 ): number[] {
   // Find all layers that are associated with this y axis
   const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
@@ -1026,7 +1212,10 @@ export function getYAxisBounds(
   let minY: number | undefined = undefined;
   let maxY: number | undefined = undefined;
   yAxisLayers.forEach(layer => {
-    const layerResource = getResourceForLayer(layer, resources) as Resource;
+    // A stacked layer is measured by its cumulative series, not its own values: the axis has to hold
+    // the stack total, and the topmost layer's cumulative series *is* that total. Reusing this loop
+    // rather than special casing stacking keeps the left/right and fitTimeWindow handling identical.
+    const layerResource = (stacks[layer.id]?.resource ?? getResourceForLayer(layer, resources)) as Resource;
     if (layerResource) {
       let leftValue: ResourceValue | undefined;
       let rightValue: ResourceValue | undefined;
@@ -1101,6 +1290,19 @@ export function getYAxisBounds(
     scaleDomain[1] = maxY;
   }
 
+  // A stack is built up from zero, so zero has to be on the axis. Without it the bands still sit on
+  // each other correctly but stop encoding proportion: a bottom band covering 95% of the total renders
+  // as a sliver of it, which is the one reading a filled stacked chart invites. Manual domains are left
+  // alone -- an explicit domain is the operator overriding exactly this kind of inference.
+  if (yAxis.stack && yAxis.domainFitMode !== 'manual') {
+    if (typeof scaleDomain[0] === 'number') {
+      scaleDomain[0] = Math.min(0, scaleDomain[0]);
+    }
+    if (typeof scaleDomain[1] === 'number') {
+      scaleDomain[1] = Math.max(0, scaleDomain[1]);
+    }
+  }
+
   return scaleDomain as number[];
 }
 
@@ -1150,11 +1352,12 @@ export function getYAxesWithScaleDomains(
   layers: Layer[],
   resources: Resource[],
   viewTimeRange: TimeRange,
+  stacks: Record<number, StackedLayerRender> = {},
 ): ComputedAxis[] {
   return yAxes.map(yAxis => {
     const computed: ComputedAxis =
       yAxis.domainFitMode !== 'manual'
-        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange) }
+        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange, stacks) }
         : { ...yAxis };
     if (yAxis.scaleType === 'log') {
       computed.logConstant = getLogConstant(getSmallestMagnitudeForAxis(yAxis, layers, resources, viewTimeRange));
