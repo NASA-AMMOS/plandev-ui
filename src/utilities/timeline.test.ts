@@ -26,6 +26,7 @@ import {
   DEFAULT_LINE_STYLE,
   DEFAULT_POINT_SHAPE,
   DEFAULT_SHOW_POINTS_MODE,
+  clampGuideBand,
   clampLineSize,
   clampOpacity,
   createTimelineLineLayer,
@@ -2166,6 +2167,48 @@ describe('getYAxisBounds with a stacked axis', () => {
   test('does not pull zero in for an unstacked axis', () => {
     const axis = { domainFitMode: 'fitPlan', id: 7 } as any;
     expect(getYAxisBounds(axis, [layer], [resource])).toEqual([200, 230]);
+  });
+});
+
+describe('clampGuideBand', () => {
+  const SIZE = 100;
+
+  test('normalizes edge order, so a region dragged backwards is not empty', () => {
+    expect(clampGuideBand(70, 20, SIZE)).toEqual(clampGuideBand(20, 70, SIZE));
+    expect(clampGuideBand(70, 20, SIZE)).toEqual({ end: 70, showEndEdge: true, showStartEdge: true, start: 20 });
+  });
+
+  test('clamps to the drawable extent and reports the clamped edge as not shown', () => {
+    expect(clampGuideBand(-50, 40, SIZE)).toEqual({ end: 40, showEndEdge: true, showStartEdge: false, start: 0 });
+    expect(clampGuideBand(60, 500, SIZE)).toEqual({ end: SIZE, showEndEdge: false, showStartEdge: true, start: 60 });
+  });
+
+  test('reports neither edge when the band engulfs the whole extent', () => {
+    expect(clampGuideBand(-100, 500, SIZE)).toEqual({
+      end: SIZE,
+      showEndEdge: false,
+      showStartEdge: false,
+      start: 0,
+    });
+  });
+
+  test('returns null when the band is entirely outside the extent', () => {
+    expect(clampGuideBand(-200, -100, SIZE)).toBeNull();
+    expect(clampGuideBand(200, 300, SIZE)).toBeNull();
+  });
+
+  test('returns null for non-finite edges rather than a NaN geometry', () => {
+    expect(clampGuideBand(NaN, 40, SIZE)).toBeNull();
+    expect(clampGuideBand(40, Infinity, SIZE)).toBeNull();
+  });
+
+  test('keeps a zero-width band, so equal bounds stay visible as a line', () => {
+    expect(clampGuideBand(50, 50, SIZE)).toEqual({ end: 50, showEndEdge: true, showStartEdge: true, start: 50 });
+  });
+
+  test('keeps a band flush against either boundary', () => {
+    expect(clampGuideBand(0, 10, SIZE)?.showStartEdge).toBe(true);
+    expect(clampGuideBand(90, SIZE, SIZE)?.showEndEdge).toBe(true);
   });
 });
 

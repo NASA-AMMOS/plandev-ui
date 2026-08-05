@@ -3,7 +3,7 @@
 <script lang="ts">
   import { select } from 'd3-selection';
   import type { ComputedAxis, HorizontalGuide } from '../../types/timeline';
-  import { getHorizontalGuideBand, getYScale, HORIZONTAL_GUIDE_BAND_OPACITY } from '../../utilities/timeline';
+  import { getHorizontalGuideBand, GUIDE_BAND_OPACITY, getYScale } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
@@ -50,16 +50,15 @@
               .attr('width', drawWidth)
               .attr('height', band.height)
               .attr('fill', dashColor)
-              .attr('fill-opacity', HORIZONTAL_GUIDE_BAND_OPACITY);
+              .attr('fill-opacity', GUIDE_BAND_OPACITY);
           }
 
           // Both edges are drawn the same way a single-value guide is, so a band still reads as the
-          // same kind of annotation rather than as a differently-shaped one. An edge whose value is off
-          // scale is skipped: the band is clamped and continues past the row, so drawing a line at the
-          // clamp would assert a boundary that is not where the operator put it.
-          const edgeYs = (band ? [y, yScale(guide.y2 as number)] : [y]).filter(
-            edgeY => Number.isFinite(edgeY) && edgeY >= 0 && edgeY <= drawHeight,
-          );
+          // same kind of annotation rather than as a differently-shaped one. clampGuideBand reports
+          // which edges are on scale; a clamped one is skipped rather than drawn at the clamp.
+          const edgeYs = band
+            ? [...(band.showStartEdge ? [band.y] : []), ...(band.showEndEdge ? [band.y + band.height] : [])]
+            : [y];
           for (const edgeY of edgeYs) {
             lineGroup
               .append('line')

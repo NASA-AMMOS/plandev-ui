@@ -323,6 +323,25 @@
     viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
   }
 
+  /**
+   * Sets or clears the guide's second timestamp, turning it into a shaded time region or back into a
+   * line. An empty date clears it, which is the only way to undo a region once created.
+   */
+  function updateVerticalGuideTimestamp2(event: CustomEvent, verticalGuide: VerticalGuide) {
+    const value = event.detail.value as string | undefined;
+    const newVerticalGuides = verticalGuides.map(guide => {
+      if (guide.id !== verticalGuide.id) {
+        return guide;
+      }
+      if (!value) {
+        const { timestamp2: _removed, ...rest } = guide;
+        return rest;
+      }
+      return { ...guide, timestamp2: value };
+    });
+    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
+  }
+
   function handleUpdateVerticalGuideLabel(event: Event, verticalGuide: VerticalGuide) {
     const { name, value } = getTarget(event);
     const newVerticalGuides = verticalGuides.map(guide => {
@@ -553,14 +572,15 @@
         >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 168px 168px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
                 <div>Date ({$plugins.time.primary.label})</div>
+                <div>To Date (optional)</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 168px 168px 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -589,6 +609,16 @@
                           dateString={verticalGuide.timestamp}
                           on:change={event => updateVerticalGuideTimestamp(event, verticalGuide)}
                           on:keydown={event => updateVerticalGuideTimestamp(event, verticalGuide)}
+                        />
+                      </Input>
+                      <Input layout="stacked" class="editor-input">
+                        <DatePicker
+                          name="timestamp2"
+                          minDate={new Date($maxTimeRange.start)}
+                          maxDate={new Date($maxTimeRange.end)}
+                          dateString={verticalGuide.timestamp2 ?? ''}
+                          on:change={event => updateVerticalGuideTimestamp2(event, verticalGuide)}
+                          on:keydown={event => updateVerticalGuideTimestamp2(event, verticalGuide)}
                         />
                       </Input>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>

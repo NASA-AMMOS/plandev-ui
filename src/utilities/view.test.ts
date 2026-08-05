@@ -267,6 +267,24 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 
+  test('Should accept a banded vertical guide and reject a non-string timestamp2', () => {
+    const view = structuredClone(viewV3) as any;
+    const timeline = view.plan.timelines[0];
+    timeline.verticalGuides = [
+      { id: 0, label: { text: 'eclipse' }, timestamp: '2022-001T00:00:00', timestamp2: '2022-001T06:00:00' },
+    ];
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+
+    // A guide with no timestamp2 is an ordinary line guide and must stay valid
+    delete timeline.verticalGuides[0].timestamp2;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+
+    timeline.verticalGuides[0].timestamp2 = 12345;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
   test('Should reject an unknown instantStyle', () => {
     expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'triangle' })).valid).toBe(false);
   });

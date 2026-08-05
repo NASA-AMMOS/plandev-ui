@@ -1,5 +1,13 @@
 <script lang="ts">
   type ComputedVerticalGuide = { id: number; label: Label; maxWidth: number; x: number };
+  type ComputedVerticalBand = {
+    id: number;
+    label: Label;
+    showEndEdge: boolean;
+    showStartEdge: boolean;
+    width: number;
+    x: number;
+  };
 
   import type { ScaleTime } from 'd3-scale';
   import { createEventDispatcher } from 'svelte';
@@ -7,8 +15,12 @@
   import { view } from '../../stores/views';
   import type { Label, MouseOver, Timeline, VerticalGuide } from '../../types/timeline';
   import { formatDate, getDoyTime, getUnixEpochTime } from '../../utilities/time';
-  import { createVerticalGuide } from '../../utilities/timeline';
+  import { hexToRgba } from '../../utilities/color';
+  import { clampGuideBand, createVerticalGuide, GUIDE_BAND_OPACITY } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
+
+  /** Fallback band color, for a guide saved with no color of its own. Matches the cursor line's gray. */
+  const DEFAULT_BAND_COLOR = '#a1a1a1';
 
   export let cursorEnabled: boolean = true;
   export let cursorHeaderHeight: number = 20;
@@ -39,6 +51,13 @@
   let cursorMaxWidthFlipped: number = 0;
   let cursorTimeLabel: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
+  /**
+   * Bands are computed separately from the guide markers rather than folded into
+   * ComputedVerticalGuide, because the two have different visibility rules: a marker is dropped once
+   * its own x leaves the view, while a band whose start is off-screen must still shade the part of the
+   * region that is on-screen. Keeping them apart leaves the marker path byte-for-byte as it was.
+   */
+  let computedVerticalBands: ComputedVerticalBand[] = [];
   let cursorWithinView = true;
   let timelines: Timeline[] = [];
 
@@ -89,6 +108,41 @@
     });
 
     computedVerticalGuides = tempComputedVerticalGuides;
+
+    const tempComputedVerticalBands: ComputedVerticalBand[] = [];
+    for (const verticalGuide of verticalGuides) {
+      if (!xScaleView || verticalGuide.timestamp2 === undefined) {
+        continue;
+      }
+      const band = clampGuideBand(
+        xScaleView(getUnixEpochTime(verticalGuide.timestamp)),
+        xScaleView(getUnixEpochTime(verticalGuide.timestamp2)),
+        drawWidth,
+      );
+      if (band === null) {
+        continue;
+      }
+      tempComputedVerticalBands.push({
+        id: verticalGuide.id,
+        label: verticalGuide.label,
+        showEndEdge: band.showEndEdge,
+        showStartEdge: band.showStartEdge,
+        width: band.end - band.start,
+        // marginLeft matches how the guide markers are offset, so a band lines up with its own marker
+        x: band.start + marginLeft,
+      });
+    }
+    computedVerticalBands = tempComputedVerticalBands;
+  }
+
+  /**
+   * Translucent fill for a band, applied to background-color rather than as an element opacity so that
+   * the band's dashed edges stay at full strength. Fading the whole element would fade the edges too,
+   * leaving a vertical band's boundaries far fainter than a horizontal one's, which keeps its opacity
+   * on the rect's fill and its stroke opaque.
+   */
+  function getBandFill(color: string | undefined): string {
+    return hexToRgba(color || DEFAULT_BAND_COLOR, GUIDE_BAND_OPACITY);
   }
 
   function removeVerticalGuide(verticalGuideId: number) {
@@ -174,6 +228,17 @@
 <div class="timeline-cursor-margin" style="height: {cursorHeaderHeight}px" />
 <div class="timeline-cursor-container">
   <div class="timeline-cursor-header" />
+  <!-- Bands first so the guide markers and labels stay on top of their own shading -->
+  {#each computedVerticalBands as band (band.id)}
+    <div
+      class="timeline-cursor-band"
+      style:background-color={getBandFill(band.label.color)}
+      style:border-left-color={band.showStartEdge ? band.label.color || DEFAULT_BAND_COLOR : 'transparent'}
+      style:border-right-color={band.showEndEdge ? band.label.color || DEFAULT_BAND_COLOR : 'transparent'}
+      style:transform="translateX({band.x}px)"
+      style:width="{band.width}px"
+    />
+  {/each}
   {#each computedVerticalGuides as guide}
     <TimelineCursor
       color={guide.label.color}
@@ -216,5 +281,18 @@
   .timeline-cursor-header {
     height: 1rem;
     position: relative;
+  }
+
+  /* Spans every row, since the region it marks is a property of the timeline rather than of one row.
+     pointer-events stay off (inherited from the container) so shading a region never costs the operator
+     the ability to click through it. */
+  .timeline-cursor-band {
+    border-left: 1px dashed;
+    border-right: 1px dashed;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transform: translateX(0);
   }
 </style>

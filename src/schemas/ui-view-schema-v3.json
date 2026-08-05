@@ -771,6 +771,10 @@
                     "timestamp": {
                       "description": "DOY timestamp (YYYY-DDDThh:mm:ss) of the vertical guide",
                       "type": "string"
+                    },
+                    "timestamp2": {
+                      "description": "Second DOY timestamp. When present the guide is drawn as a shaded time region across every row instead of a single line. Order does not matter",
+                      "type": "string"
                     }
                   },
                   "required": ["id", "label", "timestamp"],
