@@ -131,11 +131,11 @@ describe('sampleProfiles', () => {
         schema: { type: 'int' },
         values: [
           { is_gap: false, x: 1661990400000, y: 0 },
-          { is_gap: false, x: 1662234054345, y: 0 },
+          { is_gap: false, is_hold: true, x: 1662234054345, y: 0 },
           { is_gap: false, x: 1662234054345, y: 2 },
-          { is_gap: false, x: 1662347421295, y: 2 },
+          { is_gap: false, is_hold: true, x: 1662347421295, y: 2 },
           { is_gap: false, x: 1662347421295, y: 4 },
-          { is_gap: false, x: 1663372800000, y: 4 },
+          { is_gap: false, is_hold: true, x: 1663372800000, y: 4 },
         ],
       },
     ];
@@ -167,9 +167,9 @@ describe('sampleProfiles', () => {
       const [resource] = sampleProfiles([profile], START);
       expect(resource.values).toEqual([
         { is_gap: false, x: startMs + 0, y: 'A' },
-        { is_gap: false, x: startMs + 30000, y: 'A' },
+        { is_gap: false, is_hold: true, x: startMs + 30000, y: 'A' },
         { is_gap: false, x: startMs + 30000, y: 'B' },
-        { is_gap: false, x: startMs + 60000, y: 'B' },
+        { is_gap: false, is_hold: true, x: startMs + 60000, y: 'B' },
       ]);
     });
 
@@ -178,7 +178,7 @@ describe('sampleProfiles', () => {
       const [resource] = sampleProfiles([profile], START);
       expect(resource.values).toEqual([
         { is_gap: false, x: startMs + 30000, y: 'A' },
-        { is_gap: false, x: startMs + 120000, y: 'A' },
+        { is_gap: false, is_hold: true, x: startMs + 120000, y: 'A' },
       ]);
     });
 
@@ -187,6 +187,18 @@ describe('sampleProfiles', () => {
       const [resource] = sampleProfiles([profile], START);
       expect(resource.values.every(v => v.is_gap === true)).toBe(true);
     });
+
+    // The interpolation option keys entirely off is_hold, so which value carries the tag is a
+    // contract, not an implementation detail: tag the opening value instead and 'linear' would plot
+    // every segment one segment late.
+    test('tags only the closing value of each segment as a hold', () => {
+      const profile = discreteProfile('00:01:00', [
+        { start_offset: '00:00:00', value: 1 },
+        { start_offset: '00:00:30', value: 2 },
+      ]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values.map(v => v.is_hold === true)).toEqual([false, true, false, true]);
+    });
   });
 
   describe('real profile', () => {
@@ -194,6 +206,18 @@ describe('sampleProfiles', () => {
       const profile = realProfile('00:01:00', [{ initial: 50, rate: 0, start_offset: '00:00:00' }]);
       const [resource] = sampleProfiles([profile], START);
       expect(resource.values[0]).toEqual({ is_gap: false, x: startMs, y: 50 });
+    });
+
+    // A rate of 0 makes a real segment's two values numerically identical to a discrete segment's,
+    // so is_hold is the only thing distinguishing them. Tagging it here would let interpolation
+    // collapse a flat run followed by a jump into a ramp.
+    test('never tags a value as a hold, even for a segment with a rate of 0', () => {
+      const profile = realProfile('00:02:00', [
+        { initial: 0, rate: 0, start_offset: '00:00:00' },
+        { initial: 10, rate: 5, start_offset: '00:01:00' },
+      ]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values.some(v => v.is_hold !== undefined)).toBe(false);
     });
 
     test('connects consecutive segments at the same x with their respective y values', () => {
@@ -253,7 +277,7 @@ describe('sampleProfiles', () => {
     const [resource] = sampleProfiles([profile], START, '00:00:10');
     expect(resource.values).toEqual([
       { is_gap: false, x: startMs + 10000, y: 'A' },
-      { is_gap: false, x: startMs + 70000, y: 'A' },
+      { is_gap: false, is_hold: true, x: startMs + 70000, y: 'A' },
     ]);
   });
 

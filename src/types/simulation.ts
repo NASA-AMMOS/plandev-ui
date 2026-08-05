@@ -60,6 +60,14 @@ export type ResourceType = {
 
 export type ResourceValue = {
   is_gap?: boolean;
+  /**
+   * Set on the second of the two values a *discrete* profile segment produces: the one that exists
+   * only to carry the segment's value forward to the next segment's start, which is what renders a
+   * discrete profile as a staircase. A layer interpolating between segments drops these.
+   * Absent on real-profile values, whose second value is a genuinely different number derived from
+   * the segment's rate of change.
+   */
+  is_hold?: boolean;
   x: number;
   y: number | string | null;
 };

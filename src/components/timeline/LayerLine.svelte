@@ -4,7 +4,6 @@
   import { scalePoint, type ScalePoint, type ScaleTime } from 'd3-scale';
   import {
     area as d3Area,
-    curveLinear,
     line as d3Line,
     symbolCross,
     symbolDiamond,
@@ -16,6 +15,7 @@
   import type { Resource } from '../../types/simulation';
   import type {
     ComputedAxis,
+    InterpolationMode,
     LinePoint,
     LineStyle,
     MouseOver,
@@ -29,6 +29,7 @@
   import { filterNullish } from '../../utilities/generic';
   import {
     CANVAS_PADDING_Y,
+    DEFAULT_INTERPOLATION,
     DEFAULT_LINE_FILL_OPACITY,
     DEFAULT_LINE_OPACITY,
     DEFAULT_LINE_STYLE,
@@ -36,11 +37,13 @@
     DEFAULT_SHOW_POINTS_MODE,
     clampLineSize,
     clampOpacity,
+    getLineCurve,
     getLineDashArray,
     getLineFillBaselineY,
     getPointSpriteSize,
     getPointSymbolSize,
     getYScale,
+    isDroppableHoldPoint,
     minMaxDecimation,
   } from '../../utilities/timeline';
 
@@ -55,6 +58,7 @@
   export let id: number;
   export let decimate: boolean = false;
   export let interpolateHoverValue: boolean = false;
+  export let interpolation: InterpolationMode = DEFAULT_INTERPOLATION;
   export let limitTooltipToLine: boolean = false;
   export let lineColor: string = '';
   export let opacity: number = DEFAULT_LINE_OPACITY;
@@ -105,6 +109,15 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   /**
+   * Pinned to 'step' on an ordinal scale, whose y positions are rungs on a scalePoint with nothing
+   * between them -- a spline through them would bow the line into pixel rows that read as *other*
+   * states. Only reachable through the curve today, since x-range-as-line-plot is the only ordinal
+   * caller and that layer type does not expose interpolation; the categorical branches of
+   * resourcesToLinePoints keep their hold values regardless.
+   */
+  $: effectiveInterpolation = ordinalScale ? 'step' : interpolation;
+  $: dropHoldPoints = effectiveInterpolation !== 'step';
+  /**
    * Every style input the canvas draw depends on, resolved and sanitized in one place. draw() reads
    * this rather than the raw props because Svelte does not track a function body's dependencies --
    * referencing this single object in the reactive guard below is what makes any style change trigger
@@ -113,6 +126,7 @@
    * guard without permanently blocking every draw; resolving them here sidesteps that.
    */
   $: lineDrawOptions = {
+    curve: getLineCurve(effectiveInterpolation),
     dashArray: getLineDashArray(lineStyle),
     fillColor: fillColor || lineColor,
     fillOpacity: clampOpacity(fillOpacity, DEFAULT_LINE_FILL_OPACITY),
@@ -150,7 +164,10 @@
   $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
-  $: processResourcesToLinePoints(resources);
+  // dropHoldPoints is passed rather than read inside the call, since Svelte does not track what a
+  // function body reads -- reading it in there would leave the point set stale until the resource
+  // data next changed
+  $: processResourcesToLinePoints(resources, dropHoldPoints);
   $: offscreenPoint =
     ctx && generateOffscreenPoint(lineDrawOptions.pointColor, lineDrawOptions.pointRadius, lineDrawOptions.pointShape);
 
@@ -303,7 +320,8 @@
             .x(d => d.x)
             .y0(baselineY)
             .y1(d => d.y as number)
-            .curve(curveLinear);
+            // Same curve as the line so the fill's top edge cannot disagree with the line drawn on it
+            .curve(lineDrawOptions.curve);
           ctx.save();
           // Sanitized in lineDrawOptions, not just at the input, so a hand edited or imported view
           // cannot produce an opaque fill that hides the layers underneath
@@ -325,7 +343,7 @@
           .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
           .x(d => d.x)
           .y(d => d.y as number)
-          .curve(curveLinear);
+          .curve(lineDrawOptions.curve);
         ctx.save();
         ctx.lineWidth = lineDrawOptions.width;
         ctx.strokeStyle = lineColor;
@@ -615,7 +633,7 @@
   }
 
   /* TODO this is getting called too often */
-  function processResourcesToLinePoints(resources: Resource[]) {
+  function processResourcesToLinePoints(resources: Resource[], dropHoldPoints: boolean) {
     if (typeof window === 'undefined') {
       return;
     }
@@ -625,11 +643,12 @@
     points = [];
     tempPoints = [];
 
-    processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources));
+    processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources, dropHoldPoints));
   }
 
   function resourcesToLinePoints(
     resources: Resource[],
+    dropHoldPoints: boolean,
     resourceStartIndex = 0,
     valueStartIndex = 0,
     startId = 0,
@@ -643,6 +662,9 @@
       const resource = resources[resourceIndex];
       const { name, schema, values } = resource;
 
+      // Hold values are kept here whatever the layer asks for. A boolean's 0 and 1 encode false and
+      // true rather than measuring a magnitude, so a ramp between them would put the line at a y
+      // position that decodes to no value at all. Same reason the string branch below keeps them.
       if (schema.type === 'boolean') {
         for (valueIndex; valueIndex < values.length; ++valueIndex) {
           const value = values[valueIndex];
@@ -658,7 +680,7 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }
@@ -673,6 +695,9 @@
       ) {
         for (valueIndex; valueIndex < values.length; ++valueIndex) {
           const value = values[valueIndex];
+          if (dropHoldPoints && isDroppableHoldPoint(values, valueIndex)) {
+            continue;
+          }
           const { x } = value;
           const y = value.y as number;
           tempPoints.push({
@@ -685,12 +710,14 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }
         }
         valueIndex = 0;
+        // Hold values are kept here too: there is nothing between two enum states to interpolate
+        // through, so a ramp would run the line through y positions that read as other states.
       } else if (schema.type === 'string' || schema.type === 'variant') {
         for (let i = 0; i < values.length; ++i) {
           const value = values[i];
@@ -707,7 +734,7 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }

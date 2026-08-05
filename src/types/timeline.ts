@@ -162,6 +162,21 @@ export interface Layer {
   yAxisId: number | null;
 }
 
+/**
+ * How the line between two sampled values is drawn.
+ *
+ * Only affects discretely-sampled data, which is piecewise constant and therefore arrives as a pair
+ * of values per segment. Real-valued profiles already carry their own slope, so every mode draws
+ * them identically.
+ *
+ * - `step` holds each value until the next segment starts (a staircase). The default, and how every
+ *   resource was drawn before this option existed.
+ * - `linear` ramps straight from each value to the next.
+ * - `smooth` ramps along a monotone curve. Monotone specifically: it cannot overshoot a value the
+ *   model never produced, which a cardinal or basis spline would.
+ */
+export type InterpolationMode = 'step' | 'linear' | 'smooth';
+
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 
 export type PointShape = 'circle' | 'square' | 'diamond' | 'triangle' | 'cross';
@@ -171,6 +186,7 @@ export type ShowPointsMode = 'auto' | 'always' | 'never';
 export interface LineLayer extends Layer {
   fillColor?: string; // When undefined the area fill uses lineColor
   fillOpacity: number;
+  interpolation?: InterpolationMode;
   lineColor: string;
   lineStyle?: LineStyle;
   lineWidth: number;

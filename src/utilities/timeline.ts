@@ -1,6 +1,7 @@
 import { bisector, tickStep } from 'd3-array';
 import type { Quadtree, QuadtreeInternalNode, QuadtreeLeaf } from 'd3-quadtree';
 import { scaleLinear, scalePoint, scaleSymlog, scaleTime, type ScalePoint, type ScaleTime } from 'd3-scale';
+import { curveLinear, curveMonotoneX, type CurveFactory } from 'd3-shape';
 import {
   timeHour,
   timeInterval,
@@ -41,6 +42,7 @@ import type {
   ExternalEventLayerFilter,
   ExternalEventOptions,
   HorizontalGuide,
+  InterpolationMode,
   Layer,
   LineLayer,
   LineStyle,
@@ -177,6 +179,7 @@ export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
 export const DEFAULT_AXIS_SCALE_TYPE: AxisScaleType = 'linear';
+export const DEFAULT_INTERPOLATION: InterpolationMode = 'step';
 export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
 export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
@@ -411,6 +414,27 @@ export function clampLineSize(size: number | undefined, fallback: number): numbe
  */
 export function getLineDashArray(lineStyle: LineStyle | undefined): number[] {
   return LINE_DASH_ARRAYS[lineStyle as LineStyle] ?? LINE_DASH_ARRAYS.solid;
+}
+
+/**
+ * Returns the d3-shape curve for an interpolation mode. `step` and `linear` share curveLinear: the
+ * staircase comes from the hold values in the data rather than from the curve, so a step layer must
+ * connect its values with straight segments like a linear one does.
+ */
+export function getLineCurve(interpolation: InterpolationMode | undefined): CurveFactory {
+  return interpolation === 'smooth' ? curveMonotoneX : curveLinear;
+}
+
+/**
+ * Whether the value at `valueIndex` is a hold value that a layer interpolating between segments can
+ * drop. See `ResourceValue.is_hold`.
+ *
+ * A resource's last value is kept even when it is a hold value, because it is the only value
+ * carrying the profile's end time -- dropping it would end the plotted line at the start of the last
+ * segment instead of at the end of the profile.
+ */
+export function isDroppableHoldPoint(values: ResourceValue[], valueIndex: number): boolean {
+  return values[valueIndex]?.is_hold === true && valueIndex < values.length - 1;
 }
 
 /**
@@ -902,6 +926,7 @@ export function createTimelineLineLayer(
     fillOpacity: DEFAULT_LINE_FILL_OPACITY,
     filter: {},
     id,
+    interpolation: DEFAULT_INTERPOLATION,
     lineColor: ViewLineLayerColorPresets[0],
     lineStyle: DEFAULT_LINE_STYLE,
     lineWidth: 1,
