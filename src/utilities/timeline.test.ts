@@ -14,7 +14,9 @@ import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../type
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
+  DEFAULT_LINE_FILL_OPACITY,
   applyActivityLayerFilter,
+  clampLineFillOpacity,
   createHorizontalGuide,
   createRow,
   createTimeline,
@@ -28,6 +30,7 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getLineFillBaselineY,
   getMatchingTypesForActivityLayerFilter,
   getResourceForLayer,
   getTimeRangeAroundTime,
@@ -35,6 +38,7 @@ import {
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
   getYAxisBounds,
+  getYScale,
   isActivityLayer,
   isExternalEventLayer,
   isLineLayer,
@@ -418,6 +422,59 @@ test('createTimelineLayers', () => {
   expect(timelines[1].rows[0].layers[3].chartType).toBe('externalEvent');
   expect(timelines[1].rows[0].layers[3].id).toBe(11);
   expect(timelines[1].rows[0].layers[3].yAxisId).toBe(null);
+});
+
+test('createTimelineLineLayer', () => {
+  const layer = createTimelineLineLayer([], []);
+  expect(layer.showFill).toBe(false);
+  expect(layer.fillColor).toBeUndefined();
+  expect(layer.fillOpacity).toBe(DEFAULT_LINE_FILL_OPACITY);
+
+  const filledLayer = createTimelineLineLayer([], [], { fillColor: '#ff0000', fillOpacity: 0.5, showFill: true });
+  expect(filledLayer.showFill).toBe(true);
+  expect(filledLayer.fillColor).toBe('#ff0000');
+  expect(filledLayer.fillOpacity).toBe(0.5);
+
+  // A fully transparent fill is a valid choice and must not fall back to the default
+  expect(createTimelineLineLayer([], [], { fillOpacity: 0 }).fillOpacity).toBe(0);
+});
+
+describe('clampLineFillOpacity', () => {
+  test('Should pass through values already within 0-1', () => {
+    expect(clampLineFillOpacity(0)).toBe(0);
+    expect(clampLineFillOpacity(0.25)).toBe(0.25);
+    expect(clampLineFillOpacity(1)).toBe(1);
+  });
+
+  test('Should clamp values outside 0-1 since canvas ignores an out of range globalAlpha', () => {
+    expect(clampLineFillOpacity(1.5)).toBe(1);
+    expect(clampLineFillOpacity(-1)).toBe(0);
+  });
+
+  test('Should fall back to the default for non-finite values', () => {
+    // A cleared number input reports NaN, which canvas would ignore and leave the fill opaque
+    expect(clampLineFillOpacity(NaN)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampLineFillOpacity(Infinity)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampLineFillOpacity(-Infinity)).toBe(DEFAULT_LINE_FILL_OPACITY);
+  });
+});
+
+describe('getLineFillBaselineY', () => {
+  const drawHeight = 100; // Yields a y scale range of [92, 8] given CANVAS_PADDING_Y
+
+  test('Should return the position of zero when zero is within the scale domain', () => {
+    expect(getLineFillBaselineY(getYScale([0, 10], drawHeight), drawHeight)).toBe(92);
+    expect(getLineFillBaselineY(getYScale([-10, 10], drawHeight), drawHeight)).toBe(50);
+  });
+
+  test('Should clamp to the canvas when zero is outside of the scale domain', () => {
+    expect(getLineFillBaselineY(getYScale([10, 20], drawHeight), drawHeight)).toBe(drawHeight);
+    expect(getLineFillBaselineY(getYScale([-20, -10], drawHeight), drawHeight)).toBe(0);
+  });
+
+  test('Should return null when the scale domain is empty', () => {
+    expect(getLineFillBaselineY(getYScale([], drawHeight), drawHeight)).toBeNull();
+  });
 });
 
 test('createTimelineHorizontalGuides', () => {

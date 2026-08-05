@@ -300,6 +300,43 @@ test.describe.serial('Timeline View Editing', () => {
     expect(await resourceLayerEditor.locator('.timeline-layer-editor').count()).toBe(1);
   });
 
+  test('Change resource layer settings', async () => {
+    const resourceLayerEditor = await setup.page.getByLabel('Resource Layer-editor');
+    const layer = resourceLayerEditor.locator('.timeline-layer-editor').first();
+
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+
+    // Area fill is off by default, so its dependent controls should not be rendered yet
+    const fillAreaCheckbox = setup.page.getByRole('checkbox', { name: 'Fill Area' });
+    await expect(fillAreaCheckbox).not.toBeChecked();
+    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
+    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
+
+    // Enabling the fill reveals the color and opacity controls
+    await fillAreaCheckbox.check();
+    await expect(fillAreaCheckbox).toBeChecked();
+    const fillOpacity = setup.page.getByRole('spinbutton', { name: 'Fill Opacity' });
+    await expect(fillOpacity).toHaveValue('0.25');
+    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeVisible();
+
+    await fillOpacity.fill('0.5');
+    await expect(fillOpacity).toHaveValue('0.5');
+
+    // Clearing the field must not persist NaN, which would fail view schema validation and render
+    // the fill fully opaque, so the layer keeps its last valid opacity
+    await fillOpacity.fill('');
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toHaveValue('0.5');
+
+    // Disabling the fill hides its dependent controls again
+    await setup.page.getByRole('checkbox', { name: 'Fill Area' }).uncheck();
+    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
+    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
+
+    await layer.getByRole('button', { name: 'Layer Settings' }).click();
+  });
+
   test('Add an external event layer', async () => {
     const externalEventLayerEditor = setup.page.getByLabel('Event Layer-editor');
     const existingLayerCount = await externalEventLayerEditor.locator('.timeline-layer-editor').count();

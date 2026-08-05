@@ -131,9 +131,12 @@ export interface Layer {
 }
 
 export interface LineLayer extends Layer {
+  fillColor?: string; // When undefined the area fill uses lineColor
+  fillOpacity: number;
   lineColor: string;
   lineWidth: number;
   pointRadius: number;
+  showFill: boolean;
 }
 
 export interface LinePoint extends Point {

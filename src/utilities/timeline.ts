@@ -171,6 +171,12 @@ export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
 /**
+ * Default opacity for a line layer's area fill. Kept translucent so that layers beneath it
+ * (activities, x-ranges, other lines) remain readable, since line layers are drawn last.
+ */
+export const DEFAULT_LINE_FILL_OPACITY = 0.25;
+
+/**
  * The max canvas size (width or height) in pixels.
  * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
  * @todo Determine size for each user agent?
@@ -193,6 +199,33 @@ export function getYScale(domain: (number | null)[], height: number): ScaleLinea
   return scaleLinear()
     .domain(domain.filter(filterEmpty))
     .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
+}
+
+/**
+ * Clamps a line layer's area fill opacity into the 0-1 range the view schema allows, falling back
+ * to the default for non-finite input (e.g. a cleared number input yields NaN). Canvas silently
+ * ignores a non-finite or out-of-range globalAlpha and keeps the previous value, which would leave
+ * the fill fully opaque, so callers must sanitize rather than pass a raw value through.
+ */
+export function clampLineFillOpacity(opacity: number): number {
+  if (!Number.isFinite(opacity)) {
+    return DEFAULT_LINE_FILL_OPACITY;
+  }
+  return Math.max(0, Math.min(1, opacity));
+}
+
+/**
+ * Returns the y pixel position of the baseline for a line layer's area fill, or null if the
+ * y scale has no usable zero (i.e. an empty scale domain). The baseline is the position of zero
+ * clamped to the canvas so that signals crossing zero fill from the axis, while signals that
+ * never cross zero fill to the nearest edge.
+ */
+export function getLineFillBaselineY(yScale: ScaleLinear<number, number>, height: number): number | null {
+  const zeroY = yScale(0);
+  if (!Number.isFinite(zeroY)) {
+    return null;
+  }
+  return Math.max(0, Math.min(height, zeroY));
 }
 
 export function isActivityLayer(layer: Layer): layer is ActivityLayer {
@@ -662,12 +695,14 @@ export function createTimelineLineLayer(
 
   return {
     chartType: 'line',
+    fillOpacity: DEFAULT_LINE_FILL_OPACITY,
     filter: {},
     id,
     lineColor: ViewLineLayerColorPresets[0],
     lineWidth: 1,
     name: '',
     pointRadius: 2,
+    showFill: false,
     yAxisId,
     ...args,
   };

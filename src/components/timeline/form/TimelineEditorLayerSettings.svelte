@@ -3,10 +3,17 @@
 <script lang="ts">
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
+  import { ViewLineLayerColorPresets } from '../../../constants/view';
   import type { Axis, Layer, LineLayer, XRangeLayer } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
-  import { isLineLayer, isXRangeLayer } from '../../../utilities/timeline';
+  import {
+    DEFAULT_LINE_FILL_OPACITY,
+    clampLineFillOpacity,
+    isLineLayer,
+    isXRangeLayer,
+  } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
+  import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
@@ -36,6 +43,17 @@
 
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
+    // An empty or partially typed number input yields NaN. Persisting that would write a value the
+    // view schema rejects, so the view could no longer be exported, and for opacities it silently
+    // renders fully opaque since canvas ignores a non-finite globalAlpha. Drop the event instead
+    // and let the field settle on the next keystroke.
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      return;
+    }
+    if (name === 'fillOpacity') {
+      dispatch('input', { name, value: clampLineFillOpacity(value as number) });
+      return;
+    }
     dispatch('input', { name, value });
   }
 
@@ -109,6 +127,43 @@
             on:input={onInput}
           />
         </Input>
+        <Input layout="inline">
+          <label for="showFill">Fill Area</label>
+          <input
+            style:width="max-content"
+            checked={layerAsLine.showFill}
+            id="showFill"
+            name="showFill"
+            on:change={onInput}
+            type="checkbox"
+          />
+        </Input>
+        {#if layerAsLine.showFill}
+          <Input layout="inline">
+            <label for="fillColor">Fill Color</label>
+            <ColorPresetsPicker
+              presetColors={ViewLineLayerColorPresets}
+              tooltipText="Fill Color"
+              type="input"
+              value={layerAsLine.fillColor ?? layerAsLine.lineColor}
+              on:input={({ detail: { value } }) => dispatch('input', { name: 'fillColor', value })}
+            />
+          </Input>
+          <Input layout="inline">
+            <label for="fillOpacity">Fill Opacity</label>
+            <input
+              min={0}
+              max={1}
+              step={0.1}
+              class="st-input w-full"
+              id="fillOpacity"
+              name="fillOpacity"
+              type="number"
+              value={layerAsLine.fillOpacity ?? DEFAULT_LINE_FILL_OPACITY}
+              on:input={onInput}
+            />
+          </Input>
+        {/if}
       {:else if isXRangeLayer(layer)}
         <Input layout="inline">
           <label for="name">Layer Name</label>
