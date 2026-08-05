@@ -2,6 +2,6 @@
 # see https://aquasecurity.github.io/trivy/v0.53/docs/configuration/filtering/#trivyignore
 
 # This is a vulnerability in the underlying golang stdlib crypto/tls library, which is used by `esbuild`.
-# Aerie is unaffected by this because the affected golang code only runs during the build process and does not affect users directly.
+# PlanDev is unaffected by this because the affected golang code only runs during the build process and does not affect users directly.
 # For users, we are shipping built code, which means esbuild and therefore golang are never used.
 CVE-2025-68121

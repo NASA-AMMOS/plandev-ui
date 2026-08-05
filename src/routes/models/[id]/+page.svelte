@@ -64,7 +64,7 @@
 
   /**
    * Determines if the user is allowed to view the metadata passed in
-   * NOTE: this function is only needed until scheduling goals/conditions get the same permission treatment as constraints in Aerie
+   * NOTE: this function is only needed until scheduling goals/conditions get the same permission treatment as constraints in PlanDev
    * @param metadata
    * @param user
    */

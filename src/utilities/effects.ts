@@ -1024,7 +1024,7 @@ const effects = {
       const actionRunInsertInput: Record<string, unknown> = {
         action_definition_id: actionDefinitionId,
         // we are now sending secrets on every run, to provide JWT token to actions
-        // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
+        // todo: future refactor - use hasura actions to run plandev actions & avoid need for secrets call
         has_secrets: true,
         parameters: nonSecretParameters,
         settings,
@@ -8781,7 +8781,7 @@ const effects = {
       }
 
       if (dictionary.split('\n').find(line => /^PROJECT\s*:\s*"([^"]*)"/.test(line))) {
-        // convert cdl to ampcs format, consider moving to aerie backend after decision on XTCE
+        // convert cdl to ampcs format, consider moving to plandev backend after decision on XTCE
         // eslint-disable-next-line no-control-regex
         dictionary = toAmpcsXml(parseCdlDictionary(dictionary)).replaceAll(/[^\x00-\x7F]+/g, '');
       }
@@ -8902,7 +8902,7 @@ const effects = {
         }
       }
 
-      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
+      // The plandev gateway mangles the names of uploaded files to ensure uniqueness.
       // Here, we use the ids of the files we just uploaded to look up the generated filenames
       const generatedFilenames: Record<string, string> = {};
       for (const newFile of files) {
