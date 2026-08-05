@@ -46,6 +46,7 @@
     ExternalEventLayer,
     ExternalEventOptions,
     HorizontalGuide,
+    InstantStyle,
     Layer,
     LineLayer,
     Row,
@@ -58,6 +59,7 @@
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime } from '../../../utilities/time';
   import {
+    DEFAULT_INSTANT_STYLE,
     createHorizontalGuide,
     createTimelineActivityLayer,
     createTimelineExternalEventLayer,
@@ -240,6 +242,11 @@
   function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
     const { id } = event.detail;
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: id });
+  }
+
+  function handleInstantStyleChange(event: Event) {
+    const { value } = getTarget(event);
+    viewUpdateRow('discreteOptions', { ...discreteOptions, instantStyle: value as InstantStyle });
   }
 
   function handleActivityOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof ActivityOptions) {
@@ -891,6 +898,24 @@
                 </div>
               </RadioButton>
             </RadioButtons>
+          </Input>
+          <Input layout="inline" class="editor-input">
+            <label for="instant-style">Instant Marker</label>
+            <select
+              class="st-select w-full"
+              id="instant-style"
+              name="instantStyle"
+              use:tooltip={{
+                content: 'Shape for directives and for spans and events with no duration',
+                placement: 'top',
+              }}
+              value={discreteOptions.instantStyle ?? DEFAULT_INSTANT_STYLE}
+              on:change={handleInstantStyleChange}
+            >
+              <option value="line">Line</option>
+              <option value="dot">Dot</option>
+              <option value="diamond">Diamond</option>
+            </select>
           </Input>
           {#if rowHasActivityLayer}
             <div class="editor-section-header activity-options">

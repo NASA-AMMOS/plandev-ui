@@ -281,6 +281,17 @@ export type ExternalEventOptions = {
   groupBy: 'event_type_name' | 'source_key';
 };
 
+/**
+ * How an *instant* is marked -- an activity directive's start, or a span or external event whose
+ * duration is zero. Anything with a duration keeps its bar.
+ *
+ * - `line` is the 2px full-height tick every discrete item has always been drawn with, and the
+ *   default. Its left edge sits on the instant, reading as a boundary marker.
+ * - `dot` is the "represent it as an event" shape, centered on the instant.
+ * - `diamond` is the Gantt milestone convention for a zero-duration item, also centered.
+ */
+export type InstantStyle = 'line' | 'dot' | 'diamond';
+
 export type DiscreteOptions = {
   // Activity-Layer-specific Options
   activityOptions?: ActivityOptions;
@@ -293,6 +304,9 @@ export type DiscreteOptions = {
 
   // Height of subrows
   height: number;
+
+  // Marker shape for items with no duration
+  instantStyle?: InstantStyle;
 
   // Item text label behavior
   labelVisibility: 'on' | 'off' | 'auto';

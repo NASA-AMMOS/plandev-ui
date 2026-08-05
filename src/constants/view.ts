@@ -26,6 +26,9 @@ export const ViewDefaultDiscreteOptions: DiscreteOptions = {
   displayMode: 'compact',
   externalEventOptions: ViewDefaultExternalEventOptions,
   height: 16,
+  // Literal rather than DEFAULT_INSTANT_STYLE: utilities/timeline.ts imports this module, so
+  // importing back from it would close a cycle
+  instantStyle: 'line',
   labelVisibility: 'auto',
 };
 

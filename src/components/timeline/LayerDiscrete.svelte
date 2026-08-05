@@ -33,8 +33,10 @@
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import { getActivityDirectiveStartTimeMs, getIntervalInMs, getIntervalUnixEpochTime } from '../../utilities/time';
   import {
+    DEFAULT_INSTANT_STYLE,
     directiveInView,
     externalEventInView,
+    getInstantGlyphExtents,
     searchQuadtreeRect,
     spanInView,
     TimelineInteractionMode,
@@ -141,6 +143,15 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = discreteOptions.height;
+  $: instantStyle = discreteOptions.instantStyle ?? DEFAULT_INSTANT_STYLE;
+  $: instantGlyph = getInstantGlyphExtents(instantStyle, rowHeight);
+  /**
+   * How far right of an instant its label starts. Zero for 'line', which is narrow enough that
+   * labelPaddingLeft already clears it -- keeping this at zero is what makes the default style draw
+   * labels in exactly the position they have always been drawn in. The point styles are wide enough
+   * to sit under the text, so the label has to clear the marker's right edge.
+   */
+  $: instantLabelOffset = instantStyle === 'line' ? 0 : instantGlyph.right;
   $: planStartTimeMs = planStartTimeYmd ? new Date(planStartTimeYmd).getTime() : 0;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
 
@@ -552,13 +563,13 @@
 
       const rows: Record<number, { items: DiscreteTreeNodeDrawItem[]; max: number }> = {};
       itemsToDraw.forEach(item => {
-        const { startX } = item;
+        const itemStartX = getItemStartX(item);
         const itemEndX = getItemEndX(item);
         let row = 0;
         let openRowSpaceFound = false;
         while (!openRowSpaceFound) {
           const maxXForRow = rows[row] ? rows[row].max : Number.MIN_SAFE_INTEGER;
-          let minX = startX;
+          let minX = itemStartX;
           let maxX = itemEndX;
           if (minX < maxXForRow) {
             row += 1;
@@ -671,39 +682,71 @@
     let labelEndX = 0;
     let boxEndX = 0;
     if (directive && showDirectives) {
-      boxEndX = 2;
+      // Was `boxEndX = 2` -- an *absolute* x of 2 rather than a width added to startX, so every
+      // directive reported an end left of its own start. With labelVisibility 'off' nothing else
+      // raised it, so the packer saw every directive ending at x=2 and stacked none of them. Harmless
+      // while a directive was a 2px tick and everything overlapped invisibly; not harmless once the
+      // marker can be 14px wide.
+      boxEndX = startX + instantGlyph.right;
       if (discreteOptions.labelVisibility !== 'off') {
         const anchored = directive.anchor_id !== null;
         const directiveLabelWidth = measureText(directive.name, textMetricsCache).width + labelPaddingLeft;
         const finalWidth = anchored
           ? anchorIconWidth + anchorIconMarginLeft + directiveLabelWidth
           : directiveLabelWidth;
-        labelEndX = Math.max(startX, minRectSize) + finalWidth;
+        labelEndX = Math.max(startX, minRectSize) + instantLabelOffset + finalWidth;
       }
     }
     if (span && showSpans && xScaleView) {
-      const spanEndX = xScaleView(span.endMs);
-      boxEndX = Math.max(boxEndX, spanEndX);
-      if (discreteOptions.labelVisibility !== 'off') {
-        labelEndX = Math.max(
-          labelEndX,
-          Math.max(minRectSize, startX) + labelPaddingLeft + measureText(getLabelForSpan(span), textMetricsCache).width,
-        );
-      }
-    }
-    if (externalEvent && xScaleView) {
-      const spanEndX = xScaleView(externalEvent.start_ms + externalEvent.duration_ms);
+      const spanLabelOffset = isInstantSpan(span) ? instantLabelOffset : 0;
+      const spanEndX = isInstantSpan(span) ? startX + instantGlyph.right : xScaleView(span.endMs);
       boxEndX = Math.max(boxEndX, spanEndX);
       if (discreteOptions.labelVisibility !== 'off') {
         labelEndX = Math.max(
           labelEndX,
           Math.max(minRectSize, startX) +
+            spanLabelOffset +
+            labelPaddingLeft +
+            measureText(getLabelForSpan(span), textMetricsCache).width,
+        );
+      }
+    }
+    if (externalEvent && xScaleView) {
+      const eventLabelOffset = isInstantExternalEvent(externalEvent) ? instantLabelOffset : 0;
+      const spanEndX = isInstantExternalEvent(externalEvent)
+        ? startX + instantGlyph.right
+        : xScaleView(externalEvent.start_ms + externalEvent.duration_ms);
+      boxEndX = Math.max(boxEndX, spanEndX);
+      if (discreteOptions.labelVisibility !== 'off') {
+        labelEndX = Math.max(
+          labelEndX,
+          Math.max(minRectSize, startX) +
+            eventLabelOffset +
             labelPaddingLeft +
             measureText(getLabelForExternalEvent(externalEvent), textMetricsCache).width,
         );
       }
     }
     return Math.max(boxEndX, labelEndX);
+  }
+
+  /**
+   * Left edge an item occupies, which is its start x unless a centered instant marker overhangs it.
+   * The packer compares this against the previous item's end, so without it two instants a pixel
+   * apart would be packed into the same subrow with their markers overlapping.
+   */
+  function getItemStartX(item: {
+    directive?: ActivityDirective;
+    externalEvent?: ExternalEvent;
+    span?: Span;
+    startX: number;
+  }) {
+    const { span, directive, externalEvent, startX } = item;
+    const hasInstant =
+      (directive && showDirectives) ||
+      (span && showSpans && isInstantSpan(span)) ||
+      (externalEvent && isInstantExternalEvent(externalEvent));
+    return hasInstant ? startX - instantGlyph.left : startX;
   }
 
   function drawRow(y: number, items: DiscreteTreeNodeItem[], idToColorMaps: IdToColorMaps) {
@@ -756,13 +799,19 @@
         const externalEventColor =
           idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] || discreteDefaultColor;
         const isSelected = selectedExternalEventId === getExternalEventRowId(externalEvent.pkey);
+        const isInstant = isInstantExternalEvent(externalEvent);
+        const labelOffset = isInstant ? instantLabelOffset : 0;
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
           const color = getRGBAFromHex(externalEventColor, 0.5);
           ctx.fillStyle = color;
         }
-        ctx.fillRect(externalEventStartX, y, externalEventRectWidth, rowHeight);
+        if (isInstant) {
+          drawInstant(externalEventStartX, y);
+        } else {
+          ctx.fillRect(externalEventStartX, y, externalEventRectWidth, rowHeight);
+        }
 
         // Draw label if the label will fit
         let spanLabelWidth = 0;
@@ -773,7 +822,7 @@
           if (discreteOptions.labelVisibility === 'auto') {
             if (nextItem) {
               const nextX = nextItem.externalEventStartX ?? null;
-              if (typeof nextX === 'number' && externalEventStartX + spanLabelWidth >= nextX) {
+              if (typeof nextX === 'number' && externalEventStartX + labelOffset + spanLabelWidth >= nextX) {
                 shouldDrawLabel = false;
                 spanLabelWidth = 0;
               }
@@ -781,19 +830,21 @@
           }
           if (shouldDrawLabel) {
             const spanColor = discreteDefaultColor;
-            drawLabel(label, externalEventStartX, y, spanLabelWidth, spanColor, false, isSelected);
+            drawLabel(label, externalEventStartX + labelOffset, y, spanLabelWidth, spanColor, false, isSelected);
           }
         }
 
         // Add to quadtree
         visibleExternalEventsById[getExternalEventRowId(externalEvent.pkey)] = externalEvent;
-        quadtreeExternalEvents.add({
-          height: rowHeight,
-          id: getExternalEventRowId(externalEvent.pkey),
-          width: Math.max(spanLabelWidth, externalEventRectWidth),
-          x: externalEventStartX,
-          y,
-        });
+        quadtreeExternalEvents.add(
+          getItemHitBox(
+            getExternalEventRowId(externalEvent.pkey),
+            externalEventStartX,
+            y,
+            Math.max(spanLabelWidth + labelOffset, externalEventRectWidth),
+            isInstant,
+          ),
+        );
       }
 
       // Draw span
@@ -816,7 +867,13 @@
           const color = getRGBAFromHex(spanColor, 0.5);
           ctx.fillStyle = color;
         }
-        ctx.fillRect(spanStartX, y, spanRectWidth, rowHeight);
+        const isInstant = isInstantSpan(span);
+        const labelOffset = isInstant ? instantLabelOffset : 0;
+        if (isInstant) {
+          drawInstant(spanStartX, y);
+        } else {
+          ctx.fillRect(spanStartX, y, spanRectWidth, rowHeight);
+        }
 
         // Draw label if no directive and the label will fit
         let spanLabelWidth = 0;
@@ -827,7 +884,7 @@
           if (discreteOptions.labelVisibility === 'auto') {
             if (nextItem) {
               const nextX = nextItem.spanStartX ?? nextItem.directiveStartX ?? null;
-              if (typeof nextX === 'number' && spanStartX + spanLabelWidth >= nextX) {
+              if (typeof nextX === 'number' && spanStartX + labelOffset + spanLabelWidth >= nextX) {
                 shouldDrawLabel = false;
                 spanLabelWidth = 0;
               }
@@ -835,19 +892,15 @@
           }
           if (shouldDrawLabel) {
             const spanColor = idToColorMaps.spans[span.span_id] || discreteDefaultColor;
-            drawLabel(label, spanStartX, y, spanLabelWidth, spanColor, unfinished, isSelected);
+            drawLabel(label, spanStartX + labelOffset, y, spanLabelWidth, spanColor, unfinished, isSelected);
           }
         }
 
         // Add to quadtree
         visibleSpansById[span.span_id] = span;
-        quadtreeSpans.add({
-          height: rowHeight,
-          id: span.span_id,
-          width: Math.max(spanLabelWidth, spanRectWidth),
-          x: spanStartX,
-          y,
-        });
+        quadtreeSpans.add(
+          getItemHitBox(span.span_id, spanStartX, y, Math.max(spanLabelWidth + labelOffset, spanRectWidth), isInstant),
+        );
       }
 
       // Draw directive
@@ -862,7 +915,9 @@
         } else {
           ctx.fillStyle = color;
         }
-        ctx.fillRect(directiveStartX, y, 2, rowHeight);
+        // A directive marks a start time, so it is always an instant regardless of the duration of the
+        // span it produces -- that span is drawn separately, above.
+        drawInstant(directiveStartX, y);
 
         // Determine if label has space to draw
         if (drawLabels) {
@@ -876,19 +931,27 @@
               : directiveLabelWidth;
             // TODO could consider both? That said an item could have a span at the start of a plan and a directive at the beginning...
             const nextX = nextItem?.spanStartX || nextItem?.directiveStartX || null;
-            if (typeof nextX === 'number' && directiveStartX + finalWidth >= nextX) {
+            if (typeof nextX === 'number' && directiveStartX + instantLabelOffset + finalWidth >= nextX) {
               shouldDrawLabel = false;
               directiveLabelWidth = 0;
             }
           }
           if (shouldDrawLabel) {
-            drawLabel(label, directiveStartX, y, directiveLabelWidth, directiveColor, false, isSelected);
+            drawLabel(
+              label,
+              directiveStartX + instantLabelOffset,
+              y,
+              directiveLabelWidth,
+              directiveColor,
+              false,
+              isSelected,
+            );
 
             // Draw anchor
             if (anchored) {
               const anchorOpacity = selectedActivityDirectiveId !== null || selectedSpanId !== null ? 0.4 : 1;
               drawAnchorIcon(
-                directiveStartX + directiveLabelWidth + anchorIconMarginLeft,
+                directiveStartX + instantLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
                 y + rowHeight / 2 - anchorIconWidth / 2,
                 isSelected ? 1 : anchorOpacity,
               );
@@ -898,15 +961,71 @@
 
         // Add to quadtree
         visibleActivityDirectivesById[directive.id] = directive;
-        quadtreeActivityDirectives.add({
-          height: rowHeight,
-          id: directive.id,
-          width: directiveLabelWidth + labelPaddingLeft,
-          x: directiveStartX,
-          y,
-        });
+        quadtreeActivityDirectives.add(
+          getItemHitBox(
+            directive.id,
+            directiveStartX,
+            y,
+            directiveLabelWidth + instantLabelOffset + labelPaddingLeft,
+            true,
+          ),
+        );
       }
     });
+  }
+
+  /**
+   * Whether a span marks an instant rather than an interval.
+   *
+   * Deliberately keyed off the *data*, not off how few pixels the span currently occupies. A one
+   * second span at a two week zoom is a small interval, not an instant, and deriving the marker from
+   * its rendered width would make it flip shape as the operator zooms.
+   *
+   * `duration === null` means still simulating, which is an unknown duration rather than a zero one --
+   * and getIntervalInMs(null) returns 0, so durationMs alone cannot tell the two apart. Unfinished
+   * spans already have their own colour treatment and keep their bar.
+   */
+  function isInstantSpan(span: Span): boolean {
+    return span.duration !== null && span.durationMs === 0;
+  }
+
+  function isInstantExternalEvent(externalEvent: ExternalEvent): boolean {
+    return externalEvent.duration_ms === 0;
+  }
+
+  /**
+   * Hit box for a drawn item. An instant with a centered marker has to start left of the item's start
+   * x, or the left half of the marker is drawn but not clickable. `contentWidth` is the widest of the
+   * item's bar and its label, measured rightward from startX.
+   */
+  function getItemHitBox(id: Id, startX: number, y: number, contentWidth: number, isInstant: boolean): QuadtreeRect {
+    const left = isInstant ? instantGlyph.left : 0;
+    const right = isInstant ? Math.max(instantGlyph.right, contentWidth) : contentWidth;
+    return { height: rowHeight, id, width: left + right, x: startX - left, y };
+  }
+
+  /**
+   * Draws the marker for an instant. Assumes ctx.fillStyle is already set by the caller, matching the
+   * fillRect calls this replaces.
+   */
+  function drawInstant(x: number, y: number) {
+    if (instantStyle === 'line') {
+      ctx.fillRect(x, y, instantGlyph.right, rowHeight);
+      return;
+    }
+    const half = instantGlyph.size / 2;
+    const centerY = y + rowHeight / 2;
+    ctx.beginPath();
+    if (instantStyle === 'dot') {
+      ctx.arc(x, centerY, half, 0, Math.PI * 2);
+    } else {
+      ctx.moveTo(x, centerY - half);
+      ctx.lineTo(x + half, centerY);
+      ctx.lineTo(x, centerY + half);
+      ctx.lineTo(x - half, centerY);
+      ctx.closePath();
+    }
+    ctx.fill();
   }
 
   function drawLabel(

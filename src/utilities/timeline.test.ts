@@ -36,6 +36,7 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getInstantGlyphExtents,
   getLineCurve,
   getLineDashArray,
   getLogConstant,
@@ -1794,6 +1795,53 @@ describe('getLineCurve', () => {
     expect(getLineCurve(undefined)).toBe(getLineCurve(DEFAULT_INTERPOLATION));
     // @ts-expect-error forcing the case where a hand-edited view supplies an unknown mode
     expect(getLineCurve('bezier')).toBe(getLineCurve(DEFAULT_INTERPOLATION));
+  });
+});
+
+describe('getInstantGlyphExtents', () => {
+  // The default has to reproduce the 2px full-height tick every discrete item was drawn with, left
+  // edge on the instant. Any left overhang here would shift every directive in every saved view.
+  test('line extends only to the right, by exactly the historical 2px', () => {
+    const { left, right, size } = getInstantGlyphExtents('line', 16);
+    expect(left).toEqual(0);
+    expect(right).toEqual(2);
+    expect(size).toEqual(2);
+  });
+
+  test('an unknown or missing style falls back to line rather than to a point shape', () => {
+    expect(getInstantGlyphExtents(undefined, 16)).toEqual(getInstantGlyphExtents('line', 16));
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown style
+    expect(getInstantGlyphExtents('star', 16)).toEqual(getInstantGlyphExtents('line', 16));
+  });
+
+  test('point styles straddle the instant, so they do not read as arriving late', () => {
+    for (const style of ['dot', 'diamond'] as const) {
+      const { left, right, size } = getInstantGlyphExtents(style, 16);
+      expect(left).toEqual(right);
+      expect(left + right).toEqual(size);
+      expect(size).toBeGreaterThan(2);
+    }
+  });
+
+  test('dot and diamond occupy the same box, so switching between them cannot reflow a row', () => {
+    expect(getInstantGlyphExtents('dot', 16)).toEqual(getInstantGlyphExtents('diamond', 16));
+  });
+
+  test('point styles scale with the subrow height', () => {
+    expect(getInstantGlyphExtents('dot', 24).size).toBeGreaterThan(getInstantGlyphExtents('dot', 16).size);
+  });
+
+  // Unclamped, a tall subrow gets a marker that collides with its neighbour and a short one gets a
+  // marker too small to click.
+  test('point styles stay within a usable size at extreme subrow heights', () => {
+    expect(getInstantGlyphExtents('dot', 1).size).toBeGreaterThanOrEqual(4);
+    expect(getInstantGlyphExtents('dot', 5000).size).toBeLessThanOrEqual(14);
+  });
+
+  test('never returns a fractional total width, which would blur the marker', () => {
+    for (const height of [16, 17, 18, 21, 24, 33]) {
+      expect(Number.isInteger(getInstantGlyphExtents('dot', height).size)).toBe(true);
+    }
   });
 });
 
