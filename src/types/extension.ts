@@ -18,7 +18,7 @@ export type ExtensionPayload = {
 export type ExtensionResponse = {
   message: string;
   success: boolean;
-  url: string;
+  url?: string;
 };
 
 export type ExtensionRole = {

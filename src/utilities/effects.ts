@@ -672,7 +672,9 @@ const effects = {
       if (response.success) {
         showSuccessToast(response.message);
         logMessage('log', `Executed extension "${extension.label}" (ID=${extension.id}).`);
-        window.open(response.url, '_blank');
+        if (response.url) {
+          window.open(response.url, '_blank');
+        }
       } else {
         throw new Error(response.message);
       }
