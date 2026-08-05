@@ -240,6 +240,17 @@ describe('line layer style validation', () => {
     expect(valid).toBe(true);
   });
 
+  test('Should accept a stacked y axis, and reject a non-boolean stack', () => {
+    const view = structuredClone(viewV3) as any;
+    const axis = view.plan.timelines[0].rows[1].yAxes[0];
+    expect(axis.stack).toBeUndefined(); // saved before stacking existed
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    axis.stack = true;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    axis.stack = 'yes';
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
   test('Should reject an unknown instantStyle', () => {
     expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'triangle' })).valid).toBe(false);
   });

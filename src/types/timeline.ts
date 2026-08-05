@@ -96,6 +96,13 @@ export type Axis = {
   renderTickLines?: boolean;
   scaleDomain?: (number | null)[];
   scaleType?: AxisScaleType;
+  /**
+   * Stacks this axis's line layers on each other instead of overlaying them, bottom-up in layer
+   * order, so the topmost layer's line is the total. On the axis rather than on the layer because
+   * only series sharing a scale can meaningfully be summed, and because the axis domain has to become
+   * the stack total rather than the largest single series.
+   */
+  stack?: boolean;
   tickCount: number | null;
 };
 
@@ -203,7 +210,27 @@ export interface LinePoint extends Point {
     | number
     | string
     | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
+  /**
+   * Lower edge of this point's area fill, when the layer is part of a stack: the cumulative total of
+   * the layers beneath it at this x. Undefined for an unstacked layer, which fills to a single
+   * baseline for the whole series instead. Carried per point rather than as a parallel array because
+   * decimation reorders and thins points, which breaks index correspondence.
+   */
+  y0?: number | null;
 }
+
+/**
+ * One layer's contribution to a stack, resampled onto the stack's shared x grid.
+ *
+ * `y` is the running total through this layer and `y0` the running total beneath it, so a layer fills
+ * between them and the topmost layer's `y` is the stack total. Both are null where the total is
+ * unknown -- see `stackLineLayerValues`.
+ */
+export type StackedSeries = {
+  layerId: number;
+  resourceName: string;
+  values: { x: number; y: number | null; y0: number | null }[];
+};
 
 export type MouseDown = {
   activityDirectives?: ActivityDirective[];

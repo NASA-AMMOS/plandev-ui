@@ -78,6 +78,12 @@
     viewUpdateRow('yAxes', newRowYAxes);
   }
 
+  function updateYAxisStack(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    const newRowYAxes = yAxes.map(axis => (axis.id === yAxis.id ? { ...axis, stack: checked } : axis));
+    viewUpdateRow('yAxes', newRowYAxes);
+  }
+
   function updateYAxisTickLines(event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
     const newRowYAxes = yAxes.map(axis => {
@@ -135,6 +141,20 @@
           checked={yAxis.renderTickLines}
           id="renderTickLines"
           on:change={event => updateYAxisTickLines(event)}
+          type="checkbox"
+        />
+      </Input>
+      <Input layout="inline">
+        <label for="stack">Stack Layers</label>
+        <input
+          style:width="max-content"
+          checked={yAxis.stack ?? false}
+          id="stack"
+          use:tooltip={{
+            content: 'Sum this axis’s line layers bottom-up in layer order, so the top line is the total',
+            placement: 'top',
+          }}
+          on:change={updateYAxisStack}
           type="checkbox"
         />
       </Input>
