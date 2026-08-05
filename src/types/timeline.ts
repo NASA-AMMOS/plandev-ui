@@ -142,6 +142,12 @@ export type HorizontalGuide = {
   id: number;
   label: Label;
   y: number;
+  /**
+   * Turns the guide into a shaded band between `y` and `y2` -- a nominal range, a limit envelope, a
+   * threshold region. Order does not matter; the band spans whichever of the two is lower to whichever
+   * is higher. Absent for an ordinary single-value guide, which stays a line.
+   */
+  y2?: number;
   yAxisId: number;
 };
 

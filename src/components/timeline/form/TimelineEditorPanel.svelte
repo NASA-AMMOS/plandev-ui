@@ -374,6 +374,27 @@
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
+  /**
+   * Separate from handleUpdateHorizontalGuideNumberValue because clearing the input has to *remove* y2
+   * and turn the band back into a line. That handler drops a NaN so a partially typed number cannot be
+   * persisted, which would leave no way to undo a band once created.
+   */
+  function handleUpdateHorizontalGuideY2(event: Event, horizontalGuide: HorizontalGuide) {
+    const { value } = getTarget(event);
+    const y2 = value as number;
+    const newHorizontalGuides = horizontalGuides.map(guide => {
+      if (guide.id !== horizontalGuide.id) {
+        return guide;
+      }
+      if (!Number.isFinite(y2)) {
+        const { y2: _removed, ...rest } = guide;
+        return rest;
+      }
+      return { ...guide, y2 };
+    });
+    viewUpdateRow('horizontalGuides', newHorizontalGuides);
+  }
+
   function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
     const newLayers = layers.map(l => {
       if (layer.id === l.id) {
@@ -747,15 +768,16 @@
         >
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
                 <div>Y Value</div>
+                <div>To Y</div>
                 <div>Y Axis</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -774,6 +796,24 @@
                           autocomplete="off"
                           class="st-input w-full"
                           name="y"
+                          type="number"
+                        />
+                      </Input>
+                      <Input layout="stacked" class="editor-input">
+                        <label
+                          for="y2"
+                          use:tooltip={{
+                            content: 'Shade a band from Y Value to here. Leave empty for a single line',
+                            placement: 'top',
+                          }}>To Y</label
+                        >
+                        <input
+                          value={horizontalGuide.y2 ?? ''}
+                          on:input={event => handleUpdateHorizontalGuideY2(event, horizontalGuide)}
+                          autocomplete="off"
+                          class="st-input w-full"
+                          name="y2"
+                          placeholder="Line"
                           type="number"
                         />
                       </Input>

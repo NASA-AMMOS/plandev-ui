@@ -36,6 +36,7 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getHorizontalGuideBand,
   getInstantGlyphExtents,
   getLineCurve,
   getLineDashArray,
@@ -2165,6 +2166,60 @@ describe('getYAxisBounds with a stacked axis', () => {
   test('does not pull zero in for an unstacked axis', () => {
     const axis = { domainFitMode: 'fitPlan', id: 7 } as any;
     expect(getYAxisBounds(axis, [layer], [resource])).toEqual([200, 230]);
+  });
+});
+
+describe('getHorizontalGuideBand', () => {
+  const DRAW_HEIGHT = 100;
+  // Domain 0-100 over a 100px row, so a value maps to (100 - value) in pixels
+  const scale = getYScale([0, 100], DRAW_HEIGHT) as ReturnType<typeof getYScale>;
+
+  test('returns null for a single-value guide, which stays a line', () => {
+    expect(getHorizontalGuideBand(50, undefined, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('spans between the two values', () => {
+    const band = getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band?.height).toBeGreaterThan(0);
+  });
+
+  // An operator typing the bounds of a nominal range should not have to know which box is which
+  test('is identical whichever order the two values are given in', () => {
+    expect(getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT)).toEqual(
+      getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT),
+    );
+  });
+
+  test('clamps to the row so a half-off-scale band still shades the part that is on scale', () => {
+    const band = getHorizontalGuideBand(50, 5000, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.y).toBeGreaterThanOrEqual(0);
+    expect(band!.y + band!.height).toBeLessThanOrEqual(DRAW_HEIGHT);
+  });
+
+  test('returns null when the band is entirely off scale, rather than a zero-height rect', () => {
+    expect(getHorizontalGuideBand(5000, 6000, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(-6000, -5000, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('returns null for non-finite bounds rather than painting a NaN rect', () => {
+    expect(getHorizontalGuideBand(NaN, 50, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(50, NaN, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(50, Infinity, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('works on a log axis, where zero and negatives still have a position', () => {
+    const logScale = getYScale([-100, 100], DRAW_HEIGHT, 'log', 1);
+    const band = getHorizontalGuideBand(-10, 10, logScale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.height).toBeGreaterThan(0);
+  });
+
+  test('a zero-width band still produces a rect, so equal bounds do not silently vanish', () => {
+    const band = getHorizontalGuideBand(50, 50, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.height).toEqual(0);
   });
 });
 

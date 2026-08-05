@@ -466,6 +466,10 @@
                             "description": "Y value the horizontal guide anchors to",
                             "type": "number"
                           },
+                          "y2": {
+                            "description": "Second Y value. When present the guide is drawn as a shaded band between y and y2 instead of a single line. Order does not matter",
+                            "type": "number"
+                          },
                           "yAxisId": {
                             "$ref": "#/definitions/id"
                           }
