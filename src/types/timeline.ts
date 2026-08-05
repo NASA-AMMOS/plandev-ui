@@ -374,6 +374,12 @@ export type VerticalGuide = {
   id: number;
   label: Label;
   timestamp: string;
+  /**
+   * Turns the guide into a shaded time region between `timestamp` and `timestamp2`, spanning every row
+   * -- an eclipse, a solar conjunction, a keep-out window, a period with a subsystem powered down.
+   * Order does not matter. Absent for an ordinary single-time guide, which stays a line.
+   */
+  timestamp2?: string;
 };
 
 export type VerticalGuideSelection = {

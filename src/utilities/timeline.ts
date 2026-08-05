@@ -579,38 +579,65 @@ export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[
   });
 }
 
-/** Fill opacity of a banded horizontal guide. Faint enough that plotted data stays readable over it. */
-export const HORIZONTAL_GUIDE_BAND_OPACITY = 0.12;
+/** Fill opacity of a banded guide. Faint enough that plotted data stays readable over it. */
+export const GUIDE_BAND_OPACITY = 0.12;
+
+/**
+ * Clamps a guide band's two edges, given in pixels, to the drawable extent `size`, and reports which
+ * of them survived. Null when the band lies entirely outside it.
+ *
+ * Shared by horizontal and vertical guide bands because the geometry is the same problem on either
+ * axis, and so are the two rules that are easy to get wrong:
+ *
+ * - **Order is normalized.** An operator typing the ends of a nominal range, or dragging a time
+ *   region right-to-left, should get the region they meant rather than an empty one.
+ * - **A clamped edge is reported as not-shown.** The band continues past the drawable area, so drawing
+ *   its edge line at the clamp would assert a boundary where the operator did not put one.
+ */
+export function clampGuideBand(
+  a: number,
+  b: number,
+  size: number,
+): { end: number; showEndEdge: boolean; showStartEdge: boolean; start: number } | null {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    return null;
+  }
+  const start = Math.min(a, b);
+  const end = Math.max(a, b);
+  if (end < 0 || start > size) {
+    return null;
+  }
+  return {
+    end: Math.min(size, end),
+    showEndEdge: end <= size,
+    showStartEdge: start >= 0,
+    start: Math.max(0, start),
+  };
+}
 
 /**
  * Pixel rect for a horizontal guide drawn as a band, or null when the guide is an ordinary
  * single-value guide or the band falls entirely outside the visible row.
- *
- * Clamped to the row, so a band with one edge off scale still shades the part that is on scale rather
- * than painting outside its own row. Edge order is normalized, so an operator can type the bounds of a
- * nominal range in either order and get the range they meant.
  */
 export function getHorizontalGuideBand(
   y: number,
   y2: number | undefined,
   yScale: YScale,
   drawHeight: number,
-): { height: number; y: number } | null {
+): { height: number; showEndEdge: boolean; showStartEdge: boolean; y: number } | null {
   if (y2 === undefined || !Number.isFinite(y) || !Number.isFinite(y2)) {
     return null;
   }
-  const edges = [yScale(y), yScale(y2)];
-  if (!edges.every(Number.isFinite)) {
+  const band = clampGuideBand(yScale(y), yScale(y2), drawHeight);
+  if (band === null) {
     return null;
   }
-  const top = Math.min(...edges);
-  const bottom = Math.max(...edges);
-  if (bottom <= 0 || top >= drawHeight) {
-    return null;
-  }
-  const clampedTop = Math.max(0, top);
-  const clampedBottom = Math.min(drawHeight, bottom);
-  return { height: clampedBottom - clampedTop, y: clampedTop };
+  return {
+    height: band.end - band.start,
+    showEndEdge: band.showEndEdge,
+    showStartEdge: band.showStartEdge,
+    y: band.start,
+  };
 }
 
 /**
