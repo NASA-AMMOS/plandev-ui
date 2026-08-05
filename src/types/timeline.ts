@@ -1,3 +1,4 @@
+import type { ScaleLinear, ScaleSymLog } from 'd3-scale';
 import type { Selection } from 'd3-selection';
 import type { ActivityFilterField, ExternalEventFilterField } from '../enums/filter';
 import type { ActivityDirective, ActivityDirectiveId, ActivityType } from './activity';
@@ -68,14 +69,45 @@ export type ExternalEventLayerFilterSubfieldSchema = ExternalEventLayerFilterSub
 
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 
+/**
+ * How an axis maps values to pixels.
+ *
+ * 'log' is backed by d3's symlog rather than its log scale. A true log scale has no position for zero
+ * or for negative values, and mission resources routinely sit at zero (power off, buffer empty), so a
+ * true log axis silently drops those samples. Symlog is logarithmic away from zero and linear through
+ * it, so every sample gets a position. With the constant derived from the data (see getLogConstant)
+ * its decade spacing matches a true log scale to within a pixel except in the lowest decade.
+ */
+export type AxisScaleType = 'linear' | 'log';
+
+/**
+ * Any numeric y scale an axis can produce. Both are d3 continuous scales, so they are callable and
+ * share domain/range/ticks/invert -- callers that only map values to pixels need not branch on which
+ * one they were handed.
+ */
+export type YScale = ScaleLinear<number, number> | ScaleSymLog<number, number>;
+
 export type Axis = {
   color: string;
   domainFitMode: AxisDomainFitMode;
   id: number;
   label: Label;
+  logBase?: number;
   renderTickLines?: boolean;
   scaleDomain?: (number | null)[];
+  scaleType?: AxisScaleType;
   tickCount: number | null;
+};
+
+/**
+ * An Axis with the fields derived at render time rather than stored in the view. Kept as a separate
+ * type, and deliberately not folded into Axis, so it is obvious these must never be written back into
+ * a view definition -- the schema sets additionalProperties: false and would reject them. Deriving
+ * rather than persisting also means the value cannot go stale when the underlying data changes.
+ */
+export type ComputedAxis = Axis & {
+  /** Width of symlog's linear region, derived from the data. See getLogConstant. */
+  logConstant?: number;
 };
 
 export type BoundingBox = {
@@ -140,9 +172,9 @@ export interface LineLayer extends Layer {
   fillColor?: string; // When undefined the area fill uses lineColor
   fillOpacity: number;
   lineColor: string;
-  lineOpacity?: number;
   lineStyle?: LineStyle;
   lineWidth: number;
+  opacity?: number;
   pointColor?: string; // When undefined the points use lineColor
   pointRadius: number;
   pointShape?: PointShape;

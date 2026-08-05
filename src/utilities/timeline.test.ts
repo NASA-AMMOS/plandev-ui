@@ -36,11 +36,14 @@ import {
   externalEventInView,
   generateDiscreteTreeUtil,
   getLineDashArray,
+  getLogConstant,
+  getLogTickValues,
   getLineFillBaselineY,
   getMatchingTypesForActivityLayerFilter,
   getPointSpriteSize,
   getPointSymbolSize,
   getResourceForLayer,
+  getSmallestMagnitudeForAxis,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
@@ -54,6 +57,7 @@ import {
   matchesDynamicFilter,
   paginateNodes,
   spanInView,
+  thinTicksByPixelSpacing,
 } from './timeline';
 
 const testActivityTypes: ActivityType[] = [
@@ -1802,8 +1806,8 @@ describe('createTimelineLineLayer', () => {
     const layer = createTimelineLineLayer([], []);
     expect(layer.lineStyle).toEqual(DEFAULT_LINE_STYLE);
     expect(layer.lineStyle).toEqual('solid');
-    expect(layer.lineOpacity).toEqual(DEFAULT_LINE_OPACITY);
-    expect(layer.lineOpacity).toEqual(1);
+    expect(layer.opacity).toEqual(DEFAULT_LINE_OPACITY);
+    expect(layer.opacity).toEqual(1);
     expect(layer.pointShape).toEqual(DEFAULT_POINT_SHAPE);
     expect(layer.pointShape).toEqual('circle');
     expect(layer.showPoints).toEqual(DEFAULT_SHOW_POINTS_MODE);
@@ -1816,14 +1820,190 @@ describe('createTimelineLineLayer', () => {
 
   test('allows the style options to be overridden', () => {
     const layer = createTimelineLineLayer([], [], {
-      lineOpacity: 0.5,
       lineStyle: 'dashed',
+      opacity: 0.5,
       pointShape: 'diamond',
       showPoints: 'never',
     });
-    expect(layer.lineOpacity).toEqual(0.5);
+    expect(layer.opacity).toEqual(0.5);
     expect(layer.lineStyle).toEqual('dashed');
     expect(layer.pointShape).toEqual('diamond');
     expect(layer.showPoints).toEqual('never');
+  });
+});
+
+describe('thinTicksByPixelSpacing', () => {
+  // Identity scale so tick values double as pixel positions, keeping the spacing math readable
+  const identity = (value: number) => value;
+
+  test('keeps ticks that are far enough apart', () => {
+    expect(thinTicksByPixelSpacing([0, 20, 40, 60], identity, 14)).toEqual([0, 20, 40, 60]);
+  });
+
+  test('drops ticks that would overlap, keeping the first of each cluster', () => {
+    expect(thinTicksByPixelSpacing([0, 2, 4, 20, 22, 40], identity, 14)).toEqual([0, 20, 40]);
+  });
+
+  test('always keeps both extremes, evicting a neighbor that collides with the last', () => {
+    const thinned = thinTicksByPixelSpacing([0, 20, 39, 40], identity, 14);
+    expect(thinned[0]).toEqual(0);
+    expect(thinned.at(-1)).toEqual(40);
+    expect(thinned).not.toContain(39);
+  });
+
+  test('passes through short tick lists untouched', () => {
+    expect(thinTicksByPixelSpacing([], identity, 14)).toEqual([]);
+    expect(thinTicksByPixelSpacing([5], identity, 14)).toEqual([5]);
+    expect(thinTicksByPixelSpacing([5, 6], identity, 14)).toEqual([5, 6]);
+  });
+
+  test('drops ticks the scale cannot place at all', () => {
+    // A log axis now places zero, so the only unplottable case left is a scale with no domain
+    const emptyScale = getYScale([], 100, 'log');
+    expect(thinTicksByPixelSpacing([0, 1, 100], value => emptyScale(value))).toEqual([]);
+    const logScale = getYScale([0, 100], 100, 'log', getLogConstant(0.5));
+    expect(thinTicksByPixelSpacing([0, 1, 100], value => logScale(value))).toContain(0);
+  });
+});
+
+describe('getLogConstant', () => {
+  test('uses the smallest non-zero magnitude in the data', () => {
+    expect(getLogConstant(0.01)).toBeCloseTo(0.01);
+    expect(getLogConstant(1)).toBeCloseTo(1);
+    expect(getLogConstant(2500)).toBeCloseTo(2500);
+  });
+
+  test('falls back to d3 default when there is nothing to derive from', () => {
+    // All-zero data offers no magnitude to size the linear region with
+    expect(getLogConstant(undefined)).toEqual(1);
+    expect(getLogConstant(0)).toEqual(1);
+    expect(getLogConstant(NaN)).toEqual(1);
+    expect(getLogConstant(-5)).toEqual(1);
+  });
+});
+
+describe('getYScale log axis', () => {
+  const drawHeight = 100; // Yields a range of [92, 8] given CANVAS_PADDING_Y
+
+  test('places zero instead of dropping it, which a true log scale cannot do', () => {
+    // The bug this whole design exists to avoid: on a true log scale yScale(0) is -Infinity, so every
+    // sample sitting at zero silently vanished from the plot
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    expect(scale(0)).toEqual(92);
+    expect(Number.isFinite(scale(0))).toBe(true);
+  });
+
+  test('places negative values, so a signed resource keeps its full trace', () => {
+    const scale = getYScale([-100, 30], drawHeight, 'log', getLogConstant(0.1));
+    for (const value of [-100, -10, -1, 0, 1, 10, 30]) {
+      expect(Number.isFinite(scale(value))).toBe(true);
+    }
+    expect(scale(-100)).toBeGreaterThan(scale(30));
+  });
+
+  test('spaces decades near-uniformly, the way a log axis should', () => {
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    const positions = [0.01, 0.1, 1, 10, 100, 1000, 10000].map(value => scale(value));
+    const gaps = positions.slice(1).map((position, index) => positions[index] - position);
+    // A true log scale over this domain and range spaces decades exactly 14px apart. Every decade
+    // above the lowest must land within a pixel of that, which is what makes symlog an honest
+    // stand-in; only the lowest is allowed to compress where the linear region blends in.
+    for (const gap of gaps.slice(1)) {
+      expect(gap).toBeGreaterThan(13);
+      expect(gap).toBeLessThan(15);
+    }
+    expect(gaps[0]).toBeGreaterThan(9);
+  });
+
+  test('never returns a non-finite position for any real value in the domain', () => {
+    // Guards the extrema-jitter symptom: which samples survive decimation shifts with zoom, so any
+    // unplottable value made troughs flicker in and out as bin boundaries moved
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    for (const value of [0, 1e-9, 0.005, 0.01, 1, 9999, 10000]) {
+      expect(Number.isFinite(scale(value))).toBe(true);
+    }
+  });
+
+  test('defaults to linear when no scale type is given', () => {
+    const scale = getYScale([0, 100], drawHeight);
+    expect(scale(50)).toEqual(50);
+  });
+});
+
+describe('getLogTickValues', () => {
+  test('returns a ladder of powers of the base within the domain', () => {
+    expect(getLogTickValues([1, 1000], 10)).toEqual([1, 10, 100, 1000]);
+    expect(getLogTickValues([1, 64], 2)).toEqual([1, 2, 4, 8, 16, 32, 64]);
+  });
+
+  test('includes zero when the domain contains it', () => {
+    expect(getLogTickValues([0, 1000], 10)).toContain(0);
+  });
+
+  test('ladders both sides of zero for a signed domain', () => {
+    const ticks = getLogTickValues([-1000, 1000], 10);
+    expect(ticks).toContain(-100);
+    expect(ticks).toContain(0);
+    expect(ticks).toContain(100);
+    expect(ticks).toEqual([...ticks].sort((a, b) => a - b));
+  });
+
+  test('always anchors the domain extremes', () => {
+    const ticks = getLogTickValues([0.5, 750], 10);
+    expect(ticks[0]).toEqual(0.5);
+    expect(ticks.at(-1)).toEqual(750);
+  });
+
+  test('falls back to base 10 for a nonsensical base rather than looping or dividing by zero', () => {
+    expect(getLogTickValues([1, 1000], 1)).toEqual(getLogTickValues([1, 1000], 10));
+    expect(getLogTickValues([1, 1000], 0)).toEqual(getLogTickValues([1, 1000], 10));
+    expect(getLogTickValues([1, 1000], NaN)).toEqual(getLogTickValues([1, 1000], 10));
+  });
+
+  test('handles degenerate domains without throwing', () => {
+    expect(getLogTickValues([], 10)).toEqual([]);
+    expect(getLogTickValues([5, 5], 10)).toEqual([]);
+    expect(getLogTickValues([0, 0], 10)).toEqual([]);
+    expect(getLogTickValues([NaN, 10], 10)).toEqual([]);
+  });
+});
+
+describe('getLineFillBaselineY on a log axis', () => {
+  const drawHeight = 100;
+
+  test('fills to zero, which symlog can place', () => {
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    expect(getLineFillBaselineY(scale, drawHeight)).toEqual(92);
+  });
+
+  test('still returns null for an empty domain', () => {
+    expect(getLineFillBaselineY(getYScale([], drawHeight, 'log'), drawHeight)).toBeNull();
+  });
+});
+
+describe('getSmallestMagnitudeForAxis', () => {
+  const resource: Resource = {
+    name: 'signed',
+    schema: { type: 'real' },
+    values: [
+      { x: 1, y: 0 },
+      { x: 2, y: -0.25 },
+      { x: 3, y: 100 },
+    ],
+  };
+
+  test('ignores zero and uses absolute value, so a negative sample can set the floor', () => {
+    const layer = createTimelineLineLayer([], []);
+    layer.filter.resource = 'signed';
+    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
+    expect(getSmallestMagnitudeForAxis(axis, [layer], [resource])).toEqual(0.25);
+  });
+
+  test('returns undefined when an axis has no non-zero data to derive from', () => {
+    const layer = createTimelineLineLayer([], []);
+    layer.filter.resource = 'allZero';
+    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
+    const allZero: Resource = { name: 'allZero', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
   });
 });

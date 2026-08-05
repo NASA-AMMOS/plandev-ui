@@ -140,6 +140,48 @@ describe('migrateViewDefinition', () => {
   });
 });
 
+describe('y axis scale type validation', () => {
+  function viewWithYAxisProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const axis = view.plan.timelines[0].rows[1].yAxes[0];
+    view.plan.timelines[0].rows[1].yAxes[0] = { ...axis, ...props };
+    return view;
+  }
+
+  test.each(['linear', 'log'])('Should accept scaleType "%s"', scaleType => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject an unknown scaleType', () => {
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'logarithmic' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'log10' })).valid).toBe(false);
+    // symlog was collapsed into 'log', which is symlog-backed, so it is no longer a separate option
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'symlog' })).valid).toBe(false);
+  });
+
+  test('Should accept a logBase above 1 and reject anything at or below it', () => {
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 10 })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 2 })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 1 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 0 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: -10 })).valid).toBe(false);
+  });
+
+  test('Should reject a derived field that must never be persisted', () => {
+    // logConstant lives on ComputedAxis only; additionalProperties: false is what enforces that
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logConstant: 0.01 })).valid).toBe(false);
+  });
+
+  test('An axis saved before scaleType existed is still valid', () => {
+    // The v3 mock carries no scaleType, so omitting it must remain legal
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[1].yAxes[0].scaleType).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+  });
+});
+
 describe('line layer style validation', () => {
   /**
    * Returns the v3 mock view with the given properties merged into its first line layer. The mock's
@@ -169,8 +211,8 @@ describe('line layer style validation', () => {
   test('Should accept every style option', () => {
     const { valid, errors } = validateViewJSONAgainstSchema(
       viewWithLineLayerProps({
-        lineOpacity: 0.5,
         lineStyle: 'dashed',
+        opacity: 0.5,
         pointShape: 'diamond',
         showPoints: 'always',
       }),
@@ -202,9 +244,9 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: 'sometimes' })).valid).toBe(false);
   });
 
-  test('Should reject a lineOpacity outside 0-1', () => {
-    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineOpacity: -0.5 })).valid).toBe(false);
-    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineOpacity: 1.5 })).valid).toBe(false);
+  test('Should reject a opacity outside 0-1', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ opacity: -0.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ opacity: 1.5 })).valid).toBe(false);
   });
 
   test('Should reject a negative lineWidth or pointRadius', () => {
@@ -219,8 +261,8 @@ describe('line layer style validation', () => {
   test('Should reject a NaN opacity, which serializes to null rather than a number', () => {
     // A cleared number input yields NaN, and JSON.stringify turns NaN into null, so an unsanitized
     // form value makes the whole view unexportable rather than just rendering oddly.
-    const view = JSON.parse(JSON.stringify(viewWithLineLayerProps({ lineOpacity: NaN })));
-    expect(view.plan.timelines[0].rows[1].layers[0].lineOpacity).toBeNull();
+    const view = JSON.parse(JSON.stringify(viewWithLineLayerProps({ opacity: NaN })));
+    expect(view.plan.timelines[0].rows[1].layers[0].opacity).toBeNull();
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 });

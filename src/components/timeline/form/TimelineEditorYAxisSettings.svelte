@@ -4,9 +4,10 @@
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
-  import { selectedRow, selectedTimeline, viewUpdateRow } from '../../../stores/views';
-  import type { Axis, AxisDomainFitMode } from '../../../types/timeline';
+  import { selectedRow, viewUpdateRow } from '../../../stores/views';
+  import type { Axis, AxisDomainFitMode, AxisScaleType, ComputedAxis } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
+  import { DEFAULT_AXIS_SCALE_TYPE, DEFAULT_LOG_BASE } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
@@ -21,20 +22,25 @@
     delete: void;
   }>();
 
+  // The cache and row are passed in rather than read inside the function, because Svelte does not
+  // track store reads that happen inside a function body -- reading them there would evaluate this
+  // once against an empty cache and then never re-run.
+  $: computedAxis = getComputedAxis($yAxesWithScaleDomainsCache, $selectedRow?.id, yAxis.id);
+  $: effectiveScaleDomain = (computedAxis?.scaleDomain ?? []) as number[];
+
   function onDeleteAxis() {
     dispatch('delete');
   }
 
-  function getManualFitScaleDomain() {
-    let scaleDomain: number[] = [];
-    if ($selectedRow && $selectedTimeline) {
-      const rowAxes = $yAxesWithScaleDomainsCache[$selectedRow.id];
-      const axis = rowAxes.find(axis => axis.id === yAxis.id);
-      if (axis) {
-        scaleDomain = axis.scaleDomain as number[];
-      }
+  function getComputedAxis(
+    cache: Record<number, ComputedAxis[]>,
+    rowId: number | undefined,
+    axisId: number,
+  ): ComputedAxis | undefined {
+    if (rowId === undefined) {
+      return undefined;
     }
-    return scaleDomain;
+    return cache[rowId]?.find(axis => axis.id === axisId);
   }
 
   function updateYAxisAutofit(event: Event) {
@@ -45,12 +51,30 @@
         const { scaleDomain, ...rest } = axis;
         const newAxis: Axis = { ...rest, domainFitMode };
         if (domainFitMode === 'manual') {
-          newAxis.scaleDomain = getManualFitScaleDomain();
+          newAxis.scaleDomain = effectiveScaleDomain;
         }
         return newAxis;
       }
       return axis;
     });
+    viewUpdateRow('yAxes', newRowYAxes);
+  }
+
+  function updateYAxisScaleType(event: Event) {
+    const { value: v } = getTarget(event);
+    const newRowYAxes = yAxes.map(axis => (axis.id === yAxis.id ? { ...axis, scaleType: v as AxisScaleType } : axis));
+    viewUpdateRow('yAxes', newRowYAxes);
+  }
+
+  function updateYAxisLogBase(event: Event) {
+    const { value: v } = getTarget(event);
+    const base = v as number;
+    // A base of 1 or less has no logarithm, and a cleared input reports NaN. Drop the event rather
+    // than persist a value that would make the tick ladder degenerate.
+    if (!Number.isFinite(base) || base <= 1) {
+      return;
+    }
+    const newRowYAxes = yAxes.map(axis => (axis.id === yAxis.id ? { ...axis, logBase: base } : axis));
     viewUpdateRow('yAxes', newRowYAxes);
   }
 
@@ -114,6 +138,34 @@
           type="checkbox"
         />
       </Input>
+      <Input layout="inline">
+        <label for="scaleType">Scale</label>
+        <select
+          class="st-select w-full"
+          id="scaleType"
+          name="scaleType"
+          value={yAxis.scaleType ?? DEFAULT_AXIS_SCALE_TYPE}
+          on:change={event => updateYAxisScaleType(event)}
+        >
+          <option value="linear">Linear</option>
+          <option value="log">Logarithmic</option>
+        </select>
+      </Input>
+      {#if (yAxis.scaleType ?? DEFAULT_AXIS_SCALE_TYPE) === 'log'}
+        <Input layout="inline">
+          <label for="logBase">Log Base</label>
+          <input
+            min={2}
+            step={1}
+            class="st-input w-full"
+            id="logBase"
+            name="logBase"
+            type="number"
+            value={yAxis.logBase ?? DEFAULT_LOG_BASE}
+            on:input={event => updateYAxisLogBase(event)}
+          />
+        </Input>
+      {/if}
       <Input layout="inline">
         <label for="autofitDomain">Domain Fitting</label>
         <select

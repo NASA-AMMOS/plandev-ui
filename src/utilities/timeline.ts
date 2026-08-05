@@ -1,6 +1,6 @@
 import { bisector, tickStep } from 'd3-array';
 import type { Quadtree, QuadtreeInternalNode, QuadtreeLeaf } from 'd3-quadtree';
-import { scaleLinear, scalePoint, scaleTime, type ScaleLinear, type ScalePoint, type ScaleTime } from 'd3-scale';
+import { scaleLinear, scalePoint, scaleSymlog, scaleTime, type ScalePoint, type ScaleTime } from 'd3-scale';
 import {
   timeHour,
   timeInterval,
@@ -31,6 +31,8 @@ import type {
   ActivityLayerFilter,
   ActivityOptions,
   Axis,
+  AxisScaleType,
+  ComputedAxis,
   DiscreteTree,
   DiscreteTreeExpansionMap,
   DiscreteTreeNode,
@@ -52,6 +54,7 @@ import type {
   VerticalGuide,
   XRangeLayer,
   XRangeLayerColorScheme,
+  YScale,
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
@@ -173,6 +176,7 @@ export function formatTickLocalTZ(date: Date, viewDurationMs: number, tickCount:
 export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
+export const DEFAULT_AXIS_SCALE_TYPE: AxisScaleType = 'linear';
 export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
 export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
@@ -221,10 +225,136 @@ export function getOrdinalYScale(domain: (string | null)[], height: number): Sca
     .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
 }
 
-export function getYScale(domain: (number | null)[], height: number): ScaleLinear<number, number> {
-  return scaleLinear()
-    .domain(domain.filter(filterEmpty))
-    .range([height - CANVAS_PADDING_Y, CANVAS_PADDING_Y]);
+/**
+ * Minimum vertical gap in CSS pixels between two y-axis tick labels. The axis font is 10px on a 16px
+ * line box (see RowYAxes styles), so anything tighter than this overlaps and becomes unreadable.
+ */
+export const MIN_Y_TICK_SPACING = 14;
+
+/**
+ * Drops tick values whose rendered positions would sit on top of each other, keeping the first of any
+ * overlapping cluster. Needed because d3 only loosely honors a requested tick count -- on a log scale
+ * it returns decade multiples and largely ignores the count, so a short row can end up with a dozen
+ * labels crushed into the bottom few pixels.
+ *
+ * Ticks are assumed to be in scale order; the extremes are kept because they anchor the reader.
+ */
+export function thinTicksByPixelSpacing(
+  tickValues: number[],
+  scale: (value: number) => number | undefined,
+  minSpacing: number = MIN_Y_TICK_SPACING,
+): number[] {
+  const positioned = tickValues
+    .map(value => ({ position: scale(value), value }))
+    .filter((tick): tick is { position: number; value: number } => Number.isFinite(tick.position));
+  if (positioned.length < 3) {
+    return positioned.map(tick => tick.value);
+  }
+
+  const last = positioned[positioned.length - 1];
+  const kept = [positioned[0]];
+  for (const tick of positioned.slice(1, -1)) {
+    if (Math.abs(tick.position - kept[kept.length - 1].position) >= minSpacing) {
+      kept.push(tick);
+    }
+  }
+  // Always keep the far extreme, evicting a neighbor it would collide with rather than dropping it
+  while (kept.length > 1 && Math.abs(last.position - kept[kept.length - 1].position) < minSpacing) {
+    kept.pop();
+  }
+  kept.push(last);
+
+  return kept.map(tick => tick.value);
+}
+
+/**
+ * Default base for log axis tick labels. Base only affects which values get labelled -- it has no
+ * effect on pixel positions, since the scale affinely normalizes the domain onto the range and the
+ * 1/ln(base) factor cancels out.
+ */
+export const DEFAULT_LOG_BASE = 10;
+
+/**
+ * How many powers of the base to walk down from the data's largest magnitude when building a log tick
+ * ladder. Generous enough to cover any range a timeline row can legibly label, while bounding the loop
+ * for a domain that reaches extremely small magnitudes.
+ */
+const MAX_LOG_LADDER_STEPS = 32;
+
+/**
+ * Width of symlog's linear region, set to the smallest non-zero magnitude present in the data. That
+ * choice makes the decade spacing match a true log scale closely -- measured against scaleLog over the
+ * same domain, decades land within ~0.5px of log's uniform ladder -- while still giving zero a real
+ * position just below the smallest sample.
+ *
+ * d3's own default of 1 is a poor fit here: for data spanning small magnitudes it swallows several
+ * decades into the linear region and crushes them into a couple of pixels, which is precisely the
+ * problem a log axis is chosen to solve.
+ *
+ * Note this takes no base. Base affects which values get labelled, never where anything is drawn.
+ */
+export function getLogConstant(smallestMagnitude: number | undefined): number {
+  if (smallestMagnitude === undefined || !Number.isFinite(smallestMagnitude) || smallestMagnitude <= 0) {
+    return 1;
+  }
+  return smallestMagnitude;
+}
+
+/**
+ * Builds the y scale for an axis. A 'log' axis is backed by symlog so that zero and negative samples
+ * still get a position -- see AxisScaleType for why a true log scale is the wrong choice here.
+ */
+export function getYScale(
+  domain: (number | null)[],
+  height: number,
+  scaleType?: AxisScaleType,
+  logConstant?: number,
+): YScale {
+  const numericDomain = domain.filter(filterEmpty);
+  const range = [height - CANVAS_PADDING_Y, CANVAS_PADDING_Y];
+
+  if (scaleType === 'log') {
+    return scaleSymlog()
+      .domain(numericDomain)
+      .range(range)
+      .constant(logConstant && logConstant > 0 ? logConstant : 1);
+  }
+  return scaleLinear().domain(numericDomain).range(range);
+}
+
+/**
+ * Tick values for a log axis: zero plus successive powers of `base` outward in both directions, kept to
+ * those inside the domain. Generated here rather than taken from the scale because d3's symlog emits
+ * evenly spaced round numbers (200, 400, 600...) which read as a linear axis and defeat the point of
+ * choosing log. Callers still thin the result to whatever fits -- see thinTicksByPixelSpacing.
+ */
+export function getLogTickValues(domain: number[], base: number = DEFAULT_LOG_BASE): number[] {
+  const [min, max] = domain;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+    return [];
+  }
+  const safeBase = Number.isFinite(base) && base > 1 ? base : DEFAULT_LOG_BASE;
+  const maxMagnitude = Math.max(Math.abs(min), Math.abs(max));
+  if (maxMagnitude === 0) {
+    return [0];
+  }
+
+  // Walk down from the largest power of the base the data reaches. The step cap bounds the walk so a
+  // domain reaching very small magnitudes cannot spin for thousands of iterations; anything past it is
+  // far below what a row this tall could label anyway.
+  const topExponent = Math.floor(Math.log(maxMagnitude) / Math.log(safeBase));
+  const magnitudes: number[] = [];
+  for (let step = 0; step < MAX_LOG_LADDER_STEPS; step += 1) {
+    magnitudes.push(Math.pow(safeBase, topExponent - step));
+  }
+
+  // magnitudes is descending, so negating it is already ascending, and reversing it gives the
+  // ascending positive side. Zero sits between them and is always a meaningful gridline on symlog.
+  const ladder = [...magnitudes.map(magnitude => -magnitude), 0, ...magnitudes.slice().reverse()];
+
+  // Anchored by the domain extremes so the axis always shows its own bounds
+  const withinDomain = ladder.filter(value => value > min && value < max);
+  return Array.from(new Set([min, ...withinDomain, max])).sort((a, b) => a - b);
 }
 
 /**
@@ -241,17 +371,26 @@ export function clampOpacity(opacity: number | undefined, fallback: number = DEF
 }
 
 /**
- * Returns the y pixel position of the baseline for a line layer's area fill, or null if the
- * y scale has no usable zero (i.e. an empty scale domain). The baseline is the position of zero
- * clamped to the canvas so that signals crossing zero fill from the axis, while signals that
- * never cross zero fill to the nearest edge.
+ * Returns the y pixel position of the baseline for a line layer's area fill, or null if the scale
+ * has no usable baseline (i.e. an empty scale domain). The baseline is the position of zero clamped
+ * to the canvas, so that signals crossing zero fill from the axis while signals that never cross it
+ * fill to the nearest edge.
+ *
+ * A log scale is undefined at zero, so there `yScale(0)` is -Infinity and the fill would silently
+ * disappear. Fall back to the bottom of the scale's range instead, which is what an operator means
+ * by "fill under the line" on a log axis.
  */
-export function getLineFillBaselineY(yScale: ScaleLinear<number, number>, height: number): number | null {
-  const zeroY = yScale(0);
-  if (!Number.isFinite(zeroY)) {
+export function getLineFillBaselineY(yScale: YScale, height: number): number | null {
+  const [domainMin] = yScale.domain();
+  if (!Number.isFinite(domainMin)) {
     return null;
   }
-  return Math.max(0, Math.min(height, zeroY));
+  const zeroY = yScale(0);
+  const baselineY = Number.isFinite(zeroY) ? zeroY : yScale(domainMin as number);
+  if (!Number.isFinite(baselineY)) {
+    return null;
+  }
+  return Math.max(0, Math.min(height, baselineY));
 }
 
 /**
@@ -660,6 +799,7 @@ export function createYAxis(timelines: Timeline[], args: Partial<Axis> = {}): Ax
     id,
     label: { text: `Y Axis (${id})` },
     renderTickLines: true,
+    scaleType: DEFAULT_AXIS_SCALE_TYPE,
     tickCount: 4,
     ...args,
   };
@@ -763,10 +903,10 @@ export function createTimelineLineLayer(
     filter: {},
     id,
     lineColor: ViewLineLayerColorPresets[0],
-    lineOpacity: DEFAULT_LINE_OPACITY,
     lineStyle: DEFAULT_LINE_STYLE,
     lineWidth: 1,
     name: '',
+    opacity: DEFAULT_LINE_OPACITY,
     pointRadius: 2,
     pointShape: DEFAULT_POINT_SHAPE,
     showFill: false,
@@ -895,20 +1035,61 @@ export function getYAxisBounds(
 }
 
 /**
- * Populates y-axes with scaleDomain
+ * Smallest non-zero absolute value across the resources feeding an axis, or undefined when the axis has
+ * no non-zero data. Only used to derive a log axis's symlog constant.
+ */
+export function getSmallestMagnitudeForAxis(
+  yAxis: Axis,
+  layers: Layer[],
+  resources: Resource[],
+  viewTimeRange?: TimeRange,
+): number | undefined {
+  let smallest: number | undefined = undefined;
+  for (const layer of layers.filter(layer => layer.yAxisId === yAxis.id)) {
+    const layerResource = getResourceForLayer(layer, resources) as Resource;
+    if (!layerResource) {
+      continue;
+    }
+    for (const value of layerResource.values) {
+      if (typeof value.y !== 'number') {
+        continue;
+      }
+      // Mirrors the window getYAxisBounds considers, so the constant matches the domain on screen
+      if (
+        viewTimeRange &&
+        yAxis.domainFitMode === 'fitTimeWindow' &&
+        (value.x < viewTimeRange.start || value.x > viewTimeRange.end)
+      ) {
+        continue;
+      }
+      const magnitude = Math.abs(value.y);
+      if (magnitude > 0 && (smallest === undefined || magnitude < smallest)) {
+        smallest = magnitude;
+      }
+    }
+  }
+  return smallest;
+}
+
+/**
+ * Populates y-axes with scaleDomain, plus the render-time logConstant a log axis needs. Both are
+ * derived here rather than stored in the view so they cannot go stale as data changes.
  */
 export function getYAxesWithScaleDomains(
   yAxes: Axis[],
   layers: Layer[],
   resources: Resource[],
   viewTimeRange: TimeRange,
-): Axis[] {
+): ComputedAxis[] {
   return yAxes.map(yAxis => {
-    if (yAxis.domainFitMode !== 'manual') {
-      const scaleDomain = getYAxisBounds(yAxis, layers, resources, viewTimeRange);
-      return { ...yAxis, scaleDomain };
+    const computed: ComputedAxis =
+      yAxis.domainFitMode !== 'manual'
+        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange) }
+        : { ...yAxis };
+    if (yAxis.scaleType === 'log') {
+      computed.logConstant = getLogConstant(getSmallestMagnitudeForAxis(yAxis, layers, resources, viewTimeRange));
     }
-    return yAxis;
+    return computed;
   });
 }
 
