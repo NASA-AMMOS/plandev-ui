@@ -251,6 +251,22 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 
+  test('Should accept a banded horizontal guide and reject a non-numeric y2', () => {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows[1];
+    row.horizontalGuides = [{ id: 0, label: { text: 'nominal' }, y: 10, y2: 90, yAxisId: row.yAxes[0].id }];
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+
+    // A guide with no y2 is an ordinary line guide and must stay valid
+    delete row.horizontalGuides[0].y2;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+
+    row.horizontalGuides[0].y2 = 'top';
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
   test('Should reject an unknown instantStyle', () => {
     expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'triangle' })).valid).toBe(false);
   });

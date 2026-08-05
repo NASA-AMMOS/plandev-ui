@@ -579,6 +579,40 @@ export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[
   });
 }
 
+/** Fill opacity of a banded horizontal guide. Faint enough that plotted data stays readable over it. */
+export const HORIZONTAL_GUIDE_BAND_OPACITY = 0.12;
+
+/**
+ * Pixel rect for a horizontal guide drawn as a band, or null when the guide is an ordinary
+ * single-value guide or the band falls entirely outside the visible row.
+ *
+ * Clamped to the row, so a band with one edge off scale still shades the part that is on scale rather
+ * than painting outside its own row. Edge order is normalized, so an operator can type the bounds of a
+ * nominal range in either order and get the range they meant.
+ */
+export function getHorizontalGuideBand(
+  y: number,
+  y2: number | undefined,
+  yScale: YScale,
+  drawHeight: number,
+): { height: number; y: number } | null {
+  if (y2 === undefined || !Number.isFinite(y) || !Number.isFinite(y2)) {
+    return null;
+  }
+  const edges = [yScale(y), yScale(y2)];
+  if (!edges.every(Number.isFinite)) {
+    return null;
+  }
+  const top = Math.min(...edges);
+  const bottom = Math.max(...edges);
+  if (bottom <= 0 || top >= drawHeight) {
+    return null;
+  }
+  const clampedTop = Math.max(0, top);
+  const clampedBottom = Math.min(drawHeight, bottom);
+  return { height: clampedBottom - clampedTop, y: clampedTop };
+}
+
 /**
  * Whether a resource schema describes a numeric magnitude, and therefore plots against a numeric y
  * scale rather than an ordinal one.
