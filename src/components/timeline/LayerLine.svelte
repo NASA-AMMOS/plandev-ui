@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { scalePoint, type ScaleLinear, type ScalePoint, type ScaleTime } from 'd3-scale';
-  import { curveLinear, line as d3Line } from 'd3-shape';
+  import { area as d3Area, curveLinear, line as d3Line } from 'd3-shape';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type {
@@ -14,12 +14,21 @@
     TimeRange,
   } from '../../types/timeline';
   import { filterNullish } from '../../utilities/generic';
-  import { CANVAS_PADDING_Y, getYScale, minMaxDecimation } from '../../utilities/timeline';
+  import {
+    CANVAS_PADDING_Y,
+    DEFAULT_LINE_FILL_OPACITY,
+    clampLineFillOpacity,
+    getLineFillBaselineY,
+    getYScale,
+    minMaxDecimation,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let dpr: number = 1;
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
+  export let fillColor: string | undefined = undefined;
+  export let fillOpacity: number = DEFAULT_LINE_FILL_OPACITY;
   // TODO make an issue to remove these unneeded filters from LayerLine, LayerRange, etc
   export let filter: ResourceLayerFilter | undefined;
   export let id: number;
@@ -32,6 +41,7 @@
   export let mouseout: MouseEvent | undefined;
   export let pointRadius: number = 2;
   export let resources: Resource[] = [];
+  export let showFill: boolean = false;
   export let ordinalScale: boolean = false;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
@@ -58,6 +68,9 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
+  // fillColor is undefined unless the layer overrides the line color, so it cannot be checked
+  // directly in the draw condition below without permanently blocking every draw
+  $: resolvedFillColor = fillColor || lineColor;
   $: if (
     decimate !== undefined &&
     interpolateHoverValue !== undefined &&
@@ -70,6 +83,11 @@
     // TODO swap filter out for resources which are recomputed when the view changes (i.e. filter changes)
     filter &&
     lineColor !== undefined &&
+    // Always true once lineColor is defined. Present only so the condition re-runs when
+    // fillColor changes -- do not remove it as dead code or the fill stops tracking the color.
+    resolvedFillColor !== undefined &&
+    typeof fillOpacity === 'number' &&
+    typeof showFill === 'boolean' &&
     typeof lineWidth === 'number' &&
     typeof pointRadius === 'number' &&
     mounted &&
@@ -219,6 +237,30 @@
       // TODO could also just do this when finalPoints < drawWidth but might be less performant?
       if (!decimate || Math.abs(finalPoints.length - gapPoints.length - pointsInView.length) < 4) {
         drawPointsRequest = window.requestAnimationFrame(() => drawPoints(finalPoints));
+      }
+
+      // Draw the fill under the line before the line itself so that the line remains crisp on top.
+      // Ordinal scales have no numeric zero and therefore no meaningful baseline to fill to.
+      if (showFill && !ordinalScale) {
+        const baselineY = getLineFillBaselineY(yScale as ScaleLinear<number, number>, drawHeight);
+        if (baselineY !== null) {
+          const area = d3Area<LinePoint>()
+            .defined(d => d.y !== null) // Match the line so gaps become holes in the fill
+            .x(d => d.x)
+            .y0(baselineY)
+            .y1(d => d.y as number)
+            .curve(curveLinear);
+          ctx.save();
+          // Sanitized here too, not just at the input, so a hand edited or imported view cannot
+          // produce an opaque fill that hides the layers underneath
+          ctx.globalAlpha = clampLineFillOpacity(fillOpacity);
+          ctx.fillStyle = resolvedFillColor;
+          ctx.beginPath();
+          area.context(ctx)(finalPoints);
+          // Nonzero winding (the default) keeps self intersections from decimated points solid
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       // Draw the line

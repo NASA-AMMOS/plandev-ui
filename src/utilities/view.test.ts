@@ -72,6 +72,43 @@ describe('generateDefaultViewWithEvents', () => {
   });
 });
 
+describe('validateViewJSONAgainstSchema - line layer area fill', () => {
+  function getViewWithLineLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines
+      .flatMap((timeline: any) => timeline.rows)
+      .find((row: any) => row.layers.some((layer: any) => layer.chartType === 'line'));
+    const layer = row.layers.find((layer: any) => layer.chartType === 'line');
+    Object.assign(layer, props);
+    return view;
+  }
+
+  test('Should accept line layers with area fill properties', async () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      getViewWithLineLayerProps({ fillColor: '#ff0000', fillOpacity: 0.25, showFill: true }),
+    );
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject a line layer fill color that is not a hex color', async () => {
+    const { valid } = validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillColor: 'red', showFill: true }));
+    expect(valid).toBe(false);
+  });
+
+  test('Should reject a line layer fill opacity outside of 0-1', async () => {
+    expect(validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillOpacity: 1.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillOpacity: -1 })).valid).toBe(false);
+  });
+
+  test('Should reject a null line layer fill opacity, the form a NaN takes once serialized', async () => {
+    // JSON.stringify turns NaN into null, so an unsanitized number input would make a view
+    // that can no longer be exported or re-imported
+    const view = getViewWithLineLayerProps({ fillOpacity: NaN });
+    expect(validateViewJSONAgainstSchema(JSON.parse(JSON.stringify(view))).valid).toBe(false);
+  });
+});
+
 describe('applyViewDefinitionMigrations', () => {
   test('Should migrate a view from v0 -> v1', async () => {
     const migratedView = migrateViewDefinitionV0toV1(viewV0 as any);

@@ -514,6 +514,15 @@
                                 "const": "line",
                                 "description": "Layer that visualizes points and a line"
                               },
+                              "fillColor": {
+                                "$ref": "#/definitions/color"
+                              },
+                              "fillOpacity": {
+                                "description": "Opacity of the area fill",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
+                              },
                               "filter": {
                                 "$ref": "#/definitions/filterResource"
                               },
@@ -534,6 +543,10 @@
                               "pointRadius": {
                                 "description": "Radius of the points",
                                 "type": "number"
+                              },
+                              "showFill": {
+                                "description": "Whether or not to fill the area between the line and the zero baseline",
+                                "type": "boolean"
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"

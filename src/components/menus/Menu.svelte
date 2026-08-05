@@ -1,7 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts" context="module">
-  type MenuType = 'dropdown' | 'input';
+  export type MenuType = 'dropdown' | 'input';
   type HideFns = {
     dropdown: Set<() => void>;
     input: Set<() => void>;
