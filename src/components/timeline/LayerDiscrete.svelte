@@ -592,11 +592,17 @@
         }
       });
 
+      // Subrows are spread across whatever height the row has rather than stacked at a fixed pitch, so
+      // that a manually enlarged row uses the space it was given. Only the *first* subrow's height is
+      // reserved here; the rest is divided between the gaps.
       const extraSpace = Math.max(0, drawHeight - discreteOptions.height - discreteRowPadding * 2);
       const rowCount = Object.keys(rows).length;
+      // Guarding rowCount of 1 rather than relying on `|| 0` to swallow the resulting NaN, which also
+      // swallowed the padding and drew a lone subrow flush against the top of the row
+      const rowSpacing = rowCount > 1 ? extraSpace / (rowCount - 1) : 0;
       Object.entries(rows).forEach(([_, entry], i) => {
         const { items } = entry;
-        let rowVerticalOffset = discreteRowPadding + i * (extraSpace / (rowCount - 1)) || 0;
+        let rowVerticalOffset = discreteRowPadding + i * rowSpacing;
         if (discreteOptions.height >= drawHeight) {
           rowVerticalOffset = 4;
         }
@@ -605,13 +611,22 @@
         }
       });
 
-      // Dispatch optimal row height in case it is needed.
-      // This is computed by multiplying the number of rows by the row height
-      // and adding 3px of spacing in between the rows.
+      // Height this row wants when it is set to auto-adjust: every subrow, a 3px gap between them, and
+      // the padding above and below.
+      //
+      // The padding was missing, and because the spacing above *divides* the leftover height rather
+      // than stacking at a fixed pitch, leaving it out did not merely crop the bottom -- it pulled
+      // every gap closed. At three 16px subrows the old formula asked for 54px, which left 30px to
+      // divide into two gaps of 15px for rows 16px tall, so consecutive subrows overlapped by a pixel
+      // and the labels ran together. Including the padding makes the division land at exactly
+      // height + 3.
       if (expanded && discreteOptions.height) {
         const optimalRowHeight = Math.min(
           maxCanvasHeight,
-          Math.max(24, rowCount * discreteOptions.height + (rowCount - 1) * 3),
+          Math.max(
+            ViewConstants.MIN_ROW_HEIGHT,
+            discreteRowPadding * 2 + rowCount * discreteOptions.height + (rowCount - 1) * 3,
+          ),
         );
         dispatch('updateRowHeight', { newHeight: optimalRowHeight });
       }
