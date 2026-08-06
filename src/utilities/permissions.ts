@@ -117,7 +117,6 @@ function getPermission(queries: string[], user: User | null): boolean {
 type QueryString = string;
 type FunctionString = string;
 const functionQueryMap: Record<QueryString, FunctionString> = {
-  addCommandExpansionTypeScript: 'create_expansion_rule',
   addExternalDataset: 'insert_ext_dataset',
   [Queries.APPLY_PRESET_TO_ACTIVITY]: 'apply_preset',
   [Queries.BEGIN_MERGE]: 'begin_merge',
