@@ -23,6 +23,7 @@
     spanUtilityMaps,
     spans,
     spansMap,
+    xRangeValueDomains,
     yAxesWithScaleDomainsCache,
   } from '../../stores/simulation';
   import {
@@ -172,6 +173,15 @@
     }
   }
 
+  function onUpdateValueDomain(event: CustomEvent<{ domain: string[]; resourceName: string }>) {
+    const {
+      detail: { domain, resourceName },
+    } = event;
+    // Keyed by resource rather than by layer: two layers showing the same resource see the same values,
+    // and the form asks about the resource, not about which layer happens to be selected.
+    $xRangeValueDomains = { ...$xRangeValueDomains, [resourceName]: domain };
+  }
+
   function onUpdateYAxes(event: CustomEvent<{ axes: Axis[]; id: number }>) {
     const {
       detail: { axes, id },
@@ -278,6 +288,7 @@
       on:deleteRow={onDeleteRow}
       on:duplicateRow={onDuplicateRow}
       on:insertRow={onInsertRow}
+      on:updateValueDomain={onUpdateValueDomain}
       on:updateYAxes={onUpdateYAxes}
     />
   </svelte:fragment>

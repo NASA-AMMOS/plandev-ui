@@ -4,9 +4,10 @@
   import { Eye, EyeOff, RotateCcw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { ViewLineLayerColorPresets } from '../../../constants/view';
-  import { allResourceTypes } from '../../../stores/simulation';
+  import { allResourceTypes, xRangeValueDomains } from '../../../stores/simulation';
   import type { ResourceType } from '../../../types/simulation';
   import type { XRangeLayer, XRangeLayerColorScheme, XRangeValueAppearance } from '../../../types/timeline';
+  import { getTarget } from '../../../utilities/generic';
   import { getXRangeColorScale, getXRangeValueDomain } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
@@ -25,56 +26,57 @@
   // Null for a resource whose schema does not enumerate its values, which is what splits this form in
   // two: a listed set to edit in place, or an unknown set to name by hand.
   $: schemaValues = getXRangeValueDomain(schema);
-  $: values = getEditableValues(schemaValues, appearance);
-  $: schemeColors = getSchemeColors(layer.colorScheme, schemaValues);
+  // What the layer has actually seen, for the resources whose schema declares nothing. Only ever a
+  // suggestion: it covers the simulation currently loaded, so a value that has not occurred yet is
+  // still worth being able to add by hand.
+  $: observedValues = layer.filter.resource ? ($xRangeValueDomains[layer.filter.resource] ?? []) : [];
+  $: values = getEditableValues(schemaValues, observedValues, appearance);
+  $: schemeColors = getSchemeColors(layer.colorScheme, schemaValues ?? observedValues);
 
   function getResourceSchema(resourceTypes: ResourceType[], resourceName: string | undefined) {
     return resourceTypes.find(({ name }) => name === resourceName)?.schema;
   }
 
   /**
-   * Every value worth a row: the schema's own set where there is one, plus anything already configured.
+   * Every value worth a row: the declared set where the schema has one, otherwise the values the data
+   * turned out to hold, plus anything already configured either way.
    *
-   * The second half is what keeps a stale entry reachable. A model revision can stop declaring a value
-   * the operator had already pinned, and that entry goes on affecting the render either way -- listing
-   * only the schema would leave it coloring or hiding a value with nothing in the form to undo it.
+   * That last part is what keeps a stale entry reachable, and it matters in both directions. A model
+   * revision can stop declaring a value an operator had already pinned; a resimulation can stop
+   * producing one. The entry goes on affecting the render regardless, so listing only the current set
+   * would leave it coloring or hiding a value with nothing in the form to undo it.
    */
   function getEditableValues(
     schemaValues: string[] | null,
+    observedValues: string[],
     appearance: Record<string, XRangeValueAppearance>,
   ): string[] {
-    const configured = Object.keys(appearance);
-    if (!schemaValues) {
-      return configured.sort();
-    }
-    return [...schemaValues, ...configured.filter(value => !schemaValues.includes(value)).sort()];
+    const known = schemaValues ?? observedValues;
+    const extra = Object.keys(appearance).filter(value => !known.includes(value));
+    return [...known, ...extra.sort()];
   }
 
   /**
    * The color each value would take with no override, for the values whose color is knowable.
    *
-   * Only the schema's own set reproduces what the canvas paints, since it is the same domain the
-   * renderer builds its scale from. A resource whose values come from the data gets its domain from the
-   * order values happen to first appear in the profile, which this form never sees -- so those values
-   * show no inherited color rather than a confidently wrong one, and so does a value the schema has
-   * since dropped.
+   * Accurate only for the exact domain the renderer builds its scale from -- the schema's declared set,
+   * or for a free-form resource the order its values first appear in the profile, which is why that
+   * order is reported up rather than reconstructed here. Anything outside that domain, such as a value
+   * the schema or a resimulation has since dropped, gets no swatch rather than a confidently wrong one.
    */
-  function getSchemeColors(colorScheme: XRangeLayerColorScheme, schemaValues: string[] | null): Record<string, string> {
-    if (!schemaValues) {
+  function getSchemeColors(colorScheme: XRangeLayerColorScheme, domain: string[]): Record<string, string> {
+    if (!domain.length) {
       return {};
     }
-    const colorScale = getXRangeColorScale(colorScheme, schemaValues);
-    return schemaValues.reduce<Record<string, string>>(
-      (colors, value) => ({ ...colors, [value]: colorScale(value) }),
-      {},
-    );
+    const colorScale = getXRangeColorScale(colorScheme, domain);
+    return domain.reduce<Record<string, string>>((colors, value) => ({ ...colors, [value]: colorScale(value) }), {});
   }
 
   function update(value: string, entry: XRangeValueAppearance | null) {
     const next = { ...appearance };
     // An entry with nothing left in it is indistinguishable from no entry, and leaving it behind would
     // grow the saved view with every value an operator toggled and untoggled.
-    if (entry === null || (entry.color === undefined && !entry.hidden)) {
+    if (entry === null || (entry.color === undefined && entry.label === undefined && !entry.hidden)) {
       delete next[value];
     } else {
       next[value] = entry;
@@ -84,6 +86,15 @@
 
   function onColorChange(value: string, color: string) {
     update(value, { ...appearance[value], color });
+  }
+
+  function onLabelChange(value: string, event: Event) {
+    const { value: label } = getTarget(event);
+    const text = label?.toString() ?? '';
+    // Emptying the field drops the override rather than storing '', which would draw a box with no text
+    // and no way to tell that from a value whose label really is blank.
+    const { label: _cleared, ...rest } = appearance[value] ?? {};
+    update(value, text ? { ...rest, label: text } : rest);
   }
 
   function onToggleHidden(value: string) {
@@ -135,7 +146,19 @@
             value={entry?.color || schemeColors[value] || 'transparent'}
             on:input={({ detail }) => onColorChange(value, detail.value)}
           />
-          <span class="value-name" use:tooltip={{ content: value, placement: 'top' }}>{value}</span>
+          <!-- The name column is the label field. A value's drawn text is the one thing about it an
+               operator might want to change, and giving it a row of its own would have doubled the
+               height of every list; as a placeholder the raw value still shows through whenever no
+               override is set, and the tooltip has it either way. -->
+          <input
+            autocomplete="off"
+            class="value-name"
+            placeholder={value}
+            spellcheck="false"
+            use:tooltip={{ content: `Label for ${value}`, placement: 'top' }}
+            value={entry?.label ?? ''}
+            on:input={onLabelChange.bind(null, value)}
+          />
           <button
             class="st-button icon"
             aria-label={hidden ? `Show ${value}` : `Hide ${value}`}
@@ -163,8 +186,9 @@
   {/if}
 
   {#if !schemaValues}
-    <!-- Nothing lists the values of a free-form resource, so they get typed in. They are drawn on the
-         timeline and shown in its tooltip, which is where an operator reads them off. -->
+    <!-- The observed list only covers what the loaded simulation produced, so a free-form resource keeps
+         a way to name a value that has not occurred yet -- and to configure one before any simulation
+         has run at all. -->
     <div class="add-value">
       <input
         autocomplete="off"
@@ -210,10 +234,33 @@
     opacity: 0.4;
   }
 
+  /* Chromeless until pointed at, so the column still reads as a list of values rather than as a stack
+     of inputs -- the same treatment the guide rows use for the same reason. */
   .value-name {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    min-width: 0;
     overflow: hidden;
+    padding: 2px 4px;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .value-name::placeholder {
+    color: inherit;
+    opacity: 1;
+  }
+
+  .value-name:hover {
+    background: var(--st-white);
+    border-color: var(--st-gray-20);
+  }
+
+  .value-name:focus {
+    background: var(--st-white);
+    border-color: var(--st-utility-blue);
+    outline: none;
   }
 
   .value-row :global(.st-button.icon) {

@@ -36,6 +36,17 @@ export const initialSpansLoading: Writable<boolean> = writable(true);
 
 export const yAxesWithScaleDomainsCache: Writable<Record<number, Axis[]>> = writable({});
 
+/**
+ * Distinct values seen in each x-range resource, keyed by resource name, in the order the renderer's
+ * color scale assigns colors.
+ *
+ * Reported by the layers rather than derived here, because they already build this domain to color
+ * with and a second pass over a hundred thousand samples to learn the same thing would be waste. It
+ * exists for the layer settings form: a `string` resource declares no value set, so the values an
+ * operator can configure are only knowable from what a simulation actually produced.
+ */
+export const xRangeValueDomains: Writable<Record<string, string[]>> = writable({});
+
 export const simulationEvents: Writable<SimulationEvent[] | null> = writable(null);
 
 /* Subscriptions. */
