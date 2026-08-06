@@ -475,8 +475,16 @@
           timeFilteredSpans = [];
         }
 
-        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+        // Second term was a copy of the first, so a layer matching only orphan spans and no directives
+        // reported as having no activity content and was allocated no space
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredSpans.length > 0;
       } else {
+        // Cleared, not just flagged: the collapsed draw path reads these lists, so leaving the last
+        // layer's items in them keeps a removed layer on screen
+        filteredActivityDirectives = [];
+        filteredSpans = [];
+        timeFilteredActivityDirectives = [];
+        timeFilteredSpans = [];
         hasActivityLayer = false;
       }
     }

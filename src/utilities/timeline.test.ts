@@ -1832,8 +1832,16 @@ describe('getMarkerGlyphExtents', () => {
     }
   });
 
-  test('dot and diamond occupy the same box, so switching between them cannot reflow a row', () => {
-    expect(getMarkerGlyphExtents('dot', 16)).toEqual(getMarkerGlyphExtents('diamond', 16));
+  // Equal bounding boxes would not read as equal weight: a diamond fills half its box where a circle
+  // fills about 0.785 of it, so matching their boxes makes the diamond look lighter
+  test('a diamond is drawn larger than a dot, to carry the same visual weight', () => {
+    const dot = getMarkerGlyphExtents('dot', 16);
+    const diamond = getMarkerGlyphExtents('diamond', 16);
+    expect(diamond.size).toBeGreaterThan(dot.size);
+    // Areas within a few percent of each other: pi*(d/2)^2 for the circle, D^2/2 for the diamond
+    const dotArea = Math.PI * (dot.size / 2) ** 2;
+    const diamondArea = diamond.size ** 2 / 2;
+    expect(Math.abs(diamondArea - dotArea) / dotArea).toBeLessThan(0.1);
   });
 
   test('point styles scale with the subrow height', () => {
