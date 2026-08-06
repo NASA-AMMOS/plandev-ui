@@ -36,6 +36,7 @@ import {
   directiveInView,
   duplicateRow,
   externalEventInView,
+  formatBandDuration,
   generateDiscreteTreeUtil,
   getHorizontalGuideBand,
   getMarkerGlyphExtents,
@@ -2189,18 +2190,57 @@ describe('getYAxisBounds with a stacked axis', () => {
 describe('clampGuideBand', () => {
   const SIZE = 100;
 
+  /** Everything but the anchor, which order deliberately does change. */
+  const geometry = (band: ReturnType<typeof clampGuideBand>) => {
+    const { anchorAtStart, ...rest } = band ?? {};
+    void anchorAtStart;
+    return rest;
+  };
+
   test('normalizes edge order, so a region dragged backwards is not empty', () => {
-    expect(clampGuideBand(70, 20, SIZE)).toEqual(clampGuideBand(20, 70, SIZE));
-    expect(clampGuideBand(70, 20, SIZE)).toEqual({ end: 70, showEndEdge: true, showStartEdge: true, start: 20 });
+    expect(geometry(clampGuideBand(70, 20, SIZE))).toEqual(geometry(clampGuideBand(20, 70, SIZE)));
+    expect(clampGuideBand(70, 20, SIZE)).toEqual({
+      anchorAtStart: false,
+      end: 70,
+      showEndEdge: true,
+      showStartEdge: true,
+      start: 20,
+    });
+  });
+
+  // The one thing normalizing the order destroys, and the render needs it: the solid edge marks the
+  // guide's own value, so a band typed backwards has to come back solid on the right.
+  test('reports which edge the first argument ended up on', () => {
+    expect(clampGuideBand(20, 70, SIZE)?.anchorAtStart).toBe(true);
+    expect(clampGuideBand(70, 20, SIZE)?.anchorAtStart).toBe(false);
+    // Equal bounds are one edge, so calling it the start keeps a solid line rather than a dashed one
+    expect(clampGuideBand(50, 50, SIZE)?.anchorAtStart).toBe(true);
+  });
+
+  // Clamping must not move the anchor: the guide's value is still the one it always was, even with that
+  // edge scrolled out of view
+  test('keeps the anchor edge through clamping', () => {
+    expect(clampGuideBand(-50, 40, SIZE)?.anchorAtStart).toBe(true);
+    expect(clampGuideBand(40, -50, SIZE)?.anchorAtStart).toBe(false);
   });
 
   test('clamps to the drawable extent and reports the clamped edge as not shown', () => {
-    expect(clampGuideBand(-50, 40, SIZE)).toEqual({ end: 40, showEndEdge: true, showStartEdge: false, start: 0 });
-    expect(clampGuideBand(60, 500, SIZE)).toEqual({ end: SIZE, showEndEdge: false, showStartEdge: true, start: 60 });
+    expect(geometry(clampGuideBand(-50, 40, SIZE))).toEqual({
+      end: 40,
+      showEndEdge: true,
+      showStartEdge: false,
+      start: 0,
+    });
+    expect(geometry(clampGuideBand(60, 500, SIZE))).toEqual({
+      end: SIZE,
+      showEndEdge: false,
+      showStartEdge: true,
+      start: 60,
+    });
   });
 
   test('reports neither edge when the band engulfs the whole extent', () => {
-    expect(clampGuideBand(-100, 500, SIZE)).toEqual({
+    expect(geometry(clampGuideBand(-100, 500, SIZE))).toEqual({
       end: SIZE,
       showEndEdge: false,
       showStartEdge: false,
@@ -2219,7 +2259,12 @@ describe('clampGuideBand', () => {
   });
 
   test('keeps a zero-width band, so equal bounds stay visible as a line', () => {
-    expect(clampGuideBand(50, 50, SIZE)).toEqual({ end: 50, showEndEdge: true, showStartEdge: true, start: 50 });
+    expect(geometry(clampGuideBand(50, 50, SIZE))).toEqual({
+      end: 50,
+      showEndEdge: true,
+      showStartEdge: true,
+      start: 50,
+    });
   });
 
   test('keeps a band flush against either boundary', () => {
@@ -2244,10 +2289,19 @@ describe('getHorizontalGuideBand', () => {
   });
 
   // An operator typing the bounds of a nominal range should not have to know which box is which
-  test('is identical whichever order the two values are given in', () => {
-    expect(getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT)).toEqual(
-      getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT),
-    );
+  test('has the same geometry whichever order the two values are given in', () => {
+    const forward = getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT);
+    const reversed = getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT);
+    expect(forward?.y).toEqual(reversed?.y);
+    expect(forward?.height).toEqual(reversed?.height);
+  });
+
+  // A y scale runs the opposite way from the values it maps, so the guide's own value is the *upper*
+  // edge only when it is the larger of the two. Pin it: getting this backwards would draw the solid
+  // edge at y2 and contradict the editor row, which shows y.
+  test('puts the anchor at the upper edge only when the guide value is the larger', () => {
+    expect(getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT)?.anchorAtStart).toBe(true);
+    expect(getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT)?.anchorAtStart).toBe(false);
   });
 
   test('clamps to the row so a half-off-scale band still shades the part that is on scale', () => {
@@ -2602,5 +2656,44 @@ describe('getXRangeColorScale', () => {
   test('falls back to a real scheme for an unknown scheme name', () => {
     const unknown = getXRangeColorScale('schemeNope' as never, domain);
     expect(unknown('ON')).toEqual(getXRangeColorScale('schemeTableau10', domain)('ON'));
+  });
+});
+
+describe('formatBandDuration', () => {
+  const s = 1000;
+  const m = 60 * s;
+  const h = 60 * m;
+  const d = 24 * h;
+
+  test('caps at two units, so the readout fits inside the band it measures', () => {
+    expect(formatBandDuration(6 * h)).toEqual('6h 00m');
+    expect(formatBandDuration(6 * h + 30 * m)).toEqual('6h 30m');
+    // The units below the second one are dropped rather than rounded into it
+    expect(formatBandDuration(6 * h + 30 * m + 59 * s + 999)).toEqual('6h 30m');
+  });
+
+  test('zero-pads the smaller unit, so a column of caps stays one width', () => {
+    expect(formatBandDuration(2 * d + 4 * h)).toEqual('2d 04h');
+    expect(formatBandDuration(1 * h + 5 * m)).toEqual('1h 05m');
+    expect(formatBandDuration(1 * m + 5 * s)).toEqual('1m 05s');
+    expect(formatBandDuration(1 * s + 5)).toEqual('1s 005ms');
+  });
+
+  test('steps down to whatever the largest non-zero unit is', () => {
+    expect(formatBandDuration(45 * m)).toEqual('45m 00s');
+    expect(formatBandDuration(30 * s)).toEqual('30s 000ms');
+    expect(formatBandDuration(250)).toEqual('250ms');
+    expect(formatBandDuration(0)).toEqual('0ms');
+  });
+
+  // Order is normalized before the band is drawn, so a region typed backwards still lasts as long as it
+  // lasts -- a negative readout would be an artifact of the typing, not of the region
+  test('reads the same whichever way round the two ends were given', () => {
+    expect(formatBandDuration(-6 * h)).toEqual(formatBandDuration(6 * h));
+  });
+
+  test('does not roll hours into days below a full day, nor lose a day boundary', () => {
+    expect(formatBandDuration(23 * h + 59 * m)).toEqual('23h 59m');
+    expect(formatBandDuration(d)).toEqual('1d 00h');
   });
 });

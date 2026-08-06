@@ -53,14 +53,19 @@
               .attr('fill-opacity', GUIDE_BAND_OPACITY);
           }
 
-          // Both edges are drawn the same way a single-value guide is, so a band still reads as the
-          // same kind of annotation rather than as a differently-shaped one. clampGuideBand reports
-          // which edges are on scale; a clamped one is skipped rather than drawn at the clamp.
+          // A band's two edges are told apart rather than drawn alike: solid on the edge the guide's
+          // own y sits at, dashed on the edge y2 extends to, matching the vertical bands and agreeing
+          // with the editor row, which shows y and nothing else. A single-value guide stays dashed, as
+          // it always was. clampGuideBand reports which edges are on scale; a clamped one is skipped
+          // rather than drawn at the clamp.
+          const bandEndY = band ? band.y + band.height : y;
+          const anchorEdgeY = band?.anchorAtStart ? band.y : bandEndY;
           const edgeYs = band
-            ? [...(band.showStartEdge ? [band.y] : []), ...(band.showEndEdge ? [band.y + band.height] : [])]
+            ? [...(band.showStartEdge ? [band.y] : []), ...(band.showEndEdge ? [bandEndY] : [])]
             : [y];
           for (const edgeY of edgeYs) {
-            lineGroup
+            const isAnchorEdge = band !== null && edgeY === anchorEdgeY;
+            const line = lineGroup
               .append('line')
               .attr('class', `${horizontalGuideClass}-line`)
               .attr('id', guide.id)
@@ -69,8 +74,10 @@
               .attr('x2', drawWidth)
               .attr('y2', edgeY)
               .attr('stroke', dashColor)
-              .attr('stroke-dasharray', dashLength)
               .attr('stroke-width', width);
+            if (!isAnchorEdge) {
+              line.attr('stroke-dasharray', dashLength);
+            }
           }
 
           const labelVisibility = 'visible';
@@ -81,7 +88,7 @@
           // Just inside a band's upper edge rather than below one of them, which would read as
           // belonging to whichever edge it happened to land under
           const labelY = band ? band.y + labelYOffset : y + labelYOffset;
-          lineGroup
+          const label = lineGroup
             .append('text')
             .style('visibility', labelVisibility)
             .attr('class', `${horizontalGuideClass}-text`)
@@ -91,6 +98,24 @@
             .attr('font-family', labelFontFace)
             .attr('font-size', `${labelFontSize}px`)
             .text(labelText);
+
+          // The extent, trailing the name, is the horizontal counterpart of a vertical band's duration
+          // cap: it saves reading two edges off the axis. Written low-to-high regardless of which value
+          // the operator typed first, since a value interval has no direction of its own -- the solid
+          // edge above is what says which end is the guide's anchor.
+          if (band) {
+            const [low, high] = [guide.y, guide.y2 as number].sort((a, b) => a - b);
+            lineGroup
+              .append('text')
+              .attr('class', `${horizontalGuideClass}-extent`)
+              .attr('x', 5 + (label.node()?.getComputedTextLength() ?? 0) + 6)
+              .attr('y', labelY)
+              .attr('fill', labelColor)
+              .attr('fill-opacity', 0.7)
+              .attr('font-family', labelFontFace)
+              .attr('font-size', `${labelFontSize - 1}px`)
+              .text(`${low}–${high}`);
+          }
         }
       }
     }

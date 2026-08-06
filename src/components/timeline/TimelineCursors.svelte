@@ -1,6 +1,8 @@
 <script lang="ts">
   type ComputedVerticalGuide = { id: number; label: Label; maxWidth: number; x: number };
   type ComputedVerticalBand = {
+    anchorAtStart: boolean;
+    duration: string;
     id: number;
     label: Label;
     showEndEdge: boolean;
@@ -16,7 +18,12 @@
   import type { Label, MouseOver, Timeline, VerticalGuide } from '../../types/timeline';
   import { formatDate, getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { hexToRgba } from '../../utilities/color';
-  import { clampGuideBand, createVerticalGuide, GUIDE_BAND_OPACITY } from '../../utilities/timeline';
+  import {
+    clampGuideBand,
+    createVerticalGuide,
+    formatBandDuration,
+    GUIDE_BAND_OPACITY,
+  } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
 
   /** Fallback band color, for a guide saved with no color of its own. Matches the cursor line's gray. */
@@ -114,15 +121,17 @@
       if (!xScaleView || verticalGuide.timestamp2 === undefined) {
         continue;
       }
-      const band = clampGuideBand(
-        xScaleView(getUnixEpochTime(verticalGuide.timestamp)),
-        xScaleView(getUnixEpochTime(verticalGuide.timestamp2)),
-        drawWidth,
-      );
+      const anchorMs = getUnixEpochTime(verticalGuide.timestamp);
+      const extentMs = getUnixEpochTime(verticalGuide.timestamp2);
+      const band = clampGuideBand(xScaleView(anchorMs), xScaleView(extentMs), drawWidth);
       if (band === null) {
         continue;
       }
       tempComputedVerticalBands.push({
+        anchorAtStart: band.anchorAtStart,
+        // From the timestamps, not from the clamped pixel width: the readout is how long the region
+        // lasts, which does not change because the view scrolled half of it off screen.
+        duration: formatBandDuration(extentMs - anchorMs),
         id: verticalGuide.id,
         label: verticalGuide.label,
         showEndEdge: band.showEndEdge,
@@ -143,6 +152,11 @@
    */
   function getBandFill(color: string | undefined): string {
     return hexToRgba(color || DEFAULT_BAND_COLOR, GUIDE_BAND_OPACITY);
+  }
+
+  /** Cap fill: strong enough to read as the band's own edge, short of competing with the guide lines. */
+  function getCapFill(color: string): string {
+    return hexToRgba(color, 0.55);
   }
 
   function removeVerticalGuide(verticalGuideId: number) {
@@ -230,14 +244,23 @@
   <div class="timeline-cursor-header" />
   <!-- Bands first so the guide markers and labels stay on top of their own shading -->
   {#each computedVerticalBands as band (band.id)}
+    {@const bandColor = band.label.color || DEFAULT_BAND_COLOR}
     <div
       class="timeline-cursor-band"
-      style:background-color={getBandFill(band.label.color)}
-      style:border-left-color={band.showStartEdge ? band.label.color || DEFAULT_BAND_COLOR : 'transparent'}
-      style:border-right-color={band.showEndEdge ? band.label.color || DEFAULT_BAND_COLOR : 'transparent'}
+      class:anchor-at-end={!band.anchorAtStart}
+      style:background-color={getBandFill(bandColor)}
+      style:border-left-color={band.showStartEdge ? bandColor : 'transparent'}
+      style:border-right-color={band.showEndEdge ? bandColor : 'transparent'}
       style:transform="translateX({band.x}px)"
       style:width="{band.width}px"
-    />
+    >
+      <!-- The cap ties the two edges together into one object, and carries the readout an operator
+           would otherwise have to get by subtracting the two dates in the editor. Cap and pill are
+           siblings, and the cap is faded through its background color rather than through element
+           opacity, so the pill it sits under stays at full strength. -->
+      <div class="timeline-cursor-band-cap" style:background-color={getCapFill(bandColor)} />
+      <span class="timeline-cursor-band-duration" style:background-color={bandColor}>{band.duration}</span>
+    </div>
   {/each}
   {#each computedVerticalGuides as guide}
     <TimelineCursor
@@ -285,14 +308,49 @@
 
   /* Spans every row, since the region it marks is a property of the timeline rather than of one row.
      pointer-events stay off (inherited from the container) so shading a region never costs the operator
-     the ability to click through it. */
+     the ability to click through it.
+
+     Solid on the edge the guide's own timestamp sits at, dashed on the edge its `timestamp2` extends
+     to. That asymmetry is the only thing in the render that says which way the region runs, and it
+     agrees with the editor row, which shows the anchor date and nothing else. */
   .timeline-cursor-band {
-    border-left: 1px dashed;
+    border-left: 1px solid;
     border-right: 1px dashed;
     height: 100%;
     left: 0;
     position: absolute;
     top: 0;
     transform: translateX(0);
+  }
+
+  /* An operator can type the two dates in either order; the band still runs the way they meant it, so
+     the solid edge follows the anchor rather than staying on the left. */
+  .timeline-cursor-band.anchor-at-end {
+    border-left-style: dashed;
+    border-right-style: solid;
+  }
+
+  .timeline-cursor-band-cap {
+    height: 3px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Centered on the cap, and allowed to overflow a band narrower than itself rather than being clipped
+     to illegibility -- a short region is exactly when the duration is worth reading. */
+  .timeline-cursor-band-duration {
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'JetBrains mono', monospace;
+    font-size: 9px;
+    left: 50%;
+    line-height: 1;
+    padding: 2px 5px;
+    position: absolute;
+    top: 5px;
+    transform: translateX(-50%);
+    white-space: nowrap;
   }
 </style>

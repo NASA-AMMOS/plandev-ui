@@ -613,12 +613,16 @@ export const GUIDE_BAND_OPACITY = 0.12;
  *   region right-to-left, should get the region they meant rather than an empty one.
  * - **A clamped edge is reported as not-shown.** The band continues past the drawable area, so drawing
  *   its edge line at the clamp would assert a boundary where the operator did not put one.
+ *
+ * Because order is normalized, which edge came from `a` stops being recoverable from the result, so it
+ * is reported as `anchorAtStart`. `a` is the guide's own value -- the one its editor row shows -- and
+ * that edge is drawn solid while the far edge is dashed, so a band never contradicts the form.
  */
 export function clampGuideBand(
   a: number,
   b: number,
   size: number,
-): { end: number; showEndEdge: boolean; showStartEdge: boolean; start: number } | null {
+): { anchorAtStart: boolean; end: number; showEndEdge: boolean; showStartEdge: boolean; start: number } | null {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
     return null;
   }
@@ -628,11 +632,44 @@ export function clampGuideBand(
     return null;
   }
   return {
+    anchorAtStart: a <= b,
     end: Math.min(size, end),
     showEndEdge: end <= size,
     showStartEdge: start >= 0,
     start: Math.max(0, start),
   };
+}
+
+/**
+ * A band's extent as a duration, in at most two units, for the readout on its cap.
+ *
+ * Not `convertUsToDurationString`: that spells out every non-zero unit down to milliseconds, which is
+ * right for a form field and far too long for a pill sitting inside the band it measures. Two units
+ * keeps an eclipse readable as `6h 00m` while still distinguishing it from `6h 30m`; the smaller unit
+ * is zero-padded so a column of caps stays the same width.
+ */
+export function formatBandDuration(durationMs: number): string {
+  const ms = Math.abs(Math.round(durationMs));
+  const pad = (value: number, width: number = 2) => `${value}`.padStart(width, '0');
+
+  const days = Math.floor(ms / 86400000);
+  const hours = Math.floor(ms / 3600000) % 24;
+  const minutes = Math.floor(ms / 60000) % 60;
+  const seconds = Math.floor(ms / 1000) % 60;
+
+  if (days > 0) {
+    return `${days}d ${pad(hours)}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${pad(minutes)}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${pad(seconds)}s`;
+  }
+  if (seconds > 0) {
+    return `${seconds}s ${pad(ms % 1000, 3)}ms`;
+  }
+  return `${ms}ms`;
 }
 
 /**
@@ -644,7 +681,13 @@ export function getHorizontalGuideBand(
   y2: number | undefined,
   yScale: YScale,
   drawHeight: number,
-): { height: number; showEndEdge: boolean; showStartEdge: boolean; y: number } | null {
+): {
+  anchorAtStart: boolean;
+  height: number;
+  showEndEdge: boolean;
+  showStartEdge: boolean;
+  y: number;
+} | null {
   if (y2 === undefined || !Number.isFinite(y) || !Number.isFinite(y2)) {
     return null;
   }
@@ -653,6 +696,9 @@ export function getHorizontalGuideBand(
     return null;
   }
   return {
+    // A y scale runs the other way from the value it maps, so the anchor edge is the *upper* one only
+    // when the guide's own value is the larger of the two
+    anchorAtStart: band.anchorAtStart,
     height: band.end - band.start,
     showEndEdge: band.showEndEdge,
     showStartEdge: band.showStartEdge,
