@@ -536,47 +536,47 @@
         >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 168px 24px 24px 24px" gap="8px" class="editor-section-grid">
-                <div>Label</div>
-                <div>Date ({$plugins.time.primary.label})</div>
-              </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 168px 24px 24px 24px" gap="8px" class="editor-section-grid">
-                      <Input layout="stacked" class="editor-input">
-                        <label for="text">Label</label>
-                        <input
-                          value={verticalGuide.label.text}
-                          on:input={event => {
-                            const { value } = getTarget(event);
-                            const newVerticalGuides = verticalGuides.map(guide => {
-                              if (guide.id === verticalGuide.id) {
-                                guide.label.text = value?.toString() ?? '';
-                              }
-                              return guide;
-                            });
-                            viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-                          }}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="text"
-                          placeholder="Label"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <!-- Kept in the row rather than the settings menu: a guide's position is what it
-                             is for, so a list of guides you cannot read the positions of is not a list
-                             worth showing. -->
-                        <DatePicker
-                          name="timestamp"
-                          minDate={new Date($maxTimeRange.start)}
-                          maxDate={new Date($maxTimeRange.end)}
-                          dateString={verticalGuide.timestamp}
-                          on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
-                          on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
-                        />
-                      </Input>
+                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid guide-row">
+                      <!-- Label and date are stacked rather than sat side by side. The date needs about
+                           168px to show a full timestamp, which at this panel width left the label
+                           roughly 30px -- enough for "Guid". Stacking gives both the section's full
+                           width, and lets each field carry its own caption instead of a header row. -->
+                      <div class="guide-fields">
+                        <Input layout="stacked" class="guide-field">
+                          <label for="text">Label</label>
+                          <input
+                            value={verticalGuide.label.text}
+                            on:input={event => {
+                              const { value } = getTarget(event);
+                              const newVerticalGuides = verticalGuides.map(guide => {
+                                if (guide.id === verticalGuide.id) {
+                                  guide.label.text = value?.toString() ?? '';
+                                }
+                                return guide;
+                              });
+                              viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
+                            }}
+                            autocomplete="off"
+                            class="st-input w-full"
+                            name="text"
+                            placeholder="Label"
+                          />
+                        </Input>
+                        <Input layout="stacked" class="guide-field">
+                          <label for="timestamp">Date ({$plugins.time.primary.label})</label>
+                          <DatePicker
+                            name="timestamp"
+                            minDate={new Date($maxTimeRange.start)}
+                            maxDate={new Date($maxTimeRange.end)}
+                            dateString={verticalGuide.timestamp}
+                            on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
+                            on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
+                          />
+                        </Input>
+                      </div>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
                         <ColorPicker
                           value={verticalGuide.label.color}
@@ -1318,6 +1318,17 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
+  }
+
+  .guide-fields {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  /* Buttons sit beside a two-line cell, so center them against it rather than letting them ride the top */
+  :global(.editor-section-grid.guide-row) {
+    align-items: center;
   }
 
   /* Keeps the (?) on the label's row rather than letting it wrap under a long label */

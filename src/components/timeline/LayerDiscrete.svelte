@@ -638,8 +638,12 @@
     const itemsToDraw: DiscreteTreeNodeDrawItem[] = [];
     const seenSpans: Record<number, boolean> = {};
 
-    // activities
-    if (showDirectives) {
+    // Gated on hasActivityLayer / hasExternalEventsLayer exactly as compact mode is. Without the gate
+    // this path drew whatever was last in activityDirectives, so removing a row's only activity layer
+    // left it visible while the row was collapsed and made it reappear on every re-collapse.
+    // showDirectives and showSpans are not a substitute: they come from activityOptions.composition,
+    // which says which kinds to draw, not whether a layer exists to draw them from.
+    if (hasActivityLayer && showDirectives) {
       activityDirectives.forEach(directive => {
         if (!xScaleView) {
           return;
@@ -662,7 +666,7 @@
         }
       });
     }
-    if (showSpans) {
+    if (hasActivityLayer && showSpans) {
       spans.forEach(span => {
         if (seenSpans[span.span_id] || !xScaleView) {
           return;
@@ -677,7 +681,8 @@
     }
 
     // Aggregate External Event Drawables
-    externalEvents.forEach(externalEvent => {
+    const collapsedExternalEvents = hasExternalEventsLayer ? externalEvents : [];
+    collapsedExternalEvents.forEach(externalEvent => {
       if (externalEventInView(externalEvent, viewTimeRange)) {
         if (xScaleView !== null) {
           itemsToDraw.push({

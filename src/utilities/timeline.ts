@@ -214,12 +214,20 @@ const POINT_SPRITE_PADDING = 1.6;
 const MARKER_LINE_WIDTH = 2;
 
 /**
- * Size of a point-like marker as a fraction of the subrow height, then clamped. A fraction
- * so the marker scales with the row rather than becoming a speck on a tall row; clamped because a
- * marker taller than roughly a text line stops reading as a point and starts colliding with the
- * neighbouring subrow.
+ * Size of a point-like marker as a fraction of the subrow height, then clamped. A fraction so the
+ * marker scales with the row rather than becoming a speck on a tall row; clamped because a marker
+ * taller than roughly a text line stops reading as a point and starts colliding with the neighbouring
+ * subrow.
+ *
+ * Per shape, because equal *bounding boxes* do not read as equal weight: a diamond fills half its box
+ * where a circle fills about 0.785 of it, so a diamond drawn to a circle's diameter looks noticeably
+ * lighter. The diamond's fraction is the circle's scaled by sqrt(0.785 / 0.5) -- the same equal-area
+ * reasoning getPointSymbolSize applies to line layer points, where d3 does the arithmetic for us.
  */
-const MARKER_GLYPH_HEIGHT_RATIO = 0.7;
+const MARKER_GLYPH_HEIGHT_RATIOS: Record<'diamond' | 'dot', number> = {
+  diamond: 0.69,
+  dot: 0.55,
+};
 const MARKER_GLYPH_MIN_SIZE = 4;
 const MARKER_GLYPH_MAX_SIZE = 14;
 
@@ -467,7 +475,7 @@ export function getMarkerGlyphExtents(markerStyle: MarkerStyle | undefined, rowH
   }
   const size = Math.min(
     MARKER_GLYPH_MAX_SIZE,
-    Math.max(MARKER_GLYPH_MIN_SIZE, Math.round(rowHeight * MARKER_GLYPH_HEIGHT_RATIO)),
+    Math.max(MARKER_GLYPH_MIN_SIZE, Math.round(rowHeight * MARKER_GLYPH_HEIGHT_RATIOS[markerStyle])),
   );
   const half = size / 2;
   return { left: half, right: half, size };
