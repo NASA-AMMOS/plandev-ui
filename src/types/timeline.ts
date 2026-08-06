@@ -442,16 +442,61 @@ export type XRangeLayerColorScheme =
   | 'schemeSet3'
   | 'schemeTableau10';
 
+/**
+ * Per-value overrides for one x-range layer, keyed by the resource value itself.
+ *
+ * A value with no entry keeps the color its layer's `colorScheme` assigns it, so a partly configured
+ * map is the normal case: an operator marks the two or three states they care about and leaves the
+ * rest alone.
+ */
+export type XRangeValueAppearance = {
+  /** Replaces the scheme color for this value. */
+  color?: string;
+  /**
+   * Draw nothing at all for this value -- no box, no label, and no hover target.
+   *
+   * Not the same as a gap. A gap means the profile had no value, and `LayerGaps` hatches it. This
+   * value exists and was measured; the operator has decided it is not worth ink. Hiding every value
+   * but one turns an x-range layer into background shading for that one state, since x-range layers
+   * paint behind every other layer in the row.
+   */
+  hidden?: boolean;
+};
+
+/**
+ * Whether an x-range box is labelled with its value.
+ *
+ * `auto` fits the text and truncates it when it has to, which is the only behavior there was. `off` is
+ * for a layer being read as a shape rather than as text -- most of all one reduced to shading a single
+ * state, where repeating that state's name across the row says nothing its color does not.
+ *
+ * No `on`: unlike a discrete row, an x-range box cannot grow to fit its label, so forcing text into a
+ * box narrower than one character has nothing to draw.
+ */
+export type XRangeLabelVisibility = 'auto' | 'off';
+
 export interface XRangeLayer extends Layer {
   colorScheme: XRangeLayerColorScheme;
+  labelVisibility?: XRangeLabelVisibility;
   opacity: number;
   showAsLinePlot: boolean;
+  /** Inert while `showAsLinePlot` is on, which draws the whole resource as one line in one color. */
+  valueAppearance?: Record<string, XRangeValueAppearance>;
 }
 
 export interface XRangePoint extends Point {
   is_gap?: boolean;
   is_null?: boolean;
   label: Label;
+  /**
+   * The resource value behind this point, which is what colors and per-value overrides key off.
+   *
+   * Deliberately separate from `label.text`, the text drawn inside the box, even where the two
+   * currently hold the same string: they answer different questions, and conflating them means two
+   * values that happen to display alike are colored alike and merge into one box. Absent on gap
+   * points, which have no value.
+   */
+  value?: string;
 }
 
 export type TimelineItemType = ResourceType | ActivityType | ExternalEventType;

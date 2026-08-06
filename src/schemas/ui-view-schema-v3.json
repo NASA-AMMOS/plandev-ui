@@ -640,6 +640,10 @@
                                 "description": "Name of the layer",
                                 "type": "string"
                               },
+                              "labelVisibility": {
+                                "description": "Whether a range rectangle is labelled with its value",
+                                "enum": ["auto", "off"]
+                              },
                               "opacity": {
                                 "description": "Opacity of the range rectangles",
                                 "maximum": 1,
@@ -648,6 +652,23 @@
                               },
                               "showAsLinePlot": {
                                 "type": "boolean"
+                              },
+                              "valueAppearance": {
+                                "additionalProperties": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "color": {
+                                      "$ref": "#/definitions/color"
+                                    },
+                                    "hidden": {
+                                      "description": "Draw nothing for this value: no box, no label, no hover target",
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "description": "Per-value overrides keyed by the resource value. Values absent from this map keep the color their colorScheme assigns.",
+                                "type": "object"
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"

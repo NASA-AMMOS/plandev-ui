@@ -371,6 +371,65 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ opacity: 1.5 })).valid).toBe(false);
   });
 
+  test.each(['auto', 'off'])('Should accept an x-range labelVisibility of "%s"', visibility => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ labelVisibility: visibility }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // There is no 'on': a box cannot grow to fit its text the way a discrete row's bar can, so 'on' would
+  // promise something the renderer cannot do
+  test('Should reject an x-range labelVisibility of "on"', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ labelVisibility: 'on' })).valid).toBe(false);
+  });
+
+  test('Should accept a per-value appearance map on an x-range layer', () => {
+    const view = viewWithXRangeLayerProps({
+      valueAppearance: {
+        // Values are free-form strings, so the map's keys cannot be constrained -- including keys with
+        // the spaces and slashes that resource values really contain
+        'DOWNLINK/IDLE': { color: '#00ff00' },
+        NOMINAL: { color: '#ff0000', hidden: false },
+        'SAFE MODE': { hidden: true },
+      },
+    });
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // An entry with neither field is what the form leaves behind if it ever stops pruning empties, and it
+  // must not invalidate the whole view
+  test('Should accept an empty appearance entry and an empty map', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: {} })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: {} } })).valid).toBe(true);
+  });
+
+  test('Should reject a malformed appearance entry', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: 'grey' } })).valid).toBe(
+      false,
+    );
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { color: 'grey' } } })).valid,
+    ).toBe(false);
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { hidden: 'yes' } } })).valid,
+    ).toBe(false);
+    // Typos in an entry are silent otherwise: the value would just keep its scheme color
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { colour: '#cccccc' } } }))
+        .valid,
+    ).toBe(false);
+  });
+
+  // The mock's x-range layer carries no map, so this is also the "layer saved before per-value colors
+  // existed" case
+  test('An x-range layer with no appearance map is still valid', () => {
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[2].layers[0].valueAppearance).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+  });
+
   test('Should reject a NaN opacity, which serializes to null rather than a number', () => {
     // A cleared number input yields NaN, and JSON.stringify turns NaN into null, so an unsanitized
     // form value makes the whole view unexportable rather than just rendering oddly.

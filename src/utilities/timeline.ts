@@ -1,6 +1,15 @@
 import { bisector, tickStep } from 'd3-array';
 import type { Quadtree, QuadtreeInternalNode, QuadtreeLeaf } from 'd3-quadtree';
-import { scaleLinear, scalePoint, scaleSymlog, scaleTime, type ScalePoint, type ScaleTime } from 'd3-scale';
+import {
+  scaleLinear,
+  scaleOrdinal,
+  scalePoint,
+  scaleSymlog,
+  scaleTime,
+  type ScaleOrdinal,
+  type ScalePoint,
+  type ScaleTime,
+} from 'd3-scale';
 import { curveLinear, curveMonotoneX, type CurveFactory } from 'd3-shape';
 import {
   timeHour,
@@ -59,6 +68,7 @@ import type {
   Timeline,
   VerticalGuide,
   XRangeLayer,
+  XRangeLabelVisibility,
   XRangeLayerColorScheme,
   YScale,
 } from '../types/timeline';
@@ -191,6 +201,7 @@ export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
 export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
 export const DEFAULT_SHOW_POINTS_MODE: ShowPointsMode = 'auto';
+export const DEFAULT_XRANGE_LABEL_VISIBILITY: XRangeLabelVisibility = 'auto';
 
 /**
  * Canvas dash patterns in CSS pixels, keyed by line style. Deliberately absolute rather than
@@ -991,6 +1002,41 @@ export function getUniqueColorSchemeForXRangeLayer(row?: Row): XRangeLayerColorS
       defaultScheme;
   }
   return colorScheme;
+}
+
+/**
+ * Returns the color scale an x-range layer assigns to its values.
+ *
+ * Shared with the layer settings form so the swatch an operator sees next to a value is the color the
+ * canvas will actually paint. The scale is only as stable as the domain handed to it -- see
+ * `getXRangeValueDomain`.
+ */
+export function getXRangeColorScale(
+  colorScheme: XRangeLayerColorScheme,
+  domain: string[],
+): ScaleOrdinal<string, string> {
+  const scheme = ViewXRangeLayerSchemePresets[colorScheme] ?? ViewXRangeLayerSchemePresets.schemeTableau10;
+  return scaleOrdinal(scheme as string[]).domain(domain);
+}
+
+/**
+ * Returns every value an x-range resource can take, ordered as the color scheme assigns colors, or
+ * null when its schema does not declare a value set.
+ *
+ * `boolean` and `variant` schemas enumerate their values, so per-value configuration is possible
+ * before any data loads and a value keeps its color across simulations. A `string` resource can hold
+ * anything, so its values are only knowable from the profile itself: the renderer builds that domain
+ * from the order values first appear, which no form can reproduce and which a new simulation can
+ * reshuffle.
+ */
+export function getXRangeValueDomain(schema: ValueSchema | undefined): string[] | null {
+  if (schema?.type === 'boolean') {
+    return ['TRUE', 'FALSE'];
+  }
+  if (schema?.type === 'variant') {
+    return schema.variants.map(({ label }) => label);
+  }
+  return null;
 }
 
 /**
