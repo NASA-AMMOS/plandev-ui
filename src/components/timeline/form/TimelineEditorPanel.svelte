@@ -13,8 +13,6 @@
   } from '../../../assets/external-source-box.svg?component';
   import ActivityModeTextNoneIcon from '../../../assets/text-none.svg?component';
   import ActivityModeTextIcon from '../../../assets/text.svg?component';
-  import ActivityModeCompactIcon from '../../../assets/timeline-activity-mode-compact.svg?component';
-  import ActivityModeGroupedIcon from '../../../assets/timeline-activity-mode-grouped.svg?component';
   import DirectiveAndSpanIcon from '../../../assets/timeline-directive-and-span.svg?component';
   import DirectiveIcon from '../../../assets/timeline-directive.svg?component';
   import HierarchyModeDirectiveIcon from '../../../assets/timeline-hierarchy-mode-directive.svg?component';
@@ -79,6 +77,7 @@
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
+  import InfoTip from '../../ui/InfoTip.svelte';
   import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
   import Panel from '../../ui/Panel.svelte';
   import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
@@ -242,6 +241,11 @@
   function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
     const { id } = event.detail;
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: id });
+  }
+
+  function handleDiscreteOptionSelectChange(event: Event, name: keyof DiscreteOptions) {
+    const { value } = getTarget(event);
+    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value });
   }
 
   function handleMarkerStyleChange(event: Event, name: 'directiveMarker' | 'zeroDurationMarker') {
@@ -913,32 +917,26 @@
             </Input>
           </form>
           <Input layout="inline" class="editor-input">
-            <label for="activity-composition">Display</label>
-            <RadioButtons
-              selectedButtonId={discreteOptions.displayMode}
-              on:select-radio-button={event => {
-                handleOptionRadioChange(event, 'displayMode');
-              }}
+            <!-- A select rather than the icon radio group the other options use: the two modes are not
+                 distinguishable from their icons alone, and the text captions hide entirely below the
+                 panel's 360px compact threshold, which left this control unreadable exactly when the
+                 panel was narrow enough to need it most. -->
+            <div class="editor-label">
+              <label for="display-mode">Display</label>
+              <InfoTip
+                content="Grouped puts activities into collapsible rows by type. Compact packs them into as few rows as will fit."
+              />
+            </div>
+            <select
+              class="st-select w-full"
+              id="display-mode"
+              name="displayMode"
+              value={discreteOptions.displayMode}
+              on:change={event => handleDiscreteOptionSelectChange(event, 'displayMode')}
             >
-              <RadioButton
-                use={[[tooltip, { content: 'Group activities by type in collapsible rows', placement: 'top' }]]}
-                id="grouped"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeGroupedIcon />
-                  <span class="timeline-editor-responsive-label">Grouped</span>
-                </div>
-              </RadioButton>
-              <RadioButton
-                use={[[tooltip, { content: 'Pack activities into a single row', placement: 'top' }]]}
-                id="compact"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeCompactIcon />
-                  <span class="timeline-editor-responsive-label">Compact</span>
-                </div>
-              </RadioButton>
-            </RadioButtons>
+              <option value="grouped">Grouped</option>
+              <option value="compact">Compact</option>
+            </select>
           </Input>
           <Input layout="inline" class="editor-input">
             <label for="activity-composition">Labels</label>
@@ -971,14 +969,12 @@
           </Input>
           {#if rowHasActivityLayer}
             <Input layout="inline" class="editor-input">
-              <label
-                for="directive-marker"
-                use:tooltip={{
-                  content:
-                    'Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own',
-                  placement: 'top',
-                }}>Directive</label
-              >
+              <div class="editor-label">
+                <label for="directive-marker">Directive</label>
+                <InfoTip
+                  content="Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own."
+                />
+              </div>
               <select
                 class="st-select w-full"
                 id="directive-marker"
@@ -993,14 +989,12 @@
             </Input>
           {/if}
           <Input layout="inline" class="editor-input">
-            <label
-              for="zero-duration-marker"
-              use:tooltip={{
-                content:
-                  'Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar',
-                placement: 'top',
-              }}>Milestone</label
-            >
+            <div class="editor-label">
+              <label for="zero-duration-marker">Milestone</label>
+              <InfoTip
+                content="Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar."
+              />
+            </div>
             <select
               class="st-select w-full"
               id="zero-duration-marker"
@@ -1445,5 +1439,13 @@
 
   .compact .timeline-editor-responsive-label {
     display: none;
+  }
+
+  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
+  .editor-label {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
   }
 </style>
