@@ -14,6 +14,7 @@
     DEFAULT_LINE_STYLE,
     DEFAULT_POINT_SHAPE,
     DEFAULT_SHOW_POINTS_MODE,
+    DEFAULT_XRANGE_LABEL_VISIBILITY,
     clampOpacity,
     isExternalEventLayer,
     isLineLayer,
@@ -24,6 +25,7 @@
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
+  import TimelineEditorXRangeValues from './TimelineEditorXRangeValues.svelte';
 
   export let layer: Layer;
   export let yAxes: Axis[];
@@ -47,7 +49,7 @@
     delete: void;
     input: {
       name: string;
-      value: string | number | boolean | null;
+      value: string | number | boolean | object | null;
     };
   }>();
   /**
@@ -74,6 +76,10 @@
       return;
     }
     dispatch('input', { name, value });
+  }
+
+  function onValueAppearanceInput(event: CustomEvent<{ name: string; value: object }>) {
+    dispatch('input', event.detail);
   }
 
   function onDeleteLayer() {
@@ -324,6 +330,19 @@
           />
         </Input>
         <Input layout="inline">
+          <label for="labelVisibility">Value Labels</label>
+          <select
+            class="st-select w-full"
+            id="labelVisibility"
+            name="labelVisibility"
+            value={layerAsXRange.labelVisibility ?? DEFAULT_XRANGE_LABEL_VISIBILITY}
+            on:change={onInput}
+          >
+            <option value="auto">Auto</option>
+            <option value="off">Off</option>
+          </select>
+        </Input>
+        <Input layout="inline">
           <label for="showAsLinePlot">Show As Line Plot</label>
           <input
             style:width="max-content"
@@ -334,6 +353,11 @@
             type="checkbox"
           />
         </Input>
+        {#if !layerAsXRange.showAsLinePlot}
+          <!-- Left out while the layer draws as a line plot, where the whole resource is one line in
+               one color and there is nothing per-value to configure. -->
+          <TimelineEditorXRangeValues layer={layerAsXRange} on:input={onValueAppearanceInput} />
+        {/if}
       {:else if isExternalEventLayer(layer)}
         <Input layout="inline">
           <label for="name">Layer Name</label>

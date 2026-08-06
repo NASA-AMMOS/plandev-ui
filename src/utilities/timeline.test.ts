@@ -53,6 +53,8 @@ import {
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
+  getXRangeColorScale,
+  getXRangeValueDomain,
   getYAxisBounds,
   getYScale,
   isActivityLayer,
@@ -2541,5 +2543,64 @@ describe('getSmallestMagnitudeForAxis', () => {
     const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
     const allZero: Resource = { name: 'allZero', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
     expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
+  });
+});
+
+describe('getXRangeValueDomain', () => {
+  test('enumerates a boolean schema as the strings the layer draws', () => {
+    expect(getXRangeValueDomain({ type: 'boolean' })).toEqual(['TRUE', 'FALSE']);
+  });
+
+  test('takes a variant schema in declaration order, since that is what fixes each value a color', () => {
+    const schema = {
+      type: 'variant' as const,
+      variants: [
+        { key: 'ON', label: 'ON' },
+        { key: 'OFF', label: 'OFF' },
+      ],
+    };
+    expect(getXRangeValueDomain(schema)).toEqual(['ON', 'OFF']);
+  });
+
+  // The whole point of returning null rather than []: a free-form resource has values, they are just
+  // not knowable from the schema, and the form has to say so instead of showing an empty list
+  test('returns null for a schema that cannot enumerate its values', () => {
+    expect(getXRangeValueDomain({ type: 'string' })).toBeNull();
+    expect(getXRangeValueDomain({ type: 'int' })).toBeNull();
+    expect(getXRangeValueDomain({ type: 'real' })).toBeNull();
+    expect(getXRangeValueDomain(undefined)).toBeNull();
+  });
+});
+
+describe('getXRangeColorScale', () => {
+  const domain = ['ON', 'OFF', 'SAFE'];
+
+  test('assigns a color per value and repeats the scheme once it runs out', () => {
+    const scale = getXRangeColorScale('schemeAccent', domain);
+    expect(scale('ON')).not.toEqual(scale('OFF'));
+    // schemeAccent has 8 entries, so the ninth value wraps onto the first color
+    const long = Array.from({ length: 9 }, (_, i) => `v${i}`);
+    const wrapping = getXRangeColorScale('schemeAccent', long);
+    expect(wrapping('v8')).toEqual(wrapping('v0'));
+  });
+
+  // A value's color has to survive a re-render, or pinning colors would be pointless
+  test('is stable for the same scheme and domain', () => {
+    expect(getXRangeColorScale('schemeSet1', domain)('SAFE')).toEqual(
+      getXRangeColorScale('schemeSet1', domain)('SAFE'),
+    );
+  });
+
+  // Pin: the form previews inherited colors with this same function, so a divergence here would show an
+  // operator a swatch the canvas never paints
+  test('depends on position in the domain, not on the value itself', () => {
+    const scale = getXRangeColorScale('schemeDark2', domain);
+    const reordered = getXRangeColorScale('schemeDark2', ['OFF', 'ON', 'SAFE']);
+    expect(reordered('OFF')).toEqual(scale('ON'));
+  });
+
+  test('falls back to a real scheme for an unknown scheme name', () => {
+    const unknown = getXRangeColorScale('schemeNope' as never, domain);
+    expect(unknown('ON')).toEqual(getXRangeColorScale('schemeTableau10', domain)('ON'));
   });
 });

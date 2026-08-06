@@ -2,19 +2,7 @@
 
 <script lang="ts">
   import { quadtree as d3Quadtree, type Quadtree } from 'd3-quadtree';
-  import { scaleOrdinal, type ScaleTime } from 'd3-scale';
-  import {
-    schemeAccent,
-    schemeCategory10,
-    schemeDark2,
-    schemePaired,
-    schemePastel1,
-    schemePastel2,
-    schemeSet1,
-    schemeSet2,
-    schemeSet3,
-    schemeTableau10,
-  } from 'd3-scale-chromatic';
+  import { type ScaleTime } from 'd3-scale';
   import { createEventDispatcher, onMount, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
   import type {
@@ -22,11 +10,18 @@
     QuadtreeRect,
     ResourceLayerFilter,
     RowMouseOverEvent,
+    XRangeLabelVisibility,
     XRangeLayerColorScheme,
     XRangePoint,
+    XRangeValueAppearance,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { searchQuadtreeRect } from '../../utilities/timeline';
+  import {
+    DEFAULT_XRANGE_LABEL_VISIBILITY,
+    getXRangeColorScale,
+    getXRangeValueDomain,
+    searchQuadtreeRect,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
@@ -35,10 +30,12 @@
   export let drawWidth: number = 0;
   export let filter: ResourceLayerFilter | undefined;
   export let id: number;
+  export let labelVisibility: XRangeLabelVisibility | undefined = undefined;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
   export let opacity: number = 0.8;
   export let resources: Resource[] = [];
+  export let valueAppearance: Record<string, XRangeValueAppearance> | undefined = undefined;
   export let xScaleView: ScaleTime<number, number> | null = null;
 
   const dispatch = createEventDispatcher<{
@@ -64,6 +61,11 @@
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
+  // Normalized here rather than defaulted on the prop: Row spreads a whole layer in, so a layer saved
+  // before this option existed arrives with the key explicitly undefined, which a prop default does
+  // not cover -- and an undefined value would fail the draw guard below and leave the layer blank.
+  $: appearances = valueAppearance ?? {};
+  $: showLabels = (labelVisibility ?? DEFAULT_XRANGE_LABEL_VISIBILITY) !== 'off';
   $: if (
     canvasHeightDpr &&
     canvasWidthDpr &&
@@ -73,6 +75,8 @@
     colorScheme &&
     filter &&
     mounted &&
+    appearances &&
+    showLabels !== undefined &&
     opacity !== undefined &&
     points &&
     xScaleView
@@ -121,7 +125,7 @@
     }
     const startTime = performance.now();
 
-    const colorScale = getColorScale();
+    const colorScale = getXRangeColorScale(colorScheme, domain);
 
     const [viewStart, viewEnd] = xScaleView.domain().map(x => x.getTime());
 
@@ -136,14 +140,26 @@
         continue;
       }
 
-      // Scan to the next point with a different label than the current point.
+      const { value = '' } = point;
+
+      // Scan to the next point holding a different value than the current point, so a run of
+      // consecutive samples at the same value becomes one box. Keyed on the value rather than the
+      // drawn text: two distinct values must stay two boxes even where they display identically.
       let j = i + 1;
       let nextPoint = points[j];
-      while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
+      while (nextPoint && nextPoint.value === value && nextPoint.is_gap === point.is_gap) {
         j = j + 1;
         nextPoint = points[j];
       }
       i = j - 1; // Minus since the loop auto increments i at the end of the block.
+
+      // After the scan, so a hidden value costs one iteration per run rather than one per sample. No
+      // box, no label, and no quadtree entry: hidden means the operator gets the row's space back,
+      // and a hover target over blank canvas would take that back.
+      const appearance = appearances[value];
+      if (appearance?.hidden) {
+        continue;
+      }
 
       const startMs = point.x;
       const endMs = nextPoint ? nextPoint.x : points[i].x;
@@ -164,7 +180,9 @@
         visiblePointsById[id] = point;
 
         const labelText = point.label.text;
-        ctx.fillStyle = colorScale(labelText);
+        // Falls back on an empty string as well as on no entry, so clearing the color field in the
+        // form returns the value to its scheme color instead of painting an invalid fillStyle.
+        ctx.fillStyle = appearance?.color || colorScale(value);
         const rect = new Path2D();
         rect.rect(xStart, y, xWidth, drawHeight);
         ctx.fill(rect);
@@ -179,6 +197,10 @@
 
         if (xWidth > maxXWidth) {
           maxXWidth = xWidth;
+        }
+
+        if (!showLabels) {
+          continue;
         }
 
         const { textHeight, textWidth } = setLabelContext(point);
@@ -207,33 +229,6 @@
           }
         }
       }
-    }
-  }
-
-  function getColorScale() {
-    switch (colorScheme) {
-      case 'schemeAccent':
-        return scaleOrdinal(schemeAccent).domain(domain);
-      case 'schemeCategory10':
-        return scaleOrdinal(schemeCategory10).domain(domain);
-      case 'schemeDark2':
-        return scaleOrdinal(schemeDark2).domain(domain);
-      case 'schemePaired':
-        return scaleOrdinal(schemePaired).domain(domain);
-      case 'schemePastel1':
-        return scaleOrdinal(schemePastel1).domain(domain);
-      case 'schemePastel2':
-        return scaleOrdinal(schemePastel2).domain(domain);
-      case 'schemeSet1':
-        return scaleOrdinal(schemeSet1).domain(domain);
-      case 'schemeSet2':
-        return scaleOrdinal(schemeSet2).domain(domain);
-      case 'schemeSet3':
-        return scaleOrdinal(schemeSet3).domain(domain);
-      case 'schemeTableau10':
-        return scaleOrdinal(schemeTableau10).domain(domain);
-      default:
-        return scaleOrdinal(schemeTableau10).domain(domain);
     }
   }
 
@@ -282,7 +277,7 @@
       const { name, schema, values } = resource;
 
       if (schema.type === 'boolean') {
-        domain = ['TRUE', 'FALSE'];
+        domain = getXRangeValueDomain(schema) ?? [];
         for (let i = 0; i < values.length; ++i) {
           const { x, y, is_gap } = values[i];
           const text = y ? 'TRUE' : 'FALSE';
@@ -293,6 +288,7 @@
             label: { text },
             name,
             type: 'x-range',
+            value: text,
             x,
           });
         }
@@ -309,6 +305,7 @@
             label: { text },
             name,
             type: 'x-range',
+            value: text,
             x,
           });
           if (!isNull) {
@@ -317,7 +314,7 @@
         }
         domain = Object.values(domainMap);
       } else if (schema.type === 'variant') {
-        domain = schema.variants.map(({ label }) => label);
+        domain = getXRangeValueDomain(schema) ?? [];
         for (let i = 0; i < values.length; ++i) {
           const { x, y, is_gap } = values[i];
           const isNull = y === null;
@@ -329,6 +326,7 @@
             label: { text },
             name,
             type: 'x-range',
+            value: text,
             x,
           });
         }

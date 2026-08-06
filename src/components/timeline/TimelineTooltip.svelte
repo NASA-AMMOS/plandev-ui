@@ -620,7 +620,7 @@
         <div class='tooltip-row'>
           <span>Value:</span>
           <span class='tooltip-value-highlight st-typography-medium'>
-            ${point.label.text}
+            ${point.value ?? point.label.text}
           </span>
         </div>
       </div>
