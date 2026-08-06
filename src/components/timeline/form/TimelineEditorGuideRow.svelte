@@ -320,8 +320,10 @@
     white-space: nowrap;
   }
 
-  /* Present only on hover or while the row is open, so a quiet list stays quiet -- but it still holds
-     its width, or every row would twitch as the pointer crossed it. */
+  /* Faded rather than hidden on a row nobody is pointing at, so a quiet list stays quiet. Opacity
+     specifically, not visibility: a hidden button leaves the accessibility tree, so a screen reader
+     would have found no way to delete a guide at all. It also keeps holding its width either way, or
+     every row would twitch as the pointer crossed it. */
   .guide-remove {
     align-items: center;
     background: none;
@@ -333,15 +335,15 @@
     flex: 0 0 20px;
     height: 20px;
     justify-content: center;
+    opacity: 0;
     padding: 0;
-    visibility: hidden;
     width: 20px;
   }
 
   .guide-summary:hover .guide-remove,
   .guide-row.open .guide-remove,
   .guide-remove:focus-visible {
-    visibility: visible;
+    opacity: 1;
   }
 
   .guide-remove:hover {

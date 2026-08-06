@@ -60,19 +60,21 @@ test.describe.serial('Timeline View Editing', () => {
     await setup.page.locator('input[name="start-time"]').first().press('Enter');
   });
 
+  // Counted by each row's own delete button rather than by a container class: the button is the thing
+  // these two tests act on, so counting it is what proves a guide is really there to be acted on.
+  const guideRows = () => setup.page.getByRole('button', { name: 'Delete Guide' });
+
   test('Add a vertical guide', async () => {
     await setup.plan.showPanel(PanelNames.TIMELINE_EDITOR);
-    const existingGuideCount = await setup.page.locator('.guide').count();
+    const existingGuideCount = await guideRows().count();
     await setup.page.getByRole('button', { name: 'New Vertical Guide' }).click();
-    const newGuideCount = await setup.page.locator('.guide').count();
-    expect(newGuideCount - existingGuideCount).toEqual(1);
+    await expect(guideRows()).toHaveCount(existingGuideCount + 1);
   });
 
   test('Remove a vertical guide', async () => {
-    const existingGuideCount = await setup.page.locator('.guide').count();
-    await setup.page.getByRole('button', { name: 'Delete Guide' }).last().click();
-    const newGuideCount = await setup.page.locator('.guide').count();
-    expect(newGuideCount - existingGuideCount).toEqual(-1);
+    const existingGuideCount = await guideRows().count();
+    await guideRows().last().click();
+    await expect(guideRows()).toHaveCount(existingGuideCount - 1);
   });
 
   test('Add a row', async () => {
