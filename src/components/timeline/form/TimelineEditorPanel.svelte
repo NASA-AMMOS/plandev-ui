@@ -10,7 +10,6 @@
   import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
   import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
-  import { plugins } from '../../../stores/plugins';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
@@ -540,13 +539,13 @@
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
                   <div class="guide timeline-element">
                     <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid guide-row">
-                      <!-- Label and date are stacked rather than sat side by side. The date needs about
-                           168px to show a full timestamp, which at this panel width left the label
-                           roughly 30px -- enough for "Guid". Stacking gives both the section's full
-                           width, and lets each field carry its own caption instead of a header row. -->
-                      <div class="guide-fields">
-                        <Input layout="stacked" class="guide-field">
-                          <label for="text">Label</label>
+                      <!-- Label on the button line, date on its own line beneath. The date needs about
+                           168px for a full timestamp, which side by side left the label roughly 30px --
+                           enough for "Guid" -- so both get the section's full width instead. Captions
+                           are placeholders rather than labels: repeated per guide they were most of what
+                           the section looked like. -->
+                      <div class="guide-field">
+                        <div>
                           <input
                             value={verticalGuide.label.text}
                             on:input={event => {
@@ -564,18 +563,7 @@
                             name="text"
                             placeholder="Label"
                           />
-                        </Input>
-                        <Input layout="stacked" class="guide-field">
-                          <label for="timestamp">Date ({$plugins.time.primary.label})</label>
-                          <DatePicker
-                            name="timestamp"
-                            minDate={new Date($maxTimeRange.start)}
-                            maxDate={new Date($maxTimeRange.end)}
-                            dateString={verticalGuide.timestamp}
-                            on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
-                            on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
-                          />
-                        </Input>
+                        </div>
                       </div>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
                         <ColorPicker
@@ -596,6 +584,16 @@
                       >
                         <CloseIcon />
                       </button>
+                      <div class="guide-date">
+                        <DatePicker
+                          name="timestamp"
+                          minDate={new Date($maxTimeRange.start)}
+                          maxDate={new Date($maxTimeRange.end)}
+                          dateString={verticalGuide.timestamp}
+                          on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
+                          on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
+                        />
+                      </div>
                     </CssGrid>
                   </div>
                 {/each}
@@ -1320,15 +1318,19 @@
     justify-content: flex-start;
   }
 
-  .guide-fields {
-    display: grid;
-    gap: 4px;
+  .guide-field {
     min-width: 0;
   }
 
-  /* Buttons sit beside a two-line cell, so center them against it rather than letting them ride the top */
+  /* Second grid row, full width, so a full timestamp fits without squeezing the label above it */
+  .guide-date {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
   :global(.editor-section-grid.guide-row) {
     align-items: center;
+    row-gap: 4px;
   }
 
   /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
