@@ -9,7 +9,8 @@
   import { dndzone } from 'svelte-dnd-action';
   import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
-  import { viewTimeRange } from '../../../stores/plan';
+  import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
+  import { plugins } from '../../../stores/plugins';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
@@ -63,6 +64,7 @@
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
+  import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
   import InfoTip from '../../ui/InfoTip.svelte';
   import Panel from '../../ui/Panel.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
@@ -330,7 +332,16 @@
    * the field rather than storing it, which is the only way to turn a band back into a line.
    */
   function onHorizontalGuideInput(event: CustomEvent<{ name: string; value: any }>, horizontalGuide: HorizontalGuide) {
-    const { name, value } = event.detail;
+    applyHorizontalGuideChange(event.detail.name, event.detail.value, horizontalGuide);
+  }
+
+  /** Adapter for the fields kept inline in the row rather than in the settings menu. */
+  function onHorizontalGuideFieldInput(event: Event, horizontalGuide: HorizontalGuide) {
+    const { name, value } = getTarget(event);
+    applyHorizontalGuideChange(name, value, horizontalGuide);
+  }
+
+  function applyHorizontalGuideChange(name: string, value: any, horizontalGuide: HorizontalGuide) {
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id !== horizontalGuide.id) {
         return guide;
@@ -345,7 +356,15 @@
   }
 
   function onVerticalGuideInput(event: CustomEvent<{ name: string; value: any }>, verticalGuide: VerticalGuide) {
-    const { name, value } = event.detail;
+    applyVerticalGuideChange(event.detail.name, event.detail.value, verticalGuide);
+  }
+
+  /** Adapter for the date kept inline in the row rather than in the settings menu. */
+  function onVerticalGuideDateInput(event: CustomEvent, verticalGuide: VerticalGuide) {
+    applyVerticalGuideChange('timestamp', event.detail.value, verticalGuide);
+  }
+
+  function applyVerticalGuideChange(name: string, value: any, verticalGuide: VerticalGuide) {
     const newVerticalGuides = verticalGuides.map(guide => {
       if (guide.id !== verticalGuide.id) {
         return guide;
@@ -517,13 +536,14 @@
         >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 168px 24px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
+                <div>Date ({$plugins.time.primary.label})</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 168px 24px 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -542,6 +562,19 @@
                           class="st-input w-full"
                           name="text"
                           placeholder="Label"
+                        />
+                      </Input>
+                      <Input layout="stacked" class="editor-input">
+                        <!-- Kept in the row rather than the settings menu: a guide's position is what it
+                             is for, so a list of guides you cannot read the positions of is not a list
+                             worth showing. -->
+                        <DatePicker
+                          name="timestamp"
+                          minDate={new Date($maxTimeRange.start)}
+                          maxDate={new Date($maxTimeRange.end)}
+                          dateString={verticalGuide.timestamp}
+                          on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
+                          on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
                         />
                       </Input>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
@@ -726,13 +759,14 @@
         >
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
+                <div>Y Value</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -741,6 +775,18 @@
                           autocomplete="off"
                           class="st-input w-full"
                           name="text"
+                        />
+                      </Input>
+                      <Input layout="stacked" class="editor-input">
+                        <!-- Kept in the row for the same reason as the vertical guide's date. -->
+                        <label for="y">Y Value</label>
+                        <input
+                          value={horizontalGuide.y}
+                          on:input={event => onHorizontalGuideFieldInput(event, horizontalGuide)}
+                          autocomplete="off"
+                          class="st-input w-full"
+                          name="y"
+                          type="number"
                         />
                       </Input>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
@@ -863,7 +909,7 @@
           {/if}
           <Input layout="inline" class="editor-input">
             <div class="editor-label">
-              <label for="zero-duration-marker">Milestone</label>
+              <label for="zero-duration-marker">Instant</label>
               <InfoTip
                 content="Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar."
               />
@@ -888,7 +934,7 @@
               <div class="editor-label">
                 <label for="activity-composition">Show</label>
                 <InfoTip
-                  content="Directives shows only what is planned. Simulated shows only what simulation produced. Both draws the simulated span with its directive marked on it."
+                  content="Directives shows only what is planned. Simulated shows only what simulation produced. The third draws the simulated span with its directive marked on it."
                 />
               </div>
               <select
@@ -900,7 +946,7 @@
               >
                 <option value="directives">Directives</option>
                 <option value="spans">Simulated</option>
-                <option value="both">Both</option>
+                <option value="both">Directives + Simulated</option>
               </select>
             </Input>
           {/if}
