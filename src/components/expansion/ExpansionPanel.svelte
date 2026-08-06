@@ -119,12 +119,9 @@
   }
 
   function onExpandAll() {
-    const useTemplating = SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING;
     $filteredExpansionSequences.forEach(sequence => {
-      if (useTemplating && $plan !== null) {
+      if ($plan !== null) {
         effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan, user);
-      } else if (selectedExpansionSetId !== null && $plan !== null) {
-        effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, user);
       }
     });
   }
@@ -168,11 +165,7 @@
 
   function onExpandSequence(sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
-      if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-        effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
-      } else if (selectedExpansionSetId !== null) {
-        effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, user);
-      }
+      effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
     }
   }
 

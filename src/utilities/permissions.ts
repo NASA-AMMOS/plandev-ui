@@ -138,7 +138,6 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   delete_workspace: 'delete_workspace', // workspace service enum
   [Queries.DENY_MERGE]: 'deny_merge',
   [Queries.DUPLICATE_PLAN]: 'branch_plan',
-  [Queries.EXPAND_ALL_ACTIVITIES]: 'expand_all_activities',
   [Queries.EXPAND_ALL_TEMPLATES]: 'expand_all_templates',
   [Queries.APPLY_ACTIVITIES_BY_FILTER]: 'assign_activities_by_filter',
   getSequenceSeqJsonBulk: 'sequence_seq_json_bulk',
@@ -789,10 +788,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.DUPLICATE_PLAN];
-    return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
-  },
-  EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
-    const queries = [Queries.EXPAND_ALL_ACTIVITIES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   EXPAND_TEMPLATES: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
@@ -1557,10 +1552,6 @@ interface ExpansionSetsCRUDPermission<T = null> extends Omit<CRUDPermission<T>, 
   canUpdate: () => boolean;
 }
 
-interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
-  canExpand: RolePlanPermissionCheck;
-}
-
 interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPermission<T> {
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
 }
@@ -1612,7 +1603,7 @@ interface FeaturePermissions {
   derivationGroupModelLink: CRUDPermission<void>;
   derivationGroupPlanLink: CRUDPermission<void>;
   expansionRules: CRUDPermission<AssetWithOwner>;
-  expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
+  expansionSequences: CRUDPermission<AssetWithOwner<ExpansionSequence>>;
   expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
   externalEventType: CRUDPermission<void>;
   externalResources: PlanAssetCRUDPermission<PlanDataset>;
@@ -1734,7 +1725,6 @@ const featurePermissions: FeaturePermissions = {
   expansionSequences: {
     canCreate: user => queryPermissions.CREATE_EXPANSION_SEQUENCE(user),
     canDelete: user => queryPermissions.DELETE_EXPANSION_SEQUENCE(user),
-    canExpand: (user, plan, model) => queryPermissions.EXPAND(user, plan, model),
     canRead: user => queryPermissions.GET_EXPANSION_SEQUENCE_ID(user),
     canUpdate: () => false, // this is not a feature,
   },

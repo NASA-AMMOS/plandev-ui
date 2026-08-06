@@ -1154,14 +1154,6 @@ const gql = {
     }
   `,
 
-  EXPAND: `#graphql
-    mutation Expand($expansionSetId: Int!, $simulationDatasetId: Int!) {
-      expand: ${Queries.EXPAND_ALL_ACTIVITIES}(expansionSetId: $expansionSetId, simulationDatasetId: $simulationDatasetId) {
-        id
-      }
-    }
-  `,
-
   EXPAND_TEMPLATES: `#graphql
     mutation ExpandTemplates(
       $seqIds: [String!]!,

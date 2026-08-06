@@ -35,7 +35,6 @@ import {
 import {
   createExpansionRuleError as createExpansionRuleErrorStore,
   creatingExpansionSequence as creatingExpansionSequenceStore,
-  planExpansionStatus as planExpansionStatusStore,
   savingExpansionRule as savingExpansionRuleStore,
   savingExpansionSet as savingExpansionSetStore,
 } from '../stores/expansion';
@@ -4255,34 +4254,6 @@ const effects = {
     }
 
     return false;
-  },
-
-  async expand(expansionSetId: number, simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
-    try {
-      planExpansionStatusStore.set(Status.Incomplete);
-
-      if (!queryPermissions.EXPAND(user, plan, plan.model)) {
-        throwPermissionError('expand this plan');
-      }
-
-      const startTime = performance.now();
-      const data = await reqHasura<{ id: number }>(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
-      if (data.expand != null) {
-        planExpansionStatusStore.set(Status.Complete);
-        showSuccessToast('Plan Expanded Successfully');
-        logMessage(
-          'log',
-          `Expanded plan with expansion set ID=${expansionSetId} for simulation ID=${simulationDatasetId}.`,
-          { duration: performance.now() - startTime },
-        );
-      } else {
-        throw Error('Unable to expand plan');
-      }
-    } catch (e) {
-      catchError('log', 'Plan Expansion Failed', e as Error);
-      planExpansionStatusStore.set(Status.Failed);
-      showFailureToast('Plan Expansion Failed');
-    }
   },
 
   async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {

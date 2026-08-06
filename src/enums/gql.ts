@@ -87,7 +87,6 @@ export enum Queries {
   DENY_MERGE = 'deny_merge',
   DUPLICATE_PLAN = 'duplicate_plan',
   EVENT = 'event',
-  EXPAND_ALL_ACTIVITIES = 'expandAllActivities',
   EXPAND_ALL_TEMPLATES = 'expandAllTemplates',
   EXPANDED_TEMPLATES = 'expanded_templates',
   EXPANDED_SEQUENCES = 'expanded_sequences',

@@ -285,7 +285,7 @@
     hasCheckConstraintsPermission =
       featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
-      featurePermissions.expansionSequences.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
@@ -609,14 +609,8 @@
   }
 
   async function onHandleExpansion() {
-    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
-      if ($selectedExpansionSetId != null && $plan) {
-        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $user);
-      }
-    } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-      if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
-        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $user);
-      }
+    if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
+      effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $user);
     }
   }
 
