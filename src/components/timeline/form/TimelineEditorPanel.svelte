@@ -768,9 +768,9 @@
                 value={discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE}
                 on:change={event => handleMarkerStyleChange(event, 'directiveMarker')}
               >
-                <option value="line">Line</option>
-                <option value="dot">Dot</option>
-                <option value="diamond">Diamond</option>
+                <option value="line">| Line</option>
+                <option value="dot">● Dot</option>
+                <option value="diamond">◆ Diamond</option>
               </select>
             </Input>
           {/if}
@@ -788,9 +788,9 @@
               value={discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE}
               on:change={event => handleMarkerStyleChange(event, 'zeroDurationMarker')}
             >
-              <option value="line">Line</option>
-              <option value="dot">Dot</option>
-              <option value="diamond">Diamond</option>
+              <option value="line">| Line</option>
+              <option value="dot">● Dot</option>
+              <option value="diamond">◆ Diamond</option>
             </select>
           </Input>
           {#if rowHasActivityLayer}

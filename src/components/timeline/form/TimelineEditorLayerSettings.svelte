@@ -179,13 +179,16 @@
             value={layerAsLine.lineStyle ?? DEFAULT_LINE_STYLE}
             on:change={onInput}
           >
-            <option value="solid">Solid</option>
-            <option value="dashed">Dashed</option>
-            <option value="dotted">Dotted</option>
+            <option value="solid">—— Solid</option>
+            <option value="dashed">– – Dashed</option>
+            <option value="dotted">· · · Dotted</option>
           </select>
         </Input>
         <Input layout="inline">
-          <label for="opacity">Opacity</label>
+          <!-- "Line Opacity", not "Opacity": Fill Opacity appears right below it once the fill is on,
+               and two controls a few rows apart called Opacity and Fill Opacity read as if the first
+               governs both. The field name stays `opacity`, which is what the view stores. -->
+          <label for="opacity">Line Opacity</label>
           <input
             min={0}
             max={1}
@@ -219,11 +222,11 @@
             value={layerAsLine.pointShape ?? DEFAULT_POINT_SHAPE}
             on:change={onInput}
           >
-            <option value="circle">Circle</option>
-            <option value="square">Square</option>
-            <option value="diamond">Diamond</option>
-            <option value="triangle">Triangle</option>
-            <option value="cross">Cross</option>
+            <option value="circle">● Circle</option>
+            <option value="square">■ Square</option>
+            <option value="diamond">◆ Diamond</option>
+            <option value="triangle">▲ Triangle</option>
+            <option value="cross">✚ Cross</option>
           </select>
         </Input>
         <Input layout="inline">
