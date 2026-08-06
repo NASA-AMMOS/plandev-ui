@@ -7,22 +7,9 @@
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import { GripVertical } from 'lucide-svelte';
   import { dndzone } from 'svelte-dnd-action';
-  import {
-    default as ExternalEventIcon,
-    default as ExternalSourceIcon,
-  } from '../../../assets/external-source-box.svg?component';
-  import ActivityModeTextNoneIcon from '../../../assets/text-none.svg?component';
-  import ActivityModeTextIcon from '../../../assets/text.svg?component';
-  import DirectiveAndSpanIcon from '../../../assets/timeline-directive-and-span.svg?component';
-  import DirectiveIcon from '../../../assets/timeline-directive.svg?component';
-  import HierarchyModeDirectiveIcon from '../../../assets/timeline-hierarchy-mode-directive.svg?component';
-  import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
-  import SpanIcon from '../../../assets/timeline-span.svg?component';
-  import ActivityModeWidthIcon from '../../../assets/width.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
-  import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
-  import { plugins } from '../../../stores/plugins';
+  import { viewTimeRange } from '../../../stores/plan';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
@@ -34,7 +21,6 @@
     viewUpdateRow,
     viewUpdateTimeline,
   } from '../../../stores/views';
-  import type { RadioButtonId } from '../../../types/radio-buttons';
   import type {
     ActivityLayer,
     ActivityOptions,
@@ -78,18 +64,15 @@
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
   import InfoTip from '../../ui/InfoTip.svelte';
-  import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
   import Panel from '../../ui/Panel.svelte';
-  import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
-  import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
+  import TimelineEditorGuideSettings from './TimelineEditorGuideSettings.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
 
   let horizontalGuides: HorizontalGuide[] = [];
-  let editorWidth: number;
   let layers: Layer[] = [];
   let activityLayers: ActivityLayer[] = [];
   let resourceLayers: (LineLayer | XRangeLayer)[] = [];
@@ -238,38 +221,30 @@
     viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
-  function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
-    const { id } = event.detail;
-    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: id });
-  }
-
   function handleDiscreteOptionSelectChange(event: Event, name: keyof DiscreteOptions) {
     const { value } = getTarget(event);
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value });
   }
 
+  function handleActivityOptionSelectChange(event: Event, name: keyof ActivityOptions) {
+    const { value } = getTarget(event);
+    viewUpdateRow('discreteOptions', {
+      ...discreteOptions,
+      activityOptions: { ...discreteOptions.activityOptions, [name]: value },
+    });
+  }
+
+  function handleExternalEventOptionSelectChange(event: Event, name: keyof ExternalEventOptions) {
+    const { value } = getTarget(event);
+    viewUpdateRow('discreteOptions', {
+      ...discreteOptions,
+      externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: value },
+    });
+  }
+
   function handleMarkerStyleChange(event: Event, name: 'directiveMarker' | 'zeroDurationMarker') {
     const { value } = getTarget(event);
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value as MarkerStyle });
-  }
-
-  function handleActivityOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof ActivityOptions) {
-    const { id } = event.detail;
-    viewUpdateRow('discreteOptions', {
-      ...discreteOptions,
-      activityOptions: { ...discreteOptions.activityOptions, [name]: id },
-    });
-  }
-
-  function handleExternalEventOptionRadioChange(
-    event: CustomEvent<{ id: RadioButtonId }>,
-    name: keyof ExternalEventOptions,
-  ) {
-    const { id } = event.detail;
-    viewUpdateRow('discreteOptions', {
-      ...discreteOptions,
-      externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: id },
-    });
   }
 
   function addTimelineRow() {
@@ -316,36 +291,6 @@
     viewUpdateRow('horizontalGuides', filteredHorizontalGuides);
   }
 
-  function updateVerticalGuideTimestamp(event: CustomEvent, verticalGuide: VerticalGuide) {
-    const value = event.detail.value;
-    const newVerticalGuides = verticalGuides.map(guide => {
-      if (guide.id === verticalGuide.id) {
-        guide.timestamp = value as string;
-      }
-      return guide;
-    });
-    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-  }
-
-  /**
-   * Sets or clears the guide's second timestamp, turning it into a shaded time region or back into a
-   * line. An empty date clears it, which is the only way to undo a region once created.
-   */
-  function updateVerticalGuideTimestamp2(event: CustomEvent, verticalGuide: VerticalGuide) {
-    const value = event.detail.value as string | undefined;
-    const newVerticalGuides = verticalGuides.map(guide => {
-      if (guide.id !== verticalGuide.id) {
-        return guide;
-      }
-      if (!value) {
-        const { timestamp2: _removed, ...rest } = guide;
-        return rest;
-      }
-      return { ...guide, timestamp2: value };
-    });
-    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-  }
-
   function handleUpdateVerticalGuideLabel(event: Event, verticalGuide: VerticalGuide) {
     const { name, value } = getTarget(event);
     const newVerticalGuides = verticalGuides.map(guide => {
@@ -380,42 +325,38 @@
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
-  function handleUpdateHorizontalGuideNumberValue(event: Event, horizontalGuide: HorizontalGuide) {
-    const { name, value } = getTarget(event);
-    if (isNaN(value as number)) {
-      return;
-    }
-    const newHorizontalGuides = horizontalGuides.map(guide => {
-      if (guide.id === horizontalGuide.id) {
-        return {
-          ...guide,
-          [name]: value,
-        };
-      }
-      return guide;
-    });
-    viewUpdateRow('horizontalGuides', newHorizontalGuides);
-  }
-
   /**
-   * Separate from handleUpdateHorizontalGuideNumberValue because clearing the input has to *remove* y2
-   * and turn the band back into a line. That handler drops a NaN so a partially typed number cannot be
-   * persisted, which would leave no way to undo a band once created.
+   * Applies one field change from a guide's settings menu. A null for the band's second bound removes
+   * the field rather than storing it, which is the only way to turn a band back into a line.
    */
-  function handleUpdateHorizontalGuideY2(event: Event, horizontalGuide: HorizontalGuide) {
-    const { value } = getTarget(event);
-    const y2 = value as number;
+  function onHorizontalGuideInput(event: CustomEvent<{ name: string; value: any }>, horizontalGuide: HorizontalGuide) {
+    const { name, value } = event.detail;
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id !== horizontalGuide.id) {
         return guide;
       }
-      if (!Number.isFinite(y2)) {
+      if (name === 'y2' && value === null) {
         const { y2: _removed, ...rest } = guide;
         return rest;
       }
-      return { ...guide, y2 };
+      return { ...guide, [name]: value };
     });
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
+  }
+
+  function onVerticalGuideInput(event: CustomEvent<{ name: string; value: any }>, verticalGuide: VerticalGuide) {
+    const { name, value } = event.detail;
+    const newVerticalGuides = verticalGuides.map(guide => {
+      if (guide.id !== verticalGuide.id) {
+        return guide;
+      }
+      if (name === 'timestamp2' && !value) {
+        const { timestamp2: _removed, ...rest } = guide;
+        return rest;
+      }
+      return { ...guide, [name]: value };
+    });
+    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
   }
 
   function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
@@ -510,7 +451,7 @@
     <GridMenu {gridSection} title="Timeline Editor" />
   </svelte:fragment>
 
-  <div slot="body" bind:clientWidth={editorWidth} class="timeline-editor" class:compact={editorWidth < 360}>
+  <div slot="body" class="timeline-editor">
     {#if !selectedRow}
       <!-- Select Timeline. -->
       <div class="timeline-select-container">
@@ -576,15 +517,13 @@
         >
           {#if verticalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 168px 168px 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
-                <div>Date ({$plugins.time.primary.label})</div>
-                <div>To Date (optional)</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each verticalGuides as verticalGuide (verticalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 168px 168px 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -605,26 +544,6 @@
                           placeholder="Label"
                         />
                       </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <DatePicker
-                          name="timestamp"
-                          minDate={new Date($maxTimeRange.start)}
-                          maxDate={new Date($maxTimeRange.end)}
-                          dateString={verticalGuide.timestamp}
-                          on:change={event => updateVerticalGuideTimestamp(event, verticalGuide)}
-                          on:keydown={event => updateVerticalGuideTimestamp(event, verticalGuide)}
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <DatePicker
-                          name="timestamp2"
-                          minDate={new Date($maxTimeRange.start)}
-                          maxDate={new Date($maxTimeRange.end)}
-                          dateString={verticalGuide.timestamp2 ?? ''}
-                          on:change={event => updateVerticalGuideTimestamp2(event, verticalGuide)}
-                          on:keydown={event => updateVerticalGuideTimestamp2(event, verticalGuide)}
-                        />
-                      </Input>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
                         <ColorPicker
                           value={verticalGuide.label.color}
@@ -632,6 +551,11 @@
                           name="color"
                         />
                       </div>
+                      <TimelineEditorGuideSettings
+                        guide={verticalGuide}
+                        on:input={event => onVerticalGuideInput(event, verticalGuide)}
+                        on:delete={() => handleDeleteVerticalGuideClick(verticalGuide)}
+                      />
                       <button
                         on:click={() => handleDeleteVerticalGuideClick(verticalGuide)}
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
@@ -802,16 +726,13 @@
         >
           {#if horizontalGuides.length}
             <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
+              <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                 <div>Label</div>
-                <div>Y Value</div>
-                <div>To Y</div>
-                <div>Y Axis</div>
               </CssGrid>
               <div class="guides timeline-elements">
                 {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
                   <div class="guide timeline-element">
-                    <CssGrid columns="1fr 1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
+                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
                       <Input layout="stacked" class="editor-input">
                         <label for="text">Label</label>
                         <input
@@ -822,50 +743,6 @@
                           name="text"
                         />
                       </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="y">Y Value</label>
-                        <input
-                          value={horizontalGuide.y}
-                          on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="y"
-                          type="number"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label
-                          for="y2"
-                          use:tooltip={{
-                            content: 'Shade a band from Y Value to here. Leave empty for a single line',
-                            placement: 'top',
-                          }}>To Y</label
-                        >
-                        <input
-                          value={horizontalGuide.y2 ?? ''}
-                          on:input={event => handleUpdateHorizontalGuideY2(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="y2"
-                          placeholder="Line"
-                          type="number"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="yAxisId">Y Axis</label>
-                        <select
-                          on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
-                          class="st-select w-full"
-                          data-type="number"
-                          name="yAxisId"
-                        >
-                          {#each yAxes as axis}
-                            <option value={axis.id} selected={horizontalGuide.yAxisId === axis.id}>
-                              {axis.label.text}
-                            </option>
-                          {/each}
-                        </select>
-                      </Input>
                       <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
                         <ColorPicker
                           value={horizontalGuide.label.color}
@@ -873,6 +750,12 @@
                           name="color"
                         />
                       </div>
+                      <TimelineEditorGuideSettings
+                        guide={horizontalGuide}
+                        {yAxes}
+                        on:input={event => onHorizontalGuideInput(event, horizontalGuide)}
+                        on:delete={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
+                      />
                       <button
                         on:click={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
                         use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
@@ -939,33 +822,23 @@
             </select>
           </Input>
           <Input layout="inline" class="editor-input">
-            <label for="activity-composition">Labels</label>
-            <RadioButtons
-              selectedButtonId={discreteOptions.labelVisibility}
-              on:select-radio-button={event => handleOptionRadioChange(event, 'labelVisibility')}
+            <div class="editor-label">
+              <label for="label-visibility">Labels</label>
+              <InfoTip
+                content="On always draws item labels. Off never does. Auto draws only the labels that do not overlap the next item."
+              />
+            </div>
+            <select
+              class="st-select w-full"
+              id="label-visibility"
+              name="labelVisibility"
+              value={discreteOptions.labelVisibility}
+              on:change={event => handleDiscreteOptionSelectChange(event, 'labelVisibility')}
             >
-              <RadioButton use={[[tooltip, { content: 'Always show labels', placement: 'top' }]]} id="on">
-                <div class="radio-button-icon">
-                  <ActivityModeTextIcon />
-                  <span class="timeline-editor-responsive-label">On</span>
-                </div>
-              </RadioButton>
-              <RadioButton use={[[tooltip, { content: 'Never show labels', placement: 'top' }]]} id="off">
-                <div class="radio-button-icon">
-                  <ActivityModeTextNoneIcon />
-                  <span class="timeline-editor-responsive-label">Off</span>
-                </div>
-              </RadioButton>
-              <RadioButton
-                use={[[tooltip, { content: 'Show labels that do not overlap', placement: 'top' }]]}
-                id="auto"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeWidthIcon />
-                  <span class="timeline-editor-responsive-label">Auto</span>
-                </div>
-              </RadioButton>
-            </RadioButtons>
+              <option value="on">On</option>
+              <option value="off">Off</option>
+              <option value="auto">Auto</option>
+            </select>
           </Input>
           {#if rowHasActivityLayer}
             <Input layout="inline" class="editor-input">
@@ -1012,66 +885,43 @@
               <div class="st-typography-label">Activity Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Show</label>
-              <RadioButtons
+              <div class="editor-label">
+                <label for="activity-composition">Show</label>
+                <InfoTip
+                  content="Directives shows only what is planned. Simulated shows only what simulation produced. Both draws the simulated span with its directive marked on it."
+                />
+              </div>
+              <select
+                class="st-select w-full"
                 id="activity-composition"
-                selectedButtonId={discreteOptions?.activityOptions?.composition}
-                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'composition')}
+                name="composition"
+                value={discreteOptions?.activityOptions?.composition}
+                on:change={event => handleActivityOptionSelectChange(event, 'composition')}
               >
-                <RadioButton use={[[tooltip, { content: 'Only show directives', placement: 'top' }]]} id="directives">
-                  <div class="radio-button-icon">
-                    <DirectiveIcon /><span class="timeline-editor-responsive-label">Directives</span>
-                  </div>
-                </RadioButton>
-                <RadioButton use={[[tooltip, { content: 'Only show simulated', placement: 'top' }]]} id="spans">
-                  <div class="radio-button-icon">
-                    <SpanIcon />
-                    <span class="timeline-editor-responsive-label">Simulated</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[[tooltip, { content: 'Show directives and simulated activities', placement: 'top' }]]}
-                  id="both"
-                >
-                  <div class="radio-button-icon">
-                    <DirectiveAndSpanIcon />
-                    <span class="timeline-editor-responsive-label">Both</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+                <option value="directives">Directives</option>
+                <option value="spans">Simulated</option>
+                <option value="both">Both</option>
+              </select>
             </Input>
           {/if}
           {#if rowHasActivityLayer && discreteOptions.displayMode === 'grouped'}
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Hierarchy</label>
-              <RadioButtons
-                selectedButtonId={discreteOptions?.activityOptions?.hierarchyMode}
-                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'hierarchyMode')}
+              <div class="editor-label">
+                <label for="hierarchy-mode">Hierarchy</label>
+                <InfoTip
+                  content="By Directive groups starting from each directive. Flat groups directives and spans together regardless of how deeply nested they are."
+                />
+              </div>
+              <select
+                class="st-select w-full"
+                id="hierarchy-mode"
+                name="hierarchyMode"
+                value={discreteOptions?.activityOptions?.hierarchyMode}
+                on:change={event => handleActivityOptionSelectChange(event, 'hierarchyMode')}
               >
-                <RadioButton
-                  use={[[tooltip, { content: 'Group starting with directives', placement: 'top' }]]}
-                  id="directive"
-                >
-                  <div class="radio-button-icon">
-                    <HierarchyModeDirectiveIcon />
-                    <span class="timeline-editor-responsive-label">By Directive</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[
-                    [
-                      tooltip,
-                      { content: 'Group starting with directives and spans regardless of depth', placement: 'top' },
-                    ],
-                  ]}
-                  id="flat"
-                >
-                  <div class="radio-button-icon">
-                    <HierarchyModeFlatIcon />
-                    <span class="timeline-editor-responsive-label">Flat</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+                <option value="directive">By Directive</option>
+                <option value="flat">Flat</option>
+              </select>
             </Input>
           {/if}
           {#if rowHasExternalEventLayer && discreteOptions.displayMode === 'grouped'}
@@ -1079,30 +929,22 @@
               <div class="st-typography-label">External Event Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Group By</label>
-              <RadioButtons
-                selectedButtonId={discreteOptions?.externalEventOptions?.groupBy}
-                on:select-radio-button={event => handleExternalEventOptionRadioChange(event, 'groupBy')}
+              <div class="editor-label">
+                <label for="group-by">Group By</label>
+                <InfoTip
+                  content="Groups external events into rows either by the source file they came from, or by their event type."
+                />
+              </div>
+              <select
+                class="st-select w-full"
+                id="group-by"
+                name="groupBy"
+                value={discreteOptions?.externalEventOptions?.groupBy}
+                on:change={event => handleExternalEventOptionSelectChange(event, 'groupBy')}
               >
-                <RadioButton
-                  use={[[tooltip, { content: 'Group according to external source', placement: 'top' }]]}
-                  id="source_key"
-                >
-                  <div class="radio-button-icon">
-                    <ExternalSourceIcon />
-                    <span class="timeline-editor-responsive-label">By Source</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[[tooltip, { content: 'Group according to event type', placement: 'top' }]]}
-                  id="event_type_name"
-                >
-                  <div class="radio-button-icon">
-                    <ExternalEventIcon />
-                    <span class="timeline-editor-responsive-label">By Event Type</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+                <option value="source_key">By Source</option>
+                <option value="event_type_name">By Event Type</option>
+              </select>
             </Input>
           {/if}
         </EditorSection>
@@ -1430,15 +1272,6 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
-  }
-
-  .radio-button-icon {
-    display: flex;
-    gap: 4px;
-  }
-
-  .compact .timeline-editor-responsive-label {
-    display: none;
   }
 
   /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
