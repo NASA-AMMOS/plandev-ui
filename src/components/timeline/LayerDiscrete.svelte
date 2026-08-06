@@ -20,6 +20,8 @@
     DiscreteTreeNode,
     DiscreteTreeNodeDrawItem,
     DiscreteTreeNodeItem,
+    MarkerGlyph,
+    MarkerStyle,
     MouseDown,
     MouseOver,
     QuadtreeRect,
@@ -33,10 +35,10 @@
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import { getActivityDirectiveStartTimeMs, getIntervalInMs, getIntervalUnixEpochTime } from '../../utilities/time';
   import {
-    DEFAULT_INSTANT_STYLE,
+    DEFAULT_MARKER_STYLE,
     directiveInView,
     externalEventInView,
-    getInstantGlyphExtents,
+    getMarkerGlyphExtents,
     searchQuadtreeRect,
     spanInView,
     TimelineInteractionMode,
@@ -143,15 +145,18 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = discreteOptions.height;
-  $: instantStyle = discreteOptions.instantStyle ?? DEFAULT_INSTANT_STYLE;
-  $: instantGlyph = getInstantGlyphExtents(instantStyle, rowHeight);
+  $: directiveMarker = discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE;
+  $: zeroDurationMarker = discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE;
+  $: directiveGlyph = getMarkerGlyphExtents(directiveMarker, rowHeight);
+  $: zeroDurationGlyph = getMarkerGlyphExtents(zeroDurationMarker, rowHeight);
   /**
-   * How far right of an instant its label starts. Zero for 'line', which is narrow enough that
+   * How far right of a marker its label starts. Zero for 'line', which is narrow enough that
    * labelPaddingLeft already clears it -- keeping this at zero is what makes the default style draw
    * labels in exactly the position they have always been drawn in. The point styles are wide enough
    * to sit under the text, so the label has to clear the marker's right edge.
    */
-  $: instantLabelOffset = instantStyle === 'line' ? 0 : instantGlyph.right;
+  $: directiveLabelOffset = directiveMarker === 'line' ? 0 : directiveGlyph.right;
+  $: zeroDurationLabelOffset = zeroDurationMarker === 'line' ? 0 : zeroDurationGlyph.right;
   $: planStartTimeMs = planStartTimeYmd ? new Date(planStartTimeYmd).getTime() : 0;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
 
@@ -687,19 +692,19 @@
       // raised it, so the packer saw every directive ending at x=2 and stacked none of them. Harmless
       // while a directive was a 2px tick and everything overlapped invisibly; not harmless once the
       // marker can be 14px wide.
-      boxEndX = startX + instantGlyph.right;
+      boxEndX = startX + directiveGlyph.right;
       if (discreteOptions.labelVisibility !== 'off') {
         const anchored = directive.anchor_id !== null;
         const directiveLabelWidth = measureText(directive.name, textMetricsCache).width + labelPaddingLeft;
         const finalWidth = anchored
           ? anchorIconWidth + anchorIconMarginLeft + directiveLabelWidth
           : directiveLabelWidth;
-        labelEndX = Math.max(startX, minRectSize) + instantLabelOffset + finalWidth;
+        labelEndX = Math.max(startX, minRectSize) + directiveLabelOffset + finalWidth;
       }
     }
     if (span && showSpans && xScaleView) {
-      const spanLabelOffset = isInstantSpan(span) ? instantLabelOffset : 0;
-      const spanEndX = isInstantSpan(span) ? startX + instantGlyph.right : xScaleView(span.endMs);
+      const spanLabelOffset = isZeroDurationSpan(span) ? zeroDurationLabelOffset : 0;
+      const spanEndX = isZeroDurationSpan(span) ? startX + zeroDurationGlyph.right : xScaleView(span.endMs);
       boxEndX = Math.max(boxEndX, spanEndX);
       if (discreteOptions.labelVisibility !== 'off') {
         labelEndX = Math.max(
@@ -712,9 +717,9 @@
       }
     }
     if (externalEvent && xScaleView) {
-      const eventLabelOffset = isInstantExternalEvent(externalEvent) ? instantLabelOffset : 0;
-      const spanEndX = isInstantExternalEvent(externalEvent)
-        ? startX + instantGlyph.right
+      const eventLabelOffset = isZeroDurationExternalEvent(externalEvent) ? zeroDurationLabelOffset : 0;
+      const spanEndX = isZeroDurationExternalEvent(externalEvent)
+        ? startX + zeroDurationGlyph.right
         : xScaleView(externalEvent.start_ms + externalEvent.duration_ms);
       boxEndX = Math.max(boxEndX, spanEndX);
       if (discreteOptions.labelVisibility !== 'off') {
@@ -731,9 +736,12 @@
   }
 
   /**
-   * Left edge an item occupies, which is its start x unless a centered instant marker overhangs it.
-   * The packer compares this against the previous item's end, so without it two instants a pixel
-   * apart would be packed into the same subrow with their markers overlapping.
+   * Left edge an item occupies, which is its start x unless a centered marker overhangs it. The packer
+   * compares this against the previous item's end, so without it two markers a pixel apart would be
+   * packed into the same subrow and overlap.
+   *
+   * An item can carry both a directive marker and a zero-duration span marker at the same x, and the
+   * two are configured independently, so the widest overhang wins.
    */
   function getItemStartX(item: {
     directive?: ActivityDirective;
@@ -742,11 +750,17 @@
     startX: number;
   }) {
     const { span, directive, externalEvent, startX } = item;
-    const hasInstant =
-      (directive && showDirectives) ||
-      (span && showSpans && isInstantSpan(span)) ||
-      (externalEvent && isInstantExternalEvent(externalEvent));
-    return hasInstant ? startX - instantGlyph.left : startX;
+    let overhang = 0;
+    if (directive && showDirectives) {
+      overhang = directiveGlyph.left;
+    }
+    if (
+      (span && showSpans && isZeroDurationSpan(span)) ||
+      (externalEvent && isZeroDurationExternalEvent(externalEvent))
+    ) {
+      overhang = Math.max(overhang, zeroDurationGlyph.left);
+    }
+    return startX - overhang;
   }
 
   function drawRow(y: number, items: DiscreteTreeNodeItem[], idToColorMaps: IdToColorMaps) {
@@ -799,16 +813,16 @@
         const externalEventColor =
           idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] || discreteDefaultColor;
         const isSelected = selectedExternalEventId === getExternalEventRowId(externalEvent.pkey);
-        const isInstant = isInstantExternalEvent(externalEvent);
-        const labelOffset = isInstant ? instantLabelOffset : 0;
+        const isZeroDuration = isZeroDurationExternalEvent(externalEvent);
+        const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
           const color = getRGBAFromHex(externalEventColor, 0.5);
           ctx.fillStyle = color;
         }
-        if (isInstant) {
-          drawInstant(externalEventStartX, y);
+        if (isZeroDuration) {
+          drawMarker(externalEventStartX, y, zeroDurationMarker, zeroDurationGlyph);
         } else {
           ctx.fillRect(externalEventStartX, y, externalEventRectWidth, rowHeight);
         }
@@ -842,7 +856,7 @@
             externalEventStartX,
             y,
             Math.max(spanLabelWidth + labelOffset, externalEventRectWidth),
-            isInstant,
+            isZeroDuration ? zeroDurationGlyph : null,
           ),
         );
       }
@@ -867,10 +881,10 @@
           const color = getRGBAFromHex(spanColor, 0.5);
           ctx.fillStyle = color;
         }
-        const isInstant = isInstantSpan(span);
-        const labelOffset = isInstant ? instantLabelOffset : 0;
-        if (isInstant) {
-          drawInstant(spanStartX, y);
+        const isZeroDuration = isZeroDurationSpan(span);
+        const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
+        if (isZeroDuration) {
+          drawMarker(spanStartX, y, zeroDurationMarker, zeroDurationGlyph);
         } else {
           ctx.fillRect(spanStartX, y, spanRectWidth, rowHeight);
         }
@@ -899,7 +913,13 @@
         // Add to quadtree
         visibleSpansById[span.span_id] = span;
         quadtreeSpans.add(
-          getItemHitBox(span.span_id, spanStartX, y, Math.max(spanLabelWidth + labelOffset, spanRectWidth), isInstant),
+          getItemHitBox(
+            span.span_id,
+            spanStartX,
+            y,
+            Math.max(spanLabelWidth + labelOffset, spanRectWidth),
+            isZeroDuration ? zeroDurationGlyph : null,
+          ),
         );
       }
 
@@ -915,9 +935,9 @@
         } else {
           ctx.fillStyle = color;
         }
-        // A directive marks a start time, so it is always an instant regardless of the duration of the
-        // span it produces -- that span is drawn separately, above.
-        drawInstant(directiveStartX, y);
+        // Unconditional: a directive marks a start time and has no duration of its own. The span it
+        // produces is drawn separately, above, with its own marker setting.
+        drawMarker(directiveStartX, y, directiveMarker, directiveGlyph);
 
         // Determine if label has space to draw
         if (drawLabels) {
@@ -931,7 +951,7 @@
               : directiveLabelWidth;
             // TODO could consider both? That said an item could have a span at the start of a plan and a directive at the beginning...
             const nextX = nextItem?.spanStartX || nextItem?.directiveStartX || null;
-            if (typeof nextX === 'number' && directiveStartX + instantLabelOffset + finalWidth >= nextX) {
+            if (typeof nextX === 'number' && directiveStartX + directiveLabelOffset + finalWidth >= nextX) {
               shouldDrawLabel = false;
               directiveLabelWidth = 0;
             }
@@ -939,7 +959,7 @@
           if (shouldDrawLabel) {
             drawLabel(
               label,
-              directiveStartX + instantLabelOffset,
+              directiveStartX + directiveLabelOffset,
               y,
               directiveLabelWidth,
               directiveColor,
@@ -951,7 +971,7 @@
             if (anchored) {
               const anchorOpacity = selectedActivityDirectiveId !== null || selectedSpanId !== null ? 0.4 : 1;
               drawAnchorIcon(
-                directiveStartX + instantLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
+                directiveStartX + directiveLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
                 y + rowHeight / 2 - anchorIconWidth / 2,
                 isSelected ? 1 : anchorOpacity,
               );
@@ -966,8 +986,8 @@
             directive.id,
             directiveStartX,
             y,
-            directiveLabelWidth + instantLabelOffset + labelPaddingLeft,
-            true,
+            directiveLabelWidth + directiveLabelOffset + labelPaddingLeft,
+            directiveGlyph,
           ),
         );
       }
@@ -975,48 +995,55 @@
   }
 
   /**
-   * Whether a span marks an instant rather than an interval.
+   * Whether a span occupies a single moment rather than an interval.
    *
    * Deliberately keyed off the *data*, not off how few pixels the span currently occupies. A one
-   * second span at a two week zoom is a small interval, not an instant, and deriving the marker from
-   * its rendered width would make it flip shape as the operator zooms.
+   * second span at a two week zoom is a small interval, and deriving the marker from its rendered
+   * width would make it flip shape as the operator zooms.
    *
    * `duration === null` means still simulating, which is an unknown duration rather than a zero one --
    * and getIntervalInMs(null) returns 0, so durationMs alone cannot tell the two apart. Unfinished
    * spans already have their own colour treatment and keep their bar.
    */
-  function isInstantSpan(span: Span): boolean {
+  function isZeroDurationSpan(span: Span): boolean {
     return span.duration !== null && span.durationMs === 0;
   }
 
-  function isInstantExternalEvent(externalEvent: ExternalEvent): boolean {
+  function isZeroDurationExternalEvent(externalEvent: ExternalEvent): boolean {
     return externalEvent.duration_ms === 0;
   }
 
   /**
-   * Hit box for a drawn item. An instant with a centered marker has to start left of the item's start
-   * x, or the left half of the marker is drawn but not clickable. `contentWidth` is the widest of the
-   * item's bar and its label, measured rightward from startX.
+   * Hit box for a drawn item. A centered marker has to start left of the item's start x, or its left
+   * half is drawn but not clickable. `contentWidth` is the widest of the item's bar and its label,
+   * measured rightward from startX. Pass the glyph the item is actually drawn with, or null for an item
+   * drawn as a bar.
    */
-  function getItemHitBox(id: Id, startX: number, y: number, contentWidth: number, isInstant: boolean): QuadtreeRect {
-    const left = isInstant ? instantGlyph.left : 0;
-    const right = isInstant ? Math.max(instantGlyph.right, contentWidth) : contentWidth;
+  function getItemHitBox(
+    id: Id,
+    startX: number,
+    y: number,
+    contentWidth: number,
+    glyph: MarkerGlyph | null,
+  ): QuadtreeRect {
+    const left = glyph ? glyph.left : 0;
+    const right = glyph ? Math.max(glyph.right, contentWidth) : contentWidth;
     return { height: rowHeight, id, width: left + right, x: startX - left, y };
   }
 
   /**
-   * Draws the marker for an instant. Assumes ctx.fillStyle is already set by the caller, matching the
-   * fillRect calls this replaces.
+   * Draws a single-moment marker in the given style. Assumes ctx.fillStyle is already set by the
+   * caller, matching the fillRect calls this replaces.
    */
-  function drawInstant(x: number, y: number) {
-    if (instantStyle === 'line') {
-      ctx.fillRect(x, y, instantGlyph.right, rowHeight);
+  function drawMarker(x: number, y: number, style: MarkerStyle, glyph: MarkerGlyph) {
+    if (style === 'line') {
+      ctx.fillRect(x, y, glyph.right, rowHeight);
       return;
     }
-    const half = instantGlyph.size / 2;
+    const half = glyph.size / 2;
     const centerY = y + rowHeight / 2;
     ctx.beginPath();
-    if (instantStyle === 'dot') {
+    if (style === 'dot') {
       ctx.arc(x, centerY, half, 0, Math.PI * 2);
     } else {
       ctx.moveTo(x, centerY - half);

@@ -43,7 +43,8 @@ import type {
   ExternalEventLayerFilter,
   ExternalEventOptions,
   HorizontalGuide,
-  InstantStyle,
+  MarkerGlyph,
+  MarkerStyle,
   InterpolationMode,
   Layer,
   LineLayer,
@@ -182,7 +183,7 @@ export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
 export const DEFAULT_AXIS_SCALE_TYPE: AxisScaleType = 'linear';
-export const DEFAULT_INSTANT_STYLE: InstantStyle = 'line';
+export const DEFAULT_MARKER_STYLE: MarkerStyle = 'line';
 export const DEFAULT_INTERPOLATION: InterpolationMode = 'step';
 export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
@@ -207,18 +208,18 @@ const LINE_DASH_ARRAYS: Record<LineStyle, number[]> = {
  */
 const POINT_SPRITE_PADDING = 1.6;
 
-/** Width of the 'line' instant marker. The value every discrete item has been drawn with. */
-const INSTANT_LINE_WIDTH = 2;
+/** Width of the 'line' marker. The value every single-moment discrete item has been drawn with. */
+const MARKER_LINE_WIDTH = 2;
 
 /**
- * Size of a point-like instant marker as a fraction of the subrow height, then clamped. A fraction
+ * Size of a point-like marker as a fraction of the subrow height, then clamped. A fraction
  * so the marker scales with the row rather than becoming a speck on a tall row; clamped because a
  * marker taller than roughly a text line stops reading as a point and starts colliding with the
  * neighbouring subrow.
  */
-const INSTANT_GLYPH_HEIGHT_RATIO = 0.7;
-const INSTANT_GLYPH_MIN_SIZE = 4;
-const INSTANT_GLYPH_MAX_SIZE = 14;
+const MARKER_GLYPH_HEIGHT_RATIO = 0.7;
+const MARKER_GLYPH_MIN_SIZE = 4;
+const MARKER_GLYPH_MAX_SIZE = 14;
 
 /**
  * Default opacity for a line layer's area fill. Kept translucent so that layers beneath it
@@ -443,8 +444,8 @@ export function getLineCurve(interpolation: InterpolationMode | undefined): Curv
 }
 
 /**
- * Horizontal extent of an instant marker, in CSS pixels either side of the item's start x, plus the
- * marker's drawn size.
+ * Horizontal extent of a single-moment marker, in CSS pixels either side of the item's start x, plus
+ * the marker's drawn size.
  *
  * The single source of truth for instant geometry. Four separate things have to agree on it and each
  * gets it from here: the draw call, the quadtree hit box, the compact-mode bin packer, and the label
@@ -457,16 +458,13 @@ export function getLineCurve(interpolation: InterpolationMode | undefined): Curv
  * on the start time would read as arriving late by its own radius. That left overhang is the reason
  * the packer and the quadtrees need this function at all.
  */
-export function getInstantGlyphExtents(
-  instantStyle: InstantStyle | undefined,
-  rowHeight: number,
-): { left: number; right: number; size: number } {
-  if (instantStyle !== 'dot' && instantStyle !== 'diamond') {
-    return { left: 0, right: INSTANT_LINE_WIDTH, size: INSTANT_LINE_WIDTH };
+export function getMarkerGlyphExtents(markerStyle: MarkerStyle | undefined, rowHeight: number): MarkerGlyph {
+  if (markerStyle !== 'dot' && markerStyle !== 'diamond') {
+    return { left: 0, right: MARKER_LINE_WIDTH, size: MARKER_LINE_WIDTH };
   }
   const size = Math.min(
-    INSTANT_GLYPH_MAX_SIZE,
-    Math.max(INSTANT_GLYPH_MIN_SIZE, Math.round(rowHeight * INSTANT_GLYPH_HEIGHT_RATIO)),
+    MARKER_GLYPH_MAX_SIZE,
+    Math.max(MARKER_GLYPH_MIN_SIZE, Math.round(rowHeight * MARKER_GLYPH_HEIGHT_RATIO)),
   );
   const half = size / 2;
   return { left: half, right: half, size };
