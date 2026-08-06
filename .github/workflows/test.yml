@@ -83,7 +83,7 @@ jobs:
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_PLANDEV_PR___=') }}
         run: |
-          echo "AERIE_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_PLANDEV_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
+          echo "PLANDEV_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_PLANDEV_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
       - name: Extract PlanDev gateway docker tag from PR body
         # look in the PR body for eg. the string ___REQUIRES_PLANDEV_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
@@ -92,7 +92,7 @@ jobs:
           echo "GATEWAY_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
       - name: Start Services (PlanDev)
         run: |
-          echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
+          echo "PLANDEV_IMAGE_TAG: $PLANDEV_IMAGE_TAG"
           echo "GATEWAY_IMAGE_TAG: $GATEWAY_IMAGE_TAG"
           docker compose -f docker-compose-test.yml up -d --quiet-pull
           docker images
