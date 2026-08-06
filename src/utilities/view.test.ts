@@ -301,6 +301,20 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 
+  test('Should accept an external event layer opacity and reject one outside 0-1', () => {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows.find((r: any) =>
+      r.layers.some((l: any) => l.chartType === 'externalEvent'),
+    );
+    const layer = row.layers.find((l: any) => l.chartType === 'externalEvent');
+    expect(layer.opacity).toBeUndefined(); // saved before the option existed
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    layer.opacity = 0.8;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    layer.opacity = 1.5;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
   test('Should reject an unknown marker style', () => {
     expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ directiveMarker: 'triangle' })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ zeroDurationMarker: 'triangle' })).valid).toBe(

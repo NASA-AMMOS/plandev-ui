@@ -31,6 +31,13 @@ export interface ActivityLayer extends Layer {
 }
 export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
+  /**
+   * Opacity of the drawn event. External events can carry a duration, so they are drawn as translucent
+   * bars by default to keep a busy row readable -- but that same translucency washes out a
+   * zero-duration event's marker, which is small enough to need the contrast. Exposed so a row that
+   * wants its events to read strongly can say so.
+   */
+  opacity?: number;
 }
 
 export type ActivityLayerFilter = {

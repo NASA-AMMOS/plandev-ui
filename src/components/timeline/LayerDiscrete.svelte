@@ -35,6 +35,7 @@
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import { getActivityDirectiveStartTimeMs, getIntervalInMs, getIntervalUnixEpochTime } from '../../utilities/time';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
     DEFAULT_MARKER_STYLE,
     directiveInView,
     externalEventInView,
@@ -52,6 +53,8 @@
   export let externalEvents: ExternalEvent[] = [];
   export let activityDirectives: ActivityDirective[] = [];
   export let idToColorMaps: IdToColorMaps = { directives: {}, external_events: {}, spans: {} };
+  /** Per-event alpha, resolved from each external event layer's opacity. See ExternalEventLayer. */
+  export let externalEventOpacities: Record<ExternalEventId, number> = {};
   export let discreteRowPadding: number = 4;
   export let discreteSelectedColor: string = '#a9eaff';
   export let discreteSelectedTextColor: string = '#0a4c7e';
@@ -818,8 +821,9 @@
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
-          const color = getRGBAFromHex(externalEventColor, 0.5);
-          ctx.fillStyle = color;
+          const opacity =
+            externalEventOpacities[getExternalEventRowId(externalEvent.pkey)] ?? DEFAULT_EXTERNAL_EVENT_OPACITY;
+          ctx.fillStyle = getRGBAFromHex(externalEventColor, opacity);
         }
         if (isZeroDuration) {
           drawMarker(externalEventStartX, y, zeroDurationMarker, zeroDurationGlyph);
@@ -843,8 +847,18 @@
             }
           }
           if (shouldDrawLabel) {
-            const spanColor = discreteDefaultColor;
-            drawLabel(label, externalEventStartX + labelOffset, y, spanLabelWidth, spanColor, false, isSelected);
+            // The event's own color, as span and directive labels use theirs. This read
+            // discreteDefaultColor, so an external event label ignored its layer color entirely and
+            // every row's labels came out the same gray.
+            drawLabel(
+              label,
+              externalEventStartX + labelOffset,
+              y,
+              spanLabelWidth,
+              externalEventColor,
+              false,
+              isSelected,
+            );
           }
         }
 
@@ -1037,7 +1051,8 @@
    */
   function drawMarker(x: number, y: number, style: MarkerStyle, glyph: MarkerGlyph) {
     if (style === 'line') {
-      ctx.fillRect(x, y, glyph.right, rowHeight);
+      // Centered on x like the point styles, so switching style never moves the mark
+      ctx.fillRect(x - glyph.left, y, glyph.size, rowHeight);
       return;
     }
     const half = glyph.size / 2;

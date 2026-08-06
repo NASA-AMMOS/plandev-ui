@@ -1802,13 +1802,20 @@ describe('getLineCurve', () => {
 });
 
 describe('getMarkerGlyphExtents', () => {
-  // The default has to reproduce the 2px full-height tick every discrete item was drawn with, left
-  // edge on the instant. Any left overhang here would shift every directive in every saved view.
-  test('line extends only to the right, by exactly the historical 2px', () => {
+  test('line keeps its historical 2px of ink, centered on the moment it marks', () => {
     const { left, right, size } = getMarkerGlyphExtents('line', 16);
-    expect(left).toEqual(0);
-    expect(right).toEqual(2);
     expect(size).toEqual(2);
+    expect(left).toEqual(right);
+    expect(left + right).toEqual(size);
+  });
+
+  // A dot, a diamond and a line at the same x must share a center, or switching style visibly nudges
+  // the mark sideways -- which is exactly what a left-anchored line used to do
+  test('every style straddles the moment, so switching style never moves the mark', () => {
+    for (const style of ['line', 'dot', 'diamond'] as const) {
+      const { left, right } = getMarkerGlyphExtents(style, 16);
+      expect(left).toEqual(right);
+    }
   });
 
   test('an unknown or missing style falls back to line rather than to a point shape', () => {
@@ -1820,7 +1827,6 @@ describe('getMarkerGlyphExtents', () => {
   test('point styles straddle the instant, so they do not read as arriving late', () => {
     for (const style of ['dot', 'diamond'] as const) {
       const { left, right, size } = getMarkerGlyphExtents(style, 16);
-      expect(left).toEqual(right);
       expect(left + right).toEqual(size);
       expect(size).toBeGreaterThan(2);
     }

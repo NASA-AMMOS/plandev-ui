@@ -4,9 +4,10 @@
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { ViewLineLayerColorPresets } from '../../../constants/view';
-  import type { Axis, Layer, LineLayer, XRangeLayer } from '../../../types/timeline';
+  import type { Axis, ExternalEventLayer, Layer, LineLayer, XRangeLayer } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
     DEFAULT_INTERPOLATION,
     DEFAULT_LINE_FILL_OPACITY,
     DEFAULT_LINE_OPACITY,
@@ -14,6 +15,7 @@
     DEFAULT_POINT_SHAPE,
     DEFAULT_SHOW_POINTS_MODE,
     clampOpacity,
+    isExternalEventLayer,
     isLineLayer,
     isXRangeLayer,
   } from '../../../utilities/timeline';
@@ -29,12 +31,15 @@
   let layerMenu: Menu;
   let layerAsLine: LineLayer;
   let layerAsXRange: XRangeLayer;
+  let layerAsExternalEvent: ExternalEventLayer;
 
   $: if (layer) {
     if (isLineLayer(layer)) {
       layerAsLine = layer;
     } else if (isXRangeLayer(layer)) {
       layerAsXRange = layer;
+    } else if (isExternalEventLayer(layer)) {
+      layerAsExternalEvent = layer;
     }
   }
 
@@ -327,6 +332,35 @@
             name="showAsLinePlot"
             on:change={onInput}
             type="checkbox"
+          />
+        </Input>
+      {:else if isExternalEventLayer(layer)}
+        <Input layout="inline">
+          <label for="name">Layer Name</label>
+          <input
+            autocomplete="off"
+            class="st-input w-full"
+            name="name"
+            type="string"
+            value={layer.name || ''}
+            on:input={onInput}
+          />
+        </Input>
+        <Input layout="inline">
+          <!-- External events are drawn translucent so a busy row of overlapping bars stays readable.
+               That washes out a zero-duration event's marker, which is small enough to need the
+               contrast, so the opacity is worth being able to raise. -->
+          <label for="opacity">Opacity</label>
+          <input
+            min={0}
+            max={1}
+            step={0.1}
+            class="st-input w-full"
+            id="opacity"
+            name="opacity"
+            type="number"
+            value={layerAsExternalEvent.opacity ?? DEFAULT_EXTERNAL_EVENT_OPACITY}
+            on:input={onInput}
           />
         </Input>
       {/if}

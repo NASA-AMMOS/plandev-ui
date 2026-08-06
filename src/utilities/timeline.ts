@@ -185,6 +185,8 @@ export const CANVAS_PADDING_Y = 8;
 export const DEFAULT_AXIS_SCALE_TYPE: AxisScaleType = 'linear';
 export const DEFAULT_MARKER_STYLE: MarkerStyle = 'line';
 export const DEFAULT_INTERPOLATION: InterpolationMode = 'step';
+/** Translucency external events have always been drawn at, so a row of overlapping bars stays legible. */
+export const DEFAULT_EXTERNAL_EVENT_OPACITY = 0.5;
 export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
 export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
@@ -452,15 +454,16 @@ export function getLineCurve(interpolation: InterpolationMode | undefined): Curv
  * offset. They disagreed silently before this existed -- see the `boxEndX` note in
  * `LayerDiscrete.getItemEndX`.
  *
- * `line` extends only to the right, keeping its left edge on the instant: that is where a directive
- * tick has always been drawn, and it reads as a boundary marker rather than as a point. The
- * point-like styles straddle the instant instead, because a circle or diamond whose *left edge* sat
- * on the start time would read as arriving late by its own radius. That left overhang is the reason
- * the packer and the quadtrees need this function at all.
+ * **Every style straddles the moment it marks**, so switching between them never moves the mark. A bar
+ * and a marker are different things and are anchored differently: a bar represents an interval, so its
+ * left edge sits on the start time, while a marker represents a moment, so its *center* does. `line`
+ * had inherited the bar's anchoring, which left its 2px of ink entirely to the right of the time it
+ * marked and put it a pixel off-center from a dot or diamond at the same x.
  */
 export function getMarkerGlyphExtents(markerStyle: MarkerStyle | undefined, rowHeight: number): MarkerGlyph {
   if (markerStyle !== 'dot' && markerStyle !== 'diamond') {
-    return { left: 0, right: MARKER_LINE_WIDTH, size: MARKER_LINE_WIDTH };
+    const lineHalf = MARKER_LINE_WIDTH / 2;
+    return { left: lineHalf, right: lineHalf, size: MARKER_LINE_WIDTH };
   }
   const size = Math.min(
     MARKER_GLYPH_MAX_SIZE,
@@ -1172,6 +1175,7 @@ export function createTimelineExternalEventLayer(
     },
     id,
     name: '',
+    opacity: DEFAULT_EXTERNAL_EVENT_OPACITY,
     yAxisId: null,
     ...args,
   };

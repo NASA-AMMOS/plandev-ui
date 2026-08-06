@@ -677,6 +677,12 @@
                                 "description": "Name of the layer",
                                 "type": "string"
                               },
+                              "opacity": {
+                                "description": "Opacity of drawn external events",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
+                              },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
                               }
