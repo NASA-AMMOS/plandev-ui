@@ -45,13 +45,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
-          images: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui
+          images: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui
       - name: Build Docker Image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           load: true
-          tags: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui:${{ github.sha }}
       - name: Push Docker Image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -60,10 +60,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Scan aerie-ui Docker image
+      - name: Scan plandev-ui Docker image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui:${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

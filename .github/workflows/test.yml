@@ -6,7 +6,7 @@ on:
       - develop
       - dev-[0-9]+.[0-9]+.[0-9]+
     types:
-      # defaults + 'edited', to handle changes to flags like ___REQUIRES_AERIE_PR___ in the PR body
+      # defaults + 'edited', to handle changes to flags like ___REQUIRES_PLANDEV_PR___ in the PR body
       [opened, synchronize, reopened, edited]
   push:
     branches:
@@ -79,13 +79,13 @@ jobs:
           node-version: '22.22.0'
           cache: npm
       - name: Extract PlanDev backend docker tag from PR body
-        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # look in the PR body for eg. the string ___REQUIRES_PLANDEV_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
-        if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
+        if: ${{ contains(env.PR_BODY, '___REQUIRES_PLANDEV_PR___=') }}
         run: |
-          echo "AERIE_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
+          echo "AERIE_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_PLANDEV_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
       - name: Extract PlanDev gateway docker tag from PR body
-        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # look in the PR body for eg. the string ___REQUIRES_PLANDEV_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
         run: |
