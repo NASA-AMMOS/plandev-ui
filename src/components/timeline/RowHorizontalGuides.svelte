@@ -58,13 +58,18 @@
           // with the editor row, which shows y and nothing else. A single-value guide stays dashed, as
           // it always was. clampGuideBand reports which edges are on scale; a clamped one is skipped
           // rather than drawn at the clamp.
-          const bandEndY = band ? band.y + band.height : y;
-          const anchorEdgeY = band?.anchorAtStart ? band.y : bandEndY;
-          const edgeYs = band
-            ? [...(band.showStartEdge ? [band.y] : []), ...(band.showEndEdge ? [bandEndY] : [])]
-            : [y];
-          for (const edgeY of edgeYs) {
-            const isAnchorEdge = band !== null && edgeY === anchorEdgeY;
+          // Each edge carries whether it is the anchor, rather than being matched back to one by its
+          // position: comparing floats works only while both sides are computed by the identical
+          // expression, and for a zero-height band the two edges land on the same y and would both come
+          // out solid.
+          const edges: { isAnchor: boolean; y: number }[] = band
+            ? [
+                ...(band.showStartEdge ? [{ isAnchor: band.anchorAtStart, y: band.y }] : []),
+                ...(band.showEndEdge ? [{ isAnchor: !band.anchorAtStart, y: band.y + band.height }] : []),
+              ]
+            : [{ isAnchor: false, y }];
+          for (const { isAnchor, y: edgeY } of edges) {
+            const isAnchorEdge = band !== null && isAnchor;
             const line = lineGroup
               .append('line')
               .attr('class', `${horizontalGuideClass}-line`)

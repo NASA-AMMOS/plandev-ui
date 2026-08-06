@@ -6,10 +6,11 @@
   import { ViewLineLayerColorPresets } from '../../../constants/view';
   import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { plugins } from '../../../stores/plugins';
+  import type { PluginTime } from '../../../types/plugin';
   import type { Axis, ComputedAxis, HorizontalGuide, VerticalGuide } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import { formatBandDuration } from '../../../utilities/timeline';
-  import { getDoyTime, getUnixEpochTime } from '../../../utilities/time';
+  import { formatDate, getDoyTime, getUnixEpochTime } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
   import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
@@ -28,7 +29,9 @@
   $: verticalGuide = guide as VerticalGuide;
   $: isHorizontal = 'y' in guide;
   $: isRange = isHorizontal ? horizontalGuide.y2 !== undefined : verticalGuide.timestamp2 !== undefined;
-  $: summary = getSummary(guide, isHorizontal, isRange);
+  // The formatter is passed in rather than read inside getSummary, so switching the plugin's primary
+  // time format re-renders the rows -- Svelte does not track what a function body reads
+  $: summary = getSummary(guide, isHorizontal, isRange, $plugins.time.primary.format);
   $: glyphColor = guide.label.color || 'currentColor';
 
   const dispatch = createEventDispatcher<{
@@ -41,8 +44,17 @@
    * same reading its own canvas cap carries -- a duration for a time region, a low-to-high extent for a
    * value band. Deliberately the same phrasing as the render, so the row and the thing it describes are
    * recognizably about each other.
+   *
+   * A time is rendered through the plugin's primary format, the same one the guide's own label on the
+   * canvas uses. Reading the stored DOY string directly was quietly assuming DOY is what the operator
+   * has configured, which would show one instant two different ways on a mission that has not.
    */
-  function getSummary(guide: HorizontalGuide | VerticalGuide, isHorizontal: boolean, isRange: boolean): string {
+  function getSummary(
+    guide: HorizontalGuide | VerticalGuide,
+    isHorizontal: boolean,
+    isRange: boolean,
+    format: PluginTime['format'],
+  ): string {
     if (isHorizontal) {
       const { y, y2 } = guide as HorizontalGuide;
       if (!isRange) {
@@ -52,13 +64,14 @@
       return `${low}–${high}`;
     }
     const { timestamp, timestamp2 } = guide as VerticalGuide;
-    // Year dropped: every guide in a plan shares it, so it is the one part that never distinguishes
-    // two rows from each other.
-    const compact = timestamp.replace(/^\d{4}-/, '');
+    const anchorMs = getUnixEpochTime(timestamp);
+    // A leading year is dropped where the chosen format has one, since every guide in a plan shares it
+    // and it is the one part that never tells two rows apart. Left alone by any format without one.
+    const compact = formatDate(new Date(anchorMs), format).replace(/^\d{4}-/, '');
     if (!isRange) {
       return compact;
     }
-    return `${compact} · ${formatBandDuration(getUnixEpochTime(timestamp2 as string) - getUnixEpochTime(timestamp))}`;
+    return `${compact} · ${formatBandDuration(getUnixEpochTime(timestamp2 as string) - anchorMs)}`;
   }
 
   /** Where a band's second bound lands when a line is promoted to one, so it is visible immediately. */
