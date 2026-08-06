@@ -9,7 +9,7 @@
   import { dndzone } from 'svelte-dnd-action';
   import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
-  import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
+  import { viewTimeRange } from '../../../stores/plan';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
@@ -58,16 +58,14 @@
     isXRangeLayer,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
-  import ColorPicker from '../../form/ColorPicker.svelte';
   import Input from '../../form/Input.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
-  import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
   import InfoTip from '../../ui/InfoTip.svelte';
   import Panel from '../../ui/Panel.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
-  import TimelineEditorGuideSettings from './TimelineEditorGuideSettings.svelte';
+  import TimelineEditorGuideRow from './TimelineEditorGuideRow.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
@@ -292,52 +290,22 @@
     viewUpdateRow('horizontalGuides', filteredHorizontalGuides);
   }
 
-  function handleUpdateVerticalGuideLabel(event: Event, verticalGuide: VerticalGuide) {
-    const { name, value } = getTarget(event);
-    const newVerticalGuides = verticalGuides.map(guide => {
-      if (guide.id === verticalGuide.id) {
-        return {
-          ...guide,
-          label: {
-            ...guide.label,
-            [name]: value,
-          },
-        };
-      }
-      return guide;
-    });
-    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-  }
-
-  function handleUpdateHorizontalGuideLabel(event: Event, horizontalGuide: HorizontalGuide) {
-    const { name, value } = getTarget(event);
-    const newHorizontalGuides = horizontalGuides.map(guide => {
-      if (guide.id === horizontalGuide.id) {
-        return {
-          ...guide,
-          label: {
-            ...guide.label,
-            [name]: value,
-          },
-        };
-      }
-      return guide;
-    });
-    viewUpdateRow('horizontalGuides', newHorizontalGuides);
-  }
+  /**
+   * Guide row fields that live inside the guide's nested `label` rather than on the guide itself, keyed
+   * by the name the row emits. Flattened at the row so it emits one shape of event for every field it
+   * owns, instead of the caller having to know which fields are nested.
+   */
+  const LABEL_FIELDS: Record<string, string> = {
+    labelColor: 'color',
+    labelText: 'text',
+  };
 
   /**
-   * Applies one field change from a guide's settings menu. A null for the band's second bound removes
-   * the field rather than storing it, which is the only way to turn a band back into a line.
+   * Applies one field change from a guide row. A null for the band's second bound removes the field
+   * rather than storing it, which is the only way to turn a band back into a line.
    */
   function onHorizontalGuideInput(event: CustomEvent<{ name: string; value: any }>, horizontalGuide: HorizontalGuide) {
     applyHorizontalGuideChange(event.detail.name, event.detail.value, horizontalGuide);
-  }
-
-  /** Adapter for the fields kept inline in the row rather than in the settings menu. */
-  function onHorizontalGuideFieldInput(event: Event, horizontalGuide: HorizontalGuide) {
-    const { name, value } = getTarget(event);
-    applyHorizontalGuideChange(name, value, horizontalGuide);
   }
 
   function applyHorizontalGuideChange(name: string, value: any, horizontalGuide: HorizontalGuide) {
@@ -349,6 +317,10 @@
         const { y2: _removed, ...rest } = guide;
         return rest;
       }
+      const labelField = LABEL_FIELDS[name];
+      if (labelField) {
+        return { ...guide, label: { ...guide.label, [labelField]: value } };
+      }
       return { ...guide, [name]: value };
     });
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
@@ -356,11 +328,6 @@
 
   function onVerticalGuideInput(event: CustomEvent<{ name: string; value: any }>, verticalGuide: VerticalGuide) {
     applyVerticalGuideChange(event.detail.name, event.detail.value, verticalGuide);
-  }
-
-  /** Adapter for the date kept inline in the row rather than in the settings menu. */
-  function onVerticalGuideDateInput(event: CustomEvent, verticalGuide: VerticalGuide) {
-    applyVerticalGuideChange('timestamp', event.detail.value, verticalGuide);
   }
 
   function applyVerticalGuideChange(name: string, value: any, verticalGuide: VerticalGuide) {
@@ -371,6 +338,10 @@
       if (name === 'timestamp2' && !value) {
         const { timestamp2: _removed, ...rest } = guide;
         return rest;
+      }
+      const labelField = LABEL_FIELDS[name];
+      if (labelField) {
+        return { ...guide, label: { ...guide.label, [labelField]: value } };
       }
       return { ...guide, [name]: value };
     });
@@ -534,70 +505,14 @@
           on:removeAll={handleRemoveAllVerticalGuidesClick}
         >
           {#if verticalGuides.length}
-            <div class="editor-section-labeled-grid-container">
-              <div class="guides timeline-elements">
-                {#each verticalGuides as verticalGuide (verticalGuide.id)}
-                  <div class="guide timeline-element">
-                    <CssGrid columns="1fr 24px 24px 24px" gap="8px" class="editor-section-grid guide-row">
-                      <!-- Label on the button line, date on its own line beneath. The date needs about
-                           168px for a full timestamp, which side by side left the label roughly 30px --
-                           enough for "Guid" -- so both get the section's full width instead. Captions
-                           are placeholders rather than labels: repeated per guide they were most of what
-                           the section looked like. -->
-                      <div class="guide-field">
-                        <div>
-                          <input
-                            value={verticalGuide.label.text}
-                            on:input={event => {
-                              const { value } = getTarget(event);
-                              const newVerticalGuides = verticalGuides.map(guide => {
-                                if (guide.id === verticalGuide.id) {
-                                  guide.label.text = value?.toString() ?? '';
-                                }
-                                return guide;
-                              });
-                              viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-                            }}
-                            autocomplete="off"
-                            class="st-input w-full"
-                            name="text"
-                            placeholder="Label"
-                          />
-                        </div>
-                      </div>
-                      <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
-                        <ColorPicker
-                          value={verticalGuide.label.color}
-                          on:input={event => handleUpdateVerticalGuideLabel(event, verticalGuide)}
-                          name="color"
-                        />
-                      </div>
-                      <TimelineEditorGuideSettings
-                        guide={verticalGuide}
-                        on:input={event => onVerticalGuideInput(event, verticalGuide)}
-                        on:delete={() => handleDeleteVerticalGuideClick(verticalGuide)}
-                      />
-                      <button
-                        on:click={() => handleDeleteVerticalGuideClick(verticalGuide)}
-                        use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
-                        class="st-button icon"
-                      >
-                        <CloseIcon />
-                      </button>
-                      <div class="guide-date">
-                        <DatePicker
-                          name="timestamp"
-                          minDate={new Date($maxTimeRange.start)}
-                          maxDate={new Date($maxTimeRange.end)}
-                          dateString={verticalGuide.timestamp}
-                          on:change={event => onVerticalGuideDateInput(event, verticalGuide)}
-                          on:keydown={event => onVerticalGuideDateInput(event, verticalGuide)}
-                        />
-                      </div>
-                    </CssGrid>
-                  </div>
-                {/each}
-              </div>
+            <div class="guides timeline-elements">
+              {#each verticalGuides as verticalGuide (verticalGuide.id)}
+                <TimelineEditorGuideRow
+                  guide={verticalGuide}
+                  on:input={event => onVerticalGuideInput(event, verticalGuide)}
+                  on:delete={() => handleDeleteVerticalGuideClick(verticalGuide)}
+                />
+              {/each}
             </div>
           {/if}
         </EditorSection>
@@ -756,61 +671,15 @@
           on:removeAll={handleRemoveAllHorizontalGuidesClick}
         >
           {#if horizontalGuides.length}
-            <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
-                <div>Label</div>
-                <div>Y Value</div>
-              </CssGrid>
-              <div class="guides timeline-elements">
-                {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
-                  <div class="guide timeline-element">
-                    <CssGrid columns="1fr 1fr 24px 24px 24px" gap="8px" class="editor-section-grid">
-                      <Input layout="stacked" class="editor-input">
-                        <label for="text">Label</label>
-                        <input
-                          value={horizontalGuide.label.text}
-                          on:input={event => handleUpdateHorizontalGuideLabel(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="text"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <!-- Kept in the row for the same reason as the vertical guide's date. -->
-                        <label for="y">Y Value</label>
-                        <input
-                          value={horizontalGuide.y}
-                          on:input={event => onHorizontalGuideFieldInput(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="y"
-                          type="number"
-                        />
-                      </Input>
-                      <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
-                        <ColorPicker
-                          value={horizontalGuide.label.color}
-                          on:input={event => handleUpdateHorizontalGuideLabel(event, horizontalGuide)}
-                          name="color"
-                        />
-                      </div>
-                      <TimelineEditorGuideSettings
-                        guide={horizontalGuide}
-                        {yAxes}
-                        on:input={event => onHorizontalGuideInput(event, horizontalGuide)}
-                        on:delete={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
-                      />
-                      <button
-                        on:click={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
-                        use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
-                        class="st-button icon"
-                      >
-                        <CloseIcon />
-                      </button>
-                    </CssGrid>
-                  </div>
-                {/each}
-              </div>
+            <div class="guides timeline-elements">
+              {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
+                <TimelineEditorGuideRow
+                  guide={horizontalGuide}
+                  yAxes={$yAxesWithScaleDomainsCache[selectedRow?.id ?? -1] ?? yAxes}
+                  on:input={event => onHorizontalGuideInput(event, horizontalGuide)}
+                  on:delete={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
+                />
+              {/each}
             </div>
           {/if}
         </EditorSection>
@@ -1187,7 +1056,6 @@
   }
 
   .timeline-row .st-button.icon,
-  .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
   :global(.timeline-editor-layer-settings.st-button.icon),
   :global(.timeline-editor-axis-settings.st-button.icon) {
@@ -1275,21 +1143,16 @@
     padding: 4px 16px;
   }
 
+  /* No gap: each guide row draws its own separator, so spacing between them would break the list into
+     floating cards rather than reading as one list. */
   .guides {
     display: flex;
     flex-direction: column;
-    gap: 12px;
   }
 
-  .guide,
   .timeline-y-axis {
     align-items: flex-end;
     display: flex;
-  }
-
-  .guide :global(.date-picker) {
-    flex: 1;
-    min-width: 168px;
   }
 
   :global(.input.input-stacked.editor-input) {
@@ -1316,21 +1179,6 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
-  }
-
-  .guide-field {
-    min-width: 0;
-  }
-
-  /* Second grid row, full width, so a full timestamp fits without squeezing the label above it */
-  .guide-date {
-    grid-column: 1 / -1;
-    min-width: 0;
-  }
-
-  :global(.editor-section-grid.guide-row) {
-    align-items: center;
-    row-gap: 4px;
   }
 
   /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
