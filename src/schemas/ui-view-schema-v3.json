@@ -416,6 +416,10 @@
                           },
                           "type": "object"
                         },
+                        "directiveMarker": {
+                          "description": "Marker shape for activity directives. Always applied: a directive marks a start time and has no duration of its own",
+                          "enum": ["line", "dot", "diamond"]
+                        },
                         "displayMode": {
                           "description": "Describes the display mode to use for rendering external events",
                           "enum": ["compact", "grouped"]
@@ -435,13 +439,13 @@
                           "type": "number",
                           "minimum": 16
                         },
-                        "instantStyle": {
-                          "description": "Marker shape for activity directives and for spans and external events with no duration. Items with a duration keep their bar",
-                          "enum": ["line", "dot", "diamond"]
-                        },
                         "labelVisibility": {
                           "description": "External event text label behavior",
                           "enum": ["on", "off", "auto"]
+                        },
+                        "zeroDurationMarker": {
+                          "description": "Marker shape for spans and external events whose duration is zero. Anything with a duration keeps its bar",
+                          "enum": ["line", "dot", "diamond"]
                         }
                       },
                       "type": "object"

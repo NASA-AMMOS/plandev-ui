@@ -315,19 +315,40 @@ export type ExternalEventOptions = {
 };
 
 /**
- * How an *instant* is marked -- an activity directive's start, or a span or external event whose
- * duration is zero. Anything with a duration keeps its bar.
+ * Shape used to mark a discrete item that occupies a single moment.
  *
- * - `line` is the 2px full-height tick every discrete item has always been drawn with, and the
- *   default. Its left edge sits on the instant, reading as a boundary marker.
- * - `dot` is the "represent it as an event" shape, centered on the instant.
- * - `diamond` is the Gantt milestone convention for a zero-duration item, also centered.
+ * - `line` is the 2px full-height tick such items have always been drawn with, and the default. Its
+ *   left edge sits on the moment, reading as a boundary marker.
+ * - `dot` reads as an event rather than a boundary, centered on the moment.
+ * - `diamond` is the Gantt milestone convention, also centered.
+ *
+ * One vocabulary for both marker settings below, because the two defaults render identically today: a
+ * directive tick and a zero-duration span's `Math.max(2, …)` bar are both a 2px full-height rect.
  */
-export type InstantStyle = 'line' | 'dot' | 'diamond';
+export type MarkerStyle = 'line' | 'dot' | 'diamond';
+
+/**
+ * Horizontal extent of a drawn marker, in pixels either side of the item's start x, plus its drawn
+ * size. See `getMarkerGlyphExtents`.
+ */
+export type MarkerGlyph = { left: number; right: number; size: number };
 
 export type DiscreteOptions = {
   // Activity-Layer-specific Options
   activityOptions?: ActivityOptions;
+
+  /**
+   * Shape every activity directive is drawn with.
+   *
+   * Unconditional, not derived: a directive marks a start time and has no duration of its own, so
+   * there is nothing to detect. It matters most under `activityOptions.composition: 'directives'`,
+   * where the marker is the item's entire representation; under `'both'` it is an annotation sitting on
+   * its span's left edge, informative mainly when the directive has been moved since simulation.
+   *
+   * Kept separate from zeroDurationMarker because the two answer different questions. Turning
+   * zero-duration spans into milestones should not also put a diamond on every directive in the plan.
+   */
+  directiveMarker?: MarkerStyle;
 
   // Describes the primary method in which external events are visualized within this row
   displayMode: 'grouped' | 'compact';
@@ -338,11 +359,17 @@ export type DiscreteOptions = {
   // Height of subrows
   height: number;
 
-  // Marker shape for items with no duration
-  instantStyle?: InstantStyle;
-
   // Item text label behavior
   labelVisibility: 'on' | 'off' | 'auto';
+
+  /**
+   * Shape for a span or external event whose duration is zero. Anything with a duration keeps its bar.
+   *
+   * Genuinely derived, from the data rather than from rendered width -- a one second span at a two week
+   * zoom is a small interval, not a moment, and keying off pixels would make it change shape as the
+   * operator zooms.
+   */
+  zeroDurationMarker?: MarkerStyle;
 };
 
 export type Row = {

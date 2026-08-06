@@ -234,8 +234,24 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: mode })).valid).toBe(true);
   });
 
-  test.each(['line', 'dot', 'diamond'])('Should accept a row instantStyle of "%s"', style => {
-    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: style }));
+  test.each(['line', 'dot', 'diamond'])('Should accept a row directiveMarker of "%s"', style => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ directiveMarker: style }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test.each(['line', 'dot', 'diamond'])('Should accept a row zeroDurationMarker of "%s"', style => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ zeroDurationMarker: style }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // The two are independent on purpose: turning zero-duration spans into milestones must not also put
+  // a diamond on every directive in the plan
+  test('Should accept the two markers set differently', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      viewWithDiscreteOptions({ directiveMarker: 'line', zeroDurationMarker: 'diamond' }),
+    );
     expect(errors).to.deep.equal([]);
     expect(valid).toBe(true);
   });
@@ -285,15 +301,21 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 
-  test('Should reject an unknown instantStyle', () => {
-    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'triangle' })).valid).toBe(false);
+  test('Should reject an unknown marker style', () => {
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ directiveMarker: 'triangle' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ zeroDurationMarker: 'triangle' })).valid).toBe(
+      false,
+    );
+    // The pre-split field name must no longer validate
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'dot' })).valid).toBe(false);
   });
 
-  // The mock's rows carry no instantStyle, so this is also the "row saved before instant markers
-  // existed" case -- it has to keep validating and fall back to 'line' at render time.
-  test('A row with no instantStyle is still valid', () => {
+  // The mock's rows carry neither marker field, so this is also the "row saved before markers existed"
+  // case -- it has to keep validating and fall back to 'line' at render time.
+  test('A row with no marker fields is still valid', () => {
     const view = structuredClone(viewV3) as any;
-    expect(view.plan.timelines[0].rows[0].discreteOptions.instantStyle).toBeUndefined();
+    expect(view.plan.timelines[0].rows[0].discreteOptions.directiveMarker).toBeUndefined();
+    expect(view.plan.timelines[0].rows[0].discreteOptions.zeroDurationMarker).toBeUndefined();
     expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
   });
 
