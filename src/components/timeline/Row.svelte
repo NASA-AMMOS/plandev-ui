@@ -146,6 +146,7 @@
       rowId: number;
       wasAutoAdjusted?: boolean;
     };
+    updateValueDomain: { domain: string[]; resourceName: string };
     updateYAxes: {
       axes: Axis[];
       id: number;
@@ -1003,6 +1004,7 @@
             {xScaleView}
             on:mouseOver={onMouseOver}
             on:contextMenu
+            on:updateValueDomain
           />
         {/each}
         {#if hasActivityLayer || hasExternalEventsLayer}

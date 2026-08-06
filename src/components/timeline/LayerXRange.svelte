@@ -41,6 +41,7 @@
   const dispatch = createEventDispatcher<{
     contextMenu: MouseOver;
     mouseOver: RowMouseOverEvent;
+    updateValueDomain: { domain: string[]; resourceName: string };
   }>();
   const textMeasurementCache: Record<string, { textHeight: number; textWidth: number }> = {};
   // TODO maybe dynamically compute this number by looking at how much work there is to do for
@@ -87,6 +88,11 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
+  // Reported up so the layer settings form can offer the values a free-form resource actually holds,
+  // which nothing but the data knows. Fires when the sampled resource changes, not per frame.
+  $: if (domain.length && resources.length) {
+    dispatch('updateValueDomain', { domain, resourceName: resources[0].name });
+  }
 
   onMount(() => {
     if (canvas) {
@@ -179,9 +185,10 @@
         const { id } = point;
         visiblePointsById[id] = point;
 
-        const labelText = point.label.text;
-        // Falls back on an empty string as well as on no entry, so clearing the color field in the
-        // form returns the value to its scheme color instead of painting an invalid fillStyle.
+        // Both fall back on an empty string as well as on no entry, so clearing either field in the
+        // form returns the value to its default rather than painting an invalid fillStyle or blanking
+        // the box's text.
+        const labelText = appearance?.label || point.label.text;
         ctx.fillStyle = appearance?.color || colorScale(value);
         const rect = new Path2D();
         rect.rect(xStart, y, xWidth, drawHeight);
@@ -203,7 +210,7 @@
           continue;
         }
 
-        const { textHeight, textWidth } = setLabelContext(point);
+        const { textHeight, textWidth } = setLabelContext(point, labelText);
         if (textWidth < xWidth) {
           ctx.fillText(labelText, xStart + xWidth / 2 - textWidth / 2, drawHeight / 2 + textHeight / 2, textWidth);
         } else {
@@ -336,8 +343,17 @@
     return points;
   }
 
-  function setLabelContext(point: XRangePoint): {
-    labelText?: string;
+  /**
+   * Sets the canvas text style for a point's label and measures the text about to be drawn.
+   *
+   * Takes the text rather than reading `point.label.text`, because a value can be relabelled and it is
+   * the drawn string that has to be measured -- measuring the original would truncate an override to
+   * the wrong width, or refuse to draw a short one inside a box it fits perfectly well.
+   */
+  function setLabelContext(
+    point: XRangePoint,
+    labelText: string,
+  ): {
     textHeight: number;
     textWidth: number;
   } {
@@ -347,9 +363,8 @@
       ctx.fillStyle = point.label?.color || '#000000';
       ctx.font = `${fontSize}px ${fontFace}`;
     }
-    const labelText = point.label.text;
     const { textHeight, textWidth } = measureText(labelText);
-    return { labelText, textHeight, textWidth };
+    return { textHeight, textWidth };
   }
 </script>
 

@@ -663,6 +663,10 @@
                                     "hidden": {
                                       "description": "Draw nothing for this value: no box, no label, no hover target",
                                       "type": "boolean"
+                                    },
+                                    "label": {
+                                      "description": "Replaces the text drawn in this value's boxes. The value still decides color and box boundaries",
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"

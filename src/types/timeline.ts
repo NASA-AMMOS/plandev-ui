@@ -461,6 +461,12 @@ export type XRangeValueAppearance = {
    * paint behind every other layer in the row.
    */
   hidden?: boolean;
+  /**
+   * Replaces the text drawn in this value's boxes. The value itself still decides the color and still
+   * decides where one box ends and the next begins, so shortening `SUBSYSTEM_STATE_NOMINAL` to `NOM`
+   * to fit a narrow box neither recolors it nor merges it with a neighbor that shortens the same way.
+   */
+  label?: string;
 };
 
 /**

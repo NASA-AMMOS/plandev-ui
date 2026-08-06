@@ -383,6 +383,20 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ labelVisibility: 'on' })).valid).toBe(false);
   });
 
+  test('Should accept a per-value label override', () => {
+    const view = viewWithXRangeLayerProps({
+      valueAppearance: { SUBSYSTEM_STATE_NOMINAL: { color: '#00ff00', label: 'NOM' } },
+    });
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject a non-string label override', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { label: 3 } } })).valid) //
+      .toBe(false);
+  });
+
   test('Should accept a per-value appearance map on an x-range layer', () => {
     const view = viewWithXRangeLayerProps({
       valueAppearance: {
