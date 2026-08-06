@@ -65,6 +65,7 @@
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
     TimelineInteractionMode,
     applyActivityLayerFilter,
     applyExternalEventLayerFilter,
@@ -198,6 +199,9 @@
     external_events: {},
     spans: {},
   };
+  // Kept beside idToColorMaps rather than folded into it: opacity is only configurable on external
+  // event layers, and a map whose other two branches were always empty would read as an oversight
+  let externalEventOpacities: Record<ExternalEventId, number> = {};
   let timeFilteredActivityDirectives: ActivityDirective[] = [];
   let timeFilteredSpans: Span[] = [];
   let timeFilteredExternalEvents: ExternalEvent[] = [];
@@ -506,13 +510,18 @@
             externalEventsFilteredByDG,
           );
           matchingExternalEvents.forEach(externalEvent => {
-            idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] = layer.externalEventColor;
+            const externalEventRowId = getExternalEventRowId(externalEvent.pkey);
+            idToColorMaps.external_events[externalEventRowId] = layer.externalEventColor;
+            externalEventOpacities[externalEventRowId] = layer.opacity ?? DEFAULT_EXTERNAL_EVENT_OPACITY;
           });
           filteredExternalEvents = [...filteredExternalEvents, ...matchingExternalEvents];
           filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
           timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
         }
       });
+      // The map above is filled by mutation, which Svelte cannot see. Reassigning marks it changed so
+      // an opacity edit reaches LayerDiscrete, which is immutable and only re-renders on new references
+      externalEventOpacities = externalEventOpacities;
     }
   }
 
@@ -992,6 +1001,7 @@
           <LayerDiscrete
             {discreteOptions}
             {idToColorMaps}
+            {externalEventOpacities}
             {discreteTree}
             activityDirectives={filteredActivityDirectives}
             externalEvents={filteredExternalEvents}

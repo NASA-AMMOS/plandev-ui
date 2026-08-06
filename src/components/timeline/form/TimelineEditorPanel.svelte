@@ -977,7 +977,7 @@
                   content:
                     'Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own',
                   placement: 'top',
-                }}>Directive Marker</label
+                }}>Directive</label
               >
               <select
                 class="st-select w-full"
@@ -999,7 +999,7 @@
                 content:
                   'Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar',
                 placement: 'top',
-              }}>Milestone Marker</label
+              }}>Milestone</label
             >
             <select
               class="st-select w-full"
@@ -1422,8 +1422,11 @@
     display: none;
   }
 
+  /* Wide enough for the longest label in this panel ("Margin Right"). At the previous 60px, five
+     existing labels were already ellipsized -- Margin Right, Margin Left, Resize Mode, Row Height and
+     Hierarchy -- so this is the column being too narrow rather than any one label being too long. */
   :global(.input.input-inline.editor-input) {
-    grid-template-columns: 60px auto;
+    grid-template-columns: 84px auto;
     padding: 0;
   }
 
