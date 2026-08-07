@@ -1128,10 +1128,13 @@
   }
 
   /* No gap: each guide row draws its own separator, so spacing between them would break the list into
-     floating cards rather than reading as one list. */
+     floating cards rather than reading as one list. Negative margins escape EditorSection's 16px so a
+     row spans the panel edge to edge -- 32px that the date fields inside it need far more than the
+     margin does. */
   .guides {
     display: flex;
     flex-direction: column;
+    margin: 0 -16px;
   }
 
   .timeline-y-axis {
