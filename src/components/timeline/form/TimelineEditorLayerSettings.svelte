@@ -25,6 +25,7 @@
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
+  import InfoTip from '../../ui/InfoTip.svelte';
   import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import TimelineEditorXRangeValues from './TimelineEditorXRangeValues.svelte';
 
@@ -62,6 +63,10 @@
     fillOpacity: DEFAULT_LINE_FILL_OPACITY,
     opacity: DEFAULT_LINE_OPACITY,
   };
+  // Clamped on the way out to the field as well as on the way in, because a view that reached the
+  // database another way -- a hand-written mutation, an import against an older schema -- can hold a
+  // value outside 0-1. LayerLine clamps the same value before drawing with it, so showing the stored
+  // number raw meant the form reported an opacity the plot was not using.
 
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
@@ -131,24 +136,13 @@
             {/each}
           </select>
         </Input>
-        <Input layout="inline">
-          <label for="interpolation">Interpolation</label>
-          <TimelineEditorOptionButtons
-            options={[
-              { id: 'step', label: 'Step' },
-              { id: 'linear', label: 'Linear' },
-              { id: 'smooth', label: 'Smooth' },
-            ]}
-            selectedId={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
-            on:change={({ detail }) => dispatch('input', { name: 'interpolation', value: detail.id })}
-          />
-        </Input>
+        <div class="group-header">Line</div>
         <Input layout="inline">
           <!-- Duplicated from the layer row's swatch on purpose. Point Color and Fill Color both fall
                back to this value, so leaving it out of the menu meant the two derived colors showed an
                inherited color with no way to see or change what they inherited from. Both controls
                write the same lineColor field, so they cannot disagree. -->
-          <label for="lineColor">Line Color</label>
+          <label for="lineColor">Color</label>
           <ColorPresetsPicker
             presetColors={ViewLineLayerColorPresets}
             tooltipText="Line Color"
@@ -158,7 +152,12 @@
           />
         </Input>
         <Input layout="inline">
-          <label for="lineWidth">Line Width</label>
+          <div class="setting-label">
+            <label for="lineWidth">Width</label>
+            <InfoTip
+              content="Thickness of the line in pixels. Zero hides the line entirely, which is how a points-only plot is drawn."
+            />
+          </div>
           <input
             min={0}
             class="st-input w-full"
@@ -170,7 +169,7 @@
           />
         </Input>
         <Input layout="inline">
-          <label for="lineStyle">Line Style</label>
+          <label for="lineStyle">Style</label>
           <TimelineEditorOptionButtons
             options={[
               { id: 'solid', label: 'Solid' },
@@ -182,10 +181,29 @@
           />
         </Input>
         <Input layout="inline">
-          <!-- "Line Opacity", not "Opacity": Fill Opacity appears right below it once the fill is on,
-               and two controls a few rows apart called Opacity and Fill Opacity read as if the first
-               governs both. The field name stays `opacity`, which is what the view stores. -->
-          <label for="opacity">Line Opacity</label>
+          <div class="setting-label">
+            <label for="interpolation">Interpolation</label>
+            <InfoTip
+              content="How the line gets from one sample to the next. Step holds each value until the next one changes it, which is how a discrete resource actually behaves. Linear and Smooth draw between the samples instead, for a resource that really does change continuously."
+            />
+          </div>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'step', label: 'Step' },
+              { id: 'linear', label: 'Linear' },
+              { id: 'smooth', label: 'Smooth' },
+            ]}
+            selectedId={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
+            on:change={({ detail }) => dispatch('input', { name: 'interpolation', value: detail.id })}
+          />
+        </Input>
+        <Input layout="inline">
+          <!-- Labelled plainly rather than "Line Opacity" now that a section header says which part of
+               the layer this belongs to. The field name stays `opacity`, which is what the view stores. -->
+          <div class="setting-label">
+            <label for="opacity">Opacity</label>
+            <InfoTip content="0 to 1, covering the line and its points. The area fill carries its own opacity." />
+          </div>
           <input
             min={0}
             max={1}
@@ -194,24 +212,31 @@
             id="opacity"
             name="opacity"
             type="number"
-            value={layerAsLine.opacity ?? DEFAULT_LINE_OPACITY}
+            value={clampOpacity(layerAsLine.opacity, DEFAULT_LINE_OPACITY)}
             on:input={onInput}
           />
         </Input>
+
+        <div class="group-header">Points</div>
         <Input layout="inline">
-          <label for="pointRadius">Point Radius</label>
-          <input
-            min={0}
-            class="st-input w-full"
-            id="pointRadius"
-            name="pointRadius"
-            type="number"
-            value={layerAsLine.pointRadius}
-            on:input={onInput}
+          <div class="setting-label">
+            <label for="showPoints">Show</label>
+            <InfoTip
+              content="Auto draws one point per sample until there are more samples than pixels to hold them, then drops them so the line stays readable. Always keeps them at any density, Never hides them."
+            />
+          </div>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'auto', label: 'Auto' },
+              { id: 'always', label: 'Always' },
+              { id: 'never', label: 'Never' },
+            ]}
+            selectedId={layerAsLine.showPoints ?? DEFAULT_SHOW_POINTS_MODE}
+            on:change={({ detail }) => dispatch('input', { name: 'showPoints', value: detail.id })}
           />
         </Input>
         <Input layout="inline">
-          <label for="pointShape">Point Shape</label>
+          <label for="pointShape">Shape</label>
           <select
             class="st-select w-full"
             id="pointShape"
@@ -227,7 +252,7 @@
           </select>
         </Input>
         <Input layout="inline">
-          <label for="pointColor">Point Color</label>
+          <label for="pointColor">Color</label>
           <ColorPresetsPicker
             presetColors={ViewLineLayerColorPresets}
             tooltipText="Point Color"
@@ -237,19 +262,26 @@
           />
         </Input>
         <Input layout="inline">
-          <label for="showPoints">Show Points</label>
-          <TimelineEditorOptionButtons
-            options={[
-              { id: 'auto', label: 'Auto' },
-              { id: 'always', label: 'Always' },
-              { id: 'never', label: 'Never' },
-            ]}
-            selectedId={layerAsLine.showPoints ?? DEFAULT_SHOW_POINTS_MODE}
-            on:change={({ detail }) => dispatch('input', { name: 'showPoints', value: detail.id })}
+          <label for="pointRadius">Radius</label>
+          <input
+            min={0}
+            class="st-input w-full"
+            id="pointRadius"
+            name="pointRadius"
+            type="number"
+            value={layerAsLine.pointRadius}
+            on:input={onInput}
           />
         </Input>
+
+        <div class="group-header">Area</div>
         <Input layout="inline">
-          <label for="showFill">Fill Area</label>
+          <div class="setting-label">
+            <label for="showFill">Show</label>
+            <InfoTip
+              content="Fills the space between the line and zero. On an axis set to stack its layers, each fill stops at the total of the layers beneath it instead."
+            />
+          </div>
           <input
             style:width="max-content"
             checked={layerAsLine.showFill}
@@ -261,7 +293,7 @@
         </Input>
         {#if layerAsLine.showFill}
           <Input layout="inline">
-            <label for="fillColor">Fill Color</label>
+            <label for="fillColor">Color</label>
             <ColorPresetsPicker
               presetColors={ViewLineLayerColorPresets}
               tooltipText="Fill Color"
@@ -271,7 +303,7 @@
             />
           </Input>
           <Input layout="inline">
-            <label for="fillOpacity">Fill Opacity</label>
+            <label for="fillOpacity">Opacity</label>
             <input
               min={0}
               max={1}
@@ -280,7 +312,7 @@
               id="fillOpacity"
               name="fillOpacity"
               type="number"
-              value={layerAsLine.fillOpacity ?? DEFAULT_LINE_FILL_OPACITY}
+              value={clampOpacity(layerAsLine.fillOpacity, DEFAULT_LINE_FILL_OPACITY)}
               on:input={onInput}
             />
           </Input>
@@ -328,7 +360,14 @@
           />
         </Input>
         <Input layout="inline">
-          <label for="labelVisibility">Value Labels</label>
+          <!-- Auto and Off, with no "On": a value's box is as wide as the time the value holds for, and
+               a label that does not fit cannot be made to by drawing it anyway. -->
+          <div class="setting-label">
+            <label for="labelVisibility">Value Labels</label>
+            <InfoTip
+              content="Auto writes each value inside its box whenever the text fits, shrinking it a step first. There is no always-on setting because a box is only as wide as the time its value holds for."
+            />
+          </div>
           <TimelineEditorOptionButtons
             options={[
               { id: 'auto', label: 'Auto' },
@@ -339,7 +378,12 @@
           />
         </Input>
         <Input layout="inline">
-          <label for="showAsLinePlot">Show As Line Plot</label>
+          <div class="setting-label">
+            <label for="showAsLinePlot">Line Plot</label>
+            <InfoTip
+              content="Draws the resource as a line stepping between its values rather than as colored boxes. Useful for seeing how often a state changes; the per-value colors below do not apply."
+            />
+          </div>
           <input
             style:width="max-content"
             checked={layerAsXRange.showAsLinePlot}
@@ -370,7 +414,12 @@
           <!-- External events are drawn translucent so a busy row of overlapping bars stays readable.
                That washes out a zero-duration event's marker, which is small enough to need the
                contrast, so the opacity is worth being able to raise. -->
-          <label for="opacity">Opacity</label>
+          <div class="setting-label">
+            <label for="opacity">Opacity</label>
+            <InfoTip
+              content="External events are drawn part-transparent so a row of overlapping bars stays readable. Raise it when the events do not overlap, or when zero-duration markers are too faint to pick out."
+            />
+          </div>
           <input
             min={0}
             max={1}
@@ -421,6 +470,33 @@
 
   .body :global(.input-inline) {
     padding: 0;
+  }
+
+  /* Section labels over one flat list of a dozen controls. A line layer's settings fall into three
+     groups an operator already thinks in -- the line, its points, the area under it -- and naming them
+     is also what lets the labels shrink: "Color" under Points cannot be mistaken for the line's, so
+     none of them has to carry a prefix that was being ellipsized in a 300px menu. Deliberately less
+     dense than it could be. One control per row with its own full label, rather than folding width and
+     opacity in beside the color swatch as unlabelled boxes. */
+  .group-header {
+    align-items: center;
+    border-top: 1px solid var(--st-gray-20);
+    color: var(--st-gray-60);
+    display: flex;
+    font-size: 10px;
+    font-weight: 500;
+    gap: 4px;
+    letter-spacing: 0.06em;
+    padding-top: 8px;
+    text-transform: uppercase;
+  }
+
+  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
+  .setting-label {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
   }
 
   .timeline-editor-layer-settings :global(.color-picker) {
