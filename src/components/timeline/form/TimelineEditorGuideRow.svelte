@@ -125,37 +125,28 @@
     const { value } = getTarget(event);
     dispatch('input', { name: 'labelText', value: value?.toString() ?? '' });
   }
-
-  // Only when the row itself has focus. The label input and the buttons inside it handle their own
-  // keys, and swallowing Space there would stop an operator typing a guide name with a space in it.
-  function onSummaryKeydown(event: KeyboardEvent) {
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      open = !open;
-    }
-  }
 </script>
 
 <div class="guide-row" class:open>
-  <div
-    class="guide-summary"
-    role="button"
-    tabindex="0"
-    aria-expanded={open}
-    on:click={() => (open = !open)}
-    on:keydown={onSummaryKeydown}
-  >
-    <!-- A caret says the row opens and nothing else, which is the whole job. Making the type indicator
-         double as the type switch put a control that changes the guide in the one place a click was
-         already reserved for expanding it. -->
-    <span class="guide-caret" class:open>
+  <div class="guide-summary">
+    <!--
+      The caret is the toggle, rather than the whole row being one. The row is not an empty header: it
+      holds a text input and a delete button, so a click-anywhere row leaves only a thin strip that
+      actually toggles, and its hover highlight fought with the label input's own. It was also a
+      role="button" wrapping a textbox and two buttons, which is not a thing a screen reader can make
+      sense of.
+    -->
+    <button
+      class="guide-caret"
+      class:open
+      aria-expanded={open}
+      aria-label={open ? 'Collapse guide' : 'Expand guide'}
+      on:click={() => (open = !open)}
+    >
       <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.7">
         <path d="M1 3l4 4 4-4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-    </span>
+    </button>
     <span class="guide-dot" style:background-color={glyphColor} />
     <input
       autocomplete="off"
@@ -164,7 +155,6 @@
       placeholder="Label"
       spellcheck="false"
       value={guide.label.text}
-      on:click|stopPropagation
       on:input={onLabelInput}
     />
     <span class="guide-summary-value">{summary}</span>
@@ -172,7 +162,7 @@
       class="guide-remove"
       aria-label="Delete Guide"
       use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
-      on:click|stopPropagation={() => dispatch('delete')}
+      on:click={() => dispatch('delete')}
     >
       <CloseIcon />
     </button>
@@ -193,6 +183,16 @@
           ]}
           selectedId={isRange ? 'range' : 'line'}
           on:change={({ detail }) => onSetMode(detail.id)}
+        />
+        <!-- Beside the mode rather than trailing the last value field. Both of these describe the guide
+             as a whole, while the fields below describe where it sits; hanging the color off the second
+             bound made it read as belonging to that bound. -->
+        <ColorPresetsPicker
+          presetColors={ViewLineLayerColorPresets}
+          tooltipText="Guide Color"
+          type="input"
+          value={guide.label.color ?? ''}
+          on:input={({ detail }) => dispatch('input', { name: 'labelColor', value: detail.value })}
         />
       </div>
       {#if isHorizontal}
@@ -254,13 +254,6 @@
         {/if}
         <span class="guide-editor-hint st-typography-label">{$plugins.time.primary.label}</span>
       {/if}
-      <ColorPresetsPicker
-        presetColors={ViewLineLayerColorPresets}
-        tooltipText="Guide Color"
-        type="input"
-        value={guide.label.color ?? ''}
-        on:input={({ detail }) => dispatch('input', { name: 'labelColor', value: detail.value })}
-      />
     </div>
   {/if}
 </div>
@@ -270,31 +263,44 @@
     border-bottom: 1px solid var(--st-gray-15);
   }
 
+  /* Only the small inset the panel border needs. The section's own 16px is escaped by .guides so a row
+     spans the full width, which is where the fields below get the room to be legible. */
   .guide-summary {
     align-items: center;
-    cursor: pointer;
     display: flex;
     gap: 6px;
     height: 30px;
-    padding: 0 2px;
+    padding: 0 6px;
   }
 
-  .guide-summary:hover {
-    background: var(--st-gray-10);
-  }
-
-  /* Points right when closed and down when open, the one thing it is there to say. */
+  /* Points right when closed and down when open, the one thing it is there to say. Sized past the
+     glyph so the hit target is not the 9px arrow itself. */
   .guide-caret {
     align-items: center;
+    background: none;
+    border: 0;
+    border-radius: 3px;
     color: var(--st-gray-50);
+    cursor: pointer;
     display: flex;
-    flex: 0 0 12px;
+    flex: 0 0 18px;
+    height: 20px;
     justify-content: center;
+    padding: 0;
+    width: 18px;
+  }
+
+  .guide-caret:hover {
+    background: var(--st-gray-20);
+    color: var(--st-gray-70);
+  }
+
+  .guide-caret svg {
     transform: rotate(-90deg);
     transition: transform 0.12s ease;
   }
 
-  .guide-caret.open {
+  .guide-caret.open svg {
     transform: rotate(0deg);
   }
 
@@ -371,13 +377,20 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 2px 8px 22px;
+    padding: 0 6px 8px 26px;
   }
 
-  /* Its own line above the values, so the fields below it are read as belonging to the chosen mode
-     rather than competing with it for the wrapping line. */
+  /* Mode and color share the first line: both say what kind of thing this guide is, and neither is a
+     value. The fields below then read as one group rather than one of them carrying a swatch. */
   .guide-editor-mode {
+    align-items: center;
+    display: flex;
     flex: 0 0 100%;
+    gap: 6px;
+    justify-content: space-between;
+  }
+
+  .guide-editor-mode > :global(:first-child) {
     max-width: 132px;
   }
 
