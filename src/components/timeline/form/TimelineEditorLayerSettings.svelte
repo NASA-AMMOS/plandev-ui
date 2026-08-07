@@ -25,6 +25,7 @@
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
+  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import TimelineEditorXRangeValues from './TimelineEditorXRangeValues.svelte';
 
   export let layer: Layer;
@@ -132,17 +133,15 @@
         </Input>
         <Input layout="inline">
           <label for="interpolation">Interpolation</label>
-          <select
-            class="st-select w-full"
-            id="interpolation"
-            name="interpolation"
-            value={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
-            on:change={onInput}
-          >
-            <option value="step">Step</option>
-            <option value="linear">Linear</option>
-            <option value="smooth">Smooth</option>
-          </select>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'step', label: 'Step' },
+              { id: 'linear', label: 'Linear' },
+              { id: 'smooth', label: 'Smooth' },
+            ]}
+            selectedId={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
+            on:change={({ detail }) => dispatch('input', { name: 'interpolation', value: detail.id })}
+          />
         </Input>
         <Input layout="inline">
           <!-- Duplicated from the layer row's swatch on purpose. Point Color and Fill Color both fall
@@ -172,17 +171,15 @@
         </Input>
         <Input layout="inline">
           <label for="lineStyle">Line Style</label>
-          <select
-            class="st-select w-full"
-            id="lineStyle"
-            name="lineStyle"
-            value={layerAsLine.lineStyle ?? DEFAULT_LINE_STYLE}
-            on:change={onInput}
-          >
-            <option value="solid">—— Solid</option>
-            <option value="dashed">– – Dashed</option>
-            <option value="dotted">· · · Dotted</option>
-          </select>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'solid', label: 'Solid' },
+              { id: 'dashed', label: 'Dashed' },
+              { id: 'dotted', label: 'Dotted' },
+            ]}
+            selectedId={layerAsLine.lineStyle ?? DEFAULT_LINE_STYLE}
+            on:change={({ detail }) => dispatch('input', { name: 'lineStyle', value: detail.id })}
+          />
         </Input>
         <Input layout="inline">
           <!-- "Line Opacity", not "Opacity": Fill Opacity appears right below it once the fill is on,
@@ -222,11 +219,11 @@
             value={layerAsLine.pointShape ?? DEFAULT_POINT_SHAPE}
             on:change={onInput}
           >
-            <option value="circle">● Circle</option>
-            <option value="square">■ Square</option>
-            <option value="diamond">◆ Diamond</option>
-            <option value="triangle">▲ Triangle</option>
-            <option value="cross">✚ Cross</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+            <option value="diamond">Diamond</option>
+            <option value="triangle">Triangle</option>
+            <option value="cross">Cross</option>
           </select>
         </Input>
         <Input layout="inline">
@@ -241,17 +238,15 @@
         </Input>
         <Input layout="inline">
           <label for="showPoints">Show Points</label>
-          <select
-            class="st-select w-full"
-            id="showPoints"
-            name="showPoints"
-            value={layerAsLine.showPoints ?? DEFAULT_SHOW_POINTS_MODE}
-            on:change={onInput}
-          >
-            <option value="auto">Auto</option>
-            <option value="always">Always</option>
-            <option value="never">Never</option>
-          </select>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'auto', label: 'Auto' },
+              { id: 'always', label: 'Always' },
+              { id: 'never', label: 'Never' },
+            ]}
+            selectedId={layerAsLine.showPoints ?? DEFAULT_SHOW_POINTS_MODE}
+            on:change={({ detail }) => dispatch('input', { name: 'showPoints', value: detail.id })}
+          />
         </Input>
         <Input layout="inline">
           <label for="showFill">Fill Area</label>
@@ -334,16 +329,14 @@
         </Input>
         <Input layout="inline">
           <label for="labelVisibility">Value Labels</label>
-          <select
-            class="st-select w-full"
-            id="labelVisibility"
-            name="labelVisibility"
-            value={layerAsXRange.labelVisibility ?? DEFAULT_XRANGE_LABEL_VISIBILITY}
-            on:change={onInput}
-          >
-            <option value="auto">Auto</option>
-            <option value="off">Off</option>
-          </select>
+          <TimelineEditorOptionButtons
+            options={[
+              { id: 'auto', label: 'Auto' },
+              { id: 'off', label: 'Off' },
+            ]}
+            selectedId={layerAsXRange.labelVisibility ?? DEFAULT_XRANGE_LABEL_VISIBILITY}
+            on:change={({ detail }) => dispatch('input', { name: 'labelVisibility', value: detail.id })}
+          />
         </Input>
         <Input layout="inline">
           <label for="showAsLinePlot">Show As Line Plot</label>
