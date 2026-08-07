@@ -33,7 +33,6 @@
   // The formatter is passed in rather than read inside getSummary, so switching the plugin's primary
   // time format re-renders the rows -- Svelte does not track what a function body reads
   $: summary = getSummary(guide, isHorizontal, isRange, $plugins.time.primary.format);
-  $: glyphColor = guide.label.color || 'currentColor';
 
   const dispatch = createEventDispatcher<{
     delete: void;
@@ -147,7 +146,18 @@
         <path d="M1 3l4 4 4-4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
-    <span class="guide-dot" style:background-color={glyphColor} />
+    <!-- The swatch is both the indicator and the control, so the row shows which line on the canvas it
+         is and changes it in one place. It was a read-only dot with the picker buried in the
+         expansion, which meant opening a row just to recolor it. Sized to the caret beside it. -->
+    <ColorPresetsPicker
+      placement="bottom-start"
+      presetColors={ViewLineLayerColorPresets}
+      size={16}
+      tooltipText="Guide Color"
+      type="input"
+      value={guide.label.color ?? ''}
+      on:input={({ detail }) => dispatch('input', { name: 'labelColor', value: detail.value })}
+    />
     <input
       autocomplete="off"
       class="guide-label-input"
@@ -183,16 +193,6 @@
           ]}
           selectedId={isRange ? 'range' : 'line'}
           on:change={({ detail }) => onSetMode(detail.id)}
-        />
-        <!-- Beside the mode rather than trailing the last value field. Both of these describe the guide
-             as a whole, while the fields below describe where it sits; hanging the color off the second
-             bound made it read as belonging to that bound. -->
-        <ColorPresetsPicker
-          presetColors={ViewLineLayerColorPresets}
-          tooltipText="Guide Color"
-          type="input"
-          value={guide.label.color ?? ''}
-          on:input={({ detail }) => dispatch('input', { name: 'labelColor', value: detail.value })}
         />
       </div>
       {#if isHorizontal}
@@ -252,7 +252,6 @@
             />
           </div>
         {/if}
-        <span class="guide-editor-hint st-typography-label">{$plugins.time.primary.label}</span>
       {/if}
     </div>
   {/if}
@@ -302,15 +301,6 @@
 
   .guide-caret.open svg {
     transform: rotate(0deg);
-  }
-
-  /* The guide's color, so a row can be matched to its line without opening it. Not a control -- the
-     picker lives in the expansion, where the rest of the guide's settings are. */
-  .guide-dot {
-    border-radius: 2px;
-    flex: 0 0 4px;
-    height: 12px;
-    width: 4px;
   }
 
   /* Chromeless until pointed at, so a list of guides reads as names rather than as a stack of inputs */
@@ -380,17 +370,15 @@
     padding: 0 6px 8px 26px;
   }
 
-  /* Mode and color share the first line: both say what kind of thing this guide is, and neither is a
-     value. The fields below then read as one group rather than one of them carrying a swatch. */
+  /* Its own line above the values, so the fields below read as belonging to the chosen mode rather
+     than competing with it for the wrapping line. The cap goes on the control inside rather than on
+     this wrapper: capping a `flex: 0 0 100%` item frees the rest of its line, and a date field
+     promptly moved up onto it. */
   .guide-editor-mode {
-    align-items: center;
-    display: flex;
     flex: 0 0 100%;
-    gap: 6px;
-    justify-content: space-between;
   }
 
-  .guide-editor-mode > :global(:first-child) {
+  .guide-editor-mode :global(.radio-buttons) {
     max-width: 132px;
   }
 
@@ -404,12 +392,11 @@
     min-width: 0;
   }
 
+  /* Basis chosen so a range's two dates share one line: at the row's full width they land at 140px
+     each, and a DOY timestamp needs 131px of that. The UTC hint that used to sit on this line was what
+     made them wrap -- the fields themselves were never the problem. */
   .guide-editor-date {
-    flex: 1 1 160px;
+    flex: 1 1 128px;
     min-width: 0;
-  }
-
-  .guide-editor-hint {
-    color: var(--st-gray-50);
   }
 </style>

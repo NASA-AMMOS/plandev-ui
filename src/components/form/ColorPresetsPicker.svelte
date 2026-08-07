@@ -12,6 +12,12 @@
   export let tooltipText: string = 'Color';
   export let placement: Placement = 'bottom-end';
   export let presetColors: string[] = ['#ef8b8c', '#febd85'];
+  /**
+   * Trigger swatch size in px. Only the trigger -- the preset swatches inside the menu stay full size,
+   * since those are a palette to aim at rather than an indicator. Defaults to the size every existing
+   * caller was already getting.
+   */
+  export let size: number = 24;
   // Menus of the same type hide each other, so a picker nested inside another menu
   // must not share that menu's type or opening it would close its own parent.
   export let type: MenuType = 'dropdown';
@@ -57,7 +63,7 @@
   type="button"
   class="st-button color-preset-picker color relative dark:border-white/20"
   use:tooltip={{ content: tooltipText, placement: 'top' }}
-  style={`background: ${value}`}
+  style={`background: ${value}; height: ${size}px; width: ${size}px`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
   <Menu escapeScrollBoundary bind:this={pickerMenu} hideAfterClick={false} {placement} {type}>
