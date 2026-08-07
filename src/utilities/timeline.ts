@@ -641,12 +641,14 @@ export function clampGuideBand(
 }
 
 /**
- * A band's extent as a duration, in at most two units, for the readout on its cap.
+ * A band's extent as a duration, in at most two units, for the readout beside a guide's name in the
+ * timeline editor. The canvas band itself carries no duration -- an operator reading the timeline has
+ * the time axis for that, and a pill inside every shaded region was more ink than it bought.
  *
  * Not `convertUsToDurationString`: that spells out every non-zero unit down to milliseconds, which is
- * right for a form field and far too long for a pill sitting inside the band it measures. Two units
- * keeps an eclipse readable as `6h 00m` while still distinguishing it from `6h 30m`; the smaller unit
- * is zero-padded so a column of caps stays the same width.
+ * right for a form field and far too long to sit at the end of a one-line row. Two units keeps an
+ * eclipse readable as `6h 00m` while still distinguishing it from `6h 30m`; the smaller unit is
+ * zero-padded so a column of rows stays the same width.
  */
 export function formatBandDuration(durationMs: number): string {
   const ms = Math.abs(Math.round(durationMs));

@@ -2,7 +2,6 @@
   type ComputedVerticalGuide = { id: number; label: Label; maxWidth: number; x: number };
   type ComputedVerticalBand = {
     anchorAtStart: boolean;
-    duration: string;
     id: number;
     label: Label;
     showEndEdge: boolean;
@@ -18,12 +17,7 @@
   import type { Label, MouseOver, Timeline, VerticalGuide } from '../../types/timeline';
   import { formatDate, getDoyTime, getUnixEpochTime } from '../../utilities/time';
   import { hexToRgba } from '../../utilities/color';
-  import {
-    clampGuideBand,
-    createVerticalGuide,
-    formatBandDuration,
-    GUIDE_BAND_OPACITY,
-  } from '../../utilities/timeline';
+  import { clampGuideBand, createVerticalGuide, GUIDE_BAND_OPACITY } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
 
   /** Fallback band color, for a guide saved with no color of its own. Matches the cursor line's gray. */
@@ -121,17 +115,16 @@
       if (!xScaleView || verticalGuide.timestamp2 === undefined) {
         continue;
       }
-      const anchorMs = getUnixEpochTime(verticalGuide.timestamp);
-      const extentMs = getUnixEpochTime(verticalGuide.timestamp2);
-      const band = clampGuideBand(xScaleView(anchorMs), xScaleView(extentMs), drawWidth);
+      const band = clampGuideBand(
+        xScaleView(getUnixEpochTime(verticalGuide.timestamp)),
+        xScaleView(getUnixEpochTime(verticalGuide.timestamp2)),
+        drawWidth,
+      );
       if (band === null) {
         continue;
       }
       tempComputedVerticalBands.push({
         anchorAtStart: band.anchorAtStart,
-        // From the timestamps, not from the clamped pixel width: the readout is how long the region
-        // lasts, which does not change because the view scrolled half of it off screen.
-        duration: formatBandDuration(extentMs - anchorMs),
         id: verticalGuide.id,
         label: verticalGuide.label,
         showEndEdge: band.showEndEdge,
@@ -152,11 +145,6 @@
    */
   function getBandFill(color: string | undefined): string {
     return hexToRgba(color || DEFAULT_BAND_COLOR, GUIDE_BAND_OPACITY);
-  }
-
-  /** Cap fill: strong enough to read as the band's own edge, short of competing with the guide lines. */
-  function getCapFill(color: string): string {
-    return hexToRgba(color, 0.55);
   }
 
   function removeVerticalGuide(verticalGuideId: number) {
@@ -253,14 +241,7 @@
       style:border-right-color={band.showEndEdge ? bandColor : 'transparent'}
       style:transform="translateX({band.x}px)"
       style:width="{band.width}px"
-    >
-      <!-- The cap ties the two edges together into one object, and carries the readout an operator
-           would otherwise have to get by subtracting the two dates in the editor. Cap and pill are
-           siblings, and the cap is faded through its background color rather than through element
-           opacity, so the pill it sits under stays at full strength. -->
-      <div class="timeline-cursor-band-cap" style:background-color={getCapFill(bandColor)} />
-      <span class="timeline-cursor-band-duration" style:background-color={bandColor}>{band.duration}</span>
-    </div>
+    />
   {/each}
   {#each computedVerticalGuides as guide}
     <TimelineCursor
@@ -328,29 +309,5 @@
   .timeline-cursor-band.anchor-at-end {
     border-left-style: dashed;
     border-right-style: solid;
-  }
-
-  .timeline-cursor-band-cap {
-    height: 3px;
-    left: 0;
-    position: absolute;
-    top: 0;
-    width: 100%;
-  }
-
-  /* Centered on the cap, and allowed to overflow a band narrower than itself rather than being clipped
-     to illegibility -- a short region is exactly when the duration is worth reading. */
-  .timeline-cursor-band-duration {
-    border-radius: 8px;
-    color: #fff;
-    font-family: 'JetBrains mono', monospace;
-    font-size: 9px;
-    left: 50%;
-    line-height: 1;
-    padding: 2px 5px;
-    position: absolute;
-    top: 5px;
-    transform: translateX(-50%);
-    white-space: nowrap;
   }
 </style>
