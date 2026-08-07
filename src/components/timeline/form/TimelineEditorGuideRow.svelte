@@ -13,6 +13,7 @@
   import { formatDate, getDoyTime, getUnixEpochTime } from '../../../utilities/time';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
+  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
 
   export let guide: HorizontalGuide | VerticalGuide;
@@ -88,17 +89,21 @@
   }
 
   /**
-   * Line to band and back, from the one glyph that also shows which it currently is. A band is not a
-   * separate kind of guide, only one carrying a second bound, so the switch is that field arriving or
-   * being removed -- and removing it is why the panel treats a null as "delete the field".
+   * Line to band and back. A band is not a separate kind of guide, only one carrying a second bound, so
+   * the switch is that field arriving or being removed -- and removing it is why the panel treats a
+   * null as "delete the field". Re-picking the mode already set is a no-op rather than a reseed, so
+   * clicking Band twice does not throw away an edited bound.
    */
-  function onSwapType() {
-    if (isHorizontal) {
-      dispatch('input', { name: 'y2', value: isRange ? null : seedHorizontalBound(horizontalGuide, yAxes) });
-    } else {
-      dispatch('input', { name: 'timestamp2', value: isRange ? null : seedVerticalBound(verticalGuide) });
+  function onSetMode(mode: string) {
+    const wantRange = mode === 'range';
+    if (wantRange === isRange) {
+      return;
     }
-    open = true;
+    if (isHorizontal) {
+      dispatch('input', { name: 'y2', value: wantRange ? seedHorizontalBound(horizontalGuide, yAxes) : null });
+    } else {
+      dispatch('input', { name: 'timestamp2', value: wantRange ? seedVerticalBound(verticalGuide) : null });
+    }
   }
 
   function onInput(event: Event) {
@@ -143,36 +148,15 @@
     on:click={() => (open = !open)}
     on:keydown={onSummaryKeydown}
   >
-    <!-- Carries the guide's color and its type at once, and switches the type in one click. A caret
-         would have said only that the row opens, which the row already says by being clickable. -->
-    <button
-      class="guide-glyph"
-      aria-label={isRange ? 'Switch to a line' : 'Switch to a band'}
-      use:tooltip={{ content: isRange ? 'Switch to a line' : 'Switch to a band', placement: 'top' }}
-      on:click|stopPropagation={onSwapType}
-    >
-      {#if isHorizontal}
-        <svg width="12" height="12" viewBox="0 0 12 12">
-          {#if isRange}
-            <rect x="1" y="2" width="10" height="8" rx="1" fill={glyphColor} opacity="0.25" />
-            <rect x="1" y="1.6" width="10" height="1.6" rx="0.8" fill={glyphColor} />
-            <rect x="1" y="8.8" width="10" height="1.6" rx="0.8" fill={glyphColor} />
-          {:else}
-            <rect x="1" y="5.2" width="10" height="1.6" rx="0.8" fill={glyphColor} />
-          {/if}
-        </svg>
-      {:else}
-        <svg width="12" height="12" viewBox="0 0 12 12">
-          {#if isRange}
-            <rect x="2" y="1" width="8" height="10" rx="1" fill={glyphColor} opacity="0.25" />
-            <rect x="1.6" y="1" width="1.6" height="10" rx="0.8" fill={glyphColor} />
-            <rect x="8.8" y="1" width="1.6" height="10" rx="0.8" fill={glyphColor} />
-          {:else}
-            <rect x="5.2" y="1" width="1.6" height="10" rx="0.8" fill={glyphColor} />
-          {/if}
-        </svg>
-      {/if}
-    </button>
+    <!-- A caret says the row opens and nothing else, which is the whole job. Making the type indicator
+         double as the type switch put a control that changes the guide in the one place a click was
+         already reserved for expanding it. -->
+    <span class="guide-caret" class:open>
+      <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M1 3l4 4 4-4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+    <span class="guide-dot" style:background-color={glyphColor} />
     <input
       autocomplete="off"
       class="guide-label-input"
@@ -198,6 +182,19 @@
     <!-- One wrapping line rather than a stacked panel of captioned fields. At ten guides the stacked
          version cost more vertical space per open guide than the whole collapsed list. -->
     <div class="guide-editor">
+      <!-- Says outright what the two modes are and which one is on. A band is still just a guide
+           carrying a second bound, so switching to Line drops that field and switching to Band seeds
+           it -- see onSetMode. -->
+      <div class="guide-editor-mode">
+        <TimelineEditorOptionButtons
+          options={[
+            { id: 'line', label: 'Line' },
+            { id: 'range', label: isHorizontal ? 'Band' : 'Range' },
+          ]}
+          selectedId={isRange ? 'range' : 'line'}
+          on:change={({ detail }) => onSetMode(detail.id)}
+        />
+      </div>
       {#if isHorizontal}
         <input
           aria-label="Y Value"
@@ -286,23 +283,28 @@
     background: var(--st-gray-10);
   }
 
-  .guide-glyph {
+  /* Points right when closed and down when open, the one thing it is there to say. */
+  .guide-caret {
     align-items: center;
-    background: none;
-    border: 0;
-    border-radius: 3px;
     color: var(--st-gray-50);
-    cursor: pointer;
     display: flex;
-    flex: 0 0 18px;
-    height: 18px;
+    flex: 0 0 12px;
     justify-content: center;
-    padding: 0;
-    width: 18px;
+    transform: rotate(-90deg);
+    transition: transform 0.12s ease;
   }
 
-  .guide-glyph:hover {
-    background: var(--st-gray-20);
+  .guide-caret.open {
+    transform: rotate(0deg);
+  }
+
+  /* The guide's color, so a row can be matched to its line without opening it. Not a control -- the
+     picker lives in the expansion, where the rest of the guide's settings are. */
+  .guide-dot {
+    border-radius: 2px;
+    flex: 0 0 4px;
+    height: 12px;
+    width: 4px;
   }
 
   /* Chromeless until pointed at, so a list of guides reads as names rather than as a stack of inputs */
@@ -369,7 +371,14 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 2px 8px 24px;
+    padding: 0 2px 8px 22px;
+  }
+
+  /* Its own line above the values, so the fields below it are read as belonging to the chosen mode
+     rather than competing with it for the wrapping line. */
+  .guide-editor-mode {
+    flex: 0 0 100%;
+    max-width: 132px;
   }
 
   .guide-editor-value {
