@@ -160,7 +160,7 @@
     />
     <input
       autocomplete="off"
-      class="guide-label-input"
+      class="st-input guide-label-input"
       name="text"
       placeholder="Label"
       spellcheck="false"
@@ -303,25 +303,12 @@
     transform: rotate(0deg);
   }
 
-  /* Chromeless until pointed at, so a list of guides reads as names rather than as a stack of inputs */
+  /* Layout only -- st-input carries the appearance, so a guide's name field is the same control as
+     every other text field in the panel. It was chromeless until hovered, which read as quieter but
+     made it the one input here that did not look like one. */
   .guide-label-input {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
     flex: 1;
     min-width: 0;
-    padding: 3px 4px;
-  }
-
-  .guide-label-input:hover {
-    background: var(--st-white);
-    border-color: var(--st-gray-20);
-  }
-
-  .guide-label-input:focus {
-    background: var(--st-white);
-    border-color: var(--st-utility-blue);
-    outline: none;
   }
 
   .guide-summary-value {
