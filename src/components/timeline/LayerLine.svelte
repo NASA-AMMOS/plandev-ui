@@ -61,14 +61,15 @@
   export let interpolation: InterpolationMode = DEFAULT_INTERPOLATION;
   export let limitTooltipToLine: boolean = false;
   export let lineColor: string = '';
-  export let opacity: number = DEFAULT_LINE_OPACITY;
   export let lineStyle: LineStyle = DEFAULT_LINE_STYLE;
   export let lineWidth: number = 1;
   export let mousemove: MouseEvent | undefined;
   export let mouseout: MouseEvent | undefined;
+  export let opacity: number = DEFAULT_LINE_OPACITY;
   export let pointColor: string | undefined = undefined;
   export let pointRadius: number = 2;
   export let pointShape: PointShape = DEFAULT_POINT_SHAPE;
+  export let ordinalScale: boolean = false;
   export let resources: Resource[] = [];
   export let showFill: boolean = false;
   export let showPoints: ShowPointsMode = DEFAULT_SHOW_POINTS_MODE;
@@ -79,7 +80,6 @@
    * holds, before decimation reorders anything. Null when the layer is not stacked.
    */
   export let stackBaseline: (number | null)[] | null = null;
-  export let ordinalScale: boolean = false;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
   export let xScaleView: ScaleTime<number, number> | null = null;
   export let yAxes: ComputedAxis[] = [];

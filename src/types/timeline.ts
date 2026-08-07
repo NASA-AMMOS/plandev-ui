@@ -203,9 +203,15 @@ export type PointShape = 'circle' | 'square' | 'diamond' | 'triangle' | 'cross';
 
 export type ShowPointsMode = 'auto' | 'always' | 'never';
 
+/**
+ * `lineColor`, `lineWidth` and `pointRadius` are required because the view schema requires them; every
+ * other field here is optional because the schema does not, and a view saved before that field existed
+ * is still valid. New layers get all of them from `createLineLayer`, and each reader supplies the same
+ * default the schema would have, so an older view renders the way it always did.
+ */
 export interface LineLayer extends Layer {
   fillColor?: string; // When undefined the area fill uses lineColor
-  fillOpacity: number;
+  fillOpacity?: number;
   interpolation?: InterpolationMode;
   lineColor: string;
   lineStyle?: LineStyle;
@@ -214,7 +220,7 @@ export interface LineLayer extends Layer {
   pointColor?: string; // When undefined the points use lineColor
   pointRadius: number;
   pointShape?: PointShape;
-  showFill: boolean;
+  showFill?: boolean;
   showPoints?: ShowPointsMode;
 }
 
