@@ -12,6 +12,7 @@
   import Input from '../../form/Input.svelte';
   import Menu from '../../menus/Menu.svelte';
   import MenuHeader from '../../menus/MenuHeader.svelte';
+  import InfoTip from '../../ui/InfoTip.svelte';
 
   export let yAxis: Axis;
   export let yAxes: Axis[];
@@ -145,21 +146,29 @@
         />
       </Input>
       <Input layout="inline">
-        <label for="stack">Stack Layers</label>
+        <!-- The tooltip that used to hang off the checkbox itself is an InfoTip now: a bare control
+             gives no sign an explanation exists, so nobody found it. -->
+        <div class="setting-label">
+          <label for="stack">Stack Layers</label>
+          <InfoTip
+            content="Sums this axis's line layers bottom-up in layer order, so each line sits on the total of the ones beneath it and the top line is the total. Area fills follow, stopping at the layer below rather than at zero."
+          />
+        </div>
         <input
           style:width="max-content"
           checked={yAxis.stack ?? false}
           id="stack"
-          use:tooltip={{
-            content: 'Sum this axis’s line layers bottom-up in layer order, so the top line is the total',
-            placement: 'top',
-          }}
           on:change={updateYAxisStack}
           type="checkbox"
         />
       </Input>
       <Input layout="inline">
-        <label for="scaleType">Scale</label>
+        <div class="setting-label">
+          <label for="scaleType">Scale</label>
+          <InfoTip
+            content="Logarithmic compresses a range spanning several orders of magnitude into one row. Zero and negative samples still get a position -- the scale runs linear across the smallest magnitude in the data and logarithmic beyond it, so a plot that touches zero is not cut off."
+          />
+        </div>
         <select
           class="st-select w-full"
           id="scaleType"
@@ -173,7 +182,12 @@
       </Input>
       {#if (yAxis.scaleType ?? DEFAULT_AXIS_SCALE_TYPE) === 'log'}
         <Input layout="inline">
-          <label for="logBase">Log Base</label>
+          <div class="setting-label">
+            <label for="logBase">Log Base</label>
+            <InfoTip
+              content="Which values get a tick, one power of this base apart. 10 gives decades, 2 gives octaves. It changes the labels only -- nothing moves on the plot."
+            />
+          </div>
           <input
             min={2}
             step={1}
@@ -187,7 +201,12 @@
         </Input>
       {/if}
       <Input layout="inline">
-        <label for="autofitDomain">Domain Fitting</label>
+        <div class="setting-label">
+          <label for="autofitDomain">Domain Fitting</label>
+          <InfoTip
+            content="What the axis bounds follow. Autofit Plan fixes them to the whole plan, so the line keeps its shape while you zoom. Autofit Time Window refits to whatever is on screen, so a small variation fills the row. Manual holds the min and max you enter."
+          />
+        </div>
         <select
           class="st-select w-full"
           name="autofitDomain"
@@ -250,6 +269,14 @@
 
   .body :global(.input-inline) {
     padding: 0;
+  }
+
+  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
+  .setting-label {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
   }
 
   .timeline-editor-axis-settings :global(.color-picker) {
