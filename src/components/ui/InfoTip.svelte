@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { CircleHelp } from 'lucide-svelte';
+  import { CircleQuestionMark } from 'lucide-svelte';
   import type { Placement } from 'tippy.js';
   import { tooltip } from '../../utilities/tooltip';
 
@@ -17,8 +17,8 @@
   keyboard. It performs no action -- tippy triggers on hover and focus, and handles tap on touch. The
   tooltip action sets aria-label from the content, so screen readers get the same text.
 -->
-<button class="info-tip" type="button" use:tooltip={{ content, placement }}>
-  <CircleHelp {size} />
+<button class="info-tip" type="button" use:tooltip={{ content, maxWidth: 350, placement }} aria-label={content}>
+  <CircleQuestionMark {size} />
 </button>
 
 <style>
