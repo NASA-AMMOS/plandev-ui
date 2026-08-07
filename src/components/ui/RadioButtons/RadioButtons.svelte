@@ -89,12 +89,16 @@
 </div>
 
 <style>
+  /* Equal columns where every option fits in its share, and only the columns that need more take it.
+     Plain 1fr forced the widest option into 1/n of the container, so one long label clipped every
+     option in the group -- which is what pushed narrow-panel controls to dropdowns in the first place.
+     Still fills the width, so a column of these keeps a straight right edge. */
   .radio-buttons {
     align-items: center;
     background-color: var(--st-gray-10);
     border-radius: 4px;
     display: grid;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(min-content, 1fr);
     grid-auto-flow: column;
     position: relative;
     width: 100%;

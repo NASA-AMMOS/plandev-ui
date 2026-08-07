@@ -30,7 +30,6 @@
     ExternalEventLayer,
     ExternalEventOptions,
     HorizontalGuide,
-    MarkerStyle,
     Layer,
     LineLayer,
     Row,
@@ -66,10 +65,18 @@
   import Panel from '../../ui/Panel.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
   import TimelineEditorGuideRow from './TimelineEditorGuideRow.svelte';
+  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
+
+  /** Shared by the directive and zero-duration marker controls, which offer the same shapes. */
+  const MARKER_STYLE_OPTIONS: { id: string; label: string }[] = [
+    { id: 'line', label: 'Line' },
+    { id: 'dot', label: 'Dot' },
+    { id: 'diamond', label: 'Diamond' },
+  ];
 
   let horizontalGuides: HorizontalGuide[] = [];
   let layers: Layer[] = [];
@@ -220,30 +227,31 @@
     viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
-  function handleDiscreteOptionSelectChange(event: Event, name: keyof DiscreteOptions) {
-    const { value } = getTarget(event);
+  /**
+   * Discrete option writers, split from their event adapters so the segmented controls and the
+   * remaining dropdowns share one path to the view rather than each reimplementing the merge.
+   */
+  function applyDiscreteOption(name: keyof DiscreteOptions, value: unknown) {
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value });
   }
 
-  function handleActivityOptionSelectChange(event: Event, name: keyof ActivityOptions) {
-    const { value } = getTarget(event);
+  function applyActivityOption(name: keyof ActivityOptions, value: unknown) {
     viewUpdateRow('discreteOptions', {
       ...discreteOptions,
       activityOptions: { ...discreteOptions.activityOptions, [name]: value },
     });
   }
 
-  function handleExternalEventOptionSelectChange(event: Event, name: keyof ExternalEventOptions) {
-    const { value } = getTarget(event);
+  function applyExternalEventOption(name: keyof ExternalEventOptions, value: unknown) {
     viewUpdateRow('discreteOptions', {
       ...discreteOptions,
       externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: value },
     });
   }
 
-  function handleMarkerStyleChange(event: Event, name: 'directiveMarker' | 'zeroDurationMarker') {
+  function handleActivityOptionSelectChange(event: Event, name: keyof ActivityOptions) {
     const { value } = getTarget(event);
-    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value as MarkerStyle });
+    applyActivityOption(name, value);
   }
 
   function addTimelineRow() {
@@ -713,26 +721,20 @@
             </Input>
           </form>
           <Input layout="inline" class="editor-input">
-            <!-- A select rather than the icon radio group the other options use: the two modes are not
-                 distinguishable from their icons alone, and the text captions hide entirely below the
-                 panel's 360px compact threshold, which left this control unreadable exactly when the
-                 panel was narrow enough to need it most. -->
             <div class="editor-label">
               <label for="display-mode">Display</label>
               <InfoTip
                 content="Grouped puts activities into collapsible rows by type. Compact packs them into as few rows as will fit."
               />
             </div>
-            <select
-              class="st-select w-full"
-              id="display-mode"
-              name="displayMode"
-              value={discreteOptions.displayMode}
-              on:change={event => handleDiscreteOptionSelectChange(event, 'displayMode')}
-            >
-              <option value="grouped">Grouped</option>
-              <option value="compact">Compact</option>
-            </select>
+            <TimelineEditorOptionButtons
+              options={[
+                { id: 'grouped', label: 'Grouped' },
+                { id: 'compact', label: 'Compact' },
+              ]}
+              selectedId={discreteOptions.displayMode}
+              on:change={({ detail }) => applyDiscreteOption('displayMode', detail.id)}
+            />
           </Input>
           <Input layout="inline" class="editor-input">
             <div class="editor-label">
@@ -741,17 +743,15 @@
                 content="On always draws item labels. Off never does. Auto draws only the labels that do not overlap the next item."
               />
             </div>
-            <select
-              class="st-select w-full"
-              id="label-visibility"
-              name="labelVisibility"
-              value={discreteOptions.labelVisibility}
-              on:change={event => handleDiscreteOptionSelectChange(event, 'labelVisibility')}
-            >
-              <option value="on">On</option>
-              <option value="off">Off</option>
-              <option value="auto">Auto</option>
-            </select>
+            <TimelineEditorOptionButtons
+              options={[
+                { id: 'auto', label: 'Auto' },
+                { id: 'on', label: 'On' },
+                { id: 'off', label: 'Off' },
+              ]}
+              selectedId={discreteOptions.labelVisibility}
+              on:change={({ detail }) => applyDiscreteOption('labelVisibility', detail.id)}
+            />
           </Input>
           {#if rowHasActivityLayer}
             <Input layout="inline" class="editor-input">
@@ -761,17 +761,11 @@
                   content="Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own."
                 />
               </div>
-              <select
-                class="st-select w-full"
-                id="directive-marker"
-                name="directiveMarker"
-                value={discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE}
-                on:change={event => handleMarkerStyleChange(event, 'directiveMarker')}
-              >
-                <option value="line">| Line</option>
-                <option value="dot">● Dot</option>
-                <option value="diamond">◆ Diamond</option>
-              </select>
+              <TimelineEditorOptionButtons
+                options={MARKER_STYLE_OPTIONS}
+                selectedId={discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE}
+                on:change={({ detail }) => applyDiscreteOption('directiveMarker', detail.id)}
+              />
             </Input>
           {/if}
           <Input layout="inline" class="editor-input">
@@ -781,17 +775,11 @@
                 content="Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar."
               />
             </div>
-            <select
-              class="st-select w-full"
-              id="zero-duration-marker"
-              name="zeroDurationMarker"
-              value={discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE}
-              on:change={event => handleMarkerStyleChange(event, 'zeroDurationMarker')}
-            >
-              <option value="line">| Line</option>
-              <option value="dot">● Dot</option>
-              <option value="diamond">◆ Diamond</option>
-            </select>
+            <TimelineEditorOptionButtons
+              options={MARKER_STYLE_OPTIONS}
+              selectedId={discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE}
+              on:change={({ detail }) => applyDiscreteOption('zeroDurationMarker', detail.id)}
+            />
           </Input>
           {#if rowHasActivityLayer}
             <div class="editor-section-header activity-options">
@@ -825,16 +813,14 @@
                   content="By Directive groups starting from each directive. Flat groups directives and spans together regardless of how deeply nested they are."
                 />
               </div>
-              <select
-                class="st-select w-full"
-                id="hierarchy-mode"
-                name="hierarchyMode"
-                value={discreteOptions?.activityOptions?.hierarchyMode}
-                on:change={event => handleActivityOptionSelectChange(event, 'hierarchyMode')}
-              >
-                <option value="directive">By Directive</option>
-                <option value="flat">Flat</option>
-              </select>
+              <TimelineEditorOptionButtons
+                options={[
+                  { id: 'flat', label: 'Flat' },
+                  { id: 'directive', label: 'By Directive' },
+                ]}
+                selectedId={discreteOptions?.activityOptions?.hierarchyMode}
+                on:change={({ detail }) => applyActivityOption('hierarchyMode', detail.id)}
+              />
             </Input>
           {/if}
           {#if rowHasExternalEventLayer && discreteOptions.displayMode === 'grouped'}
@@ -848,16 +834,14 @@
                   content="Groups external events into rows either by the source file they came from, or by their event type."
                 />
               </div>
-              <select
-                class="st-select w-full"
-                id="group-by"
-                name="groupBy"
-                value={discreteOptions?.externalEventOptions?.groupBy}
-                on:change={event => handleExternalEventOptionSelectChange(event, 'groupBy')}
-              >
-                <option value="source_key">By Source</option>
-                <option value="event_type_name">By Event Type</option>
-              </select>
+              <TimelineEditorOptionButtons
+                options={[
+                  { id: 'source_key', label: 'By Source' },
+                  { id: 'event_type_name', label: 'By Event Type' },
+                ]}
+                selectedId={discreteOptions?.externalEventOptions?.groupBy}
+                on:change={({ detail }) => applyExternalEventOption('groupBy', detail.id)}
+              />
             </Input>
           {/if}
         </EditorSection>
