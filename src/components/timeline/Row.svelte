@@ -492,6 +492,10 @@
 
     if (hasExternalEventsLayer) {
       filteredExternalEvents = [];
+      // Cleared with the list it is keyed against, so it holds an entry only for an event still being
+      // rendered. Every rendered event is rewritten below before it is read, so keeping the stale keys
+      // would not misdraw anything -- it would just grow without bound across recomputes.
+      externalEventOpacities = {};
 
       // Filter what LINKED Derivation Groups are to be shown
       let filteredDerivationGroups = $planDerivationGroupLinks

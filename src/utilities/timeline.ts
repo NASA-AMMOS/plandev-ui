@@ -52,12 +52,12 @@ import type {
   ExternalEventLayerFilter,
   ExternalEventOptions,
   HorizontalGuide,
-  MarkerGlyph,
-  MarkerStyle,
   InterpolationMode,
   Layer,
   LineLayer,
   LineStyle,
+  MarkerGlyph,
+  MarkerStyle,
   PointShape,
   QuadtreePoint,
   QuadtreeRect,
@@ -67,8 +67,8 @@ import type {
   TimeRange,
   Timeline,
   VerticalGuide,
-  XRangeLayer,
   XRangeLabelVisibility,
+  XRangeLayer,
   XRangeLayerColorScheme,
   YScale,
 } from '../types/timeline';
@@ -193,12 +193,12 @@ export const CANVAS_PADDING_X = 0;
 export const CANVAS_PADDING_Y = 8;
 
 export const DEFAULT_AXIS_SCALE_TYPE: AxisScaleType = 'linear';
-export const DEFAULT_MARKER_STYLE: MarkerStyle = 'line';
-export const DEFAULT_INTERPOLATION: InterpolationMode = 'step';
 /** Translucency external events have always been drawn at, so a row of overlapping bars stays legible. */
 export const DEFAULT_EXTERNAL_EVENT_OPACITY = 0.5;
+export const DEFAULT_INTERPOLATION: InterpolationMode = 'step';
 export const DEFAULT_LINE_OPACITY = 1;
 export const DEFAULT_LINE_STYLE: LineStyle = 'solid';
+export const DEFAULT_MARKER_STYLE: MarkerStyle = 'line';
 export const DEFAULT_POINT_SHAPE: PointShape = 'circle';
 export const DEFAULT_SHOW_POINTS_MODE: ShowPointsMode = 'auto';
 export const DEFAULT_XRANGE_LABEL_VISIBILITY: XRangeLabelVisibility = 'auto';

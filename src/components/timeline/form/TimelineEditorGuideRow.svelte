@@ -344,9 +344,11 @@
     opacity: 1;
   }
 
+  /* `--destructive` rather than a Stellar red: the legacy palette has only `--st-red`, so the tint and
+     the text shade this needs would both have been hardcoded hex. */
   .guide-remove:hover {
-    background: var(--st-red-10, #fbe9e9);
-    color: var(--st-red-50, #c0393e);
+    background: hsl(var(--destructive) / 10%);
+    color: hsl(var(--destructive));
   }
 
   .guide-editor {
