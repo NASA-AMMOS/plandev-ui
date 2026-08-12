@@ -1,4 +1,4 @@
-import { writable, type Readable } from 'svelte/store';
+import { get, writable, type Readable } from 'svelte/store';
 import { Status } from '../enums/status';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
@@ -8,6 +8,7 @@ import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
 import { pluralize } from '../utilities/text';
 import { catchError, logMessage } from './console';
+import { getOfflineResource, offlineMode } from './offline';
 import { simulationDataset } from './simulation';
 import {
   acquireTimelineResource,
@@ -40,6 +41,26 @@ export function createProfileSubscription(
   planStartTimeYmd: string,
   user: User | null,
 ): ProfileSubscription {
+  // Offline mode has no dataset to poll: the whole bundle is already resident
+  // in memory, so the state settles synchronously and there's nothing to
+  // subscribe to or tear down.
+  if (get(offlineMode)) {
+    const resource = getOfflineResource(datasetId, name);
+    const initialState: ProfileSubscriptionState = {
+      error: resource ? '' : 'Resource not found in simulation dataset',
+      loading: false,
+      resource,
+    };
+    acquireTimelineResource(datasetId, name);
+    setTimelineResourceState(datasetId, name, 'sim', initialState);
+    const offlineState = writable<ProfileSubscriptionState>(initialState);
+
+    return {
+      store: { subscribe: offlineState.subscribe },
+      unsubscribe: () => releaseTimelineResource(datasetId, name),
+    };
+  }
+
   const initialState: ProfileSubscriptionState = { error: '', loading: true, resource: null };
   acquireTimelineResource(datasetId, name);
   setTimelineResourceState(datasetId, name, 'sim', initialState);

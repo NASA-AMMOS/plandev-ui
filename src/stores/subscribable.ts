@@ -12,6 +12,7 @@ import {
   setPendingQueryName,
   unregisterSubscription,
 } from './gqlClient';
+import { isOfflineActive } from './offlineFlag';
 
 /**
  * Returns a Svelte store that listens to GraphQL subscriptions via graphql-ws.
@@ -84,6 +85,13 @@ export function gqlSubscribable<T>(
    * Creates a subscription to the query within the shared web socket
    */
   function clientSubscribe() {
+    // Offline mode never opens a real client -- the store is served entirely
+    // via `updateValue()`. Bail before touching `getSharedClient()` so we
+    // never attempt a WebSocket connection to a nonexistent Hasura.
+    if (isOfflineActive()) {
+      return;
+    }
+
     const client = getSharedClient();
     if (browser && client && subscriptionActive) {
       // Clean up any existing subscription before creating new one
@@ -163,6 +171,9 @@ export function gqlSubscribable<T>(
   }
 
   function resubscribe() {
+    if (isOfflineActive()) {
+      return;
+    }
     if (subscriptionCleanup) {
       subscriptionCleanup();
       subscriptionCleanup = null;
@@ -171,6 +182,10 @@ export function gqlSubscribable<T>(
   }
 
   function restartSocket() {
+    if (isOfflineActive()) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(''); // Clear previous error on restart
     // Restart the shared client - debounced so only restarts once
@@ -215,9 +230,15 @@ export function gqlSubscribable<T>(
   }
 
   function subscribe(next: Subscriber<T>): Unsubscriber {
-    // If we are in the browser and subscription is not yet active,
-    // activate it using the shared client
-    if (browser && !subscriptionActive) {
+    if (isOfflineActive()) {
+      // Offline mode never opens a client -- there is no backend to talk to.
+      // Just settle loading (so any waiting UI doesn't spin forever) and let
+      // the subscriber-registration below serve the current (hydrated or
+      // initial) value.
+      setLoading(false);
+    } else if (browser && !subscriptionActive) {
+      // If we are in the browser and subscription is not yet active,
+      // activate it using the shared client
       // Generate a unique ID for this subscription instance
       registerSubscription(queryName);
       subscriptionActive = true;

@@ -15,6 +15,11 @@ export const handle: Handle = async ({ event, resolve }) => {
     return new Response(null, { status: 404 });
   }
 
+  // Offline mode has no backend to authenticate against: skip auth entirely.
+  if (event.url.pathname.includes('/offline')) {
+    return await resolve(event);
+  }
+
   try {
     if (env.PUBLIC_AUTH_SSO_ENABLED === 'true') {
       return await handleSSOAuth({ event, resolve });

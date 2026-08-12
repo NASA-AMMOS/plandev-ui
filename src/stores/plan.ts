@@ -17,9 +17,13 @@ export const planReadOnlySnapshot: Writable<boolean> = writable(false);
 // Used to lock the plan if there's an active merge request.
 export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
 
+// Used to lock the plan when viewing an offline bundle (no backend to write back to).
+export const planReadOnlyOffline: Writable<boolean> = writable(false);
+
 export const planReadOnly: Readable<boolean> = derived(
-  [planReadOnlySnapshot, planReadOnlyMergeRequest],
-  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
+  [planReadOnlySnapshot, planReadOnlyMergeRequest, planReadOnlyOffline],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planReadOnlyOffline]) =>
+    $planReadOnlyMergeRequest || $planReadOnlySnapshot || $planReadOnlyOffline,
 );
 
 export const createPlanError: Writable<string | null> = writable(null);

@@ -5,6 +5,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import FilterIcon from '@nasa-jpl/stellar/icons/filter.svg?component';
+  import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { createEventDispatcher } from 'svelte';
   import TimelineLineLayerIcon from '../../../../assets/timeline-line-layer.svg?component';
   import TimelineXRangeLayerIcon from '../../../../assets/timeline-x-range-layer.svg?component';
@@ -20,7 +21,13 @@
     Layer,
     ResourceLayerFilter,
   } from '../../../../types/timeline';
-  import { isActivityLayer, isExternalEventLayer, isLineLayer, isXRangeLayer } from '../../../../utilities/timeline';
+  import {
+    getCollidingResourceNames,
+    isActivityLayer,
+    isExternalEventLayer,
+    isLineLayer,
+    isXRangeLayer,
+  } from '../../../../utilities/timeline';
   import { tooltip } from '../../../../utilities/tooltip';
   import ColorPresetsPicker from '../../../form/ColorPresetsPicker.svelte';
   import ColorSchemePicker from '../../../form/ColorSchemePicker.svelte';
@@ -76,6 +83,18 @@
     .map(type => type.name)
     .concat($externalResourceNames)
     .sort();
+
+  // A name present in both lists is ambiguous: Row.svelte always treats it as
+  // a simulation resource, so the external profile sharing that name can't be
+  // reached through this picker. Warn rather than silently resolving it.
+  $: collidingResourceNames = getCollidingResourceNames(
+    $resourceTypes.map(type => type.name),
+    $externalResourceNames,
+  );
+  $: selectedResourceNameCollides =
+    (isLineLayer(layer) || isXRangeLayer(layer)) &&
+    !!layer.filter.resource &&
+    collidingResourceNames.includes(layer.filter.resource);
 
   function getLayerName(layer: Layer) {
     if (isActivityLayer(layer)) {
@@ -188,6 +207,17 @@
       >
         <ChevronDownIcon slot="icon" />
       </SearchableDropdown>
+      {#if selectedResourceNameCollides}
+        <div
+          class="resource-name-collision-warning"
+          use:tooltip={{
+            content: `"${layer.filter.resource}" matches both a simulation resource and an external dataset resource. This layer shows the simulation resource; the external resource of the same name can't be selected here.`,
+            placement: 'top',
+          }}
+        >
+          <WarningIcon />
+        </div>
+      {/if}
     {:else if isExternalEventLayer(layer)}
       {@const filterCount = getExternalEventLayerFilterCount(layer)}
       <ExternalEventFilterBuilder
@@ -320,5 +350,15 @@
     border-radius: 2px;
     min-width: 16px;
     padding: 0px 4px;
+  }
+
+  .resource-name-collision-warning {
+    align-items: center;
+    color: var(--st-red);
+    display: flex;
+    flex-shrink: 0;
+    height: 16px;
+    justify-content: center;
+    width: 16px;
   }
 </style>

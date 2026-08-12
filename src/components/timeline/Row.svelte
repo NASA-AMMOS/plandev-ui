@@ -221,8 +221,18 @@
     }
   });
 
-  $: if (plan && simulationDataset !== null && layers && !$resourceTypesLoading) {
-    const simulationDatasetId = simulationDataset.dataset_id;
+  // External resources are structurally independent of simulation (they come
+  // from `plan_dataset` rows, not a simulation run), so this block must not
+  // gate the external half on `simulationDataset !== null` — only the
+  // internal/sim half needs an active simulation dataset to subscribe to.
+  $: if (plan && layers && !$resourceTypesLoading) {
+    // Sentinel matching createExternalResourceSubscription's own "no active
+    // sim" convention (see its simDatasetId param): -1 means "prefer the
+    // plan-level (null simulation_dataset_id) row" instead of a sim-tied one.
+    const externalSimDatasetId = simulationDataset?.id ?? -1;
+    // Internal profiles are fetched by dataset_id and only exist once a
+    // simulation dataset is selected; null means "no sim resources possible".
+    const internalDatasetId = simulationDataset?.dataset_id ?? null;
     const resourceNamesSet = new Set<string>();
     layers.map(layer => {
       if (layer.chartType === 'line' || layer.chartType === 'x-range') {
@@ -233,10 +243,13 @@
     });
     const resourceNames = Array.from(resourceNamesSet);
 
-    // Drop entries no longer referenced by any layer or whose sim dataset
-    // changed. Both factories own their own registry cleanup on unsubscribe.
+    // Drop entries no longer referenced by any layer or whose backing
+    // dataset changed (sim dataset id for external entries, dataset_id for
+    // internal ones — see createExternalResourceSubscription's simDatasetId
+    // param). Both factories own their own registry cleanup on unsubscribe.
     Object.entries(resourceRequestMap).forEach(([key, value]) => {
-      if (resourceNames.indexOf(key) < 0 || value.simulationDatasetId !== simulationDatasetId) {
+      const currentDatasetId = value.type === 'external' ? externalSimDatasetId : internalDatasetId;
+      if (resourceNames.indexOf(key) < 0 || value.simulationDatasetId !== currentDatasetId) {
         value.unsubscribe?.();
         delete resourceRequestMap[key];
         resourceRequestMap = { ...resourceRequestMap };
@@ -245,23 +258,29 @@
 
     const simProfileStartYmd = simulationDataset?.simulation_start_time ?? plan.start_time;
     resourceNames.forEach(name => {
+      const isExternal = !$resourceTypes.find(type => type.name === name);
+      if (!isExternal && internalDatasetId === null) {
+        // Sim resource, but no simulation dataset is selected/exists yet.
+        return;
+      }
+      const datasetIdForRequest = isExternal ? externalSimDatasetId : (internalDatasetId as number);
+
       if (
         resourceRequestMap[name] &&
-        simulationDatasetId === resourceRequestMap[name].simulationDatasetId &&
+        datasetIdForRequest === resourceRequestMap[name].simulationDatasetId &&
         resourceRequestMap[name].unsubscribe
       ) {
         return;
       }
 
-      const isExternal = !$resourceTypes.find(type => type.name === name);
       // External datasets are matched by the simulation_dataset *id* (what
       // plan_dataset.simulation_dataset_id references), whereas internal
       // profiles are fetched by dataset_id. These are distinct id spaces;
       // passing dataset_id to the external factory makes its sim-tied
       // plan_dataset row preference silently never match.
       const subscription = isExternal
-        ? createExternalResourceSubscription(simulationDataset.id, name, plan.start_time, user)
-        : createProfileSubscription(simulationDatasetId, name, simProfileStartYmd, user);
+        ? createExternalResourceSubscription(externalSimDatasetId, name, plan.start_time, user)
+        : createProfileSubscription(datasetIdForRequest, name, simProfileStartYmd, user);
       const type: 'external' | 'internal' = isExternal ? 'external' : 'internal';
       // subscription.store.subscribe() runs its callback immediately,
       // before it returns. That callback creates an unsubscribe function
@@ -276,7 +295,7 @@
             error,
             loading,
             resource,
-            simulationDatasetId,
+            simulationDatasetId: datasetIdForRequest,
             type,
             unsubscribe: () => {
               storeUnsubscribe?.();
@@ -286,11 +305,6 @@
         };
       });
     });
-  } else if (simulationDataset === null) {
-    Object.values(resourceRequestMap).forEach(value => {
-      value.unsubscribe?.();
-    });
-    resourceRequestMap = {};
   }
 
   onDestroy(() => {

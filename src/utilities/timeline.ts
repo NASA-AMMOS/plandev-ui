@@ -952,6 +952,26 @@ export function getResourceForLayer(layer: Layer, resources: Resource[] | Resour
 }
 
 /**
+ * Returns the set of names present in both `resourceTypeNames` (mission model
+ * resource types, i.e. simulation resources) and `externalResourceNames`
+ * (external dataset profiles). A colliding name is ambiguous: `Row.svelte`
+ * treats any name found in the resource type list as a simulation resource,
+ * so an external profile sharing that name is otherwise silently unreachable
+ * via the layer filter. Comparison is case-sensitive, matching how resource
+ * names are matched elsewhere (e.g. Row.svelte, externalResource.ts).
+ */
+export function getCollidingResourceNames(resourceTypeNames: string[], externalResourceNames: string[]): string[] {
+  const resourceTypeNameSet = new Set(resourceTypeNames);
+  const collisions = new Set<string>();
+  for (const name of externalResourceNames) {
+    if (resourceTypeNameSet.has(name)) {
+      collisions.add(name);
+    }
+  }
+  return Array.from(collisions);
+}
+
+/**
  * Returns true if the directive falls within the viewTimeRange bounds
  */
 export function directiveInView(directive: ActivityDirective, viewTimeRange: TimeRange) {

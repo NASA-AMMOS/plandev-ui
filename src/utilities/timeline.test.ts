@@ -28,6 +28,7 @@ import {
   duplicateRow,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getCollidingResourceNames,
   getMatchingTypesForActivityLayerFilter,
   getResourceForLayer,
   getTimeRangeAroundTime,
@@ -543,6 +544,35 @@ test('getResourceForLayer', () => {
   const layer3 = createTimelineLineLayer([], []);
   layer3.filter.resource = 'resourceA';
   expect(getResourceForLayer(layer3, [resourceA, resourceB])).to.deep.equal(resourceA);
+});
+
+describe('getCollidingResourceNames', () => {
+  test('returns an empty array when there is no overlap', () => {
+    expect(getCollidingResourceNames(['a', 'b'], ['c', 'd'])).to.deep.equal([]);
+  });
+
+  test('returns every name when both lists fully overlap', () => {
+    expect(getCollidingResourceNames(['a', 'b'], ['a', 'b']).sort()).to.deep.equal(['a', 'b']);
+  });
+
+  test('returns only the names present in both lists on partial overlap', () => {
+    expect(getCollidingResourceNames(['a', 'b', 'c'], ['b', 'c', 'd']).sort()).to.deep.equal(['b', 'c']);
+  });
+
+  test('returns an empty array when either input is empty', () => {
+    expect(getCollidingResourceNames([], ['a', 'b'])).to.deep.equal([]);
+    expect(getCollidingResourceNames(['a', 'b'], [])).to.deep.equal([]);
+    expect(getCollidingResourceNames([], [])).to.deep.equal([]);
+  });
+
+  test('comparison is case-sensitive', () => {
+    expect(getCollidingResourceNames(['Resource'], ['resource'])).to.deep.equal([]);
+    expect(getCollidingResourceNames(['Resource'], ['Resource'])).to.deep.equal(['Resource']);
+  });
+
+  test('does not return duplicate entries when a name repeats in the external list', () => {
+    expect(getCollidingResourceNames(['a'], ['a', 'a'])).to.deep.equal(['a']);
+  });
 });
 
 // TODO - should we make a test case for filtering the sources in an ExternalEventsLayer?

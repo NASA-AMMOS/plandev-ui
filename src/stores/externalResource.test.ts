@@ -232,6 +232,46 @@ describe('createExternalResourceSubscription', () => {
     expect(firstCall[0]).toBe(4);
   });
 
+  test('no active sim dataset (sentinel -1) never matches a sim-tied row, falls back to plan-level row', async () => {
+    getExternalProfileSegmentsSinceMock.mockResolvedValue(segments([{ start_offset: '00:00:00', value: 'A' }]));
+
+    const profile = makeProfile({ duration: '00:02:00', id: 11, name: 'r' });
+    planDatasetsValue.set([
+      makePlanDataset({ datasetId: 5, profiles: [profile], simDatasetId: 5 }),
+      makePlanDataset({ datasetId: 6, profiles: [profile], simDatasetId: null }),
+    ]);
+    planDatasetsLoading.set(false);
+
+    // No active simulation dataset at all — matches Row.svelte's behavior
+    // when it renders external-only plans with no simulation history.
+    const sub = makeSub(-1, 'r', '2024-01-01T00:00:00', null);
+    sub.store.subscribe(() => {});
+    await flushPromises();
+
+    const [firstCall] = getExternalProfileSegmentsSinceMock.mock.calls;
+    expect(firstCall[0]).toBe(6); // plan-level row, not the sim-tied one
+  });
+
+  test('falls back to the first encountered row when neither sim-tied nor plan-level rows exist', async () => {
+    getExternalProfileSegmentsSinceMock.mockResolvedValue(segments([{ start_offset: '00:00:00', value: 'A' }]));
+
+    const profile = makeProfile({ duration: '00:02:00', id: 11, name: 'r' });
+    planDatasetsValue.set([
+      makePlanDataset({ datasetId: 7, profiles: [profile], simDatasetId: 100 }),
+      makePlanDataset({ datasetId: 8, profiles: [profile], simDatasetId: 200 }),
+    ]);
+    planDatasetsLoading.set(false);
+
+    // sub watches sim 42; no row is sim-tied to it and no plan-level (null)
+    // row exists, so the first encountered row wins.
+    const sub = makeSub(42, 'r', '2024-01-01T00:00:00', null);
+    sub.store.subscribe(() => {});
+    await flushPromises();
+
+    const [firstCall] = getExternalProfileSegmentsSinceMock.mock.calls;
+    expect(firstCall[0]).toBe(7);
+  });
+
   test('duration advance triggers a refetch with the last seen offset as sinceOffset', async () => {
     getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(
       segments([
