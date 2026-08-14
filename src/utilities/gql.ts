@@ -2882,8 +2882,10 @@ const gql = {
         }
         created_at
         description
+        external_capabilities
         id
         jar_id
+        model_type
         name
         plans {
           id

@@ -217,6 +217,9 @@
   /** What the backend wanted to say about a foreign plan it converted -- dropped activities,
    *  a derived plan window, an argument that will not typecheck. Shown, not swallowed. */
   let externalImportNotices: ExternalPlanNotice[] = [];
+  /** A converted foreign plan, re-encoded as the PlanDev transfer document the gateway imports.
+   *  Null whenever the chosen file already was one, in which case the user's file is submitted. */
+  let convertedPlanFiles: FileList | null = null;
   let planUploadFilesError: string | null = null;
   let planUploadFileInput: HTMLInputElement;
   let simTemplateField = field<number | null>(null);
@@ -397,7 +400,11 @@
         endTime,
         $simTemplateField.value,
         planTags.map(({ id }) => id),
-        planUploadFiles,
+        // What gets submitted is what the gateway can read. For one of PlanDev's own transfer
+        // documents that is the file the user chose; for a foreign file it is the CONVERSION, not
+        // the original bytes -- the gateway has no idea how to read a Blackbird plan, and handing
+        // it one produces directives with no start offset and no arguments.
+        convertedPlanFiles ?? planUploadFiles,
         $user,
       );
       if (error) {
@@ -405,6 +412,8 @@
       } else {
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
+        convertedPlanFiles = null;
+        externalImportNotices = [];
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
@@ -503,7 +512,9 @@
     isPlanImportMode = false;
     planUploadFileInput.value = '';
     planUploadFiles = undefined;
+    convertedPlanFiles = null;
     planUploadFilesError = null;
+    externalImportNotices = [];
   }
 
   function showImportPlan() {
@@ -546,9 +557,22 @@
     return typeof (parsed as PlanTransfer | DeprecatedPlanTransfer)?.start_time === 'string';
   }
 
+  /**
+   * A one-file `FileList`, which is the only shape the import effect accepts.
+   *
+   * There is no FileList constructor; `DataTransfer` is the standard way to build one, and it is
+   * what the file input itself hands over.
+   */
+  function asFileList(file: File): FileList {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    return transfer.files;
+  }
+
   async function parsePlanFile(text: string) {
     planUploadFilesError = null;
     externalImportNotices = [];
+    convertedPlanFiles = null;
     try {
       let planJSON: PlanTransfer | DeprecatedPlanTransfer;
       try {
@@ -578,6 +602,9 @@
         );
         externalImportNotices = imported.notices ?? [];
         planJSON = imported.plan as unknown as PlanTransfer;
+        convertedPlanFiles = asFileList(
+          new File([JSON.stringify(planJSON)], 'converted-plan.json', { type: 'application/json' }),
+        );
       }
 
       nameField.validateAndSet(planJSON.name);
