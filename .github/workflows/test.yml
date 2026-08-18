@@ -40,6 +40,10 @@ env:
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
   PR_BODY: '${{github.event.pull_request.body}}'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
