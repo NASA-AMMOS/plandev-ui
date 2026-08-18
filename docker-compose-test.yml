@@ -29,7 +29,7 @@ services:
     ports: ['27186:27186']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/action_file_store
+      - aerie_file_store:/usr/src/app/action_file_store
   plandev_gateway:
     container_name: plandev_gateway
     depends_on:
@@ -51,7 +51,7 @@ services:
     ports: ['9000:9000']
     restart: always
     volumes:
-      - plandev_file_store:/app/files
+      - aerie_file_store:/app/files
   plandev_merlin:
     container_name: plandev_merlin
     depends_on:
@@ -76,7 +76,7 @@ services:
     ports: ['27183:27183']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/merlin_file_store
+      - aerie_file_store:/usr/src/app/merlin_file_store
   plandev_merlin_worker:
     container_name: plandev_merlin_worker
     depends_on:
@@ -98,7 +98,7 @@ services:
     ports: ['27187:8080']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/merlin_file_store:ro
+      - aerie_file_store:/usr/src/app/merlin_file_store:ro
   plandev_scheduler:
     container_name: plandev_scheduler
     depends_on:
@@ -122,7 +122,7 @@ services:
     ports: ['27185:27185']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/merlin_file_store
+      - aerie_file_store:/usr/src/app/merlin_file_store
   plandev_scheduler_worker:
     container_name: plandev_scheduler_worker
     depends_on:
@@ -147,7 +147,7 @@ services:
     ports: ['27189:8080']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/merlin_file_store:ro
+      - aerie_file_store:/usr/src/app/merlin_file_store:ro
   plandev_sequencing:
     container_name: plandev_sequencing
     depends_on:
@@ -169,7 +169,7 @@ services:
     ports: ['27184:27184']
     restart: always
     volumes:
-      - plandev_file_store:/usr/src/app/sequencing_file_store
+      - aerie_file_store:/usr/src/app/sequencing_file_store
   hasura:
     container_name: plandev_hasura
     depends_on:
@@ -251,6 +251,6 @@ services:
     volumes:
       - workspace_file_store:/usr/src/ws
 volumes:
-  plandev_file_store:
+  aerie_file_store:
   postgres_data:
   workspace_file_store:
