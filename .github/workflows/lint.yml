@@ -28,7 +28,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: npm
 
-      - name: Install dependencies
+      - name: Install Dependencies
         # use `npm ci` for reproducible installs, fails if package & lock files are out of sync
         # install without running lifecycle scripts, then run only scripts approved in package.json's `allowScripts`
         run: |
