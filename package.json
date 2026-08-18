@@ -157,5 +157,6 @@
     "vite": {
       "esbuild": "^0.24.0"
     }
-  }
+  },
+  "allowScripts": {}
 }

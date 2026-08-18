@@ -52,7 +52,11 @@ jobs:
           cache: npm
 
       - name: Install Dependencies
-        run: npm ci --ignore-scripts
+        # use `npm ci` for reproducible installs, fails if package & lock files are out of sync
+        # install without running lifecycle scripts, then run only scripts approved in package.json's `allowScripts`
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild --strict-allow-scripts
 
       - name: Identify Flaky Tests
         run: node .github/workflows/scripts/identify-flaky-tests.mjs
