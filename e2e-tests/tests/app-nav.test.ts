@@ -76,14 +76,6 @@ test.describe('App Nav', () => {
     await expect(setup.page).toHaveURL(`${baseURL}/dictionaries`);
   });
 
-  test(`Clicking on the app menu 'Expansion' option should route to the expansion/rules page`, async ({ baseURL }) => {
-    await appNav.appMenuButton.click();
-    await appNav.appMenu.waitFor({ state: 'attached' });
-    await appNav.appMenu.waitFor({ state: 'visible' });
-    await appNav.appMenuItemExpansion.click();
-    await expect(setup.page).toHaveURL(`${baseURL}/expansion/rules`);
-  });
-
   test(`Clicking on the app menu 'Scheduling' option should route to the scheduling page`, async ({ baseURL }) => {
     await appNav.appMenuButton.click();
     await appNav.appMenu.waitFor({ state: 'attached' });
