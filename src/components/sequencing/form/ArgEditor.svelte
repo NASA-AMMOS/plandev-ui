@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import type { SyntaxNode } from '@lezer/common';
-  import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
-  import type { ArgTextDef, CommandInfoMapper } from '@nasa-jpl/aerie-sequence-languages';
+  import type { CommandDictionary, FswCommandArgument } from '@nasa-jpl/plandev-ampcs';
+  import type { ArgTextDef, CommandInfoMapper } from '@nasa-jpl/plandev-sequence-languages';
   import {
     getMissingArgDefs,
     isFswCommandArgumentBoolean,

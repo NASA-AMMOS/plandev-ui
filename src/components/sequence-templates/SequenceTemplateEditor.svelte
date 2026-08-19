@@ -6,14 +6,14 @@
   import { Compartment, EditorState } from '@codemirror/state';
   import { type ViewUpdate } from '@codemirror/view';
   import type { SyntaxNode } from '@lezer/common';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/plandev-ampcs';
   import type {
     CommandInfoMapper,
     LibrarySequenceSignature,
     OutputLanguage,
     PhoenixAdaptation,
     PhoenixContext,
-  } from '@nasa-jpl/aerie-sequence-languages';
+  } from '@nasa-jpl/plandev-sequence-languages';
   import { basicSetup, EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { createEventDispatcher, onMount } from 'svelte';

@@ -1,4 +1,4 @@
-import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+import type { CommandDictionary, FswCommand, FswCommandArgument } from '@nasa-jpl/plandev-ampcs';
 import tsc from 'typescript';
 import type { Diagnostic as ResponseDiagnostic } from '../../types/monaco-internal';
 import { findNodeByValue, stripQuotes, validateArguments } from '../workerHelpers';

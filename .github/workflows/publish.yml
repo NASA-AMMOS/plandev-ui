@@ -22,36 +22,57 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - name: Check out repository
+        # general policy: pin `uses` dependencies to commit hashes to avoid tag-poisoning attacks
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          node-version-file: '.nvmrc'
-          cache: npm
+          # throw away GH token after this step so future steps can't use it
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          # don't use NPM cache when installing, to avoid possibility of cache-poisoning attacks during publish
+          package-manager-cache: false
+
       - name: Install All Dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild --strict-allow-scripts
+
       - name: Build
         run: npm run build
+
       - name: Install Production Dependencies
-        run: npm ci --production
+        run: |
+          npm ci --production --ignore-scripts
+          npm rebuild --strict-allow-scripts
+
       - name: Login to the Container Registry
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
       - name: Extract Metadata (tags and labels) for Docker
         id: meta
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
-          images: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui
+          images: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui
+
       - name: Build Docker Image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           load: true
-          tags: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui:${{ github.sha }}
+
       - name: Push Docker Image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -60,10 +81,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Scan aerie-ui Docker image
+
+      - name: Scan plandev-ui Docker image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/nasa-ammos/aerie-ui:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/nasa-ammos/plandev-ui:${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

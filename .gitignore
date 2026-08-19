@@ -1,5 +1,6 @@
 .DS_Store
 aerie/
+plandev/
 build
 e2e-test-results
 .idea/

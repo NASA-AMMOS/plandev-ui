@@ -1,4 +1,4 @@
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import type { JSONType, SchemaObject } from 'ajv';
 import { isEqual, omitBy } from 'lodash-es';
 import type { ActionParametersMap } from '../types/actions';

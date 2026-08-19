@@ -1,19 +1,19 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import {
   parseCdlDictionary,
   toAmpcsXml,
   type PhoenixAdaptation,
   type PhoenixContext,
   type UserSequence,
-} from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
@@ -1024,7 +1024,7 @@ const effects = {
       const actionRunInsertInput: Record<string, unknown> = {
         action_definition_id: actionDefinitionId,
         // we are now sending secrets on every run, to provide JWT token to actions
-        // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
+        // todo: future refactor - use hasura actions to run plandev actions & avoid need for secrets call
         has_secrets: true,
         parameters: nonSecretParameters,
         settings,
@@ -8781,7 +8781,7 @@ const effects = {
       }
 
       if (dictionary.split('\n').find(line => /^PROJECT\s*:\s*"([^"]*)"/.test(line))) {
-        // convert cdl to ampcs format, consider moving to aerie backend after decision on XTCE
+        // convert cdl to ampcs format, consider moving to plandev backend after decision on XTCE
         // eslint-disable-next-line no-control-regex
         dictionary = toAmpcsXml(parseCdlDictionary(dictionary)).replaceAll(/[^\x00-\x7F]+/g, '');
       }
@@ -8902,7 +8902,7 @@ const effects = {
         }
       }
 
-      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
+      // The plandev gateway mangles the names of uploaded files to ensure uniqueness.
       // Here, we use the ids of the files we just uploaded to look up the generated filenames
       const generatedFilenames: Record<string, string> = {};
       for (const newFile of files) {

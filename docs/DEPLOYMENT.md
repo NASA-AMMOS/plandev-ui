@@ -11,7 +11,7 @@ The deployment of PlanDev UI depends on other PlanDev containers on the same Doc
 This command pulls the latest Docker image from GitHub, and starts a container from that image.
 
 ```bash
-docker run --name aerie-ui -d -p 80:80 ghcr.io/nasa-ammos/aerie-ui:latest
+docker run --name plandev-ui -d -p 80:80 ghcr.io/nasa-ammos/plandev-ui:latest
 ```
 
 Goto [http://localhost](http://localhost)
@@ -24,8 +24,8 @@ First make sure you have all the [prerequisite software](./DEVELOPER.md#prerequi
 cd plandev-ui
 npm install
 npm run build
-docker build -t aerie-ui .
-docker run --name aerie-ui -d -p 80:80 aerie-ui
+docker build -t plandev-ui .
+docker run --name plandev-ui -d -p 80:80 plandev-ui
 ```
 
 Goto [http://localhost](http://localhost)

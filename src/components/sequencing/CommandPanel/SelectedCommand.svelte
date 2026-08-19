@@ -8,8 +8,8 @@
     FswCommandArgument,
     FswCommandArgumentVarString,
     HwCommand,
-  } from '@nasa-jpl/aerie-ampcs';
-  import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/aerie-sequence-languages';
+  } from '@nasa-jpl/plandev-ampcs';
+  import type { ArgTextDef, CommandInfoMapper, TimeTagInfo } from '@nasa-jpl/plandev-sequence-languages';
   import type { EditorView } from 'codemirror';
   import { debounce } from 'lodash-es';
   import { ArrowUpRight } from 'lucide-svelte';

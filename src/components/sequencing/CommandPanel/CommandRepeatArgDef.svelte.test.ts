@@ -1,4 +1,4 @@
-import type { FswCommandArgument, FswCommandArgumentRepeat } from '@nasa-jpl/aerie-ampcs';
+import type { FswCommandArgument, FswCommandArgumentRepeat } from '@nasa-jpl/plandev-ampcs';
 import { cleanup, render } from '@testing-library/svelte';
 import { keyBy } from 'lodash-es';
 import { afterEach, describe, expect, it } from 'vitest';

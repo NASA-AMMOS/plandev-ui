@@ -4,7 +4,7 @@ import { reqExtension } from '../../utilities/requests';
 
 /**
  * Used to proxy requests from the UI to an external extension. This avoids any CORS errors we might
- * encounter by calling a tool that may or may not be external to Aerie.
+ * encounter by calling a tool that may or may not be external to PlanDev.
  */
 export const POST: RequestHandler = async event => {
   try {

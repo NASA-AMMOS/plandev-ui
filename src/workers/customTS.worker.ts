@@ -2,7 +2,7 @@
  * Want another example? https://github.com/statelyai/xstate-viz/blob/cd128a15486d9253edaaa360ee6c1b150f293f5c/public/ts-worker.js#L59
  * (this is basically the only example of this working on the internet!)
  */
-import type { CommandDictionary } from '@nasa-jpl/aerie-ampcs';
+import type { CommandDictionary } from '@nasa-jpl/plandev-ampcs';
 import type { Diagnostic, TypeScriptWorker as InternalTsWorker } from '../types/monaco-internal';
 import { generateCommandArgumentDiagnostics } from './diagnostics/commandArgumentsDiagnostics';
 import { generateTimeDiagnostics } from './diagnostics/timeDiagnostics';

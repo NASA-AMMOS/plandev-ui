@@ -9,7 +9,7 @@ import { INVALID_JWT } from '../utilities/permissions';
 import { ErrorTypes } from './errors';
 
 /**
- * Used to make calls to application external to Aerie.
+ * Used to make calls to application external to PlanDev.
  *
  * @param url The external URL to call.
  * @param payload The JSON payload that is serialized as the body of the request.
@@ -84,7 +84,7 @@ export async function reqActionServer<T = any>(
 }
 
 /**
- * Function to make HTTP requests to the Aerie Gateway.
+ * Function to make HTTP requests to the PlanDev Gateway.
  */
 export async function reqGateway<T = any>(
   url: string,
@@ -128,7 +128,7 @@ export async function reqGateway<T = any>(
 }
 
 /**
- * Function to make HTTP requests to the Aerie Gateway, forwarding all cookies
+ * Function to make HTTP requests to the PlanDev Gateway, forwarding all cookies
  */
 export async function reqGatewayForwardCookies<T = any>(path: string, cookies: string, referrer?: string): Promise<T> {
   const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;

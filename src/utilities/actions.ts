@@ -6,7 +6,7 @@ import type {
   ActionValueSchemaFileList,
   ActionValueSchemaSequence,
   ActionValueSchemaSequenceList,
-} from '@nasa-jpl/aerie-actions';
+} from '@nasa-jpl/plandev-actions';
 import { Status } from '../enums/status';
 import type { ActionDefinition, ActionDefinitionVersion, ActionParametersMap, ActionRunSlim } from '../types/actions';
 import type { ArgumentsMap } from '../types/parameter';

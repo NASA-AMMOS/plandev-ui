@@ -2,8 +2,8 @@
 
 <script lang="ts">
   import { base } from '$app/paths';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
-  import { seqJsonToSeqn, type PhoenixContext } from '@nasa-jpl/aerie-sequence-languages';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/plandev-ampcs';
+  import { seqJsonToSeqn, type PhoenixContext } from '@nasa-jpl/plandev-sequence-languages';
   import type { ICellRendererParams } from 'ag-grid-community';
   import { expansionRunsColumns } from '../../stores/expansion';
   import { sequenceAdaptation } from '../../stores/sequence-adaptation';
