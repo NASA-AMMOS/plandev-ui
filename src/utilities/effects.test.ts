@@ -13,13 +13,7 @@ import * as Requests from './requests';
 
 const mockPlanStore = await vi.hoisted(() => import('../stores/__mocks__/plan.mock'));
 
-vi.mock('$env/dynamic/public', () => {
-  return {
-    env: {
-      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
-    },
-  };
-}); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
 
 vi.mock('./toast', () => ({
   showFailureToast: vi.fn(),

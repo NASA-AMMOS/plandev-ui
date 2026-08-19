@@ -38,10 +38,8 @@
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
-  import { SEQUENCE_EXPANSION_MODE } from '../../../constants/command-expansion';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { SequencingMode } from '../../../enums/sequencing';
   import { Status } from '../../../enums/status';
   import {
     activityArgumentDefaults,
@@ -51,16 +49,6 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../../stores/activities';
-  import {
-    cachedConstraintsStatus,
-    checkConstraintsStatus,
-    constraintResponses,
-    constraintsStatus,
-    resetConstraintStores,
-    resetPlanConstraintStores,
-    uncheckedConstraintCount,
-  } from '../../../stores/constraints';
-  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -75,11 +63,16 @@
     simulationErrors,
   } from '../../../stores/console';
   import {
-    lastExpandedSimulationDatasetId,
-    planExpansionStatus,
-    resetExpansionStores,
-    selectedExpansionSetId,
-  } from '../../../stores/expansion';
+    cachedConstraintsStatus,
+    checkConstraintsStatus,
+    constraintResponses,
+    constraintsStatus,
+    resetConstraintStores,
+    resetPlanConstraintStores,
+    uncheckedConstraintCount,
+  } from '../../../stores/constraints';
+  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
+  import { planExpansionStatus, resetExpansionStores } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -503,10 +496,7 @@
       modelErrorCount += 1;
     }
   }
-  $: lastSimulationDatasetId =
-    SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
-      ? $lastTemplatedSimulationDatasetId
-      : $lastExpandedSimulationDatasetId;
+  $: lastSimulationDatasetId = $lastTemplatedSimulationDatasetId;
 
   onDestroy(() => {
     resetActivityStores();
@@ -817,20 +807,13 @@
               permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to expand activities'}
-              menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-                ? 'Command Expansion Status'
-                : 'Template Expansion Status'}
-              disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-                ? $selectedExpansionSetId === null
-                : $selectedSequence === null || $simulationDatasetId === null}
+              menuTitle="Template Expansion Status"
+              disabled={$selectedSequence === null || $simulationDatasetId === null}
               status={$planExpansionStatus}
               on:click={() => onHandleExpansion()}
             >
               <ChevronsLeftRight size={20} />
               <svelte:fragment slot="metadata">
-                {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-                  <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
-                {/if}
                 {#if !lastSimulationDatasetId}
                   <div>No expansions exist yet.</div>
                 {:else}

@@ -115,7 +115,6 @@ import type {
   ConstraintResult,
 } from '../types/constraint';
 import type {
-  ExpandedSequence,
   ExpansionRule,
   ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
@@ -4653,35 +4652,6 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Failed to retrieve expansion sequence ID', e as Error);
-      return null;
-    }
-  },
-
-  async getExpansionSequenceSeqJson(
-    seqId: string,
-    simulationDatasetId: number,
-    user: User | null,
-  ): Promise<string | null> {
-    try {
-      const data = await reqHasura<ExpandedSequence[]>(
-        gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
-        {
-          seqId,
-          simulationDatasetId,
-        },
-        user,
-      );
-
-      const { expanded_sequences } = data;
-      if (expanded_sequences != null && expanded_sequences.length === 1) {
-        const { expanded_sequence } = expanded_sequences[0];
-        logMessage('log', `Retrieved expansion sequence SeqJson for sequence "${seqId}".`);
-        return JSON.stringify(expanded_sequence, null, 2);
-      } else {
-        throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
-      }
-    } catch (e) {
-      catchError('log', 'Failed to get expansion sequence seq json', e as Error);
       return null;
     }
   },
