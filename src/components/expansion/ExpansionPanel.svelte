@@ -161,7 +161,7 @@
   }
 
   function onShowExpandedSequence(sequence: ExpansionSequence) {
-    showExpansionSequenceModal(sequence, user);
+    showExpansionSequenceModal(sequence);
   }
 
   function onShowFilter(sequenceFilter: SequenceFilter) {

@@ -1198,16 +1198,13 @@ export async function showEditViewModal(): Promise<ModalElementValue<{ id?: numb
 /**
  * Shows a SequenceModal with the supplied arguments.
  */
-export async function showExpansionSequenceModal(
-  expansionSequence: ExpansionSequence,
-  user: User | null,
-): Promise<ModalElementValue> {
+export async function showExpansionSequenceModal(expansionSequence: ExpansionSequence): Promise<ModalElementValue> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence, user }, target });
+        const sequenceModal = new ExpansionSequenceModal({ props: { expansionSequence }, target });
         target.resolve = resolve;
 
         sequenceModal.$on('close', () => {
