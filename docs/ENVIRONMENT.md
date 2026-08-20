@@ -3,9 +3,9 @@
 This document provides detailed information about environment variables for PlanDev UI.
 
 | Name                                | Description                                                                                                                   | Type     | Default                          |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------- |
+|-------------------------------------| ----------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------- |
 | `ORIGIN`                            | Url of where the UI is served from. See the [Svelte Kit Adapter Node docs][svelte-kit-adapter-node-docs].                     | `string` | http://localhost                 |
-| `PUBLIC_AERIE_FILE_STORE_PREFIX`    | Prefix to prepend to files uploaded through simulation configuration.                                                         | `string` | /usr/src/app/merlin_file_store/  |
+| `PUBLIC_PLANDEV_FILE_STORE_PREFIX`  | Prefix to prepend to files uploaded through simulation configuration.                                                         | `string` | /usr/src/app/merlin_file_store/  |
 | `PUBLIC_AUTH_SSO_ENABLED`           | Whether to use the SSO-based auth flow, or the /login page auth flow                                                          | `string` | false                            |
 | `PUBLIC_COMMAND_EXPANSION_MODE`     | Sets the mode to be used for command expansion, typescript or templating                                                      | `string` | typescript                       |
 | `PUBLIC_GATEWAY_CLIENT_URL`         | Url of the Gateway as called from the client (i.e. web browser)                                                               | `string` | http://localhost:9000            |
