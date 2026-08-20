@@ -698,6 +698,39 @@ export function viewUpdateSection(
   });
 }
 
+/**
+ * Opens or folds a whole timeline: every row's `expanded` and every section's `collapsed`, in one
+ * store update so a long timeline renders once rather than once per item.
+ */
+export function viewSetAllExpanded(expanded: boolean, timelineId?: number | null): void {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+
+  view.update(currentView => {
+    if (currentView === null) {
+      return currentView;
+    }
+
+    return {
+      ...currentView,
+      definition: {
+        ...currentView.definition,
+        plan: {
+          ...currentView.definition.plan,
+          timelines: currentView.definition.plan.timelines.map(timeline =>
+            timeline && timeline.id === timelineId
+              ? {
+                  ...timeline,
+                  rows: timeline.rows.map(row => ({ ...row, expanded })),
+                  sections: (timeline.sections || []).map(section => ({ ...section, collapsed: !expanded })),
+                }
+              : timeline,
+          ),
+        },
+      },
+    };
+  });
+}
+
 export function viewDeleteSection(sectionId: number, moveRowsToRoot: boolean = true, timelineId?: number | null): void {
   timelineId = timelineId ?? get<number | null>(selectedTimelineId);
 

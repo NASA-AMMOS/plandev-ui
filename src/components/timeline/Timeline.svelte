@@ -27,6 +27,7 @@
     viewAddTimelineRow,
     viewDeleteSection,
     viewReorderTimelineItems,
+    viewSetAllExpanded,
     viewSetSelectedSection,
     viewTogglePanel,
     viewUpdateSection,
@@ -371,6 +372,10 @@
 
   function onDeleteSection(event: CustomEvent<TimelineSection>) {
     viewDeleteSection(event.detail.id, true, timeline?.id);
+  }
+
+  function onSetAllExpanded(event: CustomEvent<{ expanded: boolean }>) {
+    viewSetAllExpanded(event.detail.expanded, timeline?.id);
   }
 
   /**
@@ -1090,6 +1095,7 @@
     on:duplicateRow
     on:insertRow
     on:insertSection={onInsertSection}
+    on:setAllExpanded={onSetAllExpanded}
     on:editSection={onEditSection}
     on:deleteSection={onDeleteSection}
     on:duplicateSection

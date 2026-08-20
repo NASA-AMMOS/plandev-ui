@@ -69,6 +69,7 @@
     moveRow: { direction: 'up' | 'down'; row: Row };
     moveSection: { direction: 'up' | 'down'; section: TimelineSection };
     pasteActivityDirectivesAtTime: Date | null;
+    setAllExpanded: { expanded: boolean };
     toggleActivityComposition: { composition: ActivityOptions['composition']; row: Row };
     updateVerticalGuides: VerticalGuide[];
     viewTimeRangeChanged: TimeRange;
@@ -289,6 +290,10 @@
     }
   }
 
+  function onSetAllExpanded(expanded: boolean) {
+    dispatch('setAllExpanded', { expanded });
+  }
+
   function onInsertSection() {
     // The row under the cursor, so the section lands there rather than at the end of the timeline.
     dispatch('insertSection', { row: row ?? null });
@@ -334,6 +339,9 @@
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={() => onMoveSection('up')}>Move Section Up</ContextMenu.Item>
     <ContextMenu.Item size="sm" on:click={() => onMoveSection('down')}>Move Section Down</ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand All</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse All</ContextMenu.Item>
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={onDeleteSection}>Delete Section</ContextMenu.Item>
   {:else}
@@ -611,5 +619,7 @@
     {/if}
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={onInsertSection}>Insert Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand All</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse All</ContextMenu.Item>
   {/if}
 </ContextMenuInternal>
