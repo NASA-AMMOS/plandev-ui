@@ -214,13 +214,14 @@
     pointer-events: none;
     position: absolute;
     width: 100%;
-    /* Below the section header band (z-index 5) so persistent guides respect the divider. */
-    z-index: 4;
+    /* Above the section header band (z-index 5). A guide marks one instant across every row, and
+       a band cutting the line breaks tracing a time from one section's rows to another's. */
+    z-index: 6;
   }
 
   .timeline-cursor-container--active {
-    /* The transient hover cursor draws above the section header band (z-index 5). */
-    z-index: 6;
+    /* The transient hover cursor draws above the persistent guides it may cross. */
+    z-index: 7;
   }
 
   .timeline-cursor-header {

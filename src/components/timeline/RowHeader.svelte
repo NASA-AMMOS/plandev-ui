@@ -133,8 +133,8 @@
       <div class="row-header-left-column-row">
         <div class="row-header-title-button-container">
           <button
-            aria-expanded={!expanded}
-            aria-label={expanded ? 'Expand Row' : 'Collapse Row'}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse Row' : 'Expand Row'}
             class="st-button icon row-header-title-button"
             on:click={toggleExpansion}
           >

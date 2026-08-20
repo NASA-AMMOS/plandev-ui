@@ -256,8 +256,13 @@ export type TimeRange = {
 
 export type TimelineItemRef = { id: number; type: 'section' } | { id: number; type: 'row' };
 
+/** The two edges a timeline drop can land on. A drop with no edge lands inside the target. */
+export type TimelineDropEdge = 'bottom' | 'top';
+
 export type TimelineSection = {
   collapsed: boolean;
+  /** Painted at full strength on the section band. Null only in views written before sections
+   * carried a default color; treat it as ViewDefaultSectionColor. */
   color: string | null;
   id: number;
   name: string;

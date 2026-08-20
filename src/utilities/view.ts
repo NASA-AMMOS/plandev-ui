@@ -717,7 +717,7 @@ export function migrateViewDefinitionV3toV4(viewDefinition: ViewDefinition) {
     plan: {
       ...viewDefinition.plan,
       timelines: viewDefinition.plan.timelines.map(timeline => {
-        // Skip if timeline already has items (already migrated or new view)
+        // Already migrated, or written by a build that had items.
         if (timeline.items && timeline.items.length > 0) {
           return {
             ...timeline,
@@ -725,7 +725,6 @@ export function migrateViewDefinitionV3toV4(viewDefinition: ViewDefinition) {
           };
         }
 
-        // Create items array from existing rows (all rows become root-level items)
         const items = timeline.rows.map(row => ({
           id: row.id,
           type: 'row' as const,
