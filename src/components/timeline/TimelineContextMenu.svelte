@@ -53,22 +53,23 @@
 
   const dispatch = createEventDispatcher<{
     addRowToSection: TimelineSection;
-    addSection: void;
     collapseDiscreteTree: Row;
     createActivityDirectives: ActivityDirective[];
     deleteActivityDirective: number;
     deleteRow: Row;
     deleteSection: TimelineSection;
     duplicateRow: Row;
+    duplicateSection: TimelineSection;
     editRow: Row;
     editSection: TimelineSection;
     insertRow: Row;
+    insertSection: { row: Row | null };
     jumpToActivityDirective: number;
     jumpToSpan: number;
     moveRow: { direction: 'up' | 'down'; row: Row };
+    moveSection: { direction: 'up' | 'down'; section: TimelineSection };
     pasteActivityDirectivesAtTime: Date | null;
     toggleActivityComposition: { composition: ActivityOptions['composition']; row: Row };
-    toggleSectionCollapsed: TimelineSection;
     updateVerticalGuides: VerticalGuide[];
     viewTimeRangeChanged: TimeRange;
     viewTimeRangeReset: void;
@@ -121,7 +122,10 @@
     activityOptions = undefined;
     activityDirectiveSpans = null;
     hasActivityLayer = false;
-    timelineSection = undefined;
+    // timelineSection and mouseOverOrigin survive here, the same way `row` does. Re-opening the
+    // menu hides the previous one first, and that hide runs this - so clearing them here wiped
+    // them while the new menu was being shown, and every right-click after the first fell through
+    // to the generic menu. The next contextMenu replaces both wholesale.
   }
 
   $: startYmd = simulationDataset?.simulation_start_time ?? planStartTimeYmd;
@@ -261,15 +265,21 @@
     }
   }
 
-  function onToggleSectionCollapsed() {
-    if (timelineSection) {
-      dispatch('toggleSectionCollapsed', timelineSection);
-    }
-  }
-
   function onAddRowToSection() {
     if (timelineSection) {
       dispatch('addRowToSection', timelineSection);
+    }
+  }
+
+  function onMoveSection(direction: 'up' | 'down') {
+    if (timelineSection) {
+      dispatch('moveSection', { direction, section: timelineSection });
+    }
+  }
+
+  function onDuplicateSection() {
+    if (timelineSection) {
+      dispatch('duplicateSection', timelineSection);
     }
   }
 
@@ -279,8 +289,9 @@
     }
   }
 
-  function onAddSection() {
-    dispatch('addSection');
+  function onInsertSection() {
+    // The row under the cursor, so the section lands there rather than at the end of the timeline.
+    dispatch('insertSection', { row: row ?? null });
   }
 
   function onShowDirectivesAndActivitiesChange(value: string | undefined) {
@@ -316,13 +327,13 @@
 
 <ContextMenuInternal on:hide bind:this={contextMenuComponent}>
   {#if mouseOverOrigin === 'section-header' && timelineSection}
+    <!-- Kept in step with the section header's own actions menu: same items, same order. -->
     <ContextMenu.Item size="sm" on:click={onEditSection}>Edit Section</ContextMenu.Item>
-    <ContextMenu.Item size="sm" on:click={onToggleSectionCollapsed}>
-      {timelineSection.collapsed ? 'Expand Section' : 'Collapse Section'}
-    </ContextMenu.Item>
     <ContextMenu.Item size="sm" on:click={onAddRowToSection}>Add Row to Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onDuplicateSection}>Duplicate Section</ContextMenu.Item>
     <ContextMenu.Separator />
-    <ContextMenu.Item size="sm" on:click={onAddSection}>Add Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onMoveSection('up')}>Move Section Up</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onMoveSection('down')}>Move Section Down</ContextMenu.Item>
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={onDeleteSection}>Delete Section</ContextMenu.Item>
   {:else}
@@ -599,6 +610,6 @@
       </ContextMenu.RadioGroup>
     {/if}
     <ContextMenu.Separator />
-    <ContextMenu.Item size="sm" on:click={onAddSection}>Add Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onInsertSection}>Insert Section</ContextMenu.Item>
   {/if}
 </ContextMenuInternal>

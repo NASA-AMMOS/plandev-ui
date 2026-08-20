@@ -6,20 +6,22 @@
     extractClosestEdge,
     type Edge,
   } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+  import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
   import {
     draggable,
     dropTargetForElements,
     monitorForElements,
   } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+  import { DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import ArrowLeftIcon from '@nasa-jpl/stellar/icons/arrow_left.svg?component';
+  import CaretDownIcon from '@nasa-jpl/stellar/icons/caret_down.svg?component';
+  import CaretRightIcon from '@nasa-jpl/stellar/icons/caret_right.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import DuplicateIcon from '@nasa-jpl/stellar/icons/duplicate.svg?component';
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
-  import PlusIcon from '@nasa-jpl/stellar/icons/plus.svg?component';
   import RemoveAllIcon from '@nasa-jpl/stellar/icons/remove_all.svg?component';
-  import { FolderOpen, FolderPlus, FolderX, GripVertical, ListPlus } from 'lucide-svelte';
+  import { Ellipsis, FolderPlus, FolderX, GripVertical, ListPlus } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
-  import { dndzone } from 'svelte-dnd-action';
   import {
     default as ExternalEventIcon,
     default as ExternalSourceIcon,
@@ -34,7 +36,11 @@
   import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
   import SpanIcon from '../../../assets/timeline-span.svg?component';
   import ActivityModeWidthIcon from '../../../assets/width.svg?component';
-  import { ViewDefaultDiscreteOptions, ViewDiscreteLayerColorPresets } from '../../../constants/view';
+  import {
+    ViewDefaultDiscreteOptions,
+    ViewDefaultSectionColor,
+    ViewSectionColorPresets,
+  } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
   import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
   import { plugins } from '../../../stores/plugins';
@@ -47,6 +53,7 @@
     viewAddSection,
     viewAddTimelineRow,
     viewDeleteSection,
+    viewReorderTimelineItems,
     viewSetSelectedRow,
     viewSetSelectedSection,
     viewSetSelectedTimeline,
@@ -78,6 +85,7 @@
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime } from '../../../utilities/time';
   import {
+    applyTimelineItemDrop,
     createHorizontalGuide,
     createTimelineActivityLayer,
     createTimelineExternalEventLayer,
@@ -85,11 +93,15 @@
     createTimelineXRangeLayer,
     createVerticalGuide,
     createYAxis,
+    getContrastingTextColor,
     getNextLayerID,
+    getRenderableTimelineItems,
     isActivityLayer,
     isExternalEventLayer,
     isLineLayer,
     isXRangeLayer,
+    resolveSectionDropEdge,
+    toTimelineDropEdge,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
@@ -109,6 +121,7 @@
   export let gridSection: ViewGridSection;
 
   let horizontalGuides: HorizontalGuide[] = [];
+  let editorDiv: HTMLDivElement;
   let editorWidth: number;
   let layers: Layer[] = [];
   let activityLayers: ActivityLayer[] = [];
@@ -127,22 +140,23 @@
   let rowHasExternalEventLayer: boolean | ExternalEventLayer = false;
   let yAxes: Axis[] = [];
 
-  // DND state tracking
   type DragData = {
     itemId: number;
     itemType: 'section' | 'row';
     sourceSectionId: number | null; // null means root level
   };
 
-  // Track which element is being dragged over and at which edge
-  let dragOverState: Map<string, { edge: Edge | null; isOver: boolean }> = new Map();
-
-  // Cleanup functions for DND
-  let cleanupFunctions: (() => void)[] = [];
+  // A Set so an action's destroy() can drop its own entry. As an array it only ever grew, holding
+  // every detached row alive.
+  let cleanupFunctions: Set<() => void> = new Set();
   let monitorCleanup: (() => void) | null = null;
 
   $: selectedTimeline = $view?.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
-  $: items = selectedTimeline?.items || [];
+  // Never render straight from timeline.items: a stale ref collides with a reused id and throws
+  // out of the keyed each below. The drop helper takes the healed order too, so a drop writes
+  // it back.
+  $: items = selectedTimeline ? getRenderableTimelineItems(selectedTimeline) : [];
+  $: hierarchy = { items, sections };
   $: rows = selectedTimeline?.rows || [];
   $: sections = selectedTimeline?.sections || [];
   $: rowsById = new Map(rows.map(row => [row.id, row]));
@@ -326,12 +340,9 @@
   }
 
   function removeAllSections() {
-    sections.forEach(section => {
-      viewDeleteSection(section.id, true);
-    });
+    effects.deleteTimelineSections($selectedTimelineId);
   }
 
-  // Pragmatic DND: Handle drop of a row or section
   function handleDrop(
     sourceData: DragData,
     targetItemId: number,
@@ -339,108 +350,38 @@
     targetSectionId: number | null,
     edge: Edge | null,
   ) {
-    const { itemId: sourceItemId, itemType: sourceItemType, sourceSectionId } = sourceData;
-
-    // Don't allow dropping a section into another section
-    if (sourceItemType === 'section' && targetItemType === 'row' && targetSectionId !== null) {
+    if (!selectedTimeline) {
       return;
     }
 
-    // If dropping on itself, do nothing
-    if (sourceItemId === targetItemId && sourceItemType === targetItemType) {
-      return;
-    }
-
-    // If dropping a row that's already in the target section onto that section's drop zone, do nothing
-    if (targetItemType === 'section' && sourceItemType === 'row' && edge === null && sourceSectionId === targetItemId) {
-      return;
-    }
-
-    view.update(currentView => {
-      if (currentView === null) {
-        return currentView;
-      }
-
-      const timeline = currentView.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
-      if (!timeline) {
-        return currentView;
-      }
-
-      let newItems = [...timeline.items];
-      let newSections = timeline.sections.map(s => ({ ...s, rowIds: [...s.rowIds] }));
-
-      // Remove source from its current location
-      if (sourceItemType === 'row') {
-        if (sourceSectionId !== null) {
-          // Remove from section
-          const sourceSection = newSections.find(s => s.id === sourceSectionId);
-          if (sourceSection) {
-            sourceSection.rowIds = sourceSection.rowIds.filter(id => id !== sourceItemId);
-          }
-        } else {
-          // Remove from root level
-          newItems = newItems.filter(item => !(item.type === 'row' && item.id === sourceItemId));
-        }
-      } else {
-        // Remove section from root level
-        newItems = newItems.filter(item => !(item.type === 'section' && item.id === sourceItemId));
-      }
-
-      // Determine where to insert
-      if (targetItemType === 'section' && sourceItemType === 'row' && edge === null) {
-        // Dropping a row INTO a section (not at an edge)
-        const targetSection = newSections.find(s => s.id === targetItemId);
-        if (targetSection) {
-          // Only add if not already in the section (shouldn't happen due to early return above, but safety check)
-          if (!targetSection.rowIds.includes(sourceItemId)) {
-            targetSection.rowIds.push(sourceItemId);
-          }
-        }
-      } else if (targetSectionId !== null && sourceItemType === 'row') {
-        // Dropping row within a section (reordering or moving between sections)
-        const targetSection = newSections.find(s => s.id === targetSectionId);
-        if (targetSection) {
-          // Find where to insert - the target row index in the CURRENT state (after removal)
-          const targetIndex = targetSection.rowIds.findIndex(id => id === targetItemId);
-          if (targetIndex !== -1) {
-            const insertIndex = edge === 'bottom' ? targetIndex + 1 : targetIndex;
-            targetSection.rowIds.splice(insertIndex, 0, sourceItemId);
-          } else {
-            // Target row not found, append to end
-            targetSection.rowIds.push(sourceItemId);
-          }
-        }
-      } else {
-        // Dropping at root level
-        const targetIndex = newItems.findIndex(item => item.type === targetItemType && item.id === targetItemId);
-        const insertIndex = edge === 'bottom' ? targetIndex + 1 : targetIndex;
-        newItems.splice(insertIndex, 0, { id: sourceItemId, type: sourceItemType });
-      }
-
-      return {
-        ...currentView,
-        definition: {
-          ...currentView.definition,
-          plan: {
-            ...currentView.definition.plan,
-            timelines: currentView.definition.plan.timelines.map(t => {
-              if (t.id === $selectedTimelineId) {
-                return { ...t, items: newItems, sections: newSections };
-              }
-              return t;
-            }),
-          },
-        },
-      };
+    const next = applyTimelineItemDrop(hierarchy, {
+      edge: toTimelineDropEdge(edge),
+      source: sourceData,
+      target: { itemId: targetItemId, itemType: targetItemType, sectionId: targetSectionId },
     });
+
+    if (next === null) {
+      return;
+    }
+
+    viewReorderTimelineItems(next.items, $selectedTimelineId, next.sections);
   }
 
-  // Svelte action to make an element draggable
+  /**
+   * A press starts a drag only on an item's inert surface: its name, its grip, its blank space.
+   * The whole item is the draggable, so without this a press inside one of the inputs or buttons
+   * it contains dragged the item instead of doing what the control is for.
+   */
+  function isDragSurface(element: Element | null): boolean {
+    return !!element && !element.closest('a, button, input, select, textarea, [contenteditable="true"]');
+  }
+
   function makeDraggable(
     node: HTMLElement,
     params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
   ) {
     const cleanup = draggable({
+      canDrag: ({ input }) => isDragSurface(document.elementFromPoint(input.clientX, input.clientY)),
       element: node,
       getInitialData: () =>
         ({
@@ -456,11 +397,12 @@
       },
     });
 
-    cleanupFunctions.push(cleanup);
+    cleanupFunctions.add(cleanup);
 
     return {
       destroy() {
         cleanup();
+        cleanupFunctions.delete(cleanup);
       },
       update(newParams: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null }) {
         params = newParams;
@@ -468,75 +410,48 @@
     };
   }
 
-  // Svelte action to make an element a drop target
   function makeDropTarget(
     node: HTMLElement,
-    params: {
-      acceptSection?: boolean; // For section drop targets that accept rows being dropped INTO them
-      allowedEdges?: Edge[];
-      itemId: number;
-      itemType: 'section' | 'row';
-      sectionId: number | null;
-    },
+    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
   ) {
-    const key = `${params.itemType}-${params.itemId}-${params.sectionId ?? 'root'}`;
-    dragOverState.set(key, { edge: null, isOver: false });
-
     const cleanup = dropTargetForElements({
       canDrop: ({ source }) => {
         const sourceData = source.data as DragData;
-        // Only accept drags from our row/section draggables (not activity drags, etc.)
+        // Only our own row and section draggables; activity drags land elsewhere.
         if (sourceData.itemType !== 'section' && sourceData.itemType !== 'row') {
           return false;
         }
-        // Don't allow dropping sections into sections
+        // Sections do not nest, and nothing drops onto itself.
         if (sourceData.itemType === 'section' && params.sectionId !== null) {
           return false;
         }
-        // Don't allow dropping on self
         if (sourceData.itemId === params.itemId && sourceData.itemType === params.itemType) {
           return false;
         }
         return true;
       },
       element: node,
-      getData: ({ element, input }) => {
-        const data = {
-          itemId: params.itemId,
-          itemType: params.itemType,
-          sectionId: params.sectionId,
-        };
-        // Attach closest edge for positioning
-        return attachClosestEdge(data, {
-          allowedEdges: params.allowedEdges ?? ['top', 'bottom'],
-          element,
-          input,
-        });
-      },
+      getData: ({ element, input }) =>
+        attachClosestEdge(
+          { itemId: params.itemId, itemType: params.itemType, sectionId: params.sectionId },
+          { allowedEdges: ['top', 'bottom'], element, input },
+        ),
       onDrag: ({ self }) => {
         const edge = extractClosestEdge(self.data);
-        dragOverState.set(key, { edge, isOver: true });
-        dragOverState = new Map(dragOverState);
         updateDropIndicator(node, edge);
       },
       onDragEnter: ({ self }) => {
         const edge = extractClosestEdge(self.data);
-        dragOverState.set(key, { edge, isOver: true });
-        dragOverState = new Map(dragOverState);
         node.classList.add('drop-target-active');
         updateDropIndicator(node, edge);
       },
       onDragLeave: () => {
-        dragOverState.set(key, { edge: null, isOver: false });
-        dragOverState = new Map(dragOverState);
         node.classList.remove('drop-target-active');
         removeDropIndicator(node);
       },
       onDrop: ({ self, source }) => {
         const sourceData = source.data as DragData;
         const edge = extractClosestEdge(self.data);
-        dragOverState.set(key, { edge: null, isOver: false });
-        dragOverState = new Map(dragOverState);
         node.classList.remove('drop-target-active');
         removeDropIndicator(node);
 
@@ -544,12 +459,12 @@
       },
     });
 
-    cleanupFunctions.push(cleanup);
+    cleanupFunctions.add(cleanup);
 
     return {
       destroy() {
         cleanup();
-        dragOverState.delete(key);
+        cleanupFunctions.delete(cleanup);
       },
       update(newParams: typeof params) {
         params = newParams;
@@ -557,68 +472,95 @@
     };
   }
 
-  // Svelte action for section header that can accept rows dropped onto it
-  // When a row is dropped on the section header, it gets added to the end of that section
-  function makeSectionHeaderDropTarget(node: HTMLElement, params: { sectionId: number }) {
-    const key = `section-header-${params.sectionId}`;
-    dragOverState.set(key, { edge: null, isOver: false });
+  /** Reads the geometry off the DOM; the decision itself lives in a tested utility. */
+  function sectionDropEdge(element: Element, clientY: number, sourceData: DragData) {
+    return resolveSectionDropEdge(element.getBoundingClientRect(), clientY, sourceData.itemType);
+  }
+
+  /**
+   * A section header is both a reorder target (its edges) and a container that accepts rows
+   * dropped onto its middle. Both have to live in a SINGLE drop target: two registered on one
+   * element leaves only the last active, which swallowed the top edge and made the slot above a
+   * leading section unreachable.
+   */
+  function makeSectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
+    function showFeedback(edge: Edge | null) {
+      if (edge === null) {
+        removeDropIndicator(node);
+        node.classList.add('section-accepting-row');
+      } else {
+        node.classList.remove('section-accepting-row');
+        updateDropIndicator(node, edge);
+      }
+    }
+
+    function clearFeedback() {
+      node.classList.remove('section-accepting-row', 'drop-target-active');
+      removeDropIndicator(node);
+    }
 
     const cleanup = dropTargetForElements({
       canDrop: ({ source }) => {
         const sourceData = source.data as DragData;
-        // Only accept rows, not sections
-        if (sourceData.itemType !== 'row') {
+        if (sourceData.itemType !== 'row' && sourceData.itemType !== 'section') {
           return false;
         }
-        // Don't accept if the row is already in this section
-        if (sourceData.sourceSectionId === params.sectionId) {
-          return false;
-        }
-        return true;
+        // A section cannot be dropped onto itself, but a row already inside this section can
+        // still be dragged to an edge to move it back out to the root level.
+        return !(sourceData.itemType === 'section' && sourceData.itemId === params.sectionId);
       },
       element: node,
-      getData: ({ element, input }) => {
-        // For section headers, we want to support both reordering sections (top/bottom edge)
-        // and dropping rows INTO the section (when hovering more centrally)
-        return attachClosestEdge(
-          {
-            isSection: true,
-            sectionId: params.sectionId,
-          },
-          {
-            allowedEdges: ['top', 'bottom'],
-            element,
-            input,
-          },
-        );
+      onDrag: ({ location, self, source }) => {
+        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
       },
-      onDragEnter: () => {
-        dragOverState.set(key, { edge: null, isOver: true });
-        dragOverState = new Map(dragOverState);
-        node.classList.add('section-accepting-row');
+      onDragEnter: ({ location, self, source }) => {
+        node.classList.add('drop-target-active');
+        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
       },
-      onDragLeave: () => {
-        dragOverState.set(key, { edge: null, isOver: false });
-        dragOverState = new Map(dragOverState);
-        node.classList.remove('section-accepting-row');
-      },
-      onDrop: ({ source }) => {
+      onDragLeave: clearFeedback,
+      onDrop: ({ location, self, source }) => {
         const sourceData = source.data as DragData;
-        dragOverState.set(key, { edge: null, isOver: false });
-        dragOverState = new Map(dragOverState);
-        node.classList.remove('section-accepting-row');
-
-        // Move row into this section at the end
-        handleDrop(sourceData, params.sectionId, 'section', null, null);
+        const edge = sectionDropEdge(self.element, location.current.input.clientY, sourceData);
+        clearFeedback();
+        handleDrop(sourceData, params.sectionId, 'section', null, edge);
       },
     });
 
-    cleanupFunctions.push(cleanup);
+    cleanupFunctions.add(cleanup);
 
     return {
       destroy() {
         cleanup();
-        dragOverState.delete(key);
+        cleanupFunctions.delete(cleanup);
+      },
+      update(newParams: { sectionId: number }) {
+        params = newParams;
+      },
+    };
+  }
+
+  /**
+   * The "Drag a row here" placeholder, which otherwise pointed at a spot that accepted nothing.
+   * Everything landing here goes INTO the section (edge null); its header edges do the reordering.
+   */
+  function makeEmptySectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
+    const cleanup = dropTargetForElements({
+      canDrop: ({ source }) => (source.data as DragData).itemType === 'row',
+      element: node,
+      onDragEnter: () => node.classList.add('section-accepting-row'),
+      onDragLeave: () => node.classList.remove('section-accepting-row'),
+      onDrop: ({ source }) => {
+        node.classList.remove('section-accepting-row');
+        handleDrop(source.data as DragData, params.sectionId, 'section', null, null);
+      },
+    });
+
+    cleanupFunctions.add(cleanup);
+
+    return {
+      destroy() {
+        cleanup();
+        cleanupFunctions.delete(cleanup);
       },
       update(newParams: { sectionId: number }) {
         params = newParams;
@@ -639,36 +581,85 @@
     node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
   }
 
-  // Setup global monitor on mount
+  /**
+   * Clears drag feedback classes left behind when a drag is cancelled and the target's own
+   * callbacks do not fire. Scoped to this panel: the timeline uses the same class names.
+   */
+  function cleanupAllDragStates() {
+    if (!editorDiv) {
+      return;
+    }
+
+    ['dragging', 'drop-target-active', 'drop-indicator-top', 'drop-indicator-bottom', 'section-accepting-row'].forEach(
+      cls => editorDiv.querySelectorAll(`.${cls}`).forEach(element => element.classList.remove(cls)),
+    );
+  }
+
   onMount(() => {
     monitorCleanup = monitorForElements({
-      onDrop: () => {
-        // Reset all drag over states
-        dragOverState = new Map();
-      },
+      onDragStart: cleanupAllDragStates,
+      onDrop: cleanupAllDragStates,
     });
   });
 
-  // Cleanup on destroy
   onDestroy(() => {
     cleanupFunctions.forEach(fn => fn());
-    cleanupFunctions = [];
+    cleanupFunctions.clear();
     if (monitorCleanup) {
       monitorCleanup();
       monitorCleanup = null;
     }
   });
 
-  // Y-Axes DND handlers (still using svelte-dnd-action for simple reordering)
-  function handleDndConsiderYAxes(e: CustomEvent<DndEvent>) {
-    const { detail } = e;
-    yAxes = detail.items as Axis[];
+  function makeYAxisDraggable(node: HTMLElement, params: { axisId: number }) {
+    const cleanup = combine(
+      draggable({
+        canDrag: ({ input }) => isDragSurface(document.elementFromPoint(input.clientX, input.clientY)),
+        element: node,
+        getInitialData: () => ({ axisId: params.axisId, itemType: 'yAxis' }),
+        onDragStart: () => node.classList.add('dragging'),
+        onDrop: () => node.classList.remove('dragging'),
+      }),
+      dropTargetForElements({
+        canDrop: ({ source }) => source.data.itemType === 'yAxis' && source.data.axisId !== params.axisId,
+        element: node,
+        getData: ({ element, input }) =>
+          attachClosestEdge({ axisId: params.axisId }, { allowedEdges: ['top', 'bottom'], element, input }),
+        onDrag: ({ self }) => updateDropIndicator(node, extractClosestEdge(self.data)),
+        onDragLeave: () => removeDropIndicator(node),
+        onDrop: ({ self, source }) => {
+          removeDropIndicator(node);
+          reorderYAxis(source.data.axisId as number, params.axisId, extractClosestEdge(self.data));
+        },
+      }),
+    );
+
+    cleanupFunctions.add(cleanup);
+
+    return {
+      destroy() {
+        cleanup();
+        cleanupFunctions.delete(cleanup);
+      },
+      update(newParams: { axisId: number }) {
+        params = newParams;
+      },
+    };
   }
 
-  function handleDndFinalizeYAxes(e: CustomEvent<DndEvent>) {
-    const { detail } = e;
-    yAxes = detail.items as Axis[];
-    viewUpdateRow('yAxes', yAxes);
+  function reorderYAxis(sourceId: number, targetId: number, edge: string | null) {
+    const from = yAxes.findIndex(axis => axis.id === sourceId);
+    const targetIndex = yAxes.findIndex(axis => axis.id === targetId);
+    if (from < 0 || targetIndex < 0) {
+      return;
+    }
+
+    const remaining = yAxes.filter(axis => axis.id !== sourceId);
+    const insertAt = remaining.findIndex(axis => axis.id === targetId) + (edge === 'bottom' ? 1 : 0);
+    const reordered = [...remaining.slice(0, insertAt), yAxes[from], ...remaining.slice(insertAt)];
+
+    yAxes = reordered;
+    viewUpdateRow('yAxes', reordered);
   }
 
   function handleDeleteVerticalGuideClick(verticalGuide: VerticalGuide) {
@@ -818,16 +809,6 @@
   function handleRemoveAllVerticalGuidesClick() {
     effects.deleteTimelineVerticalGuides($selectedTimelineId);
   }
-
-  // This is the JS way to style the dragged element, notice it is being passed into the dnd-zone
-  function transformDraggedElement(draggedEl?: Element) {
-    const el = draggedEl?.querySelector('.timeline-element') as HTMLElement;
-    if (!el) {
-      return;
-    }
-    el.style.background = 'var(--st-gray-10)';
-    el.classList.add('timeline-element-dragging');
-  }
 </script>
 
 <Panel padBody={false}>
@@ -835,7 +816,13 @@
     <GridMenu {gridSection} title="Timeline Editor" />
   </svelte:fragment>
 
-  <div slot="body" bind:clientWidth={editorWidth} class="timeline-editor" class:compact={editorWidth < 360}>
+  <div
+    slot="body"
+    bind:this={editorDiv}
+    bind:clientWidth={editorWidth}
+    class="timeline-editor"
+    class:compact={editorWidth < 360}
+  >
     {#if selectedSection}
       <!-- Section editing -->
       <button
@@ -865,12 +852,25 @@
           {/each}
         </select>
       </div>
+      <!-- No Collapsed field: it is direct-manipulation state, with a chevron on the band and
+           another in the list, and toggling it from a form dirties the view. -->
       <EditorSection item="Detail">
-        <div style="display: grid">
+        <!-- Color leads, as it does on the band. Trailing the name stranded the swatch at the far
+             right edge of a wide panel, away from everything else in the form. -->
+        <CssGrid columns="auto 1fr" gap="8px" class="editor-section-grid">
           <Input>
-            <label for="name">Section Name</label>
+            <label for="color">Color</label>
+            <ColorPresetsPicker
+              value={selectedSection.color ?? ViewDefaultSectionColor}
+              presetColors={ViewSectionColorPresets}
+              on:input={({ detail }) => viewUpdateSection('color', detail.value)}
+            />
+          </Input>
+          <Input>
+            <label for="section-name">Section Name</label>
             <input
               class="st-input w-full"
+              id="section-name"
               name="name"
               autocomplete="off"
               type="string"
@@ -878,46 +878,11 @@
               on:input|stopPropagation={updateSectionEvent}
             />
           </Input>
-        </div>
-        <CssGrid columns="1fr 1fr" gap="8px" class="editor-section-grid">
-          <Input>
-            <label for="collapsed">Collapsed</label>
-            <select
-              class="st-select w-full"
-              data-type="bool"
-              name="collapsed"
-              value={selectedSection.collapsed}
-              on:change={event => {
-                const { value } = getTarget(event);
-                viewUpdateSection('collapsed', value === 'true');
-              }}
-            >
-              <option value={true}>Yes</option>
-              <option value={false}>No</option>
-            </select>
-          </Input>
-          <Input>
-            <label for="color">Color</label>
-            <div class="section-color-row">
-              <ColorPresetsPicker
-                value={selectedSection.color ?? ''}
-                presetColors={ViewDiscreteLayerColorPresets}
-                on:input={({ detail }) => viewUpdateSection('color', detail.value)}
-              />
-              {#if selectedSection.color}
-                <button
-                  use:tooltip={{ content: 'Remove Color', placement: 'top' }}
-                  class="st-button icon"
-                  on:click={() => viewUpdateSection('color', null)}
-                >
-                  <CloseIcon />
-                </button>
-              {/if}
-            </div>
-          </Input>
         </CssGrid>
       </EditorSection>
-      <EditorSection item="Section" itemPlural="Section">
+      <!-- No heading: a legend reading "Section" over a button reading "Delete Section" said the
+           same word twice. -->
+      <EditorSection>
         <button
           class="st-button secondary w-full"
           on:click={() => {
@@ -1054,31 +1019,12 @@
           {/if}
         </EditorSection>
 
-        <!-- Hierarchical Rows and Sections Editor -->
-        <fieldset class="editor-section editor-section-draggable" aria-label="rows-editor">
-          <div class="editor-section-header flex flex-row justify-between">
-            <div class="st-typography-medium">Rows</div>
+        <fieldset class="editor-section editor-section-draggable rows-editor" aria-label="rows-editor">
+          <div class="editor-section-header rows-editor-header flex flex-row justify-between">
+            <div class="st-typography-medium flex items-center">Rows</div>
+            <!-- Only the two additive actions stay inline. The bulk deletes are rare and
+                 destructive, so they live behind the overflow menu rather than one click away. -->
             <div class="flex gap-2">
-              {#if rows.length > 0}
-                <button
-                  aria-label="Delete All Rows"
-                  on:click|stopPropagation={removeAllTimelineRows}
-                  use:tooltip={{ content: 'Delete All Rows', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <RemoveAllIcon />
-                </button>
-              {/if}
-              {#if sections.length > 0}
-                <button
-                  aria-label="Delete All Sections"
-                  on:click|stopPropagation={removeAllSections}
-                  use:tooltip={{ content: 'Delete All Sections', placement: 'top' }}
-                  class="st-button icon"
-                >
-                  <FolderX size={16} />
-                </button>
-              {/if}
               <button
                 aria-label="New Row"
                 on:click|stopPropagation={addTimelineRow}
@@ -1095,6 +1041,35 @@
               >
                 <FolderPlus size={16} />
               </button>
+              {#if rows.length > 0 || sections.length > 0}
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild let:builder>
+                    <button
+                      aria-label="More Row Actions"
+                      use:builder.action
+                      {...builder}
+                      use:tooltip={{ content: 'More Actions', placement: 'top' }}
+                      class="st-button icon"
+                    >
+                      <Ellipsis size={16} />
+                    </button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Content align="end">
+                    {#if rows.length > 0}
+                      <DropdownMenu.Item size="sm" class="flex gap-2" on:click={removeAllTimelineRows}>
+                        <RemoveAllIcon />
+                        Delete All Rows
+                      </DropdownMenu.Item>
+                    {/if}
+                    {#if sections.length > 0}
+                      <DropdownMenu.Item size="sm" class="flex gap-2" on:click={removeAllSections}>
+                        <FolderX size={16} />
+                        Delete All Sections
+                      </DropdownMenu.Item>
+                    {/if}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Root>
+              {/if}
             </div>
           </div>
 
@@ -1104,26 +1079,48 @@
                 {#if item.type === 'section'}
                   {@const section = sectionsById.get(item.id)}
                   {#if section}
-                    <div class="timeline-section-container">
+                    <!-- The section's color drives both the flush-left rail and the tint behind
+                         the whole block, so a colored section reads as one band. -->
+                    <div
+                      class="timeline-section-container"
+                      style:--section-accent-color={section.color || ViewDefaultSectionColor}
+                      style:--section-foreground={getContrastingTextColor(section.color || ViewDefaultSectionColor)}
+                    >
                       <div
                         class="st-typography-body timeline-section timeline-element"
                         use:makeDraggable={{ itemId: section.id, itemType: 'section', sectionId: null }}
-                        use:makeDropTarget={{ itemId: section.id, itemType: 'section', sectionId: null }}
-                        use:makeSectionHeaderDropTarget={{ sectionId: section.id }}
+                        use:makeSectionDropTarget={{ sectionId: section.id }}
                       >
                         <span class="drag-icon">
                           <GripVertical size={16} />
                         </span>
-                        {#if section.color}
-                          <span class="section-color-indicator" style:background-color={section.color} />
-                        {/if}
-                        <span class="flex flex-row gap-1">
-                          <FolderOpen size={16} />
-                          <span class="timeline-section-name">
-                            {section.name}
-                          </span>
+                        <button
+                          aria-expanded={!section.collapsed}
+                          aria-label={section.collapsed ? 'Expand Section' : 'Collapse Section'}
+                          use:tooltip={{
+                            content: section.collapsed ? 'Expand Section' : 'Collapse Section',
+                            placement: 'top',
+                          }}
+                          class="st-button icon section-chevron"
+                          on:click|stopPropagation={() => {
+                            viewUpdateSection('collapsed', !section.collapsed, section.id, $selectedTimelineId);
+                          }}
+                        >
+                          {#if section.collapsed}
+                            <CaretRightIcon />
+                          {:else}
+                            <CaretDownIcon />
+                          {/if}
+                        </button>
+                        <span class="timeline-section-name">
+                          {section.name}
                         </span>
-                        <div class="timeline-section-buttons">
+                        {#if section.collapsed && section.rowIds.length > 0}
+                          <span class="section-hidden-count st-typography-body">
+                            {section.rowIds.length} hidden
+                          </span>
+                        {/if}
+                        <div class="timeline-section-buttons item-actions">
                           <button
                             aria-label="Add Row to Section"
                             use:tooltip={{ content: 'Add Row to Section', placement: 'top' }}
@@ -1132,7 +1129,7 @@
                               viewAddTimelineRow($selectedTimelineId, false, section.id);
                             }}
                           >
-                            <PlusIcon />
+                            <ListPlus size={16} />
                           </button>
                           <button
                             aria-label="Edit Section"
@@ -1143,6 +1140,18 @@
                             }}
                           >
                             <PenIcon />
+                          </button>
+                          <button
+                            aria-label="Duplicate Section"
+                            use:tooltip={{ content: 'Duplicate Section', placement: 'top' }}
+                            class="st-button icon"
+                            on:click|stopPropagation={() => {
+                              if (selectedTimeline) {
+                                effects.duplicateTimelineSection(section, selectedTimeline, timelines);
+                              }
+                            }}
+                          >
+                            <DuplicateIcon />
                           </button>
                           <button
                             aria-label="Delete Section"
@@ -1156,9 +1165,19 @@
                           </button>
                         </div>
                       </div>
-                      <!-- Section rows -->
-                      {#if section.rowIds.length > 0}
+                      <!-- Collapsed state is shared with the timeline: folding here folds there. -->
+                      {#if !section.collapsed}
                         <div class="section-rows timeline-elements">
+                          <!-- An empty section rendered as nothing, which read as broken rather
+                               than empty, and left nothing to drop the first row onto. -->
+                          {#if section.rowIds.length === 0}
+                            <div
+                              class="section-empty st-typography-body"
+                              use:makeEmptySectionDropTarget={{ sectionId: section.id }}
+                            >
+                              Drag a row here
+                            </div>
+                          {/if}
                           {#each section.rowIds as rowId (`section-${section.id}-row-${rowId}`)}
                             {@const row = rowsById.get(rowId)}
                             {#if row}
@@ -1170,10 +1189,11 @@
                                 <span class="drag-icon">
                                   <GripVertical size={16} />
                                 </span>
+                                <span class="chevron-spacer" />
                                 <span class="timeline-row-name">
                                   {row.name}
                                 </span>
-                                <div class="timeline-row-buttons">
+                                <div class="timeline-row-buttons item-actions">
                                   <button
                                     use:tooltip={{ content: 'Edit Row', placement: 'top' }}
                                     class="st-button icon"
@@ -1223,10 +1243,11 @@
                       <span class="drag-icon">
                         <GripVertical size={16} />
                       </span>
+                      <span class="chevron-spacer" />
                       <span class="timeline-row-name">
                         {row.name}
                       </span>
-                      <div class="timeline-row-buttons">
+                      <div class="timeline-row-buttons item-actions">
                         <button
                           use:tooltip={{ content: 'Edit Row', placement: 'top' }}
                           class="st-button icon"
@@ -1624,18 +1645,9 @@
                 <div>Name</div>
                 <div>Ticks</div>
               </CssGrid>
-              <div
-                class="timeline-rows timeline-elements"
-                on:consider={handleDndConsiderYAxes}
-                on:finalize={handleDndFinalizeYAxes}
-                use:dndzone={{
-                  items: yAxes,
-                  transformDraggedElement,
-                  type: 'rows',
-                }}
-              >
+              <div class="timeline-rows timeline-elements">
                 {#each yAxes as yAxis (yAxis.id)}
-                  <div class="timeline-y-axis timeline-element">
+                  <div class="timeline-y-axis timeline-element" use:makeYAxisDraggable={{ axisId: yAxis.id }}>
                     <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid">
                       <span class="drag-icon">
                         <GripVertical size={16} />
@@ -1794,6 +1806,24 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* The global fieldset reset applies px-4, and the override that cancels it is scoped to
+     EditorSection - so this hand-rolled fieldset floated 16px inset. Rows and sections run edge to
+     edge instead, letting a section's tint and rail reach the panel border. The header keeps the
+     padding so its label stays aligned with the other section titles. */
+  .rows-editor {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .rows-editor-header {
+    padding: 0 16px;
+  }
+
+  .rows-editor-header .st-button {
+    color: var(--st-gray-50);
+  }
+
   .timeline-select-container {
     border-bottom: 1px solid var(--st-gray-20);
     padding: 16px 8px;
@@ -1839,16 +1869,27 @@
     min-width: 40px;
   }
 
+  /* Rows and sections share one left-to-right order: rail gutter, drag handle, chevron lane,
+     name. The handle and chevron stay in flow rather than sitting over the padding, so nothing
+     overlaps the flush-left rail.
+
+     height alone did not hold: as flex items of the column .timeline-hierarchy, a hovered row
+     collapsed to its 24px content height. flex-shrink stops the list compressing rows, and
+     min-height pins the used height. */
   .timeline-row {
     align-items: center;
     display: flex;
-    height: 40px;
-    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+    height: 32px;
+    min-height: 32px;
     overflow: hidden;
-    padding: 0px 16px;
+    padding: 0 16px 0 8px;
     position: relative;
   }
 
+  /* Default handle treatment, shared with the y-axis list: hidden until hover and absolutely
+     positioned so it does not take a cell in that list's grid. */
   .drag-icon {
     color: var(--st-gray-50);
     display: none;
@@ -1857,69 +1898,216 @@
     position: absolute;
   }
 
+  /* The rows/sections list opts into persistent handles, in flow as each row's first item, so the
+     color rail stays flush left with nothing over it. Scoped so the y-axis grid keeps the overlay. */
+  .timeline-hierarchy .drag-icon {
+    align-items: center;
+    color: var(--st-gray-30);
+    display: flex;
+    flex-shrink: 0;
+    margin-left: 0;
+    position: static;
+  }
+
+  .timeline-hierarchy .timeline-element:hover .drag-icon {
+    color: var(--st-gray-50);
+  }
+
+  /* The grab/grabbing pair the timeline uses on its row and section headers, on the same two
+     surfaces: the handle and the name. */
+  .timeline-hierarchy .drag-icon,
+  .timeline-row-name,
+  .timeline-section-name {
+    cursor: grab;
+  }
+
+  .timeline-hierarchy .drag-icon:active,
+  .timeline-row-name:active,
+  .timeline-section-name:active,
+  :global(.timeline-hierarchy .dragging) .drag-icon,
+  :global(.timeline-hierarchy .dragging) .timeline-row-name,
+  :global(.timeline-hierarchy .dragging) .timeline-section-name {
+    cursor: grabbing;
+  }
+
+  /* Root-level rows reserve the section chevron's width so every name lands on one left edge. */
+  .chevron-spacer {
+    flex-shrink: 0;
+    width: 16px;
+  }
+
+  /* Root-level hover fill. Rows inside a section override this with a wash of the section
+     color further down. :focus-within is included so a keyboard user tabbing to a row's
+     actions still gets an opaque backing behind them. */
   .timeline-row:hover,
-  .timeline-row:active {
+  .timeline-row:active,
+  .timeline-row:focus-within,
+  .timeline-section:hover,
+  .timeline-section:active,
+  .timeline-section:focus-within {
     background: var(--st-gray-10);
   }
 
-  .timeline-row-name {
-    display: block;
+  .timeline-row-name,
+  .timeline-section-name {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    word-break: break-all;
   }
 
   .timeline-row-buttons {
     display: flex;
   }
 
+  /* Same left structure as .timeline-row so the two align. */
   .timeline-section {
     align-items: center;
     display: flex;
-    gap: 8px;
-    height: 40px;
-    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 4px;
+    height: 32px;
+    min-height: 32px;
     overflow: hidden;
+    padding: 0 16px 0 5px;
+    position: relative;
   }
 
-  .timeline-section:hover,
-  .timeline-section:active {
-    background: var(--st-gray-10);
+  .timeline-section .section-chevron {
+    color: var(--st-gray-70);
+    flex-shrink: 0;
+    height: 24px;
+    padding: 0;
+    width: 16px;
   }
 
   .timeline-section-name {
-    display: block;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+
+  .section-hidden-count {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
     white-space: nowrap;
-    word-break: break-all;
   }
 
   .timeline-section-buttons {
     display: flex;
   }
 
+  /* The rail is flush to the panel edge and everything else, handles included, starts after its
+     3px gutter, so nothing is drawn on top of the color. The hairlines keep stacked sections
+     reading as distinct blocks rather than one tinted run. */
   .timeline-section-container {
+    border-bottom: 1px solid var(--st-gray-20);
+    border-top: 1px solid var(--st-gray-20);
     display: flex;
     flex-direction: column;
+    padding-left: 3px;
+    position: relative;
   }
 
+  /* Adjacent sections share a single hairline instead of stacking two. */
+  .timeline-section-container + .timeline-section-container {
+    border-top: none;
+  }
+
+  /* The band is the section color at full strength, and everything on it takes the
+     contrast-picked foreground rather than a fixed grey, so it stays legible at any color. */
+  .timeline-section-container .timeline-section {
+    background-color: var(--section-accent-color);
+    color: var(--section-foreground);
+  }
+
+  .timeline-section-container .timeline-section:hover,
+  .timeline-section-container .timeline-section:active,
+  .timeline-section-container .timeline-section:focus-within {
+    background-color: color-mix(in srgb, var(--section-accent-color) 88%, black);
+  }
+
+  /* The handle has its own color further down (.timeline-hierarchy .drag-icon), out-specified
+     here. Chevron and action buttons are handled on .timeline-section .st-button.icon below. */
+  .timeline-section-container .timeline-section .drag-icon,
+  .timeline-section-container .timeline-section:hover .drag-icon,
+  .timeline-section-container .timeline-section .section-hidden-count {
+    color: var(--section-foreground);
+  }
+
+  /* The default grey button hover reads as a hole punched in a saturated band. A wash of the
+     band's own foreground works on light and dark bands alike. */
+  .timeline-section-container .timeline-section :global(.st-button.icon:hover) {
+    background: color-mix(in srgb, var(--section-foreground) 18%, transparent);
+  }
+
+  /* Rows keep a light wash of the same color. At a 10% mix the lightness barely moves across
+     hues, so row names - and, on the timeline, plotted data - stay readable without normalizing. */
+  .timeline-section-container {
+    background-color: color-mix(in srgb, var(--section-accent-color) 10%, white);
+  }
+
+  .timeline-section-container .timeline-row:hover,
+  .timeline-section-container .timeline-row:active,
+  .timeline-section-container .timeline-row:focus-within {
+    background-color: color-mix(in srgb, var(--section-accent-color) 18%, white);
+  }
+
+  /* One unbroken rail from the section header down past its last row, so the whole group reads
+     as a single band. */
+  .timeline-section-container::before {
+    background-color: var(--section-accent-color, var(--st-gray-30));
+    bottom: 0;
+    content: '';
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 3px;
+  }
+
+  .section-empty {
+    border: 1px dashed color-mix(in srgb, var(--section-accent-color) 45%, var(--st-gray-40));
+    border-radius: 4px;
+    color: var(--st-gray-50);
+    margin: 4px 16px 4px 17px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  /* The dashed outline resolves into a solid one, in the drop lines' blue. Anchored on
+     .section-rows: the timeline renders its own .section-empty, and an unanchored :global rule
+     reached into it. */
+  .section-rows :global(.section-empty.section-accepting-row) {
+    background-color: color-mix(in srgb, var(--st-utility-blue) 8%, white);
+    border-color: var(--st-utility-blue);
+    border-style: solid;
+    color: var(--st-utility-blue);
+  }
+
+  /* .section-rows also carries .timeline-elements, whose 16px padding-bottom is meant for the
+     outer list and left a dead gap under every section. */
   .section-rows {
-    min-height: 8px;
+    min-height: 0;
     outline: none !important;
-    padding-left: 16px;
+    padding-bottom: 0;
+    padding-left: 0;
   }
 
+  /* Nested rows share the section's left padding so their handles line up with the section's own.
+     The nesting indent moves onto the name, by widening the chevron lane; indenting the whole row
+     would stair-step the handles. */
   .timeline-row-in-section {
-    border-left: 3px solid var(--st-gray-30);
-    padding-left: 8px;
+    padding-left: 5px;
+  }
+
+  .timeline-row-in-section .chevron-spacer {
+    width: 28px;
   }
 
   .timeline-hierarchy {
     display: flex;
     flex-direction: column;
+    padding-top: 8px;
   }
 
   .empty-state {
@@ -1928,26 +2116,49 @@
     text-align: center;
   }
 
-  .section-color-indicator {
-    border-radius: 2px;
-    flex-shrink: 0;
-    height: 16px;
-    width: 4px;
-  }
-
-  .section-color-row {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-  }
-
+  /* The band's controls take its contrast foreground. Set on this selector rather than
+     out-specified from elsewhere: Svelte does not scope the contents of :global(), so a
+     :global(.st-button.icon) rule scores lower and loses to this one. */
   .timeline-section .st-button.icon {
-    color: var(--st-gray-50);
+    color: var(--section-foreground);
   }
 
   .timeline-element:hover .drag-icon,
-  :global(.timeline-element-dragging) .drag-icon {
+  :global(.timeline-element.dragging) .drag-icon {
     display: flex;
+  }
+
+  /* Per-item actions stay hidden until the item is hovered, so a long list reads as names and
+     structure rather than a grid of icons. They stay in the DOM and in the tab order, with
+     :focus-within revealing them on the way through.
+
+     Out of flow, so they never take width from the title: a name keeps the whole row and only
+     ellipses when it genuinely outruns it. `background: inherit` picks up whichever fill the row
+     is using, so the icons sit on an opaque strip rather than on top of the text. */
+  .item-actions {
+    align-items: center;
+    background: inherit;
+    bottom: 0;
+    display: flex;
+    opacity: 0;
+    padding-left: 8px;
+    position: absolute;
+    right: 16px;
+    top: 0;
+    transition: opacity 100ms ease-in-out;
+  }
+
+  .timeline-element:hover .item-actions,
+  .timeline-element:focus-within .item-actions,
+  :global(.timeline-element.dragging) .item-actions {
+    opacity: 1;
+  }
+
+  /* Same reveal, no fade, for anyone who prefers reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .item-actions {
+      transition: none;
+    }
   }
 
   .timeline-layers {
@@ -1955,8 +2166,19 @@
     flex-direction: column;
   }
 
+  /* position: relative anchors the drop line below. */
   .timeline-y-axis {
     padding: 4px 16px;
+    position: relative;
+  }
+
+  .timeline-y-axis .drag-icon {
+    cursor: grab;
+  }
+
+  .timeline-y-axis .drag-icon:active,
+  :global(.timeline-y-axis.dragging) .drag-icon {
+    cursor: grabbing;
   }
 
   .guides {
@@ -2008,29 +2230,60 @@
     display: none;
   }
 
-  /* Pragmatic DND styles - using :global because classes are added dynamically via JS */
+  /* :global throughout: these classes are added by the drag actions, not the markup. */
   :global(.timeline-row.dragging),
-  :global(.timeline-section.dragging) {
+  :global(.timeline-section.dragging),
+  :global(.timeline-y-axis.dragging) {
     opacity: 0.5;
   }
 
-  :global(.timeline-row.drop-indicator-top),
-  :global(.timeline-section.drop-indicator-top) {
-    box-shadow: inset 0 3px 0 0 var(--st-utility-blue);
+  /* A line between items rather than an inset shadow inside one. The shadow read as a border
+     on the row itself, which stacked with the section's own outline and rail. */
+  :global(.timeline-row.drop-indicator-top)::after,
+  :global(.timeline-row.drop-indicator-bottom)::after,
+  :global(.timeline-section.drop-indicator-top)::after,
+  :global(.timeline-section.drop-indicator-bottom)::after,
+  :global(.timeline-y-axis.drop-indicator-top)::after,
+  :global(.timeline-y-axis.drop-indicator-bottom)::after {
+    background: var(--st-utility-blue);
+    content: '';
+    height: 2px;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    z-index: 10;
   }
 
-  :global(.timeline-row.drop-indicator-bottom),
-  :global(.timeline-section.drop-indicator-bottom) {
-    box-shadow: inset 0 -3px 0 0 var(--st-utility-blue);
+  /* Centred on the item's edge, not inset within it, so "after this one" and "before the next" -
+     the same slot, reached from either side of the seam - draw one line in one place. */
+  :global(.timeline-row.drop-indicator-top)::after,
+  :global(.timeline-section.drop-indicator-top)::after,
+  :global(.timeline-y-axis.drop-indicator-top)::after {
+    top: 0;
+    transform: translateY(-50%);
   }
 
-  :global(.timeline-row.drop-target-active),
-  :global(.timeline-section.drop-target-active) {
-    background: var(--st-gray-15);
+  :global(.timeline-row.drop-indicator-bottom)::after,
+  :global(.timeline-section.drop-indicator-bottom)::after,
+  :global(.timeline-y-axis.drop-indicator-bottom)::after {
+    top: 100%;
+    transform: translateY(-50%);
   }
 
+  /* The y-axis list has no top padding to hang a centred line in, and its first slot has no seam
+     to share anyway, so that line sits fully inside. The rows list is padded and needs no
+     exception. */
+  .timeline-rows > :global(:first-child.drop-indicator-top)::after {
+    transform: none;
+  }
+
+  /* Reordering is communicated by the line alone. The fill is reserved for the one drop that
+     actually nests - a row landing inside a section. The band keeps its own color and is
+     lightened rather than replaced by grey, which read as the section losing its color mid-drag
+     and fought with the contrast foreground painted on its text and icons. */
   :global(.timeline-section.section-accepting-row) {
-    background: var(--st-gray-15);
+    background-image: linear-gradient(rgb(255 255 255 / 24%), rgb(255 255 255 / 24%));
     box-shadow: inset 0 0 0 2px var(--st-utility-blue);
   }
 </style>

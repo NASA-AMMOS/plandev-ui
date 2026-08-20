@@ -1,41 +1,35 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import { DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import CaretDownIcon from '@nasa-jpl/stellar/icons/caret_down.svg?component';
   import CaretRightIcon from '@nasa-jpl/stellar/icons/caret_right.svg?component';
+  import { Ellipsis } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { ViewDefaultSectionColor } from '../../constants/view';
   import type { TimelineSection } from '../../types/timeline';
+  import { getContrastingTextColor } from '../../utilities/timeline';
 
   export let section: TimelineSection;
   export let width: number = 0;
   export let dragDisabled: boolean = true;
 
   const dispatch = createEventDispatcher<{
+    addRowToSection: void;
     contextMenu: MouseEvent;
+    deleteSection: void;
+    duplicateSection: void;
+    editSection: void;
     mouseDownSectionMove: void;
     mouseUpSectionMove: void;
+    moveSection: { direction: 'up' | 'down' };
     toggleCollapsed: { collapsed: boolean; sectionId: number };
   }>();
 
-  // Pick a readable text color for the section's background color.
-  function getContrastTextColor(hex: string): string {
-    const normalized = hex.replace('#', '');
-    const full =
-      normalized.length === 3
-        ? normalized
-            .split('')
-            .map(c => c + c)
-            .join('')
-        : normalized;
-    const r = parseInt(full.substring(0, 2), 16);
-    const g = parseInt(full.substring(2, 4), 16);
-    const b = parseInt(full.substring(4, 6), 16);
-    // Perceptual luminance (0-1); switch to light text on dark backgrounds.
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.6 ? 'var(--st-gray-90)' : '#ffffff';
-  }
-
-  $: textColor = section.color ? getContrastTextColor(section.color) : null;
+  // The band is the section color at full strength, so everything on it takes a foreground picked
+  // against that color rather than a fixed grey.
+  $: bandColor = section.color || ViewDefaultSectionColor;
+  $: foreground = getContrastingTextColor(bandColor);
 
   function toggleCollapsed() {
     dispatch('toggleCollapsed', { collapsed: !section.collapsed, sectionId: section.id });
@@ -43,6 +37,9 @@
 
   function onContextMenu(e: MouseEvent) {
     e.preventDefault();
+    // Without this the event reaches the timeline's own contextmenu handler, which overwrites
+    // the section menu with the generic one.
+    e.stopPropagation();
     dispatch('contextMenu', e);
   }
 </script>
@@ -50,19 +47,21 @@
 <div
   class="section-header"
   style:width={`${width}px`}
-  style:background-color={section.color ?? undefined}
-  style:color={textColor ?? undefined}
+  style:--section-accent-color={bandColor}
+  style:border-bottom={`1px solid ${bandColor}`}
+  style:--section-foreground={foreground}
   class:collapsed={section.collapsed}
-  class:has-color={!!section.color}
-  role="banner"
+  aria-label="{section.name} controls"
+  role="toolbar"
+  tabindex="-1"
   on:contextmenu={onContextMenu}
 >
-  <!-- Mirrors RowHeader: caret + title are one button so a click on either toggles the
-       section, while the title doubles as the drag handle (canDrag matches .section-title). -->
+  <!-- Caret, name and count are one target spanning the band, the way a row header's are: the
+       whole strip folds the section, and hovering it washes with the band's own foreground. -->
   <button
     aria-expanded={!section.collapsed}
     aria-label={section.collapsed ? 'Expand Section' : 'Collapse Section'}
-    class="st-button icon section-header-title-button"
+    class="st-button icon section-header-toggle"
     on:click={toggleCollapsed}
   >
     {#if section.collapsed}
@@ -70,6 +69,8 @@
     {:else}
       <CaretDownIcon class="section-header-collapse" />
     {/if}
+
+    <!-- Also the drag surface: canDrag hit-tests for .section-title. -->
     <div
       class="section-title st-typography-label"
       on:mousedown={() => dispatch('mouseDownSectionMove')}
@@ -79,7 +80,38 @@
     >
       {section.name}
     </div>
+
+    {#if section.collapsed && section.rowIds.length > 0}
+      <span class="section-hidden-count st-typography-body">{section.rowIds.length} hidden</span>
+    {/if}
   </button>
+
+  <!-- The right-click menu's actions, reachable without knowing to right-click. Revealed on
+       hover so the band stays clean at rest. -->
+  <div class="section-actions">
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild let:builder>
+        <button aria-label="Section Actions" use:builder.action {...builder} class="st-button icon">
+          <Ellipsis size={16} />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content align="end">
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('editSection')}>Edit Section</DropdownMenu.Item>
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('addRowToSection')}>Add Row to Section</DropdownMenu.Item>
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('duplicateSection')}>Duplicate Section</DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <!-- Keyboard-reachable reordering, matching the Move Up/Down rows have always had. -->
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('moveSection', { direction: 'up' })}>
+          Move Section Up
+        </DropdownMenu.Item>
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('moveSection', { direction: 'down' })}>
+          Move Section Down
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item size="sm" on:click={() => dispatch('deleteSection')}>Delete Section</DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  </div>
 
   <slot />
 </div>
@@ -87,10 +119,9 @@
 <style>
   .section-header {
     align-items: center;
-    background-color: var(--st-gray-15);
-    border-bottom: 1px solid var(--st-gray-20);
+    background-color: var(--section-accent-color);
+    color: var(--section-foreground);
     display: flex;
-    gap: 4px;
     height: 28px;
     padding: 0;
     position: relative;
@@ -101,18 +132,44 @@
     border-bottom: 1px solid var(--st-gray-30);
   }
 
-  .section-header-title-button {
+  /* Full-strength rail, flush left, continuing down through the section's rows. */
+  .section-header::before {
+    background-color: var(--section-accent-color);
+    bottom: -1px;
+    content: '';
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    width: 3px;
+  }
+
+  /* Everything in the band inherits the contrast foreground. Targeting controls individually let
+     the caret keep a grey hover color and wash out against a saturated band. */
+  .section-header :global(*) {
+    color: inherit;
+  }
+
+  /* Fills the band left of the actions. No padding and no gap, so the caret sits at the header's
+     left edge and the name immediately after it - the same two x positions as a root row's. */
+  .section-header-toggle {
+    border-radius: 0;
     flex: 1;
+    gap: 0;
+    height: 100%;
     justify-content: flex-start;
+    min-width: 0;
+    padding: 0;
     text-align: left;
   }
 
-  .section-header .section-header-title-button:hover {
-    background: initial;
+  /* The default grey button hover reads as a hole punched in a saturated band, so band controls
+     wash with their own foreground instead. */
+  .section-header :global(.st-button.icon:hover) {
+    background: color-mix(in srgb, var(--section-foreground) 15%, transparent);
   }
 
   .section-title {
-    color: var(--st-gray-70);
     flex: 1;
     font-weight: 500;
     overflow: hidden;
@@ -121,35 +178,42 @@
     white-space: nowrap;
   }
 
-  .section-header:not(.has-color):hover .section-title {
-    color: var(--st-gray-90);
+  .section-hidden-count {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 8px;
+    opacity: 0.8;
+    white-space: nowrap;
   }
 
-  /* When a section color is applied, the title adopts the contrast text color.
-     The button must also inherit so the title (nested inside it) resolves `inherit`
-     to the header's contrast color rather than the default button text color. */
-  .section-header.has-color .section-header-title-button,
-  .section-header.has-color .section-title {
-    color: inherit;
+  /* Actions stay hidden until the band is hovered or focused, matching the editor list. */
+  .section-actions {
+    flex-shrink: 0;
+    margin-right: 4px;
+    opacity: 0;
+    transition: opacity 100ms ease-in-out;
   }
 
-  .section-header:not(.has-color) :global(.st-button):hover :global(.section-header-collapse) {
-    color: var(--st-gray-50);
-  }
-
-  /* Colored sections: the chevron follows the contrast text color (kept slightly
-     subdued, full strength on hover) so it stays legible on any background. */
-  .section-header.has-color :global(.section-header-collapse) {
-    color: inherit;
-    opacity: 0.7;
-  }
-
-  .section-header.has-color :global(.st-button):hover :global(.section-header-collapse) {
+  .section-header:hover .section-actions,
+  .section-header:focus-within .section-actions {
     opacity: 1;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .section-actions {
+      transition: none;
+    }
+  }
+
+  /* Held back at rest, full strength on hover. Both states are the band's own foreground, so
+     neither washes out however saturated the color is. */
   :global(.section-header-collapse) {
-    color: var(--st-gray-30);
     flex-shrink: 0;
+    opacity: 0.75;
+  }
+
+  .section-header :global(.st-button):hover :global(.section-header-collapse) {
+    opacity: 1;
   }
 </style>

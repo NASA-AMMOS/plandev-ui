@@ -693,7 +693,7 @@
       const { offsetX } = e;
       overlaySvgSelection.selectAll('.activity-drag-guide').remove();
       if (e.dataTransfer !== null) {
-        // Ignore pragmatic-drag-and-drop events (row/section reordering)
+        // Row and section reordering, not an activity drop.
         const types = Array.from(e.dataTransfer.types);
         if (types.includes('application/vnd.pdnd')) {
           return;
@@ -704,7 +704,13 @@
         if (!data) {
           return;
         }
-        const json = JSON.parse(data);
+        // A drag started outside the app carries arbitrary text, not our JSON payload.
+        let json;
+        try {
+          json = JSON.parse(data);
+        } catch {
+          return;
+        }
         const type = json.type ?? '';
         const items = (json.items as TimelineItemType[]) ?? '';
         const metadata = (json.metadata as TimelineItemMetadata) ?? {};
