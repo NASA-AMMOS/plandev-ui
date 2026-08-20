@@ -10,6 +10,7 @@ import {
   viewAddSection,
   viewDeleteSection,
   viewReorderTimelineItems,
+  viewSetAllExpanded,
   viewUpdateSection,
 } from './views';
 
@@ -34,7 +35,7 @@ function buildView(): View {
     ],
     marginLeft: 250,
     marginRight: 30,
-    rows: [10, 11, 12, 13].map(id => ({ id, layers: [], name: `Row ${id}`, yAxes: [] })),
+    rows: [10, 11, 12, 13].map(id => ({ expanded: true, id, layers: [], name: `Row ${id}`, yAxes: [] })),
     sections: [{ collapsed: false, color: ViewDefaultSectionColor, id: 100, name: 'A', rowIds: [11, 12] }],
     verticalGuides: [],
   } as unknown as Timeline;
@@ -206,6 +207,34 @@ describe('view section stores', () => {
     expect(currentTimeline().sections[0].rowIds).toEqual([12, 11]);
 
     expectConsistentHierarchy();
+  });
+
+  test('viewSetAllExpanded folds every row and section together', () => {
+    viewSetAllExpanded(false, 0);
+
+    expect(currentTimeline().rows.map(row => row.expanded)).toEqual([false, false, false, false]);
+    // A section is folded by `collapsed`, so it takes the opposite of the row flag.
+    expect(currentTimeline().sections.map(section => section.collapsed)).toEqual([true]);
+
+    expectConsistentHierarchy();
+  });
+
+  test('viewSetAllExpanded opens everything again, including items already open', () => {
+    viewUpdateSection('collapsed', true, 100, 0);
+    viewSetAllExpanded(true, 0);
+
+    expect(currentTimeline().rows.map(row => row.expanded)).toEqual([true, true, true, true]);
+    expect(currentTimeline().sections.map(section => section.collapsed)).toEqual([false]);
+  });
+
+  test('viewSetAllExpanded moves no rows and no sections', () => {
+    const items = currentTimeline().items;
+    const rowIds = currentTimeline().sections[0].rowIds;
+
+    viewSetAllExpanded(false, 0);
+
+    expect(currentTimeline().items).toEqual(items);
+    expect(currentTimeline().sections[0].rowIds).toEqual(rowIds);
   });
 
   test('section operations leave the timeline’s rows untouched', () => {
