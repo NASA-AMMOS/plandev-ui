@@ -1,6 +1,7 @@
 import { keyBy } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import {
+  ViewDefaultSectionColor,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
@@ -15,6 +16,7 @@ import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
   applyActivityLayerFilter,
+  applyTimelineItemDrop,
   createHorizontalGuide,
   createRow,
   createSection,
@@ -27,27 +29,34 @@ import {
   createYAxis,
   directiveInView,
   duplicateRow,
+  duplicateSection,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getContrastRatio,
+  getContrastingTextColor,
   getMatchingTypesForActivityLayerFilter,
   getNextSectionID,
-  getOrderedRows,
   getResourceForLayer,
+  getRenderableTimelineItems,
   getRowSection,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
-  getVisibleRows,
   getYAxisBounds,
+  insertRowAfterInTimelineHierarchy,
   isActivityLayer,
   isExternalEventLayer,
   isLineLayer,
   isXRangeLayer,
   matchesDynamicFilter,
-  migrateTimelineToSections,
+  moveTimelineItemInHierarchy,
   paginateNodes,
+  removeRowFromTimelineHierarchy,
+  resolveSectionDropEdge,
   spanInView,
+  toTimelineDropEdge,
+  ungroupAllTimelineSections,
 } from './timeline';
 
 const testActivityTypes: ActivityType[] = [
@@ -1665,8 +1674,8 @@ test('matchesDynamicFilter', () => {
 });
 
 describe('Timeline sections', () => {
+  /** Root order: row r0, section [r1, r2], row r3. */
   function buildSectionedTimeline() {
-    // Rows r0..r3 with ids 0..3
     const timeline = createTimeline([]);
     const r0 = createRow([timeline]);
     timeline.rows.push(r0);
@@ -1677,11 +1686,9 @@ describe('Timeline sections', () => {
     const r3 = createRow([timeline]);
     timeline.rows.push(r3);
 
-    // Section containing r1 and r2
     const section = createSection([timeline], { rowIds: [r1.id, r2.id] });
     timeline.sections.push(section);
 
-    // Ordered items: root row r0, then the section, then root row r3
     timeline.items = [
       { id: r0.id, type: 'row' },
       { id: section.id, type: 'section' },
@@ -1704,7 +1711,13 @@ describe('Timeline sections', () => {
   test('createSection returns sensible defaults and a unique id', () => {
     const timeline = createTimeline([]);
     const section = createSection([timeline]);
-    expect(section).toMatchObject({ collapsed: false, color: null, id: 0, name: 'Section', rowIds: [] });
+    expect(section).toMatchObject({
+      collapsed: false,
+      color: ViewDefaultSectionColor,
+      id: 0,
+      name: 'Section',
+      rowIds: [],
+    });
 
     timeline.sections.push(section);
     const next = createSection([timeline]);
@@ -1718,48 +1731,642 @@ describe('Timeline sections', () => {
     expect(getRowSection(timeline, 999)).toBeNull();
   });
 
-  test('getOrderedRows flattens items + section rows in display order', () => {
-    const { r0, r1, r2, r3, timeline } = buildSectionedTimeline();
-    expect(getOrderedRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
+  test('createSection defaults to a real color so every section renders the same way', () => {
+    expect(createSection([createTimeline([])]).color).toBe(ViewDefaultSectionColor);
   });
 
-  test('getOrderedRows ignores collapsed state (returns all rows)', () => {
-    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+  test('getContrastingTextColor picks the foreground that actually scores higher', () => {
+    // Dark bands take light text, light bands take dark text.
+    expect(getContrastingTextColor('#000000')).toBe('#ffffff');
+    expect(getContrastingTextColor('#ffffff')).toBe('#1b1d1f');
+
+    // The presets are pale, so they all resolve to dark text.
+    expect(getContrastingTextColor('#fcdd8f')).toBe('#1b1d1f');
+    expect(getContrastingTextColor('#A3A3A3')).toBe('#1b1d1f');
+
+    // Mid-tone blue is the case a naive lightness threshold gets wrong.
+    expect(getContrastingTextColor('#0000ff')).toBe('#ffffff');
+  });
+
+  test('getContrastingTextColor clears WCAG AA for every built-in preset', () => {
+    ViewDiscreteLayerColorPresets.forEach(color => {
+      expect(getContrastRatio(color, getContrastingTextColor(color))).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
+  test('getContrastingTextColor returns the best available foreground even when neither hits AA', () => {
+    // #ff0000 scores 4.23 against near-black and 4.00 against white, so nothing reaches AA. A
+    // band in such a color cannot carry AA text at all; the helper returns the better of the two.
+    const best = getContrastRatio('#ff0000', getContrastingTextColor('#ff0000'));
+    expect(best).toBeCloseTo(4.23, 1);
+    expect(best).toBeGreaterThanOrEqual(getContrastRatio('#ff0000', '#ffffff'));
+    expect(best).toBeGreaterThanOrEqual(3);
+  });
+
+  test('getContrastingTextColor tolerates short hex and a missing hash', () => {
+    expect(getContrastingTextColor('#000')).toBe('#ffffff');
+    expect(getContrastingTextColor('fff')).toBe('#1b1d1f');
+  });
+
+  test('getContrastRatio spans 1 to 21', () => {
+    expect(getContrastRatio('#ffffff', '#000000')).toBeCloseTo(21, 1);
+    expect(getContrastRatio('#7a7a7a', '#7a7a7a')).toBeCloseTo(1, 5);
+  });
+
+  test('duplicateSection copies the section, its rows, and its styling', () => {
+    const { r1, r2, section, timeline } = buildSectionedTimeline();
+    section.color = '#ff0000';
     section.collapsed = true;
-    expect(getOrderedRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
+
+    const result = duplicateSection(section, timeline, [timeline]);
+
+    expect(result).not.toBeNull();
+    expect(result?.section.name).toBe('Section (copy)');
+    expect(result?.section.color).toBe('#ff0000');
+    expect(result?.section.collapsed).toBe(true);
+    expect(result?.section.id).not.toBe(section.id);
+
+    // Both rows are copied, and the copy owns the new row ids rather than the originals.
+    expect(result?.rows).toHaveLength(2);
+    expect(result?.section.rowIds).toEqual(result?.rows.map(r => r.id));
+    expect(result?.section.rowIds).not.toContain(r1.id);
+    expect(result?.section.rowIds).not.toContain(r2.id);
   });
 
-  test('getVisibleRows hides rows inside collapsed sections', () => {
-    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+  test('duplicateSection gives every copied row a distinct id', () => {
+    const { section, timeline } = buildSectionedTimeline();
+    const result = duplicateSection(section, timeline, [timeline]);
+    const ids = result?.rows.map(r => r.id) ?? [];
 
-    // Expanded: all rows visible
-    expect(getVisibleRows(timeline).map(r => r.id)).toEqual([r0.id, r1.id, r2.id, r3.id]);
-
-    // Collapsed: section rows hidden, root rows remain
-    section.collapsed = true;
-    expect(getVisibleRows(timeline).map(r => r.id)).toEqual([r0.id, r3.id]);
+    // Regression guard: duplicating rows one at a time against the same timeline list
+    // hands out the same id twice unless each copy is fed back into the working list.
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(undefined);
   });
 
-  test('migrateTimelineToSections converts legacy rows into root-level items', () => {
+  test('duplicateSection returns null when the timeline is not in the list', () => {
+    const { section, timeline } = buildSectionedTimeline();
+    expect(duplicateSection(section, timeline, [])).toBeNull();
+  });
+
+  test('duplicateSection copies an empty section', () => {
     const timeline = createTimeline([]);
-    const r0 = createRow([timeline]);
-    timeline.rows.push(r0);
-    const r1 = createRow([timeline]);
-    timeline.rows.push(r1);
+    const section = createSection([timeline], { name: 'Empty' });
+    timeline.sections.push(section);
 
-    // Simulate a pre-sections timeline missing items/sections
-    const legacy = { id: timeline.id, marginLeft: 0, marginRight: 0, rows: timeline.rows, verticalGuides: [] };
-    const migrated = migrateTimelineToSections(legacy as unknown as Timeline);
+    const result = duplicateSection(section, timeline, [timeline]);
 
-    expect(migrated.sections).toEqual([]);
-    expect(migrated.items).toEqual([
+    expect(result?.rows).toEqual([]);
+    expect(result?.section.rowIds).toEqual([]);
+    expect(result?.section.name).toBe('Empty (copy)');
+  });
+
+  test('removeRowFromTimelineHierarchy drops a root-level row from items', () => {
+    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+    const { items, sections } = removeRowFromTimelineHierarchy(timeline, r0.id);
+
+    expect(items).toEqual([
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
+    ]);
+    // A root-level removal must leave the sections untouched.
+    expect(sections[0].rowIds).toEqual([r1.id, r2.id]);
+  });
+
+  test('removeRowFromTimelineHierarchy drops a grouped row from its section', () => {
+    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+    const { items, sections } = removeRowFromTimelineHierarchy(timeline, r1.id);
+
+    expect(sections[0].rowIds).toEqual([r2.id]);
+    expect(items).toEqual([
       { id: r0.id, type: 'row' },
-      { id: r1.id, type: 'row' },
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
     ]);
   });
 
-  test('migrateTimelineToSections is a no-op for already-migrated timelines', () => {
+  test('removeRowFromTimelineHierarchy is a no-op for an unknown row', () => {
     const { timeline } = buildSectionedTimeline();
-    expect(migrateTimelineToSections(timeline)).toBe(timeline);
+    const { items, sections } = removeRowFromTimelineHierarchy(timeline, 999);
+
+    expect(items).toEqual(timeline.items);
+    expect(sections).toEqual(timeline.sections);
+  });
+
+  test('insertRowAfterInTimelineHierarchy places a row next to a root-level neighbor', () => {
+    const { r0, r1, r2, r3, section, timeline } = buildSectionedTimeline();
+    const { items, sections } = insertRowAfterInTimelineHierarchy(timeline, r0.id, 42);
+
+    expect(items).toEqual([
+      { id: r0.id, type: 'row' },
+      { id: 42, type: 'row' },
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
+    ]);
+    expect(sections[0].rowIds).toEqual([r1.id, r2.id]);
+  });
+
+  test('insertRowAfterInTimelineHierarchy places a row inside its neighbor’s section', () => {
+    const { r1, r2, timeline } = buildSectionedTimeline();
+    const { items, sections } = insertRowAfterInTimelineHierarchy(timeline, r1.id, 42);
+
+    // The new row joins the section rather than appearing at the root level.
+    expect(sections[0].rowIds).toEqual([r1.id, 42, r2.id]);
+    expect(items).toEqual(timeline.items);
+  });
+
+  test('insertRowAfterInTimelineHierarchy appends when the neighbor is not in the hierarchy', () => {
+    const { r0, r3, section, timeline } = buildSectionedTimeline();
+    const { items } = insertRowAfterInTimelineHierarchy(timeline, 999, 42);
+
+    expect(items).toEqual([
+      { id: r0.id, type: 'row' },
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
+      { id: 42, type: 'row' },
+    ]);
+  });
+});
+
+describe('resolveSectionDropEdge', () => {
+  // A section header as the geometry helper sees it.
+  const header = { bottom: 128, height: 28, top: 100 };
+
+  test('a dragged section splits the header in half', () => {
+    expect(resolveSectionDropEdge(header, 101, 'section')).toBe('top');
+    expect(resolveSectionDropEdge(header, 113, 'section')).toBe('top');
+    expect(resolveSectionDropEdge(header, 115, 'section')).toBe('bottom');
+    expect(resolveSectionDropEdge(header, 127, 'section')).toBe('bottom');
+  });
+
+  test('a dragged row reorders only from the top band', () => {
+    // 28px header -> an 8px band (28/3 clamped to the 8px maximum).
+    expect(resolveSectionDropEdge(header, 100, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(header, 107, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(header, 108, 'row')).toBeNull();
+    expect(resolveSectionDropEdge(header, 120, 'row')).toBeNull();
+  });
+
+  test('a dragged row has no bottom band', () => {
+    // Regression guard: a bottom band drew a line under the header, pointing at the slot before
+    // the section's first row, then inserted the row after the whole section.
+    expect(resolveSectionDropEdge(header, header.bottom - 1, 'row')).toBeNull();
+    expect(resolveSectionDropEdge(header, header.bottom, 'row')).toBeNull();
+  });
+
+  test('the band is clamped so it stays usable at any header height', () => {
+    // Too short for a proportional band: it floors at 4px rather than vanishing.
+    const short = { bottom: 109, height: 9, top: 100 };
+    expect(resolveSectionDropEdge(short, 103, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(short, 105, 'row')).toBeNull();
+
+    // Tall enough that a third would swallow most of the header: it caps at 8px.
+    const tall = { bottom: 200, height: 100, top: 100 };
+    expect(resolveSectionDropEdge(tall, 107, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(tall, 109, 'row')).toBeNull();
+  });
+});
+
+describe('toTimelineDropEdge', () => {
+  test('passes through the two edges a timeline understands', () => {
+    expect(toTimelineDropEdge('top')).toBe('top');
+    expect(toTimelineDropEdge('bottom')).toBe('bottom');
+  });
+
+  test('rejects everything else', () => {
+    // The hitbox helper is typed for all four sides even when only two are requested.
+    expect(toTimelineDropEdge('left')).toBeNull();
+    expect(toTimelineDropEdge('right')).toBeNull();
+    expect(toTimelineDropEdge(null)).toBeNull();
+    expect(toTimelineDropEdge(undefined)).toBeNull();
+  });
+});
+
+describe('applyTimelineItemDrop', () => {
+  /**
+   * A hierarchy of: row 10, section 100 [rows 11, 12], row 13, section 200 [row 14].
+   * Ids are spread apart so a mix-up between a row id and a section id cannot pass by accident.
+   */
+  function buildHierarchy() {
+    return {
+      items: [
+        { id: 10, type: 'row' },
+        { id: 100, type: 'section' },
+        { id: 13, type: 'row' },
+        { id: 200, type: 'section' },
+      ] as Timeline['items'],
+      sections: [
+        { collapsed: false, color: null, id: 100, name: 'A', rowIds: [11, 12] },
+        { collapsed: false, color: null, id: 200, name: 'B', rowIds: [14] },
+      ] as Timeline['sections'],
+    };
+  }
+
+  const row = (id: number, sourceSectionId: number | null = null) =>
+    ({ itemId: id, itemType: 'row', sourceSectionId }) as const;
+  const section = (id: number) => ({ itemId: id, itemType: 'section', sourceSectionId: null }) as const;
+  const atRow = (id: number, sectionId: number | null = null) => ({ itemId: id, itemType: 'row', sectionId }) as const;
+  const atSection = (id: number) => ({ itemId: id, itemType: 'section', sectionId: null }) as const;
+
+  test('reorders a root row above and below another root row', () => {
+    const above = applyTimelineItemDrop(buildHierarchy(), { edge: 'top', source: row(13), target: atRow(10) });
+    expect(above?.items).toEqual([
+      { id: 13, type: 'row' },
+      { id: 10, type: 'row' },
+      { id: 100, type: 'section' },
+      { id: 200, type: 'section' },
+    ]);
+
+    const below = applyTimelineItemDrop(buildHierarchy(), { edge: 'bottom', source: row(10), target: atRow(13) });
+    expect(below?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+      { id: 10, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('drops a root row into a section, appended to its rows', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), { edge: null, source: row(10), target: atSection(100) });
+
+    expect(next?.sections[0].rowIds).toEqual([11, 12, 10]);
+    // The row leaves the root level rather than being listed in both places.
+    expect(next?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('drops a row into an empty section', () => {
+    const hierarchy = buildHierarchy();
+    hierarchy.sections[1].rowIds = [];
+
+    const next = applyTimelineItemDrop(hierarchy, { edge: null, source: row(10), target: atSection(200) });
+
+    expect(next?.sections[1].rowIds).toEqual([10]);
+  });
+
+  test('moves a row out of a section back to the root level', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'top',
+      source: row(11, 100),
+      target: atRow(10),
+    });
+
+    expect(next?.sections[0].rowIds).toEqual([12]);
+    expect(next?.items).toEqual([
+      { id: 11, type: 'row' },
+      { id: 10, type: 'row' },
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('moves a row from one section to another', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'bottom',
+      source: row(11, 100),
+      target: atRow(14, 200),
+    });
+
+    expect(next?.sections[0].rowIds).toEqual([12]);
+    expect(next?.sections[1].rowIds).toEqual([14, 11]);
+    // A move between sections never touches the root ordering.
+    expect(next?.items).toEqual(buildHierarchy().items);
+  });
+
+  test('reorders rows within one section', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'top',
+      source: row(12, 100),
+      target: atRow(11, 100),
+    });
+
+    expect(next?.sections[0].rowIds).toEqual([12, 11]);
+  });
+
+  test('reorders a section against another section', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'top',
+      source: section(200),
+      target: atSection(100),
+    });
+
+    expect(next?.items).toEqual([
+      { id: 10, type: 'row' },
+      { id: 200, type: 'section' },
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+    ]);
+    // Reordering a section carries its rows with it - they are addressed by the section, not by items.
+    expect(next?.sections[1].rowIds).toEqual([14]);
+  });
+
+  test('appends rather than inserting next-to-last when the target is gone', () => {
+    // Regression guard: findIndex returning -1 used to fall through to splice(-1, 0, …), which
+    // silently drops the item one place from the end instead of at it.
+    const next = applyTimelineItemDrop(buildHierarchy(), { edge: 'bottom', source: row(10), target: atRow(999) });
+
+    expect(next?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+      { id: 200, type: 'section' },
+      { id: 10, type: 'row' },
+    ]);
+  });
+
+  test('appends to the target section when the neighbouring row is gone', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'bottom',
+      source: row(10),
+      target: atRow(999, 200),
+    });
+
+    expect(next?.sections[1].rowIds).toEqual([14, 10]);
+  });
+
+  test('is a no-op when an item is dropped on itself', () => {
+    expect(applyTimelineItemDrop(buildHierarchy(), { edge: 'top', source: row(10), target: atRow(10) })).toBeNull();
+    expect(
+      applyTimelineItemDrop(buildHierarchy(), { edge: 'bottom', source: section(100), target: atSection(100) }),
+    ).toBeNull();
+  });
+
+  test('is a no-op when a row is dropped onto the section it already belongs to', () => {
+    expect(
+      applyTimelineItemDrop(buildHierarchy(), { edge: null, source: row(11, 100), target: atSection(100) }),
+    ).toBeNull();
+  });
+
+  test('a row already in a section can still leave it by an edge of its own header', () => {
+    // The no-op above must not swallow this: the same row and the same section header, but aimed
+    // at the reorder band rather than at the section itself.
+    const next = applyTimelineItemDrop(buildHierarchy(), {
+      edge: 'top',
+      source: row(11, 100),
+      target: atSection(100),
+    });
+
+    expect(next?.sections[0].rowIds).toEqual([12]);
+    expect(next?.items).toEqual([
+      { id: 10, type: 'row' },
+      { id: 11, type: 'row' },
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('refuses to nest a section inside a section', () => {
+    expect(
+      applyTimelineItemDrop(buildHierarchy(), { edge: 'bottom', source: section(200), target: atRow(11, 100) }),
+    ).toBeNull();
+  });
+
+  test('a section dropped on a root row still reorders', () => {
+    const next = applyTimelineItemDrop(buildHierarchy(), { edge: 'top', source: section(200), target: atRow(10) });
+
+    expect(next?.items).toEqual([
+      { id: 200, type: 'section' },
+      { id: 10, type: 'row' },
+      { id: 100, type: 'section' },
+      { id: 13, type: 'row' },
+    ]);
+  });
+
+  test('never mutates the hierarchy it was given', () => {
+    const hierarchy = buildHierarchy();
+    const itemsBefore = JSON.stringify(hierarchy.items);
+    const sectionsBefore = JSON.stringify(hierarchy.sections);
+
+    applyTimelineItemDrop(hierarchy, { edge: null, source: row(11, 100), target: atSection(200) });
+
+    expect(JSON.stringify(hierarchy.items)).toBe(itemsBefore);
+    expect(JSON.stringify(hierarchy.sections)).toBe(sectionsBefore);
+  });
+
+  test('tolerates a timeline with no items or sections yet', () => {
+    const next = applyTimelineItemDrop(
+      { items: [], sections: [] },
+      {
+        edge: 'top',
+        source: row(10),
+        target: atRow(999),
+      },
+    );
+
+    expect(next).toEqual({ items: [{ id: 10, type: 'row' }], sections: [] });
+  });
+});
+
+describe('moveTimelineItemInHierarchy', () => {
+  /** Root order: row 10, section 100 [rows 11, 12, 13], section 200 [row 14]. */
+  function buildHierarchy() {
+    return {
+      items: [
+        { id: 10, type: 'row' },
+        { id: 100, type: 'section' },
+        { id: 200, type: 'section' },
+      ] as Timeline['items'],
+      sections: [
+        { collapsed: false, color: null, id: 100, name: 'A', rowIds: [11, 12, 13] },
+        { collapsed: false, color: null, id: 200, name: 'B', rowIds: [14] },
+      ] as Timeline['sections'],
+    };
+  }
+
+  test('moves a root row past its neighbour', () => {
+    const next = moveTimelineItemInHierarchy(buildHierarchy(), 'row', 10, 'down');
+
+    expect(next?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 10, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('moves a section past its neighbour in both directions', () => {
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'section', 200, 'up')?.items).toEqual([
+      { id: 10, type: 'row' },
+      { id: 200, type: 'section' },
+      { id: 100, type: 'section' },
+    ]);
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'section', 100, 'up')?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 10, type: 'row' },
+      { id: 200, type: 'section' },
+    ]);
+  });
+
+  test('moves a grouped row within its own section', () => {
+    const down = moveTimelineItemInHierarchy(buildHierarchy(), 'row', 11, 'down');
+    expect(down?.sections[0].rowIds).toEqual([12, 11, 13]);
+    // The root order is untouched by a move inside a section.
+    expect(down?.items).toEqual(buildHierarchy().items);
+
+    const up = moveTimelineItemInHierarchy(buildHierarchy(), 'row', 13, 'up');
+    expect(up?.sections[0].rowIds).toEqual([11, 13, 12]);
+  });
+
+  test('a grouped row cannot step out of its section', () => {
+    // The first and last rows of a section have nowhere left to go. Moving out is a drag, not a
+    // one-step nudge, so these are refusals rather than escapes to the root level.
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'row', 11, 'up')).toBeNull();
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'row', 13, 'down')).toBeNull();
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'row', 14, 'up')).toBeNull();
+  });
+
+  test('refuses to move past either end of the root order', () => {
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'row', 10, 'up')).toBeNull();
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'section', 200, 'down')).toBeNull();
+  });
+
+  test('refuses to move something that is not there', () => {
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'row', 999, 'up')).toBeNull();
+    expect(moveTimelineItemInHierarchy(buildHierarchy(), 'section', 999, 'down')).toBeNull();
+  });
+
+  test('does not confuse a row id with a section id', () => {
+    // Ids are unique per kind, not across kinds, so a lookup that ignores the type can move the
+    // wrong thing. Here a row and a section deliberately share the id 100.
+    const hierarchy = buildHierarchy();
+    hierarchy.items = [
+      { id: 100, type: 'row' },
+      { id: 100, type: 'section' },
+    ];
+
+    expect(moveTimelineItemInHierarchy(hierarchy, 'section', 100, 'up')?.items).toEqual([
+      { id: 100, type: 'section' },
+      { id: 100, type: 'row' },
+    ]);
+  });
+
+  test('never mutates the hierarchy it was given', () => {
+    const hierarchy = buildHierarchy();
+    const before = JSON.stringify(hierarchy);
+
+    moveTimelineItemInHierarchy(hierarchy, 'row', 11, 'down');
+    moveTimelineItemInHierarchy(hierarchy, 'section', 100, 'down');
+
+    expect(JSON.stringify(hierarchy)).toBe(before);
+  });
+});
+
+describe('getRenderableTimelineItems', () => {
+  function buildTimeline() {
+    return {
+      items: [
+        { id: 10, type: 'row' },
+        { id: 100, type: 'section' },
+      ] as Timeline['items'],
+      rows: [{ id: 10 }, { id: 11 }] as Timeline['rows'],
+      sections: [{ collapsed: false, color: null, id: 100, name: 'A', rowIds: [11] }] as Timeline['sections'],
+    };
+  }
+
+  test('passes a consistent hierarchy through untouched', () => {
+    const timeline = buildTimeline();
+    expect(getRenderableTimelineItems(timeline)).toEqual(timeline.items);
+  });
+
+  test('drops a ref to a section that no longer exists', () => {
+    const timeline = buildTimeline();
+    timeline.sections = [];
+
+    expect(getRenderableTimelineItems(timeline)).toEqual([{ id: 10, type: 'row' }]);
+  });
+
+  test('drops a ref to a row that no longer exists', () => {
+    const timeline = buildTimeline();
+    timeline.rows = [{ id: 11 }] as Timeline['rows'];
+
+    expect(getRenderableTimelineItems(timeline)).toEqual([{ id: 100, type: 'section' }]);
+  });
+
+  test('drops a duplicate ref, keeping the first', () => {
+    // The crash this exists for: a ghost `section-0` left in items, plus a new section that
+    // reuses id 0, is two entries keyed `section-0` - which throws out of the keyed each.
+    const timeline = buildTimeline();
+    timeline.items = [
+      { id: 100, type: 'section' },
+      { id: 10, type: 'row' },
+      { id: 100, type: 'section' },
+    ];
+
+    expect(getRenderableTimelineItems(timeline)).toEqual([
+      { id: 100, type: 'section' },
+      { id: 10, type: 'row' },
+    ]);
+  });
+
+  test('a row and a section may share an id without colliding', () => {
+    // Ids are unique per kind, not across kinds, so the two refs are distinct items.
+    const timeline = buildTimeline();
+    timeline.items = [
+      { id: 100, type: 'section' },
+      { id: 100, type: 'row' },
+    ];
+    timeline.rows = [{ id: 100 }] as Timeline['rows'];
+
+    expect(getRenderableTimelineItems(timeline)).toHaveLength(2);
+  });
+
+  test('drops a root ref to a row a section has also claimed', () => {
+    const timeline = buildTimeline();
+    timeline.items = [
+      { id: 11, type: 'row' },
+      { id: 100, type: 'section' },
+    ];
+
+    // Row 11 belongs to section 100; listing it at the root as well drew it twice.
+    expect(getRenderableTimelineItems(timeline)).toEqual([{ id: 100, type: 'section' }]);
+  });
+
+  test('tolerates a timeline with nothing in it', () => {
+    expect(getRenderableTimelineItems({ items: [], rows: [], sections: [] })).toEqual([]);
+  });
+});
+
+describe('ungroupAllTimelineSections', () => {
+  test('replaces each section with the rows it held, in place', () => {
+    const next = ungroupAllTimelineSections({
+      items: [
+        { id: 10, type: 'row' },
+        { id: 100, type: 'section' },
+        { id: 13, type: 'row' },
+        { id: 200, type: 'section' },
+      ],
+      sections: [
+        { collapsed: false, color: null, id: 100, name: 'A', rowIds: [11, 12] },
+        { collapsed: false, color: null, id: 200, name: 'B', rowIds: [14] },
+      ],
+    });
+
+    // Regression guard: emptying `sections` alone left rows 11, 12 and 14 referenced by nothing,
+    // so they vanished from the timeline while still sitting in `timeline.rows`.
+    expect(next.items).toEqual([
+      { id: 10, type: 'row' },
+      { id: 11, type: 'row' },
+      { id: 12, type: 'row' },
+      { id: 13, type: 'row' },
+      { id: 14, type: 'row' },
+    ]);
+    expect(next.sections).toEqual([]);
+  });
+
+  test('leaves no section refs behind for a reused id to collide with', () => {
+    const next = ungroupAllTimelineSections({
+      items: [{ id: 0, type: 'section' }],
+      sections: [{ collapsed: false, color: null, id: 0, name: 'A', rowIds: [] }],
+    });
+
+    expect(next.items).toEqual([]);
+  });
+
+  test('is a no-op on a timeline with no sections', () => {
+    const items = [{ id: 10, type: 'row' as const }];
+    expect(ungroupAllTimelineSections({ items, sections: [] })).toEqual({ items, sections: [] });
   });
 });

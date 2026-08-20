@@ -2,10 +2,12 @@ import * as v0 from './ui-view-schema-v0.json';
 import * as v1 from './ui-view-schema-v1.json';
 import * as v2 from './ui-view-schema-v2.json';
 import * as v3 from './ui-view-schema-v3.json';
+import * as v4 from './ui-view-schema-v4.json';
 
 export default {
   v0,
   v1,
   v2,
   v3,
+  v4,
 };

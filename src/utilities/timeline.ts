@@ -16,6 +16,7 @@ import {
 import { groupBy, isArray } from 'lodash-es';
 import {
   ViewDefaultDiscreteOptions,
+  ViewDefaultSectionColor,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
@@ -46,6 +47,7 @@ import type {
   Row,
   TimeRange,
   Timeline,
+  TimelineDropEdge,
   TimelineItemRef,
   TimelineSection,
   VerticalGuide,
@@ -858,6 +860,48 @@ export function duplicateRow(row: Row, timelines: Timeline[], timelineId: number
   });
 
   return newRow;
+}
+
+/**
+ * Copies a section and every row it contains, keeping its color and collapsed state. Adding the
+ * result to the view is the caller's job. Returns null if the section's timeline is not found.
+ */
+export function duplicateSection(
+  section: TimelineSection,
+  timeline: Timeline,
+  timelines: Timeline[],
+): { rows: Row[]; section: TimelineSection } | null {
+  // Each new row lands in a working copy as it is created, so the next one sees it and gets an
+  // id that does not collide.
+  const workingTimelines = structuredClone(timelines);
+  const workingTimeline = workingTimelines.find(t => t.id === timeline.id);
+  if (!workingTimeline) {
+    return null;
+  }
+
+  const newSection = createSection(workingTimelines, {
+    collapsed: section.collapsed,
+    color: section.color,
+    name: `${section.name} (copy)`,
+    rowIds: [],
+  });
+  workingTimeline.sections.push(newSection);
+
+  const newRows: Row[] = [];
+  section.rowIds.forEach(rowId => {
+    const row = timeline.rows.find(r => r.id === rowId);
+    if (!row) {
+      return;
+    }
+    const newRow = duplicateRow(row, workingTimelines, timeline.id);
+    if (newRow) {
+      workingTimeline.rows.push(newRow);
+      newRows.push(newRow);
+      newSection.rowIds.push(newRow.id);
+    }
+  });
+
+  return { rows: newRows, section: newSection };
 }
 
 /**
@@ -1847,7 +1891,7 @@ export function createSection(timelines: Timeline[], args: Partial<TimelineSecti
 
   return {
     collapsed: false,
-    color: null,
+    color: ViewDefaultSectionColor,
     id,
     name: 'Section',
     rowIds: [],
@@ -1856,26 +1900,51 @@ export function createSection(timelines: Timeline[], args: Partial<TimelineSecti
 }
 
 /**
- * Migrates a timeline from the old format (without sections) to the new format.
- * Existing rows become root-level items in the items array.
+ * Text color for a section band: whichever of the app's light or dark foregrounds scores the
+ * higher WCAG contrast against it. A user-picked color can land anywhere on the lightness range,
+ * so a threshold guess is not good enough.
  */
-export function migrateTimelineToSections(timeline: Timeline): Timeline {
-  // Already migrated
-  if (timeline.items !== undefined && timeline.sections !== undefined) {
-    return timeline;
+export function getContrastingTextColor(backgroundColor: string): string {
+  const light = '#ffffff';
+  const dark = '#1b1d1f';
+  return getContrastRatio(backgroundColor, dark) >= getContrastRatio(backgroundColor, light) ? dark : light;
+}
+
+/**
+ * WCAG 2.x contrast ratio between two sRGB hex colors, from 1 (identical) to 21 (black on white).
+ */
+export function getContrastRatio(colorA: string, colorB: string): number {
+  const a = getRelativeLuminance(colorA);
+  const b = getRelativeLuminance(colorB);
+  const lighter = Math.max(a, b);
+  const darker = Math.min(a, b);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * WCAG relative luminance of an sRGB hex color. Accepts 3 or 6 digit hex, with or without '#'.
+ * An unparseable color returns 1 (treated as white) so callers fall back to dark text.
+ */
+function getRelativeLuminance(hex: string): number {
+  const normalized = hex.replace('#', '');
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map(c => c + c)
+          .join('')
+      : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    return 1;
   }
 
-  // Convert existing rows to root-level items
-  const items: TimelineItemRef[] = timeline.rows.map(row => ({
-    id: row.id,
-    type: 'row' as const,
-  }));
+  const channels = [0, 2, 4].map(i => {
+    const value = parseInt(full.substring(i, i + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
 
-  return {
-    ...timeline,
-    items,
-    sections: [],
-  };
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
 /**
@@ -1891,60 +1960,242 @@ export function getRowSection(timeline: Timeline, rowId: number): TimelineSectio
 }
 
 /**
- * Gets all rows in order, respecting section ordering and section row ordering.
- * Returns rows in the order they should be displayed.
+ * Removes a row from wherever it lives in the timeline hierarchy - the root level `items`
+ * or a section's `rowIds`. Returns the new hierarchy; `rows` itself is left to the caller.
  */
-export function getOrderedRows(timeline: Timeline): Row[] {
-  const rowsById = new Map(timeline.rows.map(row => [row.id, row]));
-  const orderedRows: Row[] = [];
-
-  for (const item of timeline.items || []) {
-    if (item.type === 'row') {
-      const row = rowsById.get(item.id);
-      if (row) {
-        orderedRows.push(row);
-      }
-    } else if (item.type === 'section') {
-      const section = (timeline.sections || []).find(s => s.id === item.id);
-      if (section) {
-        for (const rowId of section.rowIds) {
-          const row = rowsById.get(rowId);
-          if (row) {
-            orderedRows.push(row);
-          }
-        }
-      }
-    }
-  }
-
-  return orderedRows;
+export function removeRowFromTimelineHierarchy(
+  timeline: Timeline,
+  rowId: number,
+): Pick<Timeline, 'items' | 'sections'> {
+  return {
+    items: (timeline.items || []).filter(item => !(item.type === 'row' && item.id === rowId)),
+    sections: (timeline.sections || []).map(section =>
+      section.rowIds.includes(rowId) ? { ...section, rowIds: section.rowIds.filter(id => id !== rowId) } : section,
+    ),
+  };
 }
 
 /**
- * Gets all visible rows (respecting collapsed sections)
+ * Places a new row directly after an existing one, in whichever container holds that row - its
+ * section's `rowIds`, or the root `items`. If the row is not in the hierarchy at all, which a
+ * legacy view can produce, the new row appends to the root so it is still reachable. Returns the
+ * new hierarchy; `rows` itself is left to the caller.
  */
-export function getVisibleRows(timeline: Timeline): Row[] {
-  const rowsById = new Map(timeline.rows.map(row => [row.id, row]));
-  const visibleRows: Row[] = [];
+export function insertRowAfterInTimelineHierarchy(
+  timeline: Timeline,
+  afterRowId: number,
+  newRowId: number,
+): Pick<Timeline, 'items' | 'sections'> {
+  const items = [...(timeline.items || [])];
+  const sections = timeline.sections || [];
+  const section = getRowSection(timeline, afterRowId);
 
-  for (const item of timeline.items || []) {
-    if (item.type === 'row') {
-      const row = rowsById.get(item.id);
-      if (row) {
-        visibleRows.push(row);
-      }
-    } else if (item.type === 'section') {
-      const section = (timeline.sections || []).find(s => s.id === item.id);
-      if (section && !section.collapsed) {
-        for (const rowId of section.rowIds) {
-          const row = rowsById.get(rowId);
-          if (row) {
-            visibleRows.push(row);
-          }
+  if (section) {
+    return {
+      items,
+      sections: sections.map(s => {
+        if (s.id !== section.id) {
+          return s;
         }
-      }
-    }
+        const rowIds = [...s.rowIds];
+        rowIds.splice(rowIds.indexOf(afterRowId) + 1, 0, newRowId);
+        return { ...s, rowIds };
+      }),
+    };
   }
 
-  return visibleRows;
+  const itemIndex = items.findIndex(item => item.type === 'row' && item.id === afterRowId);
+  items.splice(itemIndex > -1 ? itemIndex + 1 : items.length, 0, { id: newRowId, type: 'row' });
+
+  return { items, sections };
+}
+
+/**
+ * Returns the item order with everything unrenderable dropped: refs to rows or sections that no
+ * longer exist, repeats of a ref, and rows a section has also claimed.
+ *
+ * Mutations keep `items` consistent themselves; this heals a view already written inconsistently.
+ * A stale ref is worse than invisible - ids are handed out as max+1 over what exists, so a reused
+ * id collides with its ghost and the keyed each throws, taking the whole timeline down.
+ */
+export function getRenderableTimelineItems(timeline: Pick<Timeline, 'items' | 'rows' | 'sections'>): TimelineItemRef[] {
+  const rowIds = new Set((timeline.rows || []).map(row => row.id));
+  const sectionIds = new Set((timeline.sections || []).map(section => section.id));
+  const groupedRowIds = new Set((timeline.sections || []).flatMap(section => section.rowIds));
+  const seen = new Set<string>();
+
+  return (timeline.items || []).filter(item => {
+    const key = `${item.type}-${item.id}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    if (item.type === 'section' ? !sectionIds.has(item.id) : !rowIds.has(item.id) || groupedRowIds.has(item.id)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Removes every section, replacing each one in the item order with the rows it held - deleting a
+ * section only ungroups. Emptying `sections` alone strands those rows, since a grouped row is
+ * referenced only by its section.
+ */
+export function ungroupAllTimelineSections(
+  timeline: Pick<Timeline, 'items' | 'sections'>,
+): Pick<Timeline, 'items' | 'sections'> {
+  const sections = timeline.sections || [];
+
+  return {
+    items: (timeline.items || []).flatMap(item =>
+      item.type === 'section'
+        ? (sections.find(section => section.id === item.id)?.rowIds ?? []).map(rowId => ({
+            id: rowId,
+            type: 'row' as const,
+          }))
+        : [item],
+    ),
+    sections: [],
+  };
+}
+
+/**
+ * Narrows a drag-and-drop library edge to the two a timeline understands. The hitbox helper is
+ * typed for all four sides even when only top and bottom are requested.
+ */
+export function toTimelineDropEdge(edge: string | null | undefined): TimelineDropEdge | null {
+  return edge === 'top' || edge === 'bottom' ? edge : null;
+}
+
+/**
+ * Resolves a pointer position over a section header into either a reorder edge or a drop INTO the
+ * section (null). Sections can only be reordered, never nested.
+ *
+ * A row gets one reorder band, the top one, so the slot above a leading section stays reachable;
+ * anywhere else drops it into the section. A bottom band pointed at the slot before the section's
+ * first row but inserted after the whole section, which usually looked like nothing happened.
+ */
+export function resolveSectionDropEdge(
+  rect: { bottom: number; height: number; top: number },
+  clientY: number,
+  sourceItemType: TimelineItemRef['type'],
+): TimelineDropEdge | null {
+  if (sourceItemType === 'section') {
+    return clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+  }
+  const band = Math.max(4, Math.min(8, rect.height / 3));
+  return clientY < rect.top + band ? 'top' : null;
+}
+
+/**
+ * Computes the hierarchy that results from moving one item one step up or down - the keyboard and
+ * menu route to reordering. A row moves within whatever list it belongs to, its section's rows or
+ * the root order, and never hops out of a section; that is what dragging is for. Returns null when
+ * the move is not possible, so callers can skip the store write.
+ */
+export function moveTimelineItemInHierarchy(
+  timeline: Pick<Timeline, 'items' | 'sections'>,
+  type: TimelineItemRef['type'],
+  id: number,
+  direction: 'down' | 'up',
+): Pick<Timeline, 'items' | 'sections'> | null {
+  const items = timeline.items || [];
+  const sections = timeline.sections || [];
+  const owningSection = type === 'row' ? sections.find(section => section.rowIds.includes(id)) : undefined;
+
+  const index = owningSection
+    ? owningSection.rowIds.indexOf(id)
+    : items.findIndex(item => item.type === type && item.id === id);
+  const target = direction === 'up' ? index - 1 : index + 1;
+  const length = owningSection ? owningSection.rowIds.length : items.length;
+
+  if (index < 0 || target < 0 || target >= length) {
+    return null;
+  }
+
+  if (owningSection) {
+    const rowIds = [...owningSection.rowIds];
+    [rowIds[index], rowIds[target]] = [rowIds[target], rowIds[index]];
+    return {
+      items,
+      sections: sections.map(section => (section.id === owningSection.id ? { ...section, rowIds } : section)),
+    };
+  }
+
+  const newItems = [...items];
+  [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+  return { items: newItems, sections };
+}
+
+/**
+ * Computes the hierarchy that results from dropping a row or section somewhere else in it.
+ * Returns null when the drop changes nothing, so callers can skip the store write. Shared by the
+ * timeline and the editor panel, which present the same hierarchy.
+ */
+export function applyTimelineItemDrop(
+  timeline: Pick<Timeline, 'items' | 'sections'>,
+  drop: {
+    edge: TimelineDropEdge | null;
+    source: { itemId: number; itemType: TimelineItemRef['type']; sourceSectionId: number | null };
+    target: { itemId: number; itemType: TimelineItemRef['type']; sectionId: number | null };
+  },
+): Pick<Timeline, 'items' | 'sections'> | null {
+  const { edge, source, target } = drop;
+  const { itemId: sourceItemId, itemType: sourceItemType, sourceSectionId } = source;
+  const { itemId: targetItemId, itemType: targetItemType, sectionId: targetSectionId } = target;
+
+  // A section can be reordered but never nested, so a row inside a section is not a target for one.
+  if (sourceItemType === 'section' && targetItemType === 'row' && targetSectionId !== null) {
+    return null;
+  }
+
+  if (sourceItemId === targetItemId && sourceItemType === targetItemType) {
+    return null;
+  }
+
+  // Dropping a row onto the header of the section it already belongs to.
+  if (targetItemType === 'section' && sourceItemType === 'row' && edge === null && sourceSectionId === targetItemId) {
+    return null;
+  }
+
+  let items = [...(timeline.items || [])];
+  const sections = (timeline.sections || []).map(s => ({ ...s, rowIds: [...s.rowIds] }));
+
+  // Remove the source from wherever it currently lives.
+  if (sourceItemType === 'row' && sourceSectionId !== null) {
+    const sourceSection = sections.find(s => s.id === sourceSectionId);
+    if (sourceSection) {
+      sourceSection.rowIds = sourceSection.rowIds.filter(id => id !== sourceItemId);
+    }
+  } else {
+    items = items.filter(item => !(item.type === sourceItemType && item.id === sourceItemId));
+  }
+
+  if (targetItemType === 'section' && sourceItemType === 'row' && edge === null) {
+    // Into a section, rather than at one of its edges.
+    const targetSection = sections.find(s => s.id === targetItemId);
+    if (targetSection && !targetSection.rowIds.includes(sourceItemId)) {
+      targetSection.rowIds.push(sourceItemId);
+    }
+  } else if (targetSectionId !== null && sourceItemType === 'row') {
+    // Next to a row inside a section: reordering within it, or moving between two.
+    const targetSection = sections.find(s => s.id === targetSectionId);
+    if (targetSection) {
+      const targetIndex = targetSection.rowIds.findIndex(id => id === targetItemId);
+      if (targetIndex !== -1) {
+        targetSection.rowIds.splice(edge === 'bottom' ? targetIndex + 1 : targetIndex, 0, sourceItemId);
+      } else {
+        targetSection.rowIds.push(sourceItemId);
+      }
+    }
+  } else {
+    const targetIndex = items.findIndex(item => item.type === targetItemType && item.id === targetItemId);
+    // A missing target appends rather than falling through to splice(-1), which would silently
+    // insert next-to-last.
+    const insertIndex = targetIndex < 0 ? items.length : edge === 'bottom' ? targetIndex + 1 : targetIndex;
+    items.splice(insertIndex, 0, { id: sourceItemId, type: sourceItemType });
+  }
+
+  return { items, sections };
 }

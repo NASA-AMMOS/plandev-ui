@@ -6,12 +6,15 @@
 
   export let hint: string = '';
   export let hintPosition: 'center' | 'bottom' = 'center';
-  // When true, don't disable pointer events on children during drag
-  // Use this when the DropTarget contains elements that use pragmatic DND
+  // Keeps children clickable mid-drag. For a DropTarget wrapping its own drag targets.
   export let disablePointerBlock: boolean = false;
 
   let isDropTarget: boolean = false;
   let isDragging: boolean = false;
+  // Whether consumers got a 'dragstart'. dataTransfer.types is cleared by the time 'dragend'
+  // fires, so the check below can disagree between the two ends of one drag, and a consumer that
+  // got a start without an end stays stuck in its dragging state.
+  let dispatchedDragStart: boolean = false;
 
   const dispatch = createEventDispatcher<{
     dragend: DragEvent;
@@ -19,14 +22,29 @@
     drop: { items?: TimelineItemType[]; metadata?: TimelineItemMetadata; type?: string };
   }>();
 
-  // Check if this drag event is from pragmatic-drag-and-drop (row/section reordering)
-  // Pragmatic DND sets a specific MIME type 'application/vnd.pdnd' in the dataTransfer
+  /** Row and section reordering, which marks its drags with a MIME type of its own. */
   function isPragmaticDragAndDrop(e: DragEvent): boolean {
     if (!e.dataTransfer) {
       return false;
     }
     const types = Array.from(e.dataTransfer.types);
     return types.includes('application/vnd.pdnd');
+  }
+
+  /**
+   * Ends a drag from any of the events that can terminate one, always pairing a dispatched
+   * 'dragstart' with a 'dragend'. Resetting local state without dispatching left consumers such
+   * as RowDividerDropTarget stuck visible and covering the row resize handles, so a row could
+   * only be resized once.
+   */
+  function endDrag(e: Event) {
+    isDragging = false;
+    isDropTarget = false;
+
+    if (dispatchedDragStart) {
+      dispatchedDragStart = false;
+      dispatch('dragend', e as DragEvent);
+    }
   }
 
   function onDragEnter(e: DragEvent) {
@@ -76,27 +94,12 @@
       return;
     }
     isDragging = true;
+    dispatchedDragStart = true;
     dispatch('dragstart', e);
   }}
-  on:dragend={e => {
-    // Always reset states on dragend, even for pragmatic DND
-    // This ensures we clean up stuck states from rapid/cancelled drags
-    const wasDragging = isDragging;
-    isDragging = false;
-    isDropTarget = false;
-
-    if (isPragmaticDragAndDrop(e)) {
-      return;
-    }
-    if (wasDragging) {
-      dispatch('dragend', e);
-    }
-  }}
-  on:drop={e => {
-    // Reset on any window-level drop as a fallback
-    isDragging = false;
-    isDropTarget = false;
-  }}
+  on:dragend={e => endDrag(e)}
+  on:drop={e => endDrag(e)}
+  on:mouseup={e => endDrag(e)}
 />
 
 <div

@@ -43,6 +43,7 @@
     MouseOver,
     Row,
     Timeline as TimelineType,
+    TimelineSection,
   } from '../../types/timeline';
   import effects from '../../utilities/effects';
   import { getExternalEventRowId } from '../../utilities/externalEvents';
@@ -162,6 +163,13 @@
     }
   }
 
+  function onDuplicateSection(event: CustomEvent<TimelineSection>) {
+    const { detail: section } = event;
+    if (timeline) {
+      effects.duplicateTimelineSection(section, timeline, timelines);
+    }
+  }
+
   function onInsertRow(event: CustomEvent<Row>) {
     const { detail: row } = event;
     if (timeline) {
@@ -265,9 +273,6 @@
       on:updateRowHeight={({ detail: { newHeight, rowId, wasAutoAdjusted } }) => {
         viewUpdateRow('height', newHeight, timelineId, rowId, wasAutoAdjusted);
       }}
-      on:updateRows={({ detail: rows }) => {
-        viewUpdateTimeline('rows', rows, timelineId);
-      }}
       on:updateVerticalGuides={({ detail: newVerticalGuides }) => {
         viewUpdateTimeline('verticalGuides', newVerticalGuides, timelineId);
       }}
@@ -277,6 +282,7 @@
       on:editRow={onEditRow}
       on:deleteRow={onDeleteRow}
       on:duplicateRow={onDuplicateRow}
+      on:duplicateSection={onDuplicateSection}
       on:insertRow={onInsertRow}
       on:updateYAxes={onUpdateYAxes}
     />
