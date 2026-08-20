@@ -1074,7 +1074,7 @@
           </div>
 
           {#if items.length > 0}
-            <div class="timeline-hierarchy timeline-elements">
+            <div class="timeline-hierarchy timeline-elements" role="list">
               {#each items as item (`${item.type}-${item.id}`)}
                 {#if item.type === 'section'}
                   {@const section = sectionsById.get(item.id)}
@@ -1083,6 +1083,7 @@
                          the whole block, so a colored section reads as one band. -->
                     <div
                       class="timeline-section-container"
+                      role="listitem"
                       style:--section-accent-color={section.color || ViewDefaultSectionColor}
                       style:--section-foreground={getContrastingTextColor(section.color || ViewDefaultSectionColor)}
                     >
@@ -1167,7 +1168,7 @@
                       </div>
                       <!-- Collapsed state is shared with the timeline: folding here folds there. -->
                       {#if !section.collapsed}
-                        <div class="section-rows timeline-elements">
+                        <div class="section-rows timeline-elements" role="list">
                           <!-- An empty section rendered as nothing, which read as broken rather
                                than empty, and left nothing to drop the first row onto. -->
                           {#if section.rowIds.length === 0}
@@ -1183,6 +1184,7 @@
                             {#if row}
                               <div
                                 class="st-typography-body timeline-row timeline-element timeline-row-in-section"
+                                role="listitem"
                                 use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
                                 use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
                               >
@@ -1237,6 +1239,7 @@
                   {#if row}
                     <div
                       class="st-typography-body timeline-row timeline-element"
+                      role="listitem"
                       use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: null }}
                       use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: null }}
                     >
@@ -1645,9 +1648,13 @@
                 <div>Name</div>
                 <div>Ticks</div>
               </CssGrid>
-              <div class="timeline-rows timeline-elements">
+              <div class="timeline-rows timeline-elements" role="list">
                 {#each yAxes as yAxis (yAxis.id)}
-                  <div class="timeline-y-axis timeline-element" use:makeYAxisDraggable={{ axisId: yAxis.id }}>
+                  <div
+                    class="timeline-y-axis timeline-element"
+                    role="listitem"
+                    use:makeYAxisDraggable={{ axisId: yAxis.id }}
+                  >
                     <CssGrid columns="1fr 56px 24px 24px" gap="8px" class="editor-section-grid">
                       <span class="drag-icon">
                         <GripVertical size={16} />
