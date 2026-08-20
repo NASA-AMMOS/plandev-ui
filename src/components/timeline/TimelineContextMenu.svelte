@@ -340,8 +340,8 @@
     <ContextMenu.Item size="sm" on:click={() => onMoveSection('up')}>Move Section Up</ContextMenu.Item>
     <ContextMenu.Item size="sm" on:click={() => onMoveSection('down')}>Move Section Down</ContextMenu.Item>
     <ContextMenu.Separator />
-    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand All</ContextMenu.Item>
-    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse All</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand Timeline</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse Timeline</ContextMenu.Item>
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={onDeleteSection}>Delete Section</ContextMenu.Item>
   {:else}
@@ -619,7 +619,7 @@
     {/if}
     <ContextMenu.Separator />
     <ContextMenu.Item size="sm" on:click={onInsertSection}>Insert Section</ContextMenu.Item>
-    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand All</ContextMenu.Item>
-    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse All</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand Timeline</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse Timeline</ContextMenu.Item>
   {/if}
 </ContextMenuInternal>
