@@ -851,7 +851,9 @@
     />
 
     {#if items.length > 0}
-      <div class="rows" style="max-height: {rowsMaxHeight}px" on:wheel={handleScroll}>
+      <!-- List semantics are declared here rather than inherited: svelte-dnd-action used to add
+           role="list" and role="listitem" itself, and they went away with it. -->
+      <div class="rows" style="max-height: {rowsMaxHeight}px" role="list" on:wheel={handleScroll}>
         {#each items as item, i (`${item.type}-${item.id}`)}
           {#if item.type === 'section'}
             {@const section = sectionsById.get(item.id)}
@@ -911,6 +913,7 @@
                     {#if row}
                       <div
                         class="timeline-row-wrapper timeline-row-in-section"
+                        role="listitem"
                         class:selected-row-outline={$selectedRow?.id === row.id}
                         style:--section-accent-color={section.color || ViewDefaultSectionColor}
                         use:makeTimelineItemDraggable={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
@@ -987,6 +990,7 @@
             {#if row}
               <div
                 class="timeline-row-wrapper"
+                role="listitem"
                 use:makeTimelineItemDraggable={{ itemId: row.id, itemType: 'row', sectionId: null }}
                 use:makeTimelineItemDropTarget={{ itemId: row.id, itemType: 'row', sectionId: null }}
               >
