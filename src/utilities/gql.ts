@@ -287,47 +287,6 @@ const gql = {
     }
   `,
 
-  CREATE_EXPANSION_RULE: `#graphql
-    mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
-      createExpansionRule: ${Queries.INSERT_EXPANSION_RULE}(object: $rule) {
-        id
-      }
-    }
-  `,
-
-  CREATE_EXPANSION_RULE_TAGS: `#graphql
-    mutation CreateExpansionRuleTags($tags: [expansion_rule_tags_insert_input!]!) {
-      ${Queries.INSERT_EXPANSION_RULE_TAGS}(objects: $tags, on_conflict: {
-        constraint: expansion_rule_tags_pkey,
-        update_columns: []
-      }) {
-        affected_rows
-      }
-    }
-  `,
-
-  CREATE_EXPANSION_SEQUENCE: `#graphql
-    mutation CreateExpansionSequence($sequence: sequence_insert_input!) {
-      createExpansionSequence: ${Queries.INSERT_SEQUENCE}(object: $sequence) {
-        seq_id
-      }
-    }
-  `,
-
-  CREATE_EXPANSION_SET: `#graphql
-    mutation CreateExpansionSet($parcelId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
-      ${Queries.CREATE_EXPANSION_SET}(
-        missionModelId: $modelId,
-        expansionIds: $expansionRuleIds,
-        name: $name,
-        description: $description
-        parcelId : $parcelId
-      ) {
-        id
-      }
-    }
-  `,
-
   CREATE_MODEL: `#graphql
     mutation CreateModel($model: mission_model_insert_input!) {
       createModel: ${Queries.INSERT_MISSION_MODEL}(object: $model) {
@@ -1320,41 +1279,6 @@ const gql = {
           }
         }
         id
-      }
-    }
-  `,
-
-  GET_EXPANSION_RUNS: `#graphql
-    query GetExpansionRuns {
-      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
-        created_at
-        expansion_set {
-          created_at
-          id
-          name
-          parcel_id
-        }
-        simulation_dataset {
-          dataset_id
-          simulation {
-            plan {
-              id
-              name
-            }
-          }
-        }
-        id
-      }
-    }
-  `,
-
-  GET_EXPANSION_SEQUENCE_ID: `#graphql
-    query GetExpansionSequenceId($simulation_dataset_id: Int!, $simulated_activity_id: Int!) {
-      expansionSequence: ${Queries.SEQUENCE_TO_SIMULATED_ACTIVITY}(
-        simulation_dataset_id: $simulation_dataset_id,
-        simulated_activity_id: $simulated_activity_id
-      ) {
-        seq_id
       }
     }
   `,

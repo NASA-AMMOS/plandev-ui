@@ -6,7 +6,7 @@ import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqChangeRoleResponse } from '../types/auth';
 import type { ConstraintDefinition, ConstraintMetadata, ConstraintRun } from '../types/constraint';
-import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
+import type { ExpansionRule, ExpansionSet } from '../types/expansion';
 import type { DerivationGroup, ExternalSource, ExternalSourceSlim } from '../types/external-source';
 import type { Model } from '../types/model';
 import type {
@@ -158,50 +158,6 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
 
 function getFunctionPermission(query: string): string {
   return functionQueryMap[query];
-}
-
-function getRoleModelPermission(
-  queries: string[],
-  user: User | null,
-  plans: PlanWithOwners[],
-  model: ModelWithOwner,
-): boolean {
-  if (user && user.rolePermissions) {
-    return queries.reduce((prevValue: boolean, queryName) => {
-      let permission = false;
-      if (user.rolePermissions != null) {
-        switch (user.rolePermissions[getFunctionPermission(queryName)]) {
-          case 'MISSION_MODEL_OWNER':
-          case 'OWNER':
-            permission = isUserOwner(user, model);
-            break;
-          case 'PLAN_OWNER':
-            permission = plans.reduce((prevSubValue, plan) => {
-              return prevSubValue || (plan.model_id === model.id && isPlanOwner(user, plan));
-            }, false);
-            break;
-          case 'PLAN_COLLABORATOR':
-            permission = plans.reduce((prevSubValue, plan) => {
-              return prevSubValue || (plan.model_id === model.id && isPlanCollaborator(user, plan));
-            }, false);
-            break;
-          case 'PLAN_OWNER_COLLABORATOR':
-            permission = plans.reduce((prevSubValue, plan) => {
-              return (
-                prevSubValue ||
-                (plan.model_id === model.id && (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
-              );
-            }, false);
-            break;
-          case 'NO_CHECK':
-          default:
-            permission = true;
-        }
-      }
-      return prevValue && permission;
-    }, true);
-  }
-  return false;
 }
 
 function getRolePlanPermission(
@@ -444,19 +400,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   },
   CREATE_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_DICTIONARY], user);
-  },
-  CREATE_EXPANSION_RULE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE], user);
-  },
-  CREATE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE_TAGS], user);
-  },
-  CREATE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE], user);
-  },
-  CREATE_EXPANSION_SET: (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner): boolean => {
-    const queries = [Queries.CREATE_EXPANSION_SET];
-    return isUserAdmin(user) || (getPermission(queries, user) && getRoleModelPermission(queries, user, plans, model));
   },
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
@@ -802,12 +745,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_EXPANSION_RULE: () => true,
   GET_EXPANSION_RUN: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
-  },
-  GET_EXPANSION_RUNS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
-  },
-  GET_EXPANSION_SEQUENCE_ID: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
   GET_EXTERNAL_EVENTS: () => true,
   GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
@@ -1451,7 +1388,6 @@ type PlanAssetUpdatePermissionCheck<T = AssetWithOwner> = (
 ) => boolean;
 
 type RolePlanPermissionCheck = (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
-type RoleModelPermissionCheck = (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner | null) => boolean;
 
 type RolePlanPermissionCheckWithAsset<T = AssetWithOwner> = (
   user: User | null,
@@ -1544,11 +1480,6 @@ interface ConstraintRunCRUDPermission extends Omit<CRUDPermission<ConstraintRun>
   canCreate: RolePlanPermissionCheck;
 }
 
-interface ExpansionSetsCRUDPermission<T = null> extends Omit<CRUDPermission<T>, 'canCreate'> {
-  canCreate: RoleModelPermissionCheck;
-  canUpdate: () => boolean;
-}
-
 interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPermission<T> {
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
 }
@@ -1599,9 +1530,6 @@ interface FeaturePermissions {
   derivationGroupAcknowledgement: PlanSpecificationCRUDPermission;
   derivationGroupModelLink: CRUDPermission<void>;
   derivationGroupPlanLink: CRUDPermission<void>;
-  expansionRules: CRUDPermission<AssetWithOwner>;
-  expansionSequences: CRUDPermission<AssetWithOwner<ExpansionSequence>>;
-  expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
   externalEventType: CRUDPermission<void>;
   externalResources: PlanAssetCRUDPermission<PlanDataset>;
   externalSource: CRUDPermission<ExternalSourceSlim[]>;
@@ -1712,24 +1640,6 @@ const featurePermissions: FeaturePermissions = {
     canDelete: user => queryPermissions.DELETE_PLAN_DERIVATION_GROUP(user),
     canRead: user => queryPermissions.SUB_PLAN_DERIVATION_GROUP(user),
     canUpdate: () => false, // this is not a feature
-  },
-  expansionRules: {
-    canCreate: user => queryPermissions.CREATE_EXPANSION_RULE(user),
-    canDelete: (user, expansionRule) => queryPermissions.DELETE_EXPANSION_RULE(user, expansionRule),
-    canRead: user => queryPermissions.SUB_EXPANSION_RULES(user),
-    canUpdate: (user, expansionRule) => queryPermissions.UPDATE_EXPANSION_RULE(user, expansionRule),
-  },
-  expansionSequences: {
-    canCreate: user => queryPermissions.CREATE_EXPANSION_SEQUENCE(user),
-    canDelete: user => queryPermissions.DELETE_EXPANSION_SEQUENCE(user),
-    canRead: user => queryPermissions.GET_EXPANSION_SEQUENCE_ID(user),
-    canUpdate: () => false, // this is not a feature,
-  },
-  expansionSets: {
-    canCreate: (user, plans, model) => queryPermissions.CREATE_EXPANSION_SET(user, plans, model),
-    canDelete: (user, expansionSet) => queryPermissions.DELETE_EXPANSION_SET(user, expansionSet),
-    canRead: user => queryPermissions.SUB_EXPANSION_SETS(user),
-    canUpdate: () => false, // no feature to update expansion sets exists
   },
   externalEventType: {
     canCreate: user => gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),

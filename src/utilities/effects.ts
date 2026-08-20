@@ -116,10 +116,8 @@ import type {
 } from '../types/constraint';
 import type {
   ExpansionRule,
-  ExpansionRuleInsertInput,
   ExpansionRuleSetInput,
   ExpansionRun,
-  ExpansionRunSlim,
   ExpansionSequence,
   ExpansionSequenceInsertInput,
   ExpansionSequenceToActivityInsertInput,
@@ -235,7 +233,6 @@ import type {
   ConstraintDefinitionTagsInsertInput,
   ConstraintMetadataTagsInsertInput,
   ConstraintTagsInsertInput,
-  ExpansionRuleTagsInsertInput,
   PlanSnapshotTagsInsertInput,
   PlanTagsInsertInput,
   SchedulingConditionDefinitionTagsInsertInput,
@@ -1392,66 +1389,6 @@ const effects = {
       showFailureToast('Derivation Group Create Failed');
       createDerivationGroupErrorStore.set((e as Error).message);
       return undefined;
-    }
-  },
-
-  async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
-    try {
-      createExpansionRuleErrorStore.set(null);
-
-      if (!queryPermissions.CREATE_EXPANSION_RULE(user)) {
-        throwPermissionError('create an expansion rule');
-      }
-
-      savingExpansionRuleStore.set(true);
-      const data = await reqHasura<ExpansionRule>(gql.CREATE_EXPANSION_RULE, { rule }, user);
-      const { createExpansionRule } = data;
-      if (createExpansionRule != null) {
-        const { id } = createExpansionRule;
-        showSuccessToast('Expansion Rule Created Successfully');
-        logMessage(
-          'log',
-          `Created expansion rule "${rule.name}" (ID=${createExpansionRule.id}) for parcel ID=${rule.parcel_id}.`,
-        );
-        savingExpansionRuleStore.set(false);
-        return id;
-      } else {
-        throw Error(`Unable to create expansion rule "${rule.name}"`);
-      }
-    } catch (e) {
-      catchError('log', 'Expansion Rule Create Failed', e as Error);
-      showFailureToast('Expansion Rule Create Failed');
-      savingExpansionRuleStore.set(false);
-      createExpansionRuleErrorStore.set((e as Error).message);
-      return null;
-    }
-  },
-
-  async createExpansionRuleTags(tags: ExpansionRuleTagsInsertInput[], user: User | null): Promise<number | null> {
-    try {
-      if (!queryPermissions.CREATE_EXPANSION_RULE_TAGS(user)) {
-        throwPermissionError('create expansion rule tags');
-      }
-
-      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_EXPANSION_RULE_TAGS, { tags }, user);
-      const { insert_expansion_rule_tags: insertExpansionRuleTags } = data;
-      if (insertExpansionRuleTags != null) {
-        const { affected_rows: affectedRows } = insertExpansionRuleTags;
-
-        if (affectedRows !== tags.length) {
-          throw Error('Some expansion rule tags were not successfully created');
-        }
-        tags.forEach(tag => {
-          logMessage('log', `Created expansion rule tag ID=${tag.tag_id} for rule ID=${tag.rule_id}.`);
-        });
-        return affectedRows;
-      } else {
-        throw Error(`Unable to create expansion rule tags`);
-      }
-    } catch (e) {
-      catchError('log', 'Create Expansion Rule Tags Failed', e as Error);
-      showFailureToast('Create Expansion Rule Tags Failed');
-      return null;
     }
   },
 
@@ -4604,23 +4541,6 @@ const effects = {
       catchError('log', 'Failed to get expansion run', e as Error);
       showFailureToast('Expansion Run Details Retrieval Failed');
       return { aborted: false, expansionRun: null };
-    }
-  },
-
-  async getExpansionRuns(user: User | null): Promise<ExpansionRunSlim[]> {
-    try {
-      const data = await reqHasura<ExpansionRunSlim[]>(gql.GET_EXPANSION_RUNS, {}, user);
-      const { expansionRuns } = data;
-      if (expansionRuns) {
-        logMessage('log', `Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
-        return expansionRuns;
-      } else {
-        return [];
-      }
-    } catch (e) {
-      catchError('log', 'Failed to get expansion runs', e as Error);
-      showFailureToast('Expansion Runs Retrieval Failed');
-      return [];
     }
   },
 
