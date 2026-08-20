@@ -26,6 +26,18 @@ test.describe.serial('Timeline Collapsible Sections', () => {
   // The colored band alone, as opposed to the group of band plus rows.
   const sectionBand = () => sectionGroup().getByRole('toolbar', { name: `${sectionName} controls` });
   const timelineRows = () => setup.page.getByRole('banner');
+  // A section created without renaming it, which is what the two menu tests at the end make.
+  const defaultBand = () => setup.page.getByRole('toolbar', { name: 'Section controls' });
+
+  async function deleteAllSections() {
+    if ((await editorSections().count()) === 0) {
+      return;
+    }
+    await setup.page.getByRole('button', { name: 'More Row Actions' }).click();
+    await setup.page.getByRole('menuitem', { name: 'Delete All Sections' }).click();
+    await setup.page.getByRole('button', { exact: true, name: 'Delete' }).click();
+    await expect(editorSections()).toHaveCount(0);
+  }
 
   test('Add a section', async () => {
     await setup.plan.showPanel(PanelNames.TIMELINE_EDITOR);
@@ -65,7 +77,23 @@ test.describe.serial('Timeline Collapsible Sections', () => {
     const rootRowTitle = setup.page
       .locator('.timeline-row-wrapper:not(.timeline-row-in-section) .row-header-title')
       .first();
-    await rootRowTitle.dragTo(placeholder);
+
+    // Stepped by hand rather than dragTo: the drop target only registers once it has seen a few
+    // dragover events, and a two-event drag lands as a cancel instead of a drop. Everything is
+    // measured after the press, since hovering the source can scroll the list under it.
+    await rootRowTitle.hover();
+    await setup.page.mouse.down();
+
+    const source = await rootRowTitle.boundingBox();
+    const target = await placeholder.boundingBox();
+    const x = (target?.x ?? 0) + (target?.width ?? 0) / 2;
+    const y = (target?.y ?? 0) + (target?.height ?? 0) / 2;
+
+    // A short nudge first, so the drag is under way before the long move.
+    await setup.page.mouse.move((source?.x ?? 0) + 8, (source?.y ?? 0) + 8);
+    await setup.page.mouse.move(x, y, { steps: 12 });
+    await setup.page.mouse.move(x, y);
+    await setup.page.mouse.up();
 
     await expect(sectionRows()).toHaveCount(1);
     await expect(placeholder).toBeHidden();
@@ -149,5 +177,58 @@ test.describe.serial('Timeline Collapsible Sections', () => {
     // And the freed ids can be reused without colliding with a leftover reference.
     await setup.page.getByRole('button', { name: 'New Section' }).click();
     await expect(editorSections()).toHaveCount(1);
+  });
+
+  test('Insert Section lands next to the row it was invoked from', async () => {
+    await setup.plan.showPanel(PanelNames.TIMELINE_EDITOR);
+
+    // Start with no sections, so the one inserted below is the only band on the timeline, and
+    // with two rows, so "next to the first" is distinguishable from "at the end".
+    await deleteAllSections();
+    if ((await timelineRows().count()) < 2) {
+      await setup.page.getByRole('button', { exact: true, name: 'New Row' }).click();
+    }
+    await expect(timelineRows()).not.toHaveCount(1);
+
+    await timelineRows().first().getByRole('button', { name: 'Row Settings' }).click();
+    await setup.page.getByRole('menuitem', { name: 'Insert Section' }).click();
+    await expect(defaultBand()).toBeVisible();
+
+    const firstRowBox = await timelineRows().first().boundingBox();
+    const bandBox = await defaultBand().boundingBox();
+    const secondRowBox = await timelineRows().nth(1).boundingBox();
+
+    // Between the row it came from and the one that follows, rather than after every row.
+    expect(bandBox?.y ?? 0).toBeGreaterThan(firstRowBox?.y ?? 0);
+    expect(bandBox?.y ?? 0).toBeLessThan(secondRowBox?.y ?? 0);
+  });
+
+  test('Collapse Timeline folds every row and section, Expand Timeline opens them', async () => {
+    await setup.plan.showPanel(PanelNames.TIMELINE_EDITOR);
+
+    // One section of its own rather than whatever the test above left behind, since a retry of
+    // this serial group restarts from a fresh plan. It holds no rows, so collapsing it hides no
+    // row headers and the count below stays stable.
+    await deleteAllSections();
+    await setup.page.getByRole('button', { name: 'New Section' }).click();
+    await expect(defaultBand()).toBeVisible();
+
+    const rowCount = await timelineRows().count();
+
+    await timelineRows().first().getByRole('button', { name: 'Row Settings' }).click();
+    await setup.page.getByRole('menuitem', { name: 'Collapse Timeline' }).click();
+
+    await expect(setup.page.getByRole('button', { name: 'Expand Row' })).toHaveCount(rowCount);
+    await expect(defaultBand().getByRole('button', { name: 'Expand Section' })).toBeVisible();
+
+    // A collapsed row is too short to render its Row Settings button, so the way back is the
+    // section band's own right-click menu - which offers the same pair. Wait for the first menu
+    // to unmount, or the two menus both match the item below.
+    await expect(setup.page.getByRole('menuitem', { name: 'Collapse Timeline' })).toHaveCount(0);
+    await defaultBand().click({ button: 'right' });
+    await setup.page.getByRole('menuitem', { name: 'Expand Timeline' }).click();
+
+    await expect(setup.page.getByRole('button', { name: 'Collapse Row' })).toHaveCount(rowCount);
+    await expect(defaultBand().getByRole('button', { name: 'Collapse Section' })).toBeVisible();
   });
 });
