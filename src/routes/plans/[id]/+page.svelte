@@ -72,7 +72,8 @@
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
-  import { planExpansionStatus, resetExpansionStores } from '../../../stores/expansion';
+  import { resetExpansionStores } from '../../../stores/expansion';
+  import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -505,6 +506,7 @@
     resetConstraintStores();
     resetPlanSchedulingStores();
     resetExpansionStores();
+    resetSequenceTemplateStores();
     resetPlanStores();
     resetPlanSnapshotStores();
     resetSimulationStores();
@@ -809,7 +811,7 @@
                 : 'You do not have permission to expand activities'}
               menuTitle="Template Expansion Status"
               disabled={$selectedSequence === null || $simulationDatasetId === null}
-              status={$planExpansionStatus}
+              status={$sequenceTemplateExpansionStatus}
               on:click={() => onHandleExpansion()}
             >
               <ChevronsLeftRight size={20} />
