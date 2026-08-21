@@ -2881,16 +2881,6 @@ const gql = {
     }
   `,
 
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: `#graphql
-    subscription SubMostRecentExpansion {
-      ${Queries.EXPANDED_SEQUENCES} {
-        seq_id
-        expanded_sequence
-        simulation_dataset_id
-      }
-    }
-  `,
-
   SUB_PARAMETER_DICTIONARIES: `#graphql
     subscription SubParameterDictionaries {
       ${Queries.PARAMETER_DICTIONARIES}(order_by: { id: desc }) {
