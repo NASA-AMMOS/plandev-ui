@@ -17,11 +17,6 @@ export type ActivityType = {
   subsystem_tag?: Tag | null;
 };
 
-export type ActivityTypeExpansionRules = {
-  expansion_rules: ExpansionRuleSlim[];
-  name: ActivityType['name'];
-};
-
 export type ActivityDirectiveId = number;
 export type ActivityPresetId = number;
 

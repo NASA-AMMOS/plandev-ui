@@ -287,43 +287,10 @@ const gql = {
     }
   `,
 
-  CREATE_EXPANSION_RULE: `#graphql
-    mutation CreateExpansionRule($rule: expansion_rule_insert_input!) {
-      createExpansionRule: ${Queries.INSERT_EXPANSION_RULE}(object: $rule) {
-        id
-      }
-    }
-  `,
-
-  CREATE_EXPANSION_RULE_TAGS: `#graphql
-    mutation CreateExpansionRuleTags($tags: [expansion_rule_tags_insert_input!]!) {
-      ${Queries.INSERT_EXPANSION_RULE_TAGS}(objects: $tags, on_conflict: {
-        constraint: expansion_rule_tags_pkey,
-        update_columns: []
-      }) {
-        affected_rows
-      }
-    }
-  `,
-
   CREATE_EXPANSION_SEQUENCE: `#graphql
     mutation CreateExpansionSequence($sequence: sequence_insert_input!) {
       createExpansionSequence: ${Queries.INSERT_SEQUENCE}(object: $sequence) {
         seq_id
-      }
-    }
-  `,
-
-  CREATE_EXPANSION_SET: `#graphql
-    mutation CreateExpansionSet($parcelId: Int!, $modelId: Int!, $expansionRuleIds: [Int!]!, $name: String,  $description: String) {
-      ${Queries.CREATE_EXPANSION_SET}(
-        missionModelId: $modelId,
-        expansionIds: $expansionRuleIds,
-        name: $name,
-        description: $description
-        parcelId : $parcelId
-      ) {
-        id
       }
     }
   `,
@@ -793,22 +760,6 @@ const gql = {
     }
   `,
 
-  DELETE_EXPANSION_RULE: `#graphql
-    mutation DeleteExpansionRule($id: Int!) {
-      deleteExpansionRule: ${Queries.DELETE_EXPANSION_RULE}(id: $id) {
-        id
-      }
-    }
-  `,
-
-  DELETE_EXPANSION_RULE_TAGS: `#graphql
-    mutation DeleteExpansionRuleTags($tag_ids: [Int!]!, $rule_id: Int!) {
-        ${Queries.DELETE_EXPANSION_RULE_TAGS}(where: { tag_id: { _in: $tag_ids }, rule_id: { _eq: $rule_id } }) {
-          affected_rows
-      }
-    }
-  `,
-
   DELETE_EXPANSION_SEQUENCE: `#graphql
     mutation DeleteExpansionSequence($seqId: String!, $simulationDatasetId: Int!) {
       deleteExpansionSequence: ${Queries.DELETE_SEQUENCE}(seq_id: $seqId, simulation_dataset_id: $simulationDatasetId) {
@@ -824,14 +775,6 @@ const gql = {
         simulated_activity_id: $simulated_activity_id
       ) {
         seq_id
-      }
-    }
-  `,
-
-  DELETE_EXPANSION_SET: `#graphql
-    mutation DeleteExpansionSet($id: Int!) {
-      deleteExpansionSet: ${Queries.DELETE_EXPANSION_SET}(id: $id) {
-        id
       }
     }
   `,
@@ -1189,23 +1132,6 @@ const gql = {
     }
   `,
 
-  GET_ACTIVITY_TYPES_EXPANSION_RULES: `#graphql
-    query GetActivityTypesExpansionRules($modelId: Int!) {
-      activity_types: ${Queries.ACTIVITY_TYPES}(where: { model_id: { _eq: $modelId } }) {
-        expansion_rules {
-          activity_type
-          authoring_mission_model_id
-          created_at
-          expansion_logic
-          id
-          parcel_id
-          updated_at
-        }
-        name
-      }
-    }
-  `,
-
   GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK: `#graphql
     query GetConstraintProcedureEffectiveArgumentsBulk($arguments: [ProcedureEffectiveArgumentsInput!]!) {
       constraintProcedureEffectiveArgumentsBulk: ${Queries.GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK}(
@@ -1258,92 +1184,6 @@ const gql = {
         topic_index
         transaction_index
         value
-      }
-    }
-  `,
-
-  GET_EXPANSION_RULE: `#graphql
-    query GetExpansionRule($id: Int!) {
-      expansionRule: ${Queries.EXPANSION_RULE}(id: $id) {
-        activity_type
-        authoring_mission_model_id
-        created_at
-        description
-        expansion_logic
-        id
-        name
-        owner
-        parcel_id
-        updated_at
-        updated_by
-        tags {
-          tag {
-            color
-            id
-            name
-          }
-        }
-      }
-    }
-  `,
-
-  GET_EXPANSION_RUN: `#graphql
-    query GetExpansionRun($id: Int!) {
-      expansionRun: ${Queries.EXPANSION_RUNS}_by_pk(id: $id) {
-        created_at
-        expansion_set {
-          created_at
-          id
-          name
-          parcel_id
-        }
-        expanded_sequences {
-          expanded_sequence
-          id
-          seq_id
-          sequence {
-            activity_instance_joins {
-              simulated_activity {
-                id
-                activity_type_name
-              }
-            }
-          }
-        }
-        simulation_dataset {
-          dataset_id
-          simulation {
-            plan {
-              id
-              name
-            }
-          }
-        }
-        id
-      }
-    }
-  `,
-
-  GET_EXPANSION_RUNS: `#graphql
-    query GetExpansionRuns {
-      expansionRuns: ${Queries.EXPANSION_RUNS}(order_by: { id: desc }) {
-        created_at
-        expansion_set {
-          created_at
-          id
-          name
-          parcel_id
-        }
-        simulation_dataset {
-          dataset_id
-          simulation {
-            plan {
-              id
-              name
-            }
-          }
-        }
-        id
       }
     }
   `,
@@ -1817,32 +1657,6 @@ const gql = {
         parent_id
         start_offset
         type
-      }
-    }
-  `,
-
-  GET_TYPESCRIPT_ACTIVITY_TYPE: `#graphql
-    query GetTypeScriptActivityType($activityTypeName: String!, $modelId: Int!) {
-      dslTypeScriptResponse: ${Queries.GET_ACTIVITY_TYPE_SCRIPT}(activityTypeName: $activityTypeName, missionModelId:$modelId) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
-      }
-    }
-  `,
-
-  GET_TYPESCRIPT_COMMAND_DICTIONARY: `#graphql
-    query GetTypeScriptCommandDictionary($commandDictionaryId: Int!) {
-      dslTypeScriptResponse: ${Queries.GET_COMMAND_TYPE_SCRIPT}(commandDictionaryId: $commandDictionaryId) {
-        reason
-        status
-        typescriptFiles {
-          content
-          filePath
-        }
       }
     }
   `,
@@ -2587,36 +2401,6 @@ const gql = {
     }
   `,
 
-  SUB_EXPANSION_RULES: `#graphql
-    subscription SubExpansionRules {
-      expansionRules: ${Queries.EXPANSION_RULES}(order_by: { id: desc }) {
-        activity_type
-        authoring_mission_model_id
-        created_at
-        description
-        expansion_logic
-        id
-        name
-        owner
-        parcel_id
-        updated_at
-        updated_by
-        tags {
-          tag_id
-        }
-      }
-    }
-  `,
-
-  SUB_EXPANSION_RULE_TAGS: `#graphql
-    subscription SubExpansionRuleTags {
-      expansionRuleTags: ${Queries.EXPANSION_RULE_TAGS}(order_by: { rule_id: desc }) {
-        rule_id
-        tag_id
-      }
-    }
-  `,
-
   SUB_EXPANSION_SEQUENCES: `#graphql
     subscription SubExpansionSequences {
       ${Queries.SEQUENCE} {
@@ -2624,30 +2408,6 @@ const gql = {
         metadata
         seq_id
         simulation_dataset_id
-      }
-    }
-  `,
-
-  SUB_EXPANSION_SETS: `#graphql
-    subscription SubExpansionSets {
-      expansionSets: ${Queries.EXPANSION_SETS}(order_by: { id: desc }) {
-        created_at
-        description
-        expansion_rules {
-          activity_type
-          authoring_mission_model_id
-          expansion_logic
-          id
-          owner
-          parcel_id
-        }
-        id
-        mission_model_id
-        name
-        owner
-        parcel_id
-        updated_at
-        updated_by
       }
     }
   `,
@@ -2855,16 +2615,6 @@ const gql = {
           owner
           updated_at
         }
-      }
-    }
-  `,
-
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: `#graphql
-    subscription SubMostRecentExpansion {
-      ${Queries.EXPANDED_SEQUENCES} {
-        seq_id
-        expanded_sequence
-        simulation_dataset_id
       }
     }
   `,
@@ -3971,16 +3721,6 @@ const gql = {
         derivation_group_name,
         plan_id,
         acknowledged
-      }
-    }
-  `,
-
-  UPDATE_EXPANSION_RULE: `#graphql
-    mutation UpdateExpansionRule($id: Int!, $rule: expansion_rule_set_input!) {
-      updateExpansionRule: ${Queries.UPDATE_EXPANSION_RULE}(
-        pk_columns: { id: $id }, _set: $rule
-      ) {
-        updated_at
       }
     }
   `,
