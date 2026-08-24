@@ -2619,18 +2619,6 @@ const gql = {
     }
   `,
 
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: `#graphql
-    subscription SubMostRecentExpansion($planId: Int!) {
-      ${Queries.PLAN}(id: $planId) {
-        simulations {
-          simulation_datasets {
-            id
-          }
-        }
-      }
-    }
-  `,
-
   SUB_PARAMETER_DICTIONARIES: `#graphql
     subscription SubParameterDictionaries {
       ${Queries.PARAMETER_DICTIONARIES}(order_by: { id: desc }) {

@@ -971,7 +971,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_EXTERNAL_SOURCE_TYPES: () => true,
   SUB_MODEL: () => true,
   SUB_MODELS: () => true,
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
   SUB_PARCEL: (): boolean => true,
   SUB_PARCELS: (): boolean => true,
