@@ -1404,7 +1404,6 @@ type PlanAssetUpdatePermissionCheck<T = AssetWithOwner> = (
 ) => boolean;
 
 type RolePlanPermissionCheck = (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
-type RoleModelPermissionCheck = (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner | null) => boolean;
 
 type RolePlanPermissionCheckWithAsset<T = AssetWithOwner> = (
   user: User | null,
