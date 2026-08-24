@@ -1,5 +1,4 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type { Status } from '../enums/status';
 import type { ExpansionSequence } from '../types/expansion';
 import gql from '../utilities/gql';
 import { simulationDatasetId } from './simulation';
@@ -13,8 +12,6 @@ export const expansionSequences = gqlSubscribable<ExpansionSequence[]>(gql.SUB_E
 
 export const creatingExpansionSequence: Writable<boolean> = writable(false);
 
-export const planExpansionStatus: Writable<Status | null> = writable(null);
-
 /* Derived. */
 
 export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived(
@@ -25,5 +22,4 @@ export const filteredExpansionSequences: Readable<ExpansionSequence[]> = derived
 
 export function resetExpansionStores(): void {
   creatingExpansionSequence.set(false);
-  planExpansionStatus.set(null);
 }

@@ -1397,7 +1397,7 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        logMessage('log', `Created expansion rule sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
+        logMessage('log', `Created expansion sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
         creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
