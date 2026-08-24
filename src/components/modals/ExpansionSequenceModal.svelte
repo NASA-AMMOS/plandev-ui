@@ -30,7 +30,7 @@
 
   function onDownload() {
     downloadBlob(
-      new Blob([outputStr ?? `No output found for sequence "${expansionSequence.seq_id}"'`], { type: 'text/pain' }),
+      new Blob([outputStr ?? `No output found for sequence "${expansionSequence.seq_id}"'`], { type: 'text/plain' }),
       `${expansionSequence.seq_id}_${expansionSequence.simulation_dataset_id}.txt`,
     );
   }
