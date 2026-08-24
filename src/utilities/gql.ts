@@ -1114,7 +1114,7 @@ const gql = {
   `,
 
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: `#graphql
-    query GetActivityTypesExpansionRules($activityId: Int!, $planId: Int!) {
+    query GetActivityDirectiveChangelog($activityId: Int!, $planId: Int!) {
       activityDirectiveRevisions: ${Queries.ACTIVITY_DIRECTIVE_CHANGELOG}(
         where: { plan_id: { _eq: $planId }, _and: { activity_directive_id: { _eq: $activityId }}},
         order_by: { revision: desc }

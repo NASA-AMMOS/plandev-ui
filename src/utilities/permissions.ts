@@ -158,6 +158,8 @@ function getFunctionPermission(query: string): string {
   return functionQueryMap[query];
 }
 
+// currently unused but generally useful - get user's role permissions for a given model
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRoleModelPermission(
   queries: string[],
   user: User | null,
