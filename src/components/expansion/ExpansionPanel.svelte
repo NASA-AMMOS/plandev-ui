@@ -142,7 +142,10 @@
 
   async function onDownloadExpandedSequence(sequence: ExpansionSequence) {
     const outputName: string = `${sequence.seq_id}_${sequence.simulation_dataset_id}`;
-    const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+    const expandedTemplate = $expandedTemplates.find(
+      template =>
+        template.seq_id === sequence.seq_id && template.simulation_dataset_id === sequence.simulation_dataset_id,
+    );
     const outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
     downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
   }
@@ -154,7 +157,10 @@
   }
 
   async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
-    const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+    const expandedTemplate = $expandedTemplates.find(
+      template =>
+        template.seq_id === sequence.seq_id && template.simulation_dataset_id === sequence.simulation_dataset_id,
+    );
     const expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
 
     await effects.sendSequenceToWorkspace(sequence, expandedResult, user);

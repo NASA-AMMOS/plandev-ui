@@ -23,7 +23,9 @@
 
   $: {
     const expandedTemplate = $expandedTemplates.find(
-      expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
+      template =>
+        template.seq_id === expansionSequence.seq_id &&
+        template.simulation_dataset_id === expansionSequence.simulation_dataset_id,
     );
     outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${expansionSequence.seq_id}"'`;
   }
