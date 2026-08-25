@@ -238,7 +238,12 @@ import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import type { Workspace, WorkspaceCollaborator } from '../types/workspace';
-import type { WorkspaceTreeMap, WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
+import type {
+  WorkspaceFileMetadata,
+  WorkspaceTreeMap,
+  WorkspaceTreeNode,
+  WorkspaceTreeNodeWithFullPath,
+} from '../types/workspace-tree-view';
 import {
   ActivityDeletionAction,
   addAbsoluteTimeToRevision,
@@ -6990,6 +6995,7 @@ const effects = {
   async sendSequenceToWorkspace(
     sequence: ExpansionSequence | null,
     expandedSequence: string | null,
+    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
     user: User | null,
   ): Promise<string | null> {
     try {
@@ -7033,6 +7039,7 @@ const effects = {
       if (confirmNewFile && confirmNewFileValue) {
         const { filePath: newFilePath } = confirmNewFileValue;
         await WorkspaceApi.saveFile(workspaceId, newFilePath, expandedSequence, false, user);
+        await WorkspaceApi.setFileMetadata(workspaceId, newFilePath, metadata, user);
 
         showSuccessToast('Workspace File Created Successfully');
       } else {
