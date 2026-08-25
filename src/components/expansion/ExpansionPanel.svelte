@@ -26,6 +26,7 @@
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
+  import { getExpandedTemplateForSequence } from '../../utilities/expansion';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -142,10 +143,7 @@
 
   async function onDownloadExpandedSequence(sequence: ExpansionSequence) {
     const outputName: string = `${sequence.seq_id}_${sequence.simulation_dataset_id}`;
-    const expandedTemplate = $expandedTemplates.find(
-      template =>
-        template.seq_id === sequence.seq_id && template.simulation_dataset_id === sequence.simulation_dataset_id,
-    );
+    const expandedTemplate = getExpandedTemplateForSequence($expandedTemplates, sequence);
     const outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
     downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
   }
@@ -157,10 +155,7 @@
   }
 
   async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
-    const expandedTemplate = $expandedTemplates.find(
-      template =>
-        template.seq_id === sequence.seq_id && template.simulation_dataset_id === sequence.simulation_dataset_id,
-    );
+    const expandedTemplate = getExpandedTemplateForSequence($expandedTemplates, sequence);
     const expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"`;
 
     await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
