@@ -11,6 +11,7 @@
   import ModalContent from './ModalContent.svelte';
   import ModalFooter from './ModalFooter.svelte';
   import ModalHeader from './ModalHeader.svelte';
+  import { getExpandedTemplateForSequence } from '../../utilities/expansion';
 
   const dispatch = createEventDispatcher<{
     close: void;
@@ -22,9 +23,7 @@
   let language: string = 'plaintext';
 
   $: {
-    const expandedTemplate = $expandedTemplates.find(
-      expandedTemplate => expandedTemplate.seq_id === expansionSequence.seq_id,
-    );
+    const expandedTemplate = getExpandedTemplateForSequence($expandedTemplates, expansionSequence);
     outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${expansionSequence.seq_id}"'`;
   }
 
