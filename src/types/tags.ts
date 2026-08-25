@@ -44,11 +44,6 @@ export type SchedulingGoalDefinitionTagsInsertInput = {
   tag_id: number;
 };
 
-export type ExpansionRuleTagsInsertInput = {
-  rule_id: number;
-  tag_id: number;
-};
-
 export type SchedulingTagsInsertInput = {
   tag_id: number;
 };

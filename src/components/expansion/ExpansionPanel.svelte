@@ -6,9 +6,7 @@
   import PlayIcon from '@nasa-jpl/stellar/icons/play.svg?component';
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import { Download, FileCode2, SquareCode } from 'lucide-svelte';
-  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
-  import { SequencingMode } from '../../enums/sequencing';
-  import { expansionSequences, expansionSets, filteredExpansionSequences } from '../../stores/expansion';
+  import { expansionSequences, filteredExpansionSequences } from '../../stores/expansion';
   import { plan } from '../../stores/plan';
   import { expandedTemplates } from '../../stores/sequence-template';
   import { sequenceFilters } from '../../stores/sequencing';
@@ -18,7 +16,7 @@
   import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
-  import { downloadBlob, downloadJSON } from '../../utilities/generic';
+  import { downloadBlob } from '../../utilities/generic';
   import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
@@ -42,7 +40,6 @@
   let isExpansionDisabled: boolean = true;
   let expansionDisabledMessage: string = '';
 
-  let selectedExpansionSetId: number | null = null;
   let relevantSimulationDatasetIds: number[] | undefined = [];
   let relevantExpansionSequences: ExpansionSequence[] = [];
 
@@ -75,13 +72,8 @@
   $: {
     if ($simulationDatasetLatest) {
       if (relevantExpansionSequences.length > 0) {
-        if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-          isExpansionDisabled = false;
-          expansionDisabledMessage = 'Expansion not available for sequence templates';
-        } else {
-          isExpansionDisabled = selectedExpansionSetId === null;
-          expansionDisabledMessage = selectedExpansionSetId === null ? 'No expansion set selected' : '';
-        }
+        isExpansionDisabled = false;
+        expansionDisabledMessage = 'Expansion not available for sequence templates';
       } else {
         isExpansionDisabled = true;
         expansionDisabledMessage = 'No relevant expansion sequences found';
@@ -119,12 +111,9 @@
   }
 
   function onExpandAll() {
-    const useTemplating = SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING;
     $filteredExpansionSequences.forEach(sequence => {
-      if (useTemplating && $plan !== null) {
+      if ($plan !== null) {
         effects.expandTemplates([sequence.seq_id], sequence.simulation_dataset_id, $plan, user);
-      } else if (selectedExpansionSetId !== null && $plan !== null) {
-        effects.expand(selectedExpansionSetId, sequence.simulation_dataset_id, $plan, user);
       }
     });
   }
@@ -152,46 +141,27 @@
   }
 
   async function onDownloadExpandedSequence(sequence: ExpansionSequence) {
-    let outputStr: string | null;
-    let outputName: string = `${sequence.seq_id}_${sequence.simulation_dataset_id}`;
-    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-      const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
-      outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
-      downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
-    } else {
-      outputStr = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
-      if (outputStr) {
-        downloadJSON(JSON.parse(outputStr), `${outputName}.json`);
-      }
-    }
+    const outputName: string = `${sequence.seq_id}_${sequence.simulation_dataset_id}`;
+    const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+    const outputStr = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
+    downloadBlob(new Blob([outputStr], { type: 'text/plain' }), `${outputName}.txt`);
   }
 
   function onExpandSequence(sequence: ExpansionSequence) {
     if ($simulationDatasetLatest !== null && $plan !== null) {
-      if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-        effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
-      } else if (selectedExpansionSetId !== null) {
-        effects.expand(selectedExpansionSetId, $simulationDatasetLatest.id, $plan, user);
-      }
+      effects.expandTemplates([sequence.seq_id], $simulationDatasetLatest.id, $plan, user);
     }
   }
 
   async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
-    let expandedResult: string | null;
-    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-      const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
-      expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
-    } else {
-      expandedResult = await effects.getExpansionSequenceSeqJson(sequence.seq_id, sequence.simulation_dataset_id, user);
-    }
+    const expandedTemplate = $expandedTemplates.find(expandedTemplate => expandedTemplate.seq_id === sequence.seq_id);
+    const expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"'`;
 
-    if (expandedResult !== null) {
-      await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
-    }
+    await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
   }
 
   function onShowExpandedSequence(sequence: ExpansionSequence) {
-    showExpansionSequenceModal(sequence, user);
+    showExpansionSequenceModal(sequence);
   }
 
   function onShowFilter(sequenceFilter: SequenceFilter) {
@@ -265,22 +235,6 @@
           aria-label="Filter..."
         />
       </div>
-      {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-        <div class="sne-expansion-set-select">
-          <select name="expansionSetId" bind:value={selectedExpansionSetId} class="st-select min-w-36">
-            {#if !$expansionSets.length}
-              <option value={null}>No Expansion Sets</option>
-            {:else}
-              <option value={null} disabled hidden>Expansion Set</option>
-              {#each $expansionSets as expansionSet}
-                <option value={expansionSet.id}>
-                  {expansionSet.name} ({expansionSet.id})
-                </option>
-              {/each}
-            {/if}
-          </select>
-        </div>
-      {/if}
       <div class="sne-buttons flex flex-wrap gap-1">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild let:builder>

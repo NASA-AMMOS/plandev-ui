@@ -6,7 +6,7 @@ import type { ActivityDirective, ActivityPreset } from '../types/activity';
 import type { User, UserRole } from '../types/app';
 import type { ReqChangeRoleResponse } from '../types/auth';
 import type { ConstraintDefinition, ConstraintMetadata, ConstraintRun } from '../types/constraint';
-import type { ExpansionRule, ExpansionSequence, ExpansionSet } from '../types/expansion';
+import type { ExpansionSequence } from '../types/expansion';
 import type { DerivationGroup, ExternalSource, ExternalSourceSlim } from '../types/external-source';
 import type { Model } from '../types/model';
 import type {
@@ -117,14 +117,12 @@ function getPermission(queries: string[], user: User | null): boolean {
 type QueryString = string;
 type FunctionString = string;
 const functionQueryMap: Record<QueryString, FunctionString> = {
-  addCommandExpansionTypeScript: 'create_expansion_rule',
   addExternalDataset: 'insert_ext_dataset',
   [Queries.APPLY_PRESET_TO_ACTIVITY]: 'apply_preset',
   [Queries.BEGIN_MERGE]: 'begin_merge',
   [Queries.CANCEL_MERGE]: 'cancel_merge',
   [Queries.COMMIT_MERGE]: 'commit_merge',
   [Queries.CONSTRAINT_VIOLATIONS]: 'check_constraints',
-  [Queries.CREATE_EXPANSION_SET]: 'create_expansion_set',
   [Queries.CREATE_MERGE_REQUEST]: 'create_merge_rq',
   [Queries.CREATE_SNAPSHOT]: 'create_snapshot',
   create_workspace: 'create_workspace', // workspace service enum
@@ -138,10 +136,8 @@ const functionQueryMap: Record<QueryString, FunctionString> = {
   delete_workspace: 'delete_workspace', // workspace service enum
   [Queries.DENY_MERGE]: 'deny_merge',
   [Queries.DUPLICATE_PLAN]: 'branch_plan',
-  [Queries.EXPAND_ALL_ACTIVITIES]: 'expand_all_activities',
   [Queries.EXPAND_ALL_TEMPLATES]: 'expand_all_templates',
   [Queries.APPLY_ACTIVITIES_BY_FILTER]: 'assign_activities_by_filter',
-  getSequenceSeqJsonBulk: 'sequence_seq_json_bulk',
   [Queries.GET_CONFLICTING_ACTIVITIES]: 'get_conflicting_activities',
   [Queries.GET_NON_CONFLICTING_ACTIVITIES]: 'get_non_conflicting_activities',
   get_plan_history: 'get_plan_history',
@@ -162,6 +158,8 @@ function getFunctionPermission(query: string): string {
   return functionQueryMap[query];
 }
 
+// currently unused but generally useful - get user's role permissions for a given model
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRoleModelPermission(
   queries: string[],
   user: User | null,
@@ -447,18 +445,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   CREATE_DICTIONARY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_DICTIONARY], user);
   },
-  CREATE_EXPANSION_RULE: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE], user);
-  },
-  CREATE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.INSERT_EXPANSION_RULE_TAGS], user);
-  },
   CREATE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_SEQUENCE], user);
-  },
-  CREATE_EXPANSION_SET: (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner): boolean => {
-    const queries = [Queries.CREATE_EXPANSION_SET];
-    return isUserAdmin(user) || (getPermission(queries, user) && getRoleModelPermission(queries, user, plans, model));
   },
   CREATE_MODEL: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.INSERT_MISSION_MODEL], user);
@@ -638,24 +626,11 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         derivationGroups.every(derivationGroup => isUserOwner(user, derivationGroup) === true))
     );
   },
-  DELETE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
-    return (
-      isUserAdmin(user) || (getPermission([Queries.DELETE_EXPANSION_RULE], user) && isUserOwner(user, expansionRule))
-    );
-  },
-  DELETE_EXPANSION_RULE_TAGS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.DELETE_EXPANSION_RULE_TAGS], user);
-  },
   DELETE_EXPANSION_SEQUENCE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE], user);
   },
   DELETE_EXPANSION_SEQUENCE_TO_ACTIVITY: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_SEQUENCE_TO_SIMULATED_ACTIVITY], user);
-  },
-  DELETE_EXPANSION_SET: (user: User | null, expansionSet: AssetWithOwner<ExpansionSet>): boolean => {
-    return (
-      isUserAdmin(user) || (getPermission([Queries.DELETE_EXPANSION_SET], user) && isUserOwner(user, expansionSet))
-    );
   },
   DELETE_EXTERNAL_EVENT_TYPE: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.DELETE_EXTERNAL_EVENT_TYPE], user);
@@ -791,31 +766,18 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     const queries = [Queries.DUPLICATE_PLAN];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
-  EXPAND: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
-    const queries = [Queries.EXPAND_ALL_ACTIVITIES];
-    return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
-  },
   EXPAND_TEMPLATES: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
     const queries = [Queries.EXPAND_ALL_TEMPLATES];
     return isUserAdmin(user) || (getPermission(queries, user) && getRolePlanPermission(queries, user, plan, model));
   },
   GET_ACTIVITY_DIRECTIVE_CHANGELOG: () => true,
-  GET_ACTIVITY_TYPES_EXPANSION_RULES: () => true,
   GET_CONSTRAINT_PROCEDURE_EFFECTIVE_ARGUMENTS_BULK: () => true,
   GET_EFFECTIVE_ACTIVITY_ARGUMENTS_BULK: () => true,
   GET_EFFECTIVE_MODEL_ARGUMENTS: () => true,
   GET_EVENTS: () => true,
-  GET_EXPANSION_RULE: () => true,
-  GET_EXPANSION_RUN: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
-  },
-  GET_EXPANSION_RUNS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RUNS], user);
-  },
   GET_EXPANSION_SEQUENCE_ID: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
-  GET_EXPANSION_SEQUENCE_SEQ_JSON: () => true,
   GET_EXTERNAL_EVENTS: () => true,
   GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
   GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
@@ -845,8 +807,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   GET_SEQUENCE_ADAPTATION: () => true,
   GET_SIMULATION_DATASET_ID: () => true,
   GET_SPANS: () => true,
-  GET_TYPESCRIPT_ACTIVITY_TYPE: () => true,
-  GET_TYPESCRIPT_COMMAND_DICTIONARY: () => true,
   GET_TYPESCRIPT_CONSTRAINTS: () => true,
   GET_TYPESCRIPT_SCHEDULING: () => true,
   GET_UPLOADED_FILENAME: () => true,
@@ -1005,14 +965,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_DERIVATION_GROUPS: () => true,
   SUB_EVENT_TYPES_IN_USE: () => true,
   SUB_EXPANDED_TEMPLATES: () => true,
-  SUB_EXPANSION_RULES: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPANSION_RULES], user);
-  },
-  SUB_EXPANSION_RULE_TAGS: () => true,
   SUB_EXPANSION_SEQUENCES: () => true,
-  SUB_EXPANSION_SETS: (user: User | null): boolean => {
-    return isUserAdmin(user) || getPermission([Queries.EXPANSION_SETS], user);
-  },
   SUB_EXTENSIONS: () => true,
   SUB_EXTERNAL_EVENT_TYPES: () => true,
   SUB_EXTERNAL_SOURCE: () => true,
@@ -1020,9 +973,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_EXTERNAL_SOURCE_TYPES: () => true,
   SUB_MODEL: () => true,
   SUB_MODELS: () => true,
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SEQS: () => true,
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_SIMS: () => true,
-  SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS: () => true,
   SUB_PARAMETER_DICTIONARIES: () => true,
   SUB_PARCEL: (): boolean => true,
   SUB_PARCELS: (): boolean => true,
@@ -1159,11 +1109,6 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       isUserAdmin(user) ||
       (getPermission([Queries.UPDATE_DERIVATION_GROUP_ACKNOWLEDGED], user) &&
         (isPlanOwner(user, plan) || isPlanCollaborator(user, plan)))
-    );
-  },
-  UPDATE_EXPANSION_RULE: (user: User | null, expansionRule: AssetWithOwner<ExpansionRule>): boolean => {
-    return (
-      isUserAdmin(user) || (getPermission([Queries.UPDATE_EXPANSION_RULE], user) && isUserOwner(user, expansionRule))
     );
   },
   UPDATE_MODEL: (user: User | null) => {
@@ -1459,7 +1404,6 @@ type PlanAssetUpdatePermissionCheck<T = AssetWithOwner> = (
 ) => boolean;
 
 type RolePlanPermissionCheck = (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
-type RoleModelPermissionCheck = (user: User | null, plans: PlanWithOwners[], model: ModelWithOwner | null) => boolean;
 
 type RolePlanPermissionCheckWithAsset<T = AssetWithOwner> = (
   user: User | null,
@@ -1552,15 +1496,6 @@ interface ConstraintRunCRUDPermission extends Omit<CRUDPermission<ConstraintRun>
   canCreate: RolePlanPermissionCheck;
 }
 
-interface ExpansionSetsCRUDPermission<T = null> extends Omit<CRUDPermission<T>, 'canCreate'> {
-  canCreate: RoleModelPermissionCheck;
-  canUpdate: () => boolean;
-}
-
-interface ExpansionSequenceCRUDPermission<T = null> extends CRUDPermission<T> {
-  canExpand: RolePlanPermissionCheck;
-}
-
 interface SchedulingCRUDPermission<T = null> extends RunnableSpecificationCRUDPermission<T> {
   canAnalyze: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null) => boolean;
 }
@@ -1611,9 +1546,7 @@ interface FeaturePermissions {
   derivationGroupAcknowledgement: PlanSpecificationCRUDPermission;
   derivationGroupModelLink: CRUDPermission<void>;
   derivationGroupPlanLink: CRUDPermission<void>;
-  expansionRules: CRUDPermission<AssetWithOwner>;
-  expansionSequences: ExpansionSequenceCRUDPermission<AssetWithOwner<ExpansionSequence>>;
-  expansionSets: ExpansionSetsCRUDPermission<AssetWithOwner<ExpansionSet>>;
+  expansionSequences: CRUDPermission<AssetWithOwner<ExpansionSequence>>;
   externalEventType: CRUDPermission<void>;
   externalResources: PlanAssetCRUDPermission<PlanDataset>;
   externalSource: CRUDPermission<ExternalSourceSlim[]>;
@@ -1725,24 +1658,11 @@ const featurePermissions: FeaturePermissions = {
     canRead: user => queryPermissions.SUB_PLAN_DERIVATION_GROUP(user),
     canUpdate: () => false, // this is not a feature
   },
-  expansionRules: {
-    canCreate: user => queryPermissions.CREATE_EXPANSION_RULE(user),
-    canDelete: (user, expansionRule) => queryPermissions.DELETE_EXPANSION_RULE(user, expansionRule),
-    canRead: user => queryPermissions.SUB_EXPANSION_RULES(user),
-    canUpdate: (user, expansionRule) => queryPermissions.UPDATE_EXPANSION_RULE(user, expansionRule),
-  },
   expansionSequences: {
     canCreate: user => queryPermissions.CREATE_EXPANSION_SEQUENCE(user),
     canDelete: user => queryPermissions.DELETE_EXPANSION_SEQUENCE(user),
-    canExpand: (user, plan, model) => queryPermissions.EXPAND(user, plan, model),
     canRead: user => queryPermissions.GET_EXPANSION_SEQUENCE_ID(user),
     canUpdate: () => false, // this is not a feature,
-  },
-  expansionSets: {
-    canCreate: (user, plans, model) => queryPermissions.CREATE_EXPANSION_SET(user, plans, model),
-    canDelete: (user, expansionSet) => queryPermissions.DELETE_EXPANSION_SET(user, expansionSet),
-    canRead: user => queryPermissions.SUB_EXPANSION_SETS(user),
-    canUpdate: () => false, // no feature to update expansion sets exists
   },
   externalEventType: {
     canCreate: user => gatewayPermissions.CREATE_EXTERNAL_EVENT_TYPE(user),

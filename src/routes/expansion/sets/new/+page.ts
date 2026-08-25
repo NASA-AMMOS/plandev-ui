@@ -1,10 +1,7 @@
-import effects from '../../../../utilities/effects';
-import type { PageLoad } from './$types';
+import { resolve } from '$app/paths';
+import { redirect } from '@sveltejs/kit';
 
-export const load: PageLoad = async ({ parent }) => {
-  const { user } = await parent();
-
-  const { plans: initialPlans } = await effects.getPlansAndModels(user);
-
-  return { initialPlans };
+export const load = async () => {
+  // TypeScript command expansion has been removed, replaced by Sequence Templates
+  redirect(308, resolve(`/sequence-templates`));
 };

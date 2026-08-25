@@ -20,7 +20,6 @@ export const USER_STORAGE_STATES: Record<string, string> = {
 };
 
 const MAIN_TEST_SUITE_BASE_URL = 'http://localhost:3000';
-const SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL = 'http://localhost:3001';
 
 const config: PlaywrightTestConfig = {
   forbidOnly: !!process.env.CI,
@@ -41,20 +40,8 @@ const config: PlaywrightTestConfig = {
       name: 'e2e tests',
       teardown: 'teardown',
       testDir: './e2e-tests',
-      testIgnore: /.*\/sequence-templates\.test\.ts/,
       use: {
         baseURL: MAIN_TEST_SUITE_BASE_URL,
-        storageState: STORAGE_STATE,
-      },
-    },
-    {
-      dependencies: ['setup-auth', 'setup-jar'],
-      name: 'e2e sequence template tests',
-      teardown: 'teardown',
-      testDir: './e2e-tests',
-      testMatch: /.*\/sequence-templates\.test\.ts/,
-      use: {
-        baseURL: SEQUENCE_TEMPLATE_TEST_SUITE_BASE_URL,
         storageState: STORAGE_STATE,
       },
     },
@@ -86,10 +73,6 @@ const config: PlaywrightTestConfig = {
       command: 'npm run preview',
       port: 3000,
       reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: 'PUBLIC_COMMAND_EXPANSION_MODE=templating npm run preview',
-      port: 3001,
     },
   ],
 };
