@@ -2,7 +2,6 @@ import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
 import type { PartialWith, UserId } from './app';
 import type { ActivityDirectiveValidationFailures } from './console';
-import type { ExpansionRuleSlim } from './expansion';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { PlanSchema } from './plan';
 import type { ValueSchema } from './schema';
@@ -15,11 +14,6 @@ export type ActivityType = {
   parameters: ParametersMap;
   required_parameters: string[];
   subsystem_tag?: Tag | null;
-};
-
-export type ActivityTypeExpansionRules = {
-  expansion_rules: ExpansionRuleSlim[];
-  name: ActivityType['name'];
 };
 
 export type ActivityDirectiveId = number;

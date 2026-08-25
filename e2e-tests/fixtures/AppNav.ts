@@ -8,7 +8,6 @@ export class AppNav {
   appMenuItemAbout: Locator;
   appMenuItemDictionaries: Locator;
   appMenuItemDocumentation: Locator;
-  appMenuItemExpansion: Locator;
   appMenuItemGateway: Locator;
   appMenuItemGraphQLPlayground: Locator;
   appMenuItemLogout: Locator;
@@ -37,7 +36,6 @@ export class AppNav {
     this.appMenuItemAbout = this.appMenu.getByRole('menuitem', { name: 'About' });
     this.appMenuItemDictionaries = this.appMenu.getByRole('menuitem', { name: 'Dictionaries' });
     this.appMenuItemDocumentation = this.appMenu.getByRole('menuitem', { name: 'Documentation' });
-    this.appMenuItemExpansion = this.appMenu.getByRole('menuitem', { name: 'Expansion' });
     this.appMenuItemGateway = this.appMenu.getByRole('menuitem', { name: 'Gateway' });
     this.appMenuItemGraphQLPlayground = this.appMenu.getByRole('menuitem', { name: 'GraphQL Playground' });
     this.appMenuItemLogout = this.appMenu.getByRole('button', { name: 'Logout' });

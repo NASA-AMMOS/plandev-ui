@@ -39,13 +39,7 @@ vi.mock('svelte', async importOriginal => {
   };
 });
 
-vi.mock('$env/dynamic/public', () => {
-  return {
-    env: {
-      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
-    },
-  };
-}); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
 vi.mock('$app/stores', () => {
   const page = {
     subscribe: vi.fn((callback: (value: { url: URL }) => void) => {

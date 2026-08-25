@@ -2,7 +2,7 @@ import { derived, writable, type Writable } from 'svelte/store';
 import type { Status } from '../enums/status';
 import { type ExpandedTemplate, type SequenceTemplate } from '../types/sequence-template';
 import gql from '../utilities/gql';
-import { planSimDatasetMapping } from './expansion';
+import { simulationDatasetsPlan } from './simulation';
 import { gqlSubscribable } from './subscribable';
 
 /* Writable */
@@ -18,22 +18,19 @@ export const expandedTemplates = gqlSubscribable<ExpandedTemplate[]>(gql.SUB_EXP
 
 export const sequenceTemplates = gqlSubscribable<SequenceTemplate[]>(gql.SUB_SEQUENCE_TEMPLATES, {}, []);
 
-export const allTemplates = gqlSubscribable<
-  { expanded_template: string; seq_id: string; simulation_dataset_id: number }[]
->(gql.SUB_MOST_RECENT_EXPANSION_FOR_SIMULATION_TEMPS, {}, []);
-
 /* Derived */
 export const lastTemplatedSimulationDatasetId = derived(
-  [allTemplates, planSimDatasetMapping],
-  ([$allTemplates, $planSimDatasetMapping]) => {
-    if (!$planSimDatasetMapping) {
+  [expandedTemplates, simulationDatasetsPlan],
+  ([$expandedTemplates, $simulationDatasetsPlan]) => {
+    if (!$simulationDatasetsPlan) {
       return -1;
     }
-    const filteredDatasets = $planSimDatasetMapping.simulations[0].simulation_datasets.map(entry => entry.id);
+    const simulationDatasetIds = new Set($simulationDatasetsPlan.map(dataset => dataset.id));
 
-    const lastExpansion = $allTemplates
-      .filter(entry => filteredDatasets.includes(entry.simulation_dataset_id))
+    const lastExpansion = $expandedTemplates
+      .filter(template => simulationDatasetIds.has(template.simulation_dataset_id))
       .sort((a, b) => b.simulation_dataset_id - a.simulation_dataset_id)[0];
+
     return lastExpansion?.simulation_dataset_id ?? -1;
   },
 );
