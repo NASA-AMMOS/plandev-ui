@@ -72,7 +72,7 @@
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
-  import { resetExpansionStores } from '../../../stores/expansion';
+  import { resetExpansionStores, expansionSequences } from '../../../stores/expansion';
   import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
@@ -199,6 +199,7 @@
   let simulationDataAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
+  let latestExpansionSequenceIds: string[] | null = null;
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
@@ -499,6 +500,13 @@
   }
   $: lastSimulationDatasetId = $lastTemplatedSimulationDatasetId;
 
+  $: latestExpansionSequenceIds =
+    $simulationDatasetLatest === null
+      ? []
+      : $expansionSequences
+          .filter(sequence => sequence.simulation_dataset_id === $simulationDatasetLatest.id)
+          .map(sequence => sequence.seq_id);
+
   onDestroy(() => {
     resetActivityStores();
     resetExternalSourceStores();
@@ -601,8 +609,13 @@
   }
 
   async function onHandleExpansion() {
-    if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
-      effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $user);
+    if (
+      $plan !== null &&
+      $simulationDatasetLatest !== null &&
+      latestExpansionSequenceIds !== null &&
+      latestExpansionSequenceIds.length > 0
+    ) {
+      await effects.expandTemplates(latestExpansionSequenceIds, $simulationDatasetLatest.id, $plan, $user);
     }
   }
 
@@ -804,13 +817,13 @@
             />
             <PlanNavButton
               title={!compactNavMode ? 'Expansion' : ''}
-              buttonText="Expand Activities"
+              buttonText="Expand All Sequences"
               hasPermission={hasExpandPermission}
               permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to expand activities'}
               menuTitle="Template Expansion Status"
-              disabled={$selectedSequence === null || $simulationDatasetId === null}
+              disabled={$simulationDatasetLatest === null || latestExpansionSequenceIds.length === 0}
               status={$sequenceTemplateExpansionStatus}
               on:click={() => onHandleExpansion()}
             >
