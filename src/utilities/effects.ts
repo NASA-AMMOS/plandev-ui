@@ -8459,7 +8459,8 @@ const effects = {
         const id = originalFilenameToId[newFile.name];
         const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user)).uploaded_file;
         if (response !== null) {
-          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0].name}`;
+          const fileStorePrefix = env.PUBLIC_PLANDEV_FILE_STORE_PREFIX || env.PUBLIC_AERIE_FILE_STORE_PREFIX;
+          generatedFilenames[newFile.name] = `${fileStorePrefix}${response[0].name}`;
         }
       }
 
