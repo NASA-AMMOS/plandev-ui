@@ -110,7 +110,6 @@
     schedulingGoalCount,
   } from '../../../stores/scheduling';
   import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
-  import { selectedSequence } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -199,7 +198,7 @@
   let simulationDataAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
-  let latestExpansionSequenceIds: string[] | null = null;
+  let latestExpansionSequenceIds: string[] = [];
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
@@ -612,7 +611,6 @@
     if (
       $plan !== null &&
       $simulationDatasetLatest !== null &&
-      latestExpansionSequenceIds !== null &&
       latestExpansionSequenceIds.length > 0
     ) {
       await effects.expandTemplates(latestExpansionSequenceIds, $simulationDatasetLatest.id, $plan, $user);
@@ -821,7 +819,7 @@
               hasPermission={hasExpandPermission}
               permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to expand activities'}
+                : 'You do not have permission to expand sequences'}
               menuTitle="Template Expansion Status"
               disabled={$simulationDatasetLatest === null || latestExpansionSequenceIds.length === 0}
               status={$sequenceTemplateExpansionStatus}

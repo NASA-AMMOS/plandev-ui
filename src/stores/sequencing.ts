@@ -27,8 +27,6 @@ export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDict
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
 
-export const selectedSequence: Writable<string | null> = writable(null);
-
 export const creatingWorkspace: Writable<boolean> = writable(false);
 
 /* Subscriptions. */
