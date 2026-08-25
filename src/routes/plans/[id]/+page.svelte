@@ -608,11 +608,7 @@
   }
 
   async function onHandleExpansion() {
-    if (
-      $plan !== null &&
-      $simulationDatasetLatest !== null &&
-      latestExpansionSequenceIds.length > 0
-    ) {
+    if ($plan !== null && $simulationDatasetLatest !== null && latestExpansionSequenceIds.length > 0) {
       await effects.expandTemplates(latestExpansionSequenceIds, $simulationDatasetLatest.id, $plan, $user);
     }
   }
