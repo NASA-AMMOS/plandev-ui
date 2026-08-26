@@ -1170,7 +1170,10 @@ describe('Workspace utility function tests', () => {
   describe('getAvailableActionsForNodes', () => {
     const createMockAction = (
       id: number,
-      paramSchema: Record<string, { pattern?: string; primary?: boolean; type: string }>,
+      paramSchema: Record<
+        string,
+        { extensionPattern?: string; filenamePattern?: string; primary?: boolean; type: string }
+      >,
     ): ActionDefinition => ({
       archived: false,
       created_at: '2024-01-01',
@@ -1278,8 +1281,8 @@ describe('Workspace utility function tests', () => {
       expect(result[0].parameter).toBe('primaryParam');
     });
 
-    test('Should filter by file pattern when specified', () => {
-      const actions = [createMockAction(1, { input: { pattern: '*.seq', type: 'file' } })];
+    test('Should filter by file extension pattern when specified', () => {
+      const actions = [createMockAction(1, { input: { extensionPattern: '*.seq', type: 'file' } })];
       const nodes: WorkspaceTreeNode[] = [{ name: 'file.txt', type: WorkspaceContentType.Text }];
 
       const result = getAvailableActionsForNodes(actions, nodes);
@@ -1287,9 +1290,27 @@ describe('Workspace utility function tests', () => {
       expect(result).toEqual([]);
     });
 
-    test('Should match file pattern correctly', () => {
-      const actions = [createMockAction(1, { input: { pattern: '*.seq', type: 'file' } })];
+    test('Should match file extension pattern correctly', () => {
+      const actions = [createMockAction(1, { input: { extensionPattern: '*.seq', type: 'file' } })];
       const nodes: WorkspaceTreeNode[] = [{ name: 'test.seq', type: WorkspaceContentType.Sequence }];
+
+      const result = getAvailableActionsForNodes(actions, nodes);
+
+      expect(result).toHaveLength(1);
+    });
+
+    test('Should filter by filename pattern when specified', () => {
+      const actions = [createMockAction(1, { input: { filenamePattern: 'seq_.+?(?=_)_nav', type: 'file' } })];
+      const nodes: WorkspaceTreeNode[] = [{ name: 'file.seq', type: WorkspaceContentType.Text }];
+
+      const result = getAvailableActionsForNodes(actions, nodes);
+
+      expect(result).toEqual([]);
+    });
+
+    test('Should match filename pattern correctly', () => {
+      const actions = [createMockAction(1, { input: { filenamePattern: 'seq_.+?(?=_)_nav', type: 'file' } })];
+      const nodes: WorkspaceTreeNode[] = [{ name: 'seq_1_nav.seq', type: WorkspaceContentType.Sequence }];
 
       const result = getAvailableActionsForNodes(actions, nodes);
 
