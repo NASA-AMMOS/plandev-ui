@@ -10,6 +10,7 @@ import {
   getCleansedStructArguments,
   getValueSchemaDefaultValue,
   isRecParameter,
+  textMatchesPattern,
 } from './parameters';
 
 describe('getArgument', () => {
@@ -597,5 +598,18 @@ describe('filterByPattern', () => {
     const examplePattern = 'sequence';
     const result = filterByFilenamePattern(exampleOptions, examplePattern);
     expect(result.length).toEqual(1);
+  });
+});
+describe('textMatchesPattern', () => {
+  test('Should be able to filter by generic text', () => {
+    const examplePattern: string = 'seq_.+?(?=_)_nav';
+    const exampleInputMatch: string = 'seq_1_nav.seq';
+    expect(textMatchesPattern(exampleInputMatch, examplePattern)).toBe(true);
+
+    const exampleInputNoMatch: string = 'this_will_not_match.seq';
+    expect(textMatchesPattern(exampleInputNoMatch, examplePattern)).toBe(false);
+
+    expect(textMatchesPattern('asdfasdfasdfasdf', '')).toBe(true);
+    expect(textMatchesPattern('asdfasdfasdfasdf', '*')).toBe(true);
   });
 });

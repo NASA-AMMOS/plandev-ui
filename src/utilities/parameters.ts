@@ -193,7 +193,7 @@ export function textMatchesPattern(path: string, pattern: string): boolean {
     return true;
   }
 
-  return path.search(pattern) !== -1;
+  return path.search(new RegExp(pattern)) !== -1;
 }
 
 export function filterByFilenamePattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
