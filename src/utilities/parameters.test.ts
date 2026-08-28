@@ -597,7 +597,44 @@ describe('filterByPattern', () => {
     ];
     const examplePattern = 'sequence';
     const result = filterByFilenamePattern(exampleOptions, examplePattern);
-    expect(result.length).toEqual(1);
+    expect(result).toEqual([
+      {
+        display: 'maybeasequence.seqn',
+        value: 'maybeasequence.seqn',
+      },
+    ]);
+  });
+  test('Should be able to filter by filename regular expression', () => {
+    const exampleOptions: ValueSchemaOption[] = [
+      {
+        display: 'thisisafile.txt',
+        value: 'thisisafile.txt',
+      },
+      {
+        display: 'Sequence 1',
+        value: 'this_is_sequence_1_file.seqn',
+      },
+      {
+        display: 'Sequence 2',
+        value: 'this_is_sequence_2_file.text',
+      },
+      {
+        display: 'Not A Sequence',
+        value: 'this_is_not_a_sequence_2a_file.text',
+      },
+    ];
+    const examplePattern = 'sequence_\\d+_file';
+    const result = filterByFilenamePattern(exampleOptions, examplePattern);
+    expect(result).toEqual([
+      {
+        display: 'Sequence 1',
+        value: 'this_is_sequence_1_file.seqn',
+      },
+      {
+        display: 'Sequence 2',
+        value: 'this_is_sequence_2_file.text',
+      },
+    ]);
   });
 });
 describe('textMatchesPattern', () => {
