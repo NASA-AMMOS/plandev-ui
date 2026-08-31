@@ -309,36 +309,38 @@ test.describe.serial('Timeline View Editing', () => {
     // Open the layer settings menu
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
 
-    const lineStyle = layer.getByRole('combobox', { name: 'Line Style' });
+    // Line Style and Show Points are segmented controls, so they are radiogroups rather than selects.
+    // Their accessible names come from ariaLabel, since a `<label for>` cannot name a radiogroup.
+    const lineStyle = layer.getByRole('radiogroup', { name: 'Line Style' });
+    const showPoints = layer.getByRole('radiogroup', { name: 'Show Points' });
     const lineOpacity = layer.getByRole('spinbutton', { name: 'Line Opacity' });
     const pointShape = layer.getByRole('combobox', { name: 'Point Shape' });
-    const showPoints = layer.getByRole('combobox', { name: 'Show Points' });
 
     // Expect the defaults to match how the layer rendered before these options existed
-    await expect(lineStyle).toHaveValue('solid');
+    await expect(lineStyle.getByRole('radio', { checked: true, name: 'Solid' })).toBeVisible();
+    await expect(showPoints.getByRole('radio', { checked: true, name: 'Auto' })).toBeVisible();
     await expect(lineOpacity).toHaveValue('1');
     await expect(pointShape).toHaveValue('circle');
-    await expect(showPoints).toHaveValue('auto');
     await expect(layer.getByRole('button', { name: 'Line Color' })).toBeVisible();
     await expect(layer.getByRole('button', { name: 'Point Color' })).toBeVisible();
 
     // Change every style option and expect each to stick
-    await lineStyle.selectOption('dashed');
+    await lineStyle.getByRole('radio', { name: 'Dashed' }).click();
+    await showPoints.getByRole('radio', { name: 'Never' }).click();
     await pointShape.selectOption('diamond');
-    await showPoints.selectOption('never');
     await lineOpacity.fill('0.5');
 
-    await expect(lineStyle).toHaveValue('dashed');
+    await expect(lineStyle.getByRole('radio', { checked: true, name: 'Dashed' })).toBeVisible();
+    await expect(showPoints.getByRole('radio', { checked: true, name: 'Never' })).toBeVisible();
     await expect(pointShape).toHaveValue('diamond');
-    await expect(showPoints).toHaveValue('never');
     await expect(lineOpacity).toHaveValue('0.5');
 
     // The row still renders after restyling -- a bad globalAlpha or dash pattern would throw during
     // the canvas draw and leave the row blank. Clamping and NaN handling are unit tested.
     await expect(setup.page.locator('.timeline-row-wrapper', { hasText: rowName })).toBeVisible();
 
-    await lineStyle.selectOption('solid');
-    await showPoints.selectOption('auto');
+    await lineStyle.getByRole('radio', { name: 'Solid' }).click();
+    await showPoints.getByRole('radio', { name: 'Auto' }).click();
     await lineOpacity.fill('1');
 
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
@@ -351,7 +353,7 @@ test.describe.serial('Timeline View Editing', () => {
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
 
     // Area fill is off by default, so its dependent controls should not be rendered yet
-    const fillAreaCheckbox = setup.page.getByRole('checkbox', { name: 'Fill Area' });
+    const fillAreaCheckbox = setup.page.getByRole('checkbox', { name: 'Show Fill Area' });
     await expect(fillAreaCheckbox).not.toBeChecked();
     await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
     await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
@@ -374,7 +376,7 @@ test.describe.serial('Timeline View Editing', () => {
     await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toHaveValue('0.5');
 
     // Disabling the fill hides its dependent controls again
-    await setup.page.getByRole('checkbox', { name: 'Fill Area' }).uncheck();
+    await setup.page.getByRole('checkbox', { name: 'Show Fill Area' }).uncheck();
     await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
     await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
 

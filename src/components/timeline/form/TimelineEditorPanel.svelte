@@ -309,14 +309,20 @@
   };
 
   /**
+   * One field change from a guide row. `null` is only ever the band's second bound being cleared, which
+   * is how a band is turned back into a line -- the writers below remove the field rather than store it.
+   */
+  type GuideRowChange = { name: string; value: string | number | null };
+
+  /**
    * Applies one field change from a guide row. A null for the band's second bound removes the field
    * rather than storing it, which is the only way to turn a band back into a line.
    */
-  function onHorizontalGuideInput(event: CustomEvent<{ name: string; value: any }>, horizontalGuide: HorizontalGuide) {
+  function onHorizontalGuideInput(event: CustomEvent<GuideRowChange>, horizontalGuide: HorizontalGuide) {
     applyHorizontalGuideChange(event.detail.name, event.detail.value, horizontalGuide);
   }
 
-  function applyHorizontalGuideChange(name: string, value: any, horizontalGuide: HorizontalGuide) {
+  function applyHorizontalGuideChange(name: string, value: GuideRowChange['value'], horizontalGuide: HorizontalGuide) {
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id !== horizontalGuide.id) {
         return guide;
@@ -334,11 +340,11 @@
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
-  function onVerticalGuideInput(event: CustomEvent<{ name: string; value: any }>, verticalGuide: VerticalGuide) {
+  function onVerticalGuideInput(event: CustomEvent<GuideRowChange>, verticalGuide: VerticalGuide) {
     applyVerticalGuideChange(event.detail.name, event.detail.value, verticalGuide);
   }
 
-  function applyVerticalGuideChange(name: string, value: any, verticalGuide: VerticalGuide) {
+  function applyVerticalGuideChange(name: string, value: GuideRowChange['value'], verticalGuide: VerticalGuide) {
     const newVerticalGuides = verticalGuides.map(guide => {
       if (guide.id !== verticalGuide.id) {
         return guide;
@@ -721,13 +727,15 @@
             </Input>
           </form>
           <Input layout="inline" class="editor-input">
-            <div class="editor-label">
+            <div class="flex min-w-0 items-center gap-1">
               <label for="display-mode">Display</label>
               <InfoTip
                 content="Grouped puts activities into collapsible rows by type. Compact packs them into as few rows as will fit."
               />
             </div>
             <TimelineEditorOptionButtons
+              ariaLabel="Display"
+              id="display-mode"
               options={[
                 { id: 'grouped', label: 'Grouped' },
                 { id: 'compact', label: 'Compact' },
@@ -737,13 +745,15 @@
             />
           </Input>
           <Input layout="inline" class="editor-input">
-            <div class="editor-label">
+            <div class="flex min-w-0 items-center gap-1">
               <label for="label-visibility">Labels</label>
               <InfoTip
                 content="On always draws item labels. Off never does. Auto draws only the labels that do not overlap the next item."
               />
             </div>
             <TimelineEditorOptionButtons
+              ariaLabel="Labels"
+              id="label-visibility"
               options={[
                 { id: 'auto', label: 'Auto' },
                 { id: 'on', label: 'On' },
@@ -755,13 +765,15 @@
           </Input>
           {#if rowHasActivityLayer}
             <Input layout="inline" class="editor-input">
-              <div class="editor-label">
+              <div class="flex min-w-0 items-center gap-1">
                 <label for="directive-marker">Directive</label>
                 <InfoTip
                   content="Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own."
                 />
               </div>
               <TimelineEditorOptionButtons
+                ariaLabel="Directive Marker"
+                id="directive-marker"
                 options={MARKER_STYLE_OPTIONS}
                 selectedId={discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE}
                 on:change={({ detail }) => applyDiscreteOption('directiveMarker', detail.id)}
@@ -769,13 +781,15 @@
             </Input>
           {/if}
           <Input layout="inline" class="editor-input">
-            <div class="editor-label">
+            <div class="flex min-w-0 items-center gap-1">
               <label for="zero-duration-marker">Instant</label>
               <InfoTip
                 content="Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar."
               />
             </div>
             <TimelineEditorOptionButtons
+              ariaLabel="Instant Marker"
+              id="zero-duration-marker"
               options={MARKER_STYLE_OPTIONS}
               selectedId={discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE}
               on:change={({ detail }) => applyDiscreteOption('zeroDurationMarker', detail.id)}
@@ -786,7 +800,7 @@
               <div class="st-typography-label">Activity Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <div class="editor-label">
+              <div class="flex min-w-0 items-center gap-1">
                 <label for="activity-composition">Show</label>
                 <InfoTip
                   content="Directives shows only what is planned. Simulated shows only what simulation produced. The third draws the simulated span with its directive marked on it."
@@ -807,13 +821,15 @@
           {/if}
           {#if rowHasActivityLayer && discreteOptions.displayMode === 'grouped'}
             <Input layout="inline" class="editor-input">
-              <div class="editor-label">
+              <div class="flex min-w-0 items-center gap-1">
                 <label for="hierarchy-mode">Hierarchy</label>
                 <InfoTip
                   content="By Directive groups starting from each directive. Flat groups directives and spans together regardless of how deeply nested they are."
                 />
               </div>
               <TimelineEditorOptionButtons
+                ariaLabel="Hierarchy"
+                id="hierarchy-mode"
                 options={[
                   { id: 'flat', label: 'Flat' },
                   { id: 'directive', label: 'By Directive' },
@@ -828,13 +844,15 @@
               <div class="st-typography-label">External Event Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <div class="editor-label">
+              <div class="flex min-w-0 items-center gap-1">
                 <label for="group-by">Group By</label>
                 <InfoTip
                   content="Groups external events into rows either by the source file they came from, or by their event type."
                 />
               </div>
               <TimelineEditorOptionButtons
+                ariaLabel="Group By"
+                id="group-by"
                 options={[
                   { id: 'source_key', label: 'By Source' },
                   { id: 'event_type_name', label: 'By Event Type' },
@@ -1166,13 +1184,5 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
-  }
-
-  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
-  .editor-label {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-    min-width: 0;
   }
 </style>

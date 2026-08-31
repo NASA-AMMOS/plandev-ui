@@ -9,6 +9,9 @@
   import ColorPicker from './ColorPicker.svelte';
 
   export let value: string = '';
+  /** Makes a sibling `<label for>` resolve to the trigger. The accessible name still comes from
+   * `tooltipText`, which the tooltip action writes to aria-label. */
+  export let id: string | undefined = undefined;
   export let tooltipText: string = 'Color';
   export let placement: Placement = 'bottom-end';
   export let presetColors: string[] = ['#ef8b8c', '#febd85'];
@@ -60,6 +63,7 @@
 
 <button
   bind:this={triggerElement}
+  {id}
   type="button"
   class="st-button color-preset-picker color relative dark:border-white/20"
   use:tooltip={{ content: tooltipText, placement: 'top' }}

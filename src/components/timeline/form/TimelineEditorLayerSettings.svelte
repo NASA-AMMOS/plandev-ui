@@ -63,11 +63,6 @@
     fillOpacity: DEFAULT_LINE_FILL_OPACITY,
     opacity: DEFAULT_LINE_OPACITY,
   };
-  // Clamped on the way out to the field as well as on the way in, because a view that reached the
-  // database another way -- a hand-written mutation, an import against an older schema -- can hold a
-  // value outside 0-1. LayerLine clamps the same value before drawing with it, so showing the stored
-  // number raw meant the form reported an opacity the plot was not using.
-
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
     // An empty or partially typed number input yields NaN. Persisting that would write a value the
@@ -136,6 +131,10 @@
             {/each}
           </select>
         </Input>
+        <Input layout="inline">
+          <label for="id">Layer ID</label>
+          <input class="st-input w-full" name="id" type="number" value={layer.id} disabled />
+        </Input>
         <div class="group-header">Line</div>
         <Input layout="inline">
           <!-- Duplicated from the layer row's swatch on purpose. Point Color and Fill Color both fall
@@ -144,6 +143,7 @@
                write the same lineColor field, so they cannot disagree. -->
           <label for="lineColor">Color</label>
           <ColorPresetsPicker
+            id="lineColor"
             presetColors={ViewLineLayerColorPresets}
             tooltipText="Line Color"
             type="input"
@@ -152,7 +152,7 @@
           />
         </Input>
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="lineWidth">Width</label>
             <InfoTip
               content="Thickness of the line in pixels. Zero hides the line entirely, which is how a points-only plot is drawn."
@@ -161,6 +161,7 @@
           <input
             min={0}
             class="st-input w-full"
+            aria-label="Line Width"
             id="lineWidth"
             name="lineWidth"
             type="number"
@@ -171,6 +172,8 @@
         <Input layout="inline">
           <label for="lineStyle">Style</label>
           <TimelineEditorOptionButtons
+            ariaLabel="Line Style"
+            id="lineStyle"
             options={[
               { id: 'solid', label: 'Solid' },
               { id: 'dashed', label: 'Dashed' },
@@ -181,13 +184,15 @@
           />
         </Input>
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="interpolation">Interpolation</label>
             <InfoTip
               content="How the line gets from one sample to the next. Step holds each value until the next one changes it, which is how a discrete resource actually behaves. Linear and Smooth draw between the samples instead, for a resource that really does change continuously."
             />
           </div>
           <TimelineEditorOptionButtons
+            ariaLabel="Interpolation"
+            id="interpolation"
             options={[
               { id: 'step', label: 'Step' },
               { id: 'linear', label: 'Linear' },
@@ -200,7 +205,7 @@
         <Input layout="inline">
           <!-- Labelled plainly rather than "Line Opacity" now that a section header says which part of
                the layer this belongs to. The field name stays `opacity`, which is what the view stores. -->
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="opacity">Opacity</label>
             <InfoTip content="0 to 1, covering the line and its points. The area fill carries its own opacity." />
           </div>
@@ -209,6 +214,7 @@
             max={1}
             step={0.1}
             class="st-input w-full"
+            aria-label="Line Opacity"
             id="opacity"
             name="opacity"
             type="number"
@@ -219,13 +225,15 @@
 
         <div class="group-header">Points</div>
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="showPoints">Show</label>
             <InfoTip
               content="Auto draws one point per sample until there are more samples than pixels to hold them, then drops them so the line stays readable. Always keeps them at any density, Never hides them."
             />
           </div>
           <TimelineEditorOptionButtons
+            ariaLabel="Show Points"
+            id="showPoints"
             options={[
               { id: 'auto', label: 'Auto' },
               { id: 'always', label: 'Always' },
@@ -239,6 +247,7 @@
           <label for="pointShape">Shape</label>
           <select
             class="st-select w-full"
+            aria-label="Point Shape"
             id="pointShape"
             name="pointShape"
             value={layerAsLine.pointShape ?? DEFAULT_POINT_SHAPE}
@@ -254,6 +263,7 @@
         <Input layout="inline">
           <label for="pointColor">Color</label>
           <ColorPresetsPicker
+            id="pointColor"
             presetColors={ViewLineLayerColorPresets}
             tooltipText="Point Color"
             type="input"
@@ -266,6 +276,7 @@
           <input
             min={0}
             class="st-input w-full"
+            aria-label="Point Radius"
             id="pointRadius"
             name="pointRadius"
             type="number"
@@ -276,7 +287,7 @@
 
         <div class="group-header">Area</div>
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="showFill">Show</label>
             <InfoTip
               content="Fills the space between the line and zero. On an axis set to stack its layers, each fill stops at the total of the layers beneath it instead."
@@ -284,6 +295,7 @@
           </div>
           <input
             style:width="max-content"
+            aria-label="Show Fill Area"
             checked={layerAsLine.showFill}
             id="showFill"
             name="showFill"
@@ -295,6 +307,7 @@
           <Input layout="inline">
             <label for="fillColor">Color</label>
             <ColorPresetsPicker
+              id="fillColor"
               presetColors={ViewLineLayerColorPresets}
               tooltipText="Fill Color"
               type="input"
@@ -309,6 +322,7 @@
               max={1}
               step={0.1}
               class="st-input w-full"
+              aria-label="Fill Opacity"
               id="fillOpacity"
               name="fillOpacity"
               type="number"
@@ -362,13 +376,15 @@
         <Input layout="inline">
           <!-- Auto and Off, with no "On": a value's box is as wide as the time the value holds for, and
                a label that does not fit cannot be made to by drawing it anyway. -->
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="labelVisibility">Value Labels</label>
             <InfoTip
               content="Auto writes each value inside its box whenever the text fits, shrinking it a step first. There is no always-on setting because a box is only as wide as the time its value holds for."
             />
           </div>
           <TimelineEditorOptionButtons
+            ariaLabel="Value Labels"
+            id="labelVisibility"
             options={[
               { id: 'auto', label: 'Auto' },
               { id: 'off', label: 'Off' },
@@ -378,7 +394,7 @@
           />
         </Input>
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="showAsLinePlot">Line Plot</label>
             <InfoTip
               content="Draws the resource as a line stepping between its values rather than as colored boxes. Useful for seeing how often a state changes; the per-value colors below do not apply."
@@ -411,13 +427,13 @@
           />
         </Input>
         <Input layout="inline">
-          <!-- External events are drawn translucent so a busy row of overlapping bars stays readable.
-               That washes out a zero-duration event's marker, which is small enough to need the
-               contrast, so the opacity is worth being able to raise. -->
-          <div class="setting-label">
+          <!-- External events are drawn translucent so a busy row of overlapping bars stays readable,
+               which is worth being able to turn off for a row whose events do not overlap. Zero-duration
+               markers are exempt and always draw opaque, so this is not the way to make those legible. -->
+          <div class="flex min-w-0 items-center gap-1">
             <label for="opacity">Opacity</label>
             <InfoTip
-              content="External events are drawn part-transparent so a row of overlapping bars stays readable. Raise it when the events do not overlap, or when zero-duration markers are too faint to pick out."
+              content="External events with a duration are drawn part-transparent so a row of overlapping bars stays readable. Raise it when the events do not overlap. Zero-duration events are drawn as opaque markers regardless."
             />
           </div>
           <input
@@ -425,6 +441,7 @@
             max={1}
             step={0.1}
             class="st-input w-full"
+            aria-label="Event Opacity"
             id="opacity"
             name="opacity"
             type="number"
@@ -433,10 +450,6 @@
           />
         </Input>
       {/if}
-      <Input layout="inline">
-        <label for="id">Layer ID</label>
-        <input class="st-input w-full" name="id" type="number" value={layer.id} disabled />
-      </Input>
       <button class="st-button secondary w-full" style="position: relative" on:click={onDeleteLayer}
         >Delete Layer</button
       >
@@ -489,14 +502,6 @@
     letter-spacing: 0.06em;
     padding-top: 8px;
     text-transform: uppercase;
-  }
-
-  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
-  .setting-label {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-    min-width: 0;
   }
 
   .timeline-editor-layer-settings :global(.color-picker) {

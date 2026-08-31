@@ -372,8 +372,14 @@ export function getYScale(
  */
 export function getLogTickValues(domain: number[], base: number = DEFAULT_LOG_BASE): number[] {
   const [min, max] = domain;
-  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
     return [];
+  }
+  // A constant-valued resource fits both bounds on the same number. There is no ladder to build, but
+  // returning nothing left the axis with no labels at all -- worse than the linear scale, which still
+  // labels the one value it has. Label it here too.
+  if (min === max) {
+    return [min];
   }
   const safeBase = Number.isFinite(base) && base > 1 ? base : DEFAULT_LOG_BASE;
   const maxMagnitude = Math.max(Math.abs(min), Math.abs(max));
@@ -571,6 +577,13 @@ export type StackInputSeries = {
  *
  * Negative values reduce the running total rather than being stacked separately, so the top of the
  * stack always reads as the net sum.
+ *
+ * Cost, knowingly unbounded: the grid is the union of every x across every series, and every series is
+ * resampled onto all of it, so this allocates roughly (total samples x series) points in one synchronous
+ * pass. That is the same per-sample main-thread work `resourcesToLinePoints` and `sampleProfiles`
+ * already do, multiplied by the number of layers being summed. Left unchunked because the result feeds
+ * `getYAxesWithScaleDomains` in the same tick and stacking is opt-in per axis -- but it is the one path
+ * here that does not yield, so a row stacking several very long resources will block a frame.
  */
 export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[] {
   const grid = getStackXGrid(series);
@@ -748,7 +761,7 @@ export function getLineLayerStacks(
     if (!yAxis.stack) {
       continue;
     }
-    const schemasByLayerId: Record<number, Resource> = {};
+    const resourcesByLayerId: Record<number, Resource> = {};
     const input: StackInputSeries[] = [];
     // Layer order is stack order, bottom up
     for (const layer of layers) {
@@ -759,7 +772,7 @@ export function getLineLayerStacks(
       if (!resource || !isNumericResourceSchema(resource.schema)) {
         continue;
       }
-      schemasByLayerId[layer.id] = resource;
+      resourcesByLayerId[layer.id] = resource;
       input.push({
         interpolation: layer.interpolation,
         layerId: layer.id,
@@ -776,7 +789,7 @@ export function getLineLayerStacks(
         baseline: series.values.map(value => value.y0),
         resource: {
           name: series.resourceName,
-          schema: schemasByLayerId[series.layerId].schema,
+          schema: resourcesByLayerId[series.layerId].schema,
           // Untagged on purpose: these values are already resampled to the shape the layer draws, so a
           // second round of hold dropping downstream would thin the stack out of alignment with its
           // own baseline
@@ -1361,7 +1374,19 @@ export function createTimelineXRangeLayer(
 }
 
 /**
- * Returns the max bounds of the resources associated with an axis
+ * Extra facts about an axis's values that a caller can ask `getYAxisBounds` to collect while it is
+ * already walking them.
+ *
+ * An out-param rather than a second function because the walk is the expensive part: a log axis needs
+ * the smallest magnitude for its symlog constant, and computing it separately meant scanning every
+ * value of every layer on the axis twice on every pan and zoom. Filled in place; absent fields mean
+ * the values held nothing to derive them from.
+ */
+export type AxisValueStats = { smallestMagnitude?: number };
+
+/**
+ * Returns the max bounds of the resources associated with an axis, optionally collecting `stats` about
+ * the values it walks on the way through.
  */
 export function getYAxisBounds(
   yAxis: Axis,
@@ -1369,6 +1394,7 @@ export function getYAxisBounds(
   resources: Resource[],
   viewTimeRange?: TimeRange,
   stacks: Record<number, StackedLayerRender> = {},
+  stats?: AxisValueStats,
 ): number[] {
   // Find all layers that are associated with this y axis
   const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
@@ -1429,6 +1455,14 @@ export function getYAxisBounds(
           if (maxY === undefined || value.y > maxY) {
             maxY = value.y;
           }
+          if (stats) {
+            // Absolute value, and zero skipped: symlog's constant is the width of its linear region,
+            // so what matters is the smallest magnitude the data reaches on either side of zero
+            const magnitude = Math.abs(value.y);
+            if (magnitude > 0 && (stats.smallestMagnitude === undefined || magnitude < stats.smallestMagnitude)) {
+              stats.smallestMagnitude = magnitude;
+            }
+          }
         }
       });
       // Account for the neighboring left and right values as these values are connected to in line drawing
@@ -1474,16 +1508,23 @@ export function getYAxisBounds(
 /**
  * Smallest non-zero absolute value across the resources feeding an axis, or undefined when the axis has
  * no non-zero data. Only used to derive a log axis's symlog constant.
+ *
+ * For an axis whose domain is being fitted, ask `getYAxisBounds` for this via its `stats` out-param
+ * instead -- it is walking the same values anyway. This exists for a `manual` axis, which skips that
+ * walk entirely, so here it is the only pass rather than a second one.
  */
 export function getSmallestMagnitudeForAxis(
   yAxis: Axis,
   layers: Layer[],
   resources: Resource[],
   viewTimeRange?: TimeRange,
+  stacks: Record<number, StackedLayerRender> = {},
 ): number | undefined {
   let smallest: number | undefined = undefined;
   for (const layer of layers.filter(layer => layer.yAxisId === yAxis.id)) {
-    const layerResource = getResourceForLayer(layer, resources) as Resource;
+    // Stacked series, as getYAxisBounds does: the constant sizes the linear region of the scale the
+    // domain is on, so both have to be read off the same values
+    const layerResource = (stacks[layer.id]?.resource ?? getResourceForLayer(layer, resources)) as Resource;
     if (!layerResource) {
       continue;
     }
@@ -1520,12 +1561,21 @@ export function getYAxesWithScaleDomains(
   stacks: Record<number, StackedLayerRender> = {},
 ): ComputedAxis[] {
   return yAxes.map(yAxis => {
+    const isLog = yAxis.scaleType === 'log';
+    // Collected by the domain walk rather than by a walk of its own, so a log axis costs one pass over
+    // its values instead of two. Only asked for when a log axis will actually use it.
+    const stats: AxisValueStats | undefined = isLog ? {} : undefined;
     const computed: ComputedAxis =
       yAxis.domainFitMode !== 'manual'
-        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange, stacks) }
+        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange, stacks, stats) }
         : { ...yAxis };
-    if (yAxis.scaleType === 'log') {
-      computed.logConstant = getLogConstant(getSmallestMagnitudeForAxis(yAxis, layers, resources, viewTimeRange));
+    if (isLog) {
+      // A manual axis skipped the walk above, so it has to be asked for separately
+      const smallestMagnitude =
+        yAxis.domainFitMode !== 'manual'
+          ? stats?.smallestMagnitude
+          : getSmallestMagnitudeForAxis(yAxis, layers, resources, viewTimeRange, stacks);
+      computed.logConstant = getLogConstant(smallestMagnitude);
     }
     return computed;
   });

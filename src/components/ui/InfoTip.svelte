@@ -17,25 +17,16 @@
   keyboard. It performs no action -- tippy triggers on hover and focus, and handles tap on touch. The
   tooltip action sets aria-label from the content, so screen readers get the same text.
 -->
-<button class="info-tip" type="button" use:tooltip={{ content, maxWidth: 350, placement }} aria-label={content}>
+<!--
+  Muted until pointed at, so a column of these reads as punctuation rather than as a row of controls.
+  Tailwind and stellar-svelte's semantic colors rather than the legacy --st-* variables, per the
+  transition this codebase is midway through.
+-->
+<button
+  class="inline-flex shrink-0 cursor-help items-center border-0 bg-transparent p-0 text-muted-foreground hover:text-foreground focus-visible:text-foreground"
+  type="button"
+  use:tooltip={{ content, maxWidth: 350, placement }}
+  aria-label={content}
+>
   <CircleQuestionMark {size} />
 </button>
-
-<style>
-  /* Muted until pointed at, so a column of these reads as punctuation rather than as a row of controls */
-  .info-tip {
-    align-items: center;
-    background: none;
-    border: 0;
-    color: var(--st-gray-40);
-    cursor: help;
-    display: inline-flex;
-    flex-shrink: 0;
-    padding: 0;
-  }
-
-  .info-tip:hover,
-  .info-tip:focus-visible {
-    color: var(--st-gray-70);
-  }
-</style>

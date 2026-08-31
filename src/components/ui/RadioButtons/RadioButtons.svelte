@@ -13,6 +13,12 @@
   import { classNames } from '../../../utilities/generic';
 
   export { className as class };
+  /**
+   * Accessible name for the group. A `role="radiogroup"` takes no name from a sibling `<label for>` --
+   * only a labelable element does -- so without this a labelled group of radio buttons is announced,
+   * and matched by role-based tests, with no name at all.
+   */
+  export let ariaLabel: string | undefined = undefined;
   export let radioButtonContextKey: string = DefaultRadioButtonContextKey;
   export let radioButtonContainerClassName: string | undefined = undefined;
   export let selectedButtonId: RadioButtonId | undefined = undefined;
@@ -82,6 +88,7 @@
     ...(radioButtonContainerClassName ? { [radioButtonContainerClassName]: !!radioButtonContainerClassName } : {}),
   })}
   role="radiogroup"
+  aria-label={ariaLabel}
   {id}
 >
   <div class="radio-buttons-background"></div>
