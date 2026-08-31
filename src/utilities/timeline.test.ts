@@ -10,7 +10,8 @@ import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
-import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type { ValueSchema } from '../types/schema';
+import type { DiscreteTreeNode, InterpolationMode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
@@ -45,6 +46,7 @@ import {
   getLogConstant,
   getLogTickValues,
   getLineFillBaselineY,
+  getLineLayerStacks,
   getMatchingTypesForActivityLayerFilter,
   getPointSpriteSize,
   getPointSymbolSize,
@@ -61,6 +63,7 @@ import {
   isActivityLayer,
   isDroppableHoldPoint,
   isExternalEventLayer,
+  isNumericResourceSchema,
   isLineLayer,
   isXRangeLayer,
   matchesDynamicFilter,
@@ -2554,9 +2557,15 @@ describe('getLogTickValues', () => {
 
   test('handles degenerate domains without throwing', () => {
     expect(getLogTickValues([], 10)).toEqual([]);
-    expect(getLogTickValues([5, 5], 10)).toEqual([]);
-    expect(getLogTickValues([0, 0], 10)).toEqual([]);
     expect(getLogTickValues([NaN, 10], 10)).toEqual([]);
+  });
+
+  // A constant-valued resource makes both bounds the same number. Returning nothing left the axis with
+  // no labels at all, which is worse than the linear scale it replaced -- that still labels its one
+  // value.
+  test('labels the single value of a constant resource rather than leaving the axis blank', () => {
+    expect(getLogTickValues([5, 5], 10)).toEqual([5]);
+    expect(getLogTickValues([0, 0], 10)).toEqual([0]);
   });
 });
 
@@ -2597,6 +2606,244 @@ describe('getSmallestMagnitudeForAxis', () => {
     const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
     const allZero: Resource = { name: 'allZero', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
     expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
+  });
+});
+
+describe('isNumericResourceSchema', () => {
+  // This is the gate that decides whether a layer can join a stack, so a wrong answer here does not
+  // throw -- it silently leaves a layer out of a total, or sums something meaningless into one.
+  test('accepts the schemas that plot against a numeric scale', () => {
+    expect(isNumericResourceSchema({ type: 'int' })).toBe(true);
+    expect(isNumericResourceSchema({ type: 'real' })).toBe(true);
+    expect(isNumericResourceSchema({ type: 'duration' })).toBe(true);
+  });
+
+  test('accepts a real-valued struct, which is how a profile carries initial and rate', () => {
+    expect(
+      isNumericResourceSchema({
+        items: { initial: { type: 'real' }, rate: { type: 'real' } },
+        type: 'struct',
+      } as ValueSchema),
+    ).toBe(true);
+  });
+
+  test('rejects a struct that is not a real profile', () => {
+    expect(isNumericResourceSchema({ items: { initial: { type: 'real' } }, type: 'struct' } as ValueSchema)).toBe(
+      false,
+    );
+    expect(
+      isNumericResourceSchema({
+        items: { initial: { type: 'string' }, rate: { type: 'real' } },
+        type: 'struct',
+      } as ValueSchema),
+    ).toBe(false);
+  });
+
+  // A boolean's 0/1 encodes false/true and an enum's y position is an arbitrary rung, so summing
+  // either produces a number that means nothing
+  test('rejects the schemas whose values are categorical rather than magnitudes', () => {
+    expect(isNumericResourceSchema({ type: 'boolean' })).toBe(false);
+    expect(isNumericResourceSchema({ type: 'string' })).toBe(false);
+    expect(isNumericResourceSchema({ type: 'variant', variants: [] } as unknown as ValueSchema)).toBe(false);
+  });
+});
+
+describe('getLineLayerStacks', () => {
+  function lineLayer(id: number, resourceName: string, yAxisId: number, interpolation?: InterpolationMode) {
+    return { chartType: 'line', filter: { resource: resourceName }, id, interpolation, name: '', yAxisId } as any;
+  }
+  function numericResource(name: string, values: { x: number; y: number }[]): Resource {
+    return { name, schema: { type: 'real' }, values };
+  }
+
+  const axisStacked = createYAxis([], { domainFitMode: 'fitPlan', id: 1, stack: true });
+  const axisPlain = createYAxis([], { domainFitMode: 'fitPlan', id: 1 });
+  const a = numericResource('a', [
+    { x: 0, y: 10 },
+    { x: 10, y: 20 },
+  ]);
+  const b = numericResource('b', [
+    { x: 0, y: 1 },
+    { x: 10, y: 2 },
+  ]);
+
+  test('returns nothing for an axis that has not opted in, so nothing changes by default', () => {
+    expect(getLineLayerStacks([axisPlain], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b])).toEqual({});
+  });
+
+  // Stacking one series against nothing is the identity, and the resample would be pure cost
+  test('returns nothing when fewer than two layers would be stacked', () => {
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1)], [a])).toEqual({});
+  });
+
+  test('keys the result by layer id, with a baseline index-aligned to its own values', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b]);
+    expect(Object.keys(stacks).sort()).toEqual(['1', '2']);
+    expect(stacks[1].resource.values).toEqual([
+      { x: 0, y: 10 },
+      { x: 10, y: 20 },
+    ]);
+    expect(stacks[1].baseline).toEqual([0, 0]);
+    // The second layer sits on the first, so its line is the running total and its baseline is layer 1
+    expect(stacks[2].resource.values).toEqual([
+      { x: 0, y: 11 },
+      { x: 10, y: 22 },
+    ]);
+    expect(stacks[2].baseline).toEqual([10, 20]);
+    expect(stacks[2].baseline.length).toEqual(stacks[2].resource.values.length);
+  });
+
+  // Layer order is stack order, so reversing the layers has to reverse which one is on the bottom
+  test('stacks bottom-up in layer order', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(2, 'b', 1), lineLayer(1, 'a', 1)], [a, b]);
+    expect(stacks[2].baseline).toEqual([0, 0]);
+    expect(stacks[1].baseline).toEqual([1, 2]);
+  });
+
+  test('carries each layer own resource name and schema onto its stacked series', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b]);
+    expect(stacks[1].resource.name).toEqual('a');
+    expect(stacks[2].resource.name).toEqual('b');
+    expect(stacks[2].resource.schema).toEqual({ type: 'real' });
+  });
+
+  // The stacking pass emits values already in the shape the layer draws, so tagging them would make
+  // LayerLine drop points and pull the line out of alignment with its own baseline
+  test('leaves the stacked values untagged so they are not thinned a second time', () => {
+    const held = numericResource('held', [
+      { x: 0, y: 5 },
+      { x: 10, y: 5 },
+    ]);
+    (held.values[1] as ResourceValue).is_hold = true;
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'held', 1), lineLayer(2, 'b', 1)], [held, b]);
+    expect(stacks[1].resource.values.every(value => value.is_hold === undefined)).toBe(true);
+  });
+
+  // A layer whose resource cannot be summed is left out entirely rather than contributing a
+  // meaningless number, which also means it keeps drawing normally
+  test('skips a layer whose resource is not numeric, and gives up if that leaves one layer', () => {
+    const enumResource: Resource = { name: 'e', schema: { type: 'string' }, values: [{ x: 0, y: 'ON' }] };
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'e', 1)], [a, enumResource])).toEqual(
+      {},
+    );
+    const stacks = getLineLayerStacks(
+      [axisStacked],
+      [lineLayer(1, 'a', 1), lineLayer(2, 'e', 1), lineLayer(3, 'b', 1)],
+      [a, enumResource, b],
+    );
+    expect(Object.keys(stacks).sort()).toEqual(['1', '3']);
+    expect(stacks[3].baseline).toEqual([10, 20]);
+  });
+
+  test('skips a layer with no loaded resource', () => {
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'missing', 1)], [a])).toEqual({});
+  });
+
+  test('ignores layers bound to a different axis, and layers that are not line layers', () => {
+    const otherAxisLayer = lineLayer(3, 'b', 2);
+    const xRangeLayer = { chartType: 'x-range', filter: { resource: 'b' }, id: 4, name: '', yAxisId: 1 } as any;
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), otherAxisLayer, xRangeLayer], [a, b])).toEqual({});
+  });
+
+  test('stacks each axis independently', () => {
+    const secondAxis = createYAxis([], { domainFitMode: 'fitPlan', id: 2, stack: true });
+    const c = numericResource('c', [
+      { x: 0, y: 100 },
+      { x: 10, y: 100 },
+    ]);
+    const stacks = getLineLayerStacks(
+      [axisStacked, secondAxis],
+      [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1), lineLayer(3, 'c', 2), lineLayer(4, 'b', 2)],
+      [a, b, c],
+    );
+    expect(stacks[2].baseline).toEqual([10, 20]);
+    // Layer 4 stacks on c, not on anything from the first axis
+    expect(stacks[4].baseline).toEqual([100, 100]);
+  });
+
+  // Each series resamples with its own interpolation mode, so a step resource and a linear one stack
+  // together correctly instead of one being forced into the other shape
+  test('respects each layer own interpolation mode', () => {
+    const stepped = numericResource('stepped', [
+      { x: 0, y: 10 },
+      { x: 10, y: 10 },
+      { x: 10, y: 20 },
+      { x: 20, y: 20 },
+    ]);
+    const ramp = numericResource('ramp', [
+      { x: 0, y: 0 },
+      { x: 20, y: 20 },
+    ]);
+    const stacks = getLineLayerStacks(
+      [axisStacked],
+      [lineLayer(1, 'stepped', 1, 'step'), lineLayer(2, 'ramp', 1, 'linear')],
+      [stepped, ramp],
+    );
+    // At x=10 the step layer is still 10 on the way in, and the ramp has reached its own midpoint
+    const atTen = stacks[2].resource.values.filter(value => value.x === 10);
+    expect(atTen[atTen.length - 1].y).toEqual(30);
+  });
+});
+
+describe('getYAxisBounds stats', () => {
+  const signed: Resource = {
+    name: 'signed',
+    schema: { type: 'real' },
+    values: [
+      { x: 1, y: 0 },
+      { x: 2, y: -0.25 },
+      { x: 3, y: 100 },
+    ],
+  };
+  const layer = { chartType: 'line', filter: { resource: 'signed' }, id: 1, name: '', yAxisId: 7 } as any;
+  const axis = createYAxis([], { domainFitMode: 'fitPlan', id: 7 });
+
+  // Collected during the domain walk so a log axis costs one pass over its values rather than two
+  test('collects the smallest non-zero magnitude alongside the domain', () => {
+    const stats: { smallestMagnitude?: number } = {};
+    expect(getYAxisBounds(axis, [layer], [signed], undefined, {}, stats)).toEqual([-0.25, 100]);
+    expect(stats.smallestMagnitude).toEqual(0.25);
+  });
+
+  test('leaves the stat unset when there is no non-zero data to derive it from', () => {
+    const allZero: Resource = { name: 'signed', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    const stats: { smallestMagnitude?: number } = {};
+    getYAxisBounds(axis, [layer], [allZero], undefined, {}, stats);
+    expect(stats.smallestMagnitude).toBeUndefined();
+  });
+
+  test('collects nothing when no stats object is passed, which is the default', () => {
+    expect(() => getYAxisBounds(axis, [layer], [signed])).not.toThrow();
+  });
+
+  // The domain of a stacked axis comes off the cumulative series, so the constant that sizes the
+  // scale linear region has to be read off the same values
+  test('reads a stacked layer stat off its cumulative series, matching the domain', () => {
+    const stacks = {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          name: 'signed',
+          schema: { type: 'real' as const },
+          values: [
+            { x: 1, y: 4 },
+            { x: 2, y: 8 },
+          ],
+        },
+      },
+    };
+    const stats: { smallestMagnitude?: number } = {};
+    expect(getYAxisBounds(axis, [layer], [signed], undefined, stacks, stats)).toEqual([4, 8]);
+    expect(stats.smallestMagnitude).toEqual(4);
+  });
+
+  // fitTimeWindow narrows the domain, and the constant has to narrow with it or the scale linear
+  // region will not match what is on screen
+  test('honors the fitTimeWindow window, so the stat matches the domain on screen', () => {
+    const windowed = createYAxis([], { domainFitMode: 'fitTimeWindow', id: 7 });
+    const stats: { smallestMagnitude?: number } = {};
+    getYAxisBounds(windowed, [layer], [signed], { end: 3, start: 3 }, {}, stats);
+    expect(stats.smallestMagnitude).toEqual(100);
   });
 });
 

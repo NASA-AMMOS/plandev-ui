@@ -125,7 +125,7 @@
 
 <div class="value-appearance">
   <div class="header">
-    <span class="st-typography-medium">Value Colors</span>
+    <span class="st-typography-medium pt-1">Value Colors</span>
     <InfoTip
       content="Pin a color to a specific resource value so it stays the same across plans and simulations, or hide a value to take it out of the row entirely. Hiding all but one value leaves that state shading the row background."
     />
@@ -175,7 +175,7 @@
             class="st-button icon"
             aria-label="Reset {value}"
             disabled={!entry}
-            use:tooltip={{ content: 'Reset to scheme color', placement: 'top' }}
+            use:tooltip={{ content: 'Reset color, label, and visibility', placement: 'top' }}
             on:click={() => update(value, null)}
           >
             <RotateCcw size={14} />
@@ -227,15 +227,11 @@
     grid-template-columns: min-content 1fr 20px 20px;
   }
 
-  /* Dims the whole row rather than only the eye, so a scan down the list reads which values are out
-     without checking each icon. */
   .value-row.hidden .value-name,
   .value-row.hidden :global(.color-preset-picker) {
     opacity: 0.4;
   }
 
-  /* Chromeless until pointed at, so the column still reads as a list of values rather than as a stack
-     of inputs -- the same treatment the guide rows use for the same reason. */
   .value-name {
     background: transparent;
     border: 1px solid transparent;

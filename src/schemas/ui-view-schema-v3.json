@@ -543,22 +543,14 @@
                               },
                               "interpolation": {
                                 "description": "How the line between two sampled values is drawn. Only affects discretely-sampled resources, which are piecewise constant",
-                                "enum": ["step", "linear", "smooth"],
-                                "type": "string"
+                                "enum": ["step", "linear", "smooth"]
                               },
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
-                              "opacity": {
-                                "description": "Opacity of the line and its points",
-                                "maximum": 1,
-                                "minimum": 0,
-                                "type": "number"
-                              },
                               "lineStyle": {
                                 "description": "Stroke pattern of the line",
-                                "enum": ["solid", "dashed", "dotted"],
-                                "type": "string"
+                                "enum": ["solid", "dashed", "dotted"]
                               },
                               "lineWidth": {
                                 "description": "Width of the line",
@@ -568,6 +560,12 @@
                               "name": {
                                 "description": "Name of the layer",
                                 "type": "string"
+                              },
+                              "opacity": {
+                                "description": "Opacity of the line and its points",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
                               },
                               "pointColor": {
                                 "$ref": "#/definitions/color"
@@ -579,8 +577,7 @@
                               },
                               "pointShape": {
                                 "description": "Shape of the points, drawn at equal visual area across shapes",
-                                "enum": ["circle", "square", "diamond", "triangle", "cross"],
-                                "type": "string"
+                                "enum": ["circle", "square", "diamond", "triangle", "cross"]
                               },
                               "showFill": {
                                 "description": "Whether or not to fill the area between the line and the zero baseline",
@@ -588,8 +585,7 @@
                               },
                               "showPoints": {
                                 "description": "When to render points. 'auto' hides them once the line is decimated",
-                                "enum": ["auto", "always", "never"],
-                                "type": "string"
+                                "enum": ["auto", "always", "never"]
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
@@ -636,13 +632,13 @@
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
-                              "name": {
-                                "description": "Name of the layer",
-                                "type": "string"
-                              },
                               "labelVisibility": {
                                 "description": "Whether a range rectangle is labelled with its value",
                                 "enum": ["auto", "off"]
+                              },
+                              "name": {
+                                "description": "Name of the layer",
+                                "type": "string"
                               },
                               "opacity": {
                                 "description": "Opacity of the range rectangles",
@@ -742,9 +738,9 @@
                             "$ref": "#/definitions/label"
                           },
                           "logBase": {
-                            "description": "Base for log axis tick labels. Affects which values are labelled only -- tick positions are unchanged by the base",
-                            "exclusiveMinimum": 1,
-                            "type": "number"
+                            "description": "Base for log axis tick labels, an integer of 2 or more. Affects which values are labelled only -- tick positions are unchanged by the base",
+                            "minimum": 2,
+                            "type": "integer"
                           },
                           "renderTickLines": {
                             "description": "If true render horizontal lines for each y axis tick, if false do not render them",
@@ -759,8 +755,7 @@
                           },
                           "scaleType": {
                             "description": "How the axis maps values to pixels. 'log' is backed by a symmetric log scale so that zero and negative values still have a position",
-                            "enum": ["linear", "log"],
-                            "type": "string"
+                            "enum": ["linear", "log"]
                           },
                           "stack": {
                             "description": "If true, sum this axis's line layers bottom-up in layer order so the topmost layer's line is the total. Layers whose resource is not numeric are left unstacked",

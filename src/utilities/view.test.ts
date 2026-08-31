@@ -161,9 +161,12 @@ describe('y axis scale type validation', () => {
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'symlog' })).valid).toBe(false);
   });
 
-  test('Should accept a logBase above 1 and reject anything at or below it', () => {
+  // Integer bases of 2 or more, the same bound the Log Base input enforces. A base of 1 or less has no
+  // logarithm, and a fractional one labels values nobody reads a plot in.
+  test('Should accept an integer logBase of 2 or more and reject anything else', () => {
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 10 })).valid).toBe(true);
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 2 })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 1.5 })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 1 })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 0 })).valid).toBe(false);
     expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: -10 })).valid).toBe(false);

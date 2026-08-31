@@ -9,12 +9,12 @@
   import type { PluginTime } from '../../../types/plugin';
   import type { Axis, ComputedAxis, HorizontalGuide, VerticalGuide } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
-  import { formatBandDuration } from '../../../utilities/timeline';
   import { formatDate, getDoyTime, getUnixEpochTime } from '../../../utilities/time';
+  import { formatBandDuration } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
-  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
+  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
 
   export let guide: HorizontalGuide | VerticalGuide;
   /** Only meaningful for a horizontal guide, which has to be bound to one of the row's axes. */
@@ -65,13 +65,16 @@
     }
     const { timestamp, timestamp2 } = guide as VerticalGuide;
     const anchorMs = getUnixEpochTime(timestamp);
-    // A leading year is dropped where the chosen format has one, since every guide in a plan shares it
-    // and it is the one part that never tells two rows apart. Left alone by any format without one.
-    const compact = formatDate(new Date(anchorMs), format).replace(/^\d{4}-/, '');
+    // Whatever the formatter returns, in full. An earlier version stripped a leading year to buy width,
+    // on the reasoning that every guide in a plan shares it. That reasoning was about telling rows
+    // apart, which is not the only thing this line does -- in DOY it left `215T14:30:00`, which does not
+    // read as a date. It was also a regex guess at a mission-supplied format, so what it removed varied
+    // by plugin. The width it saved is one row's label input giving up a few characters.
+    const anchor = formatDate(new Date(anchorMs), format);
     if (!isRange) {
-      return compact;
+      return anchor;
     }
-    return `${compact} · ${formatBandDuration(getUnixEpochTime(timestamp2 as string) - anchorMs)}`;
+    return `${anchor} · ${formatBandDuration(getUnixEpochTime(timestamp2 as string) - anchorMs)}`;
   }
 
   /** Where a band's second bound lands when a line is promoted to one, so it is visible immediately. */
@@ -146,13 +149,9 @@
         <path d="M1 3l4 4 4-4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
-    <!-- The swatch is both the indicator and the control, so the row shows which line on the canvas it
-         is and changes it in one place. It was a read-only dot with the picker buried in the
-         expansion, which meant opening a row just to recolor it. Sized to the caret beside it. -->
     <ColorPresetsPicker
       placement="bottom-start"
       presetColors={ViewLineLayerColorPresets}
-      size={16}
       tooltipText="Guide Color"
       type="input"
       value={guide.label.color ?? ''}
@@ -164,12 +163,13 @@
       name="text"
       placeholder="Label"
       spellcheck="false"
+      title={guide.label.text}
       value={guide.label.text}
       on:input={onLabelInput}
     />
     <span class="guide-summary-value">{summary}</span>
     <button
-      class="guide-remove"
+      class="st-button icon guide-remove"
       aria-label="Delete Guide"
       use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
       on:click={() => dispatch('delete')}
@@ -179,12 +179,7 @@
   </div>
 
   {#if open}
-    <!-- One wrapping line rather than a stacked panel of captioned fields. At ten guides the stacked
-         version cost more vertical space per open guide than the whole collapsed list. -->
     <div class="guide-editor">
-      <!-- Says outright what the two modes are and which one is on. A band is still just a guide
-           carrying a second bound, so switching to Line drops that field and switching to Band seeds
-           it -- see onSetMode. -->
       <div class="guide-editor-mode">
         <TimelineEditorOptionButtons
           options={[
@@ -262,18 +257,15 @@
     border-bottom: 1px solid var(--st-gray-15);
   }
 
-  /* Only the small inset the panel border needs. The section's own 16px is escaped by .guides so a row
-     spans the full width, which is where the fields below get the room to be legible. */
   .guide-summary {
     align-items: center;
     display: flex;
     gap: 6px;
     height: 30px;
+    margin: 2px 0px;
     padding: 0 6px;
   }
 
-  /* Points right when closed and down when open, the one thing it is there to say. Sized past the
-     glyph so the hit target is not the 9px arrow itself. */
   .guide-caret {
     align-items: center;
     background: none;
@@ -311,44 +303,21 @@
     min-width: 0;
   }
 
+  /* Inter at 11px, not the 10px monospace this started as. Measured against the same summary the two
+     come out the same width -- 157px to 156px -- so the monospace was costing a point of size for
+     nothing. It was not buying alignment either: the summaries do not form a column, since each one
+     starts wherever its row's label input happens to end. It was also the only monospace in the app.
+     `tabular-nums` keeps the one thing it did give, digits of even width, so a duration ticking over
+     while a guide is dragged does not resize the row under the pointer. */
   .guide-summary-value {
     color: var(--st-gray-60);
-    font-family: 'JetBrains mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  /* Faded rather than hidden on a row nobody is pointing at, so a quiet list stays quiet. Opacity
-     specifically, not visibility: a hidden button leaves the accessibility tree, so a screen reader
-     would have found no way to delete a guide at all. It also keeps holding its width either way, or
-     every row would twitch as the pointer crossed it. */
   .guide-remove {
-    align-items: center;
-    background: none;
-    border: 0;
-    border-radius: 4px;
     color: var(--st-gray-50);
-    cursor: pointer;
-    display: flex;
-    flex: 0 0 20px;
-    height: 20px;
-    justify-content: center;
-    opacity: 0;
-    padding: 0;
-    width: 20px;
-  }
-
-  .guide-summary:hover .guide-remove,
-  .guide-row.open .guide-remove,
-  .guide-remove:focus-visible {
-    opacity: 1;
-  }
-
-  /* `--destructive` rather than a Stellar red: the legacy palette has only `--st-red`, so the tint and
-     the text shade this needs would both have been hardcoded hex. */
-  .guide-remove:hover {
-    background: hsl(var(--destructive) / 10%);
-    color: hsl(var(--destructive));
   }
 
   .guide-editor {
@@ -359,16 +328,8 @@
     padding: 0 6px 8px 26px;
   }
 
-  /* Its own line above the values, so the fields below read as belonging to the chosen mode rather
-     than competing with it for the wrapping line. The cap goes on the control inside rather than on
-     this wrapper: capping a `flex: 0 0 100%` item frees the rest of its line, and a date field
-     promptly moved up onto it. */
   .guide-editor-mode {
     flex: 0 0 100%;
-  }
-
-  .guide-editor-mode :global(.radio-buttons) {
-    max-width: 132px;
   }
 
   .guide-editor-value {

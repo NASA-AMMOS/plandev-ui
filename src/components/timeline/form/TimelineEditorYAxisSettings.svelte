@@ -70,9 +70,11 @@
   function updateYAxisLogBase(event: Event) {
     const { value: v } = getTarget(event);
     const base = v as number;
-    // A base of 1 or less has no logarithm, and a cleared input reports NaN. Drop the event rather
-    // than persist a value that would make the tick ladder degenerate.
-    if (!Number.isFinite(base) || base <= 1) {
+    // Integer bases from 2 up, matching the input's own min/step and the view schema. A base of 1 or
+    // less has no logarithm at all, and a fractional one labels values nobody reads a plot in. A
+    // cleared or partly typed field reports NaN, and typing 10 passes through 1 -- so a rejected value
+    // is dropped rather than persisted, and the field settles on the next keystroke.
+    if (!Number.isInteger(base) || base < 2) {
       return;
     }
     const newRowYAxes = yAxes.map(axis => (axis.id === yAxis.id ? { ...axis, logBase: base } : axis));
@@ -145,10 +147,10 @@
           type="checkbox"
         />
       </Input>
+      <!-- Every explanation in this menu is an InfoTip rather than a tooltip on the control itself: a
+           bare control gives no sign an explanation exists, so nobody went looking for one. -->
       <Input layout="inline">
-        <!-- The tooltip that used to hang off the checkbox itself is an InfoTip now: a bare control
-             gives no sign an explanation exists, so nobody found it. -->
-        <div class="setting-label">
+        <div class="flex min-w-0 items-center gap-1">
           <label for="stack">Stack Layers</label>
           <InfoTip
             content="Sums this axis's line layers bottom-up in layer order, so each line sits on the total of the ones beneath it and the top line is the total. Area fills follow, stopping at the layer below rather than at zero."
@@ -163,10 +165,10 @@
         />
       </Input>
       <Input layout="inline">
-        <div class="setting-label">
+        <div class="flex min-w-0 items-center gap-1">
           <label for="scaleType">Scale</label>
           <InfoTip
-            content="Logarithmic compresses a range spanning several orders of magnitude into one row. Zero and negative samples still get a position -- the scale runs linear across the smallest magnitude in the data and logarithmic beyond it, so a plot that touches zero is not cut off."
+            content="Logarithmic compresses a range spanning several orders of magnitude into one row. Zero and negative samples still get a position -- the scale runs linear across the smallest magnitude in the data and logarithmic beyond it, so a plot that touches zero is not cut off. On either scale, ticks too close together to label on a short row are dropped."
           />
         </div>
         <select
@@ -182,7 +184,7 @@
       </Input>
       {#if (yAxis.scaleType ?? DEFAULT_AXIS_SCALE_TYPE) === 'log'}
         <Input layout="inline">
-          <div class="setting-label">
+          <div class="flex min-w-0 items-center gap-1">
             <label for="logBase">Log Base</label>
             <InfoTip
               content="Which values get a tick, one power of this base apart. 10 gives decades, 2 gives octaves. It changes the labels only -- nothing moves on the plot."
@@ -201,7 +203,7 @@
         </Input>
       {/if}
       <Input layout="inline">
-        <div class="setting-label">
+        <div class="flex min-w-0 items-center gap-1">
           <label for="autofitDomain">Domain Fitting</label>
           <InfoTip
             content="What the axis bounds follow. Autofit Plan fixes them to the whole plan, so the line keeps its shape while you zoom. Autofit Time Window refits to whatever is on screen, so a small variation fills the row. Manual holds the min and max you enter."
@@ -269,14 +271,6 @@
 
   .body :global(.input-inline) {
     padding: 0;
-  }
-
-  /* Keeps the (?) on the label's row rather than letting it wrap under a long label */
-  .setting-label {
-    align-items: center;
-    display: flex;
-    gap: 4px;
-    min-width: 0;
   }
 
   .timeline-editor-axis-settings :global(.color-picker) {
