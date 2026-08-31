@@ -100,9 +100,9 @@
     isExternalEventLayer,
     isLineLayer,
     isXRangeLayer,
-    resolveSectionDropEdge,
     toTimelineDropEdge,
   } from '../../../utilities/timeline';
+  import { createTimelineDragActions, type TimelineDragData } from '../../../utilities/timelineDragDrop';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
@@ -140,15 +140,6 @@
   let rowHasExternalEventLayer: boolean | ExternalEventLayer = false;
   let yAxes: Axis[] = [];
 
-  type DragData = {
-    itemId: number;
-    itemType: 'section' | 'row';
-    sourceSectionId: number | null; // null means root level
-  };
-
-  // A Set so an action's destroy() can drop its own entry. As an array it only ever grew, holding
-  // every detached row alive.
-  let cleanupFunctions: Set<() => void> = new Set();
   let monitorCleanup: (() => void) | null = null;
 
   $: selectedTimeline = $view?.definition.plan.timelines.find(t => t.id === $selectedTimelineId);
@@ -344,9 +335,9 @@
   }
 
   function handleDrop(
-    sourceData: DragData,
+    sourceData: TimelineDragData,
     targetItemId: number,
-    targetItemType: 'section' | 'row',
+    targetItemType: TimelineDragData['itemType'],
     targetSectionId: number | null,
     edge: Edge | null,
   ) {
@@ -376,242 +367,38 @@
     return !!element && !element.closest('a, button, input, select, textarea, [contenteditable="true"]');
   }
 
-  function makeDraggable(
-    node: HTMLElement,
-    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
-  ) {
-    const cleanup = draggable({
-      canDrag: ({ input }) => isDragSurface(document.elementFromPoint(input.clientX, input.clientY)),
-      element: node,
-      getInitialData: () =>
-        ({
-          itemId: params.itemId,
-          itemType: params.itemType,
-          sourceSectionId: params.sectionId,
-        }) as DragData,
-      onDragStart: () => {
-        node.classList.add('dragging');
-      },
-      onDrop: () => {
-        node.classList.remove('dragging');
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null }) {
-        params = newParams;
-      },
-    };
-  }
-
-  function makeDropTarget(
-    node: HTMLElement,
-    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
-  ) {
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => {
-        const sourceData = source.data as DragData;
-        // Only our own row and section draggables; activity drags land elsewhere.
-        if (sourceData.itemType !== 'section' && sourceData.itemType !== 'row') {
-          return false;
-        }
-        // Sections do not nest, and nothing drops onto itself.
-        if (sourceData.itemType === 'section' && params.sectionId !== null) {
-          return false;
-        }
-        if (sourceData.itemId === params.itemId && sourceData.itemType === params.itemType) {
-          return false;
-        }
-        return true;
-      },
-      element: node,
-      getData: ({ element, input }) =>
-        attachClosestEdge(
-          { itemId: params.itemId, itemType: params.itemType, sectionId: params.sectionId },
-          { allowedEdges: ['top', 'bottom'], element, input },
-        ),
-      onDrag: ({ self }) => {
-        const edge = extractClosestEdge(self.data);
-        updateDropIndicator(node, edge);
-      },
-      onDragEnter: ({ self }) => {
-        const edge = extractClosestEdge(self.data);
-        node.classList.add('drop-target-active');
-        updateDropIndicator(node, edge);
-      },
-      onDragLeave: () => {
-        node.classList.remove('drop-target-active');
-        removeDropIndicator(node);
-      },
-      onDrop: ({ self, source }) => {
-        const sourceData = source.data as DragData;
-        const edge = extractClosestEdge(self.data);
-        node.classList.remove('drop-target-active');
-        removeDropIndicator(node);
-
-        handleDrop(sourceData, params.itemId, params.itemType, params.sectionId, edge);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: typeof params) {
-        params = newParams;
-      },
-    };
-  }
-
-  /** Reads the geometry off the DOM; the decision itself lives in a tested utility. */
-  function sectionDropEdge(element: Element, clientY: number, sourceData: DragData) {
-    return resolveSectionDropEdge(element.getBoundingClientRect(), clientY, sourceData.itemType);
-  }
-
-  /**
-   * A section header is both a reorder target (its edges) and a container that accepts rows
-   * dropped onto its middle. Both have to live in a SINGLE drop target: two registered on one
-   * element leaves only the last active, which swallowed the top edge and made the slot above a
-   * leading section unreachable.
-   */
-  function makeSectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
-    function showFeedback(edge: Edge | null) {
-      if (edge === null) {
-        removeDropIndicator(node);
-        node.classList.add('section-accepting-row');
-      } else {
-        node.classList.remove('section-accepting-row');
-        updateDropIndicator(node, edge);
-      }
-    }
-
-    function clearFeedback() {
-      node.classList.remove('section-accepting-row', 'drop-target-active');
-      removeDropIndicator(node);
-    }
-
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => {
-        const sourceData = source.data as DragData;
-        if (sourceData.itemType !== 'row' && sourceData.itemType !== 'section') {
-          return false;
-        }
-        // A section cannot be dropped onto itself, but a row already inside this section can
-        // still be dragged to an edge to move it back out to the root level.
-        return !(sourceData.itemType === 'section' && sourceData.itemId === params.sectionId);
-      },
-      element: node,
-      onDrag: ({ location, self, source }) => {
-        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
-      },
-      onDragEnter: ({ location, self, source }) => {
-        node.classList.add('drop-target-active');
-        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
-      },
-      onDragLeave: clearFeedback,
-      onDrop: ({ location, self, source }) => {
-        const sourceData = source.data as DragData;
-        const edge = sectionDropEdge(self.element, location.current.input.clientY, sourceData);
-        clearFeedback();
-        handleDrop(sourceData, params.sectionId, 'section', null, edge);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { sectionId: number }) {
-        params = newParams;
-      },
-    };
-  }
-
-  /**
-   * The "Drag a row here" placeholder, which otherwise pointed at a spot that accepted nothing.
-   * Everything landing here goes INTO the section (edge null); its header edges do the reordering.
-   */
-  function makeEmptySectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => (source.data as DragData).itemType === 'row',
-      element: node,
-      onDragEnter: () => node.classList.add('section-accepting-row'),
-      onDragLeave: () => node.classList.remove('section-accepting-row'),
-      onDrop: ({ source }) => {
-        node.classList.remove('section-accepting-row');
-        handleDrop(source.data as DragData, params.sectionId, 'section', null, null);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { sectionId: number }) {
-        params = newParams;
-      },
-    };
-  }
-
-  function updateDropIndicator(node: HTMLElement, edge: Edge | null) {
-    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
-    if (edge === 'top') {
-      node.classList.add('drop-indicator-top');
-    } else if (edge === 'bottom') {
-      node.classList.add('drop-indicator-bottom');
-    }
-  }
-
-  function removeDropIndicator(node: HTMLElement) {
-    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
-  }
-
-  /**
-   * Clears drag feedback classes left behind when a drag is cancelled and the target's own
-   * callbacks do not fire. Scoped to this panel: the timeline uses the same class names.
-   */
-  function cleanupAllDragStates() {
-    if (!editorDiv) {
-      return;
-    }
-
-    ['dragging', 'drop-target-active', 'drop-indicator-top', 'drop-indicator-bottom', 'section-accepting-row'].forEach(
-      cls => editorDiv.querySelectorAll(`.${cls}`).forEach(element => element.classList.remove(cls)),
-    );
-  }
+  // Shared with the timeline itself, which presents the same hierarchy and so needs the same four
+  // actions. Only the drag surfaces differ between the two.
+  const {
+    clearDragFeedback,
+    destroyAll,
+    makeDraggable,
+    makeDropTarget,
+    makeEmptySectionDropTarget,
+    makeSectionDropTarget,
+    removeDropIndicator,
+    toAction,
+    updateDropIndicator,
+  } = createTimelineDragActions({ isDragSurface, onDrop: handleDrop });
 
   onMount(() => {
     monitorCleanup = monitorForElements({
-      onDragStart: cleanupAllDragStates,
-      onDrop: cleanupAllDragStates,
+      onDragStart: () => clearDragFeedback(editorDiv),
+      onDrop: () => clearDragFeedback(editorDiv),
     });
   });
 
   onDestroy(() => {
-    cleanupFunctions.forEach(fn => fn());
-    cleanupFunctions.clear();
+    destroyAll();
     if (monitorCleanup) {
       monitorCleanup();
       monitorCleanup = null;
     }
   });
 
-  function makeYAxisDraggable(node: HTMLElement, params: { axisId: number }) {
+  function makeYAxisDraggable(node: HTMLElement, initialParams: { axisId: number }) {
+    let params = initialParams;
+
     const cleanup = combine(
       draggable({
         canDrag: ({ input }) => isDragSurface(document.elementFromPoint(input.clientX, input.clientY)),
@@ -634,17 +421,7 @@
       }),
     );
 
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { axisId: number }) {
-        params = newParams;
-      },
-    };
+    return toAction<{ axisId: number }>(cleanup, next => (params = next));
   }
 
   function reorderYAxis(sourceId: number, targetId: number, edge: string | null) {
@@ -2095,7 +1872,6 @@
      outer list and left a dead gap under every section. */
   .section-rows {
     min-height: 0;
-    outline: none !important;
     padding-bottom: 0;
     padding-left: 0;
   }
