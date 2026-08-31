@@ -1,16 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    attachClosestEdge,
-    extractClosestEdge,
-    type Edge,
-  } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-  import {
-    draggable,
-    dropTargetForElements,
-    monitorForElements,
-  } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+  import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+  import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
   import type { ScaleTime } from 'd3-scale';
   import { zoomIdentity, type D3ZoomEvent, type ZoomTransform } from 'd3-zoom';
   import { throttle } from 'lodash-es';
@@ -68,10 +60,10 @@
     getRenderableTimelineItems,
     getXScale,
     moveTimelineItemInHierarchy,
-    resolveSectionDropEdge,
     toTimelineDropEdge,
   } from '../../utilities/timeline';
-  import TimelineRow from './Row.svelte';
+  import { createTimelineDragActions, type TimelineDragData } from '../../utilities/timelineDragDrop';
+  import TimelineRowItem, { type TimelineRowSharedProps } from './TimelineRowItem.svelte';
   import RowHeaderDragHandleWidth from './RowHeaderDragHandleWidth.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';
   import TimelineCursors from './TimelineCursors.svelte';
@@ -137,25 +129,16 @@
   let cursorEnabled: boolean = true;
   let cursorHeaderHeight: number = 0;
   let histogramCursorTime: Date | null = null;
+  let items: TimelineItemRef[] = [];
+  let monitorCleanup: (() => void) | null = null;
   let mouseOver: MouseOver | null;
   let removeDPRChangeListener: (() => void) | null = null;
-  let items: TimelineItemRef[] = [];
   let rowDragMoveDisabled = true;
   let rowHeaderDragHandleWidthPx: number = 2;
   let rows: Row[] = [];
   let rowsMaxHeight: number = 600;
   let sectionDragDisabled = true;
   let sections: TimelineSection[] = [];
-
-  type DragData = {
-    itemId: number;
-    itemType: 'section' | 'row';
-    sourceSectionId: number | null; // null means root level
-  };
-  // A Set so an action's destroy() can drop its own entry. As an array it only ever grew, holding
-  // every detached row alive through a session's worth of reorders.
-  let cleanupFunctions: Set<() => void> = new Set();
-  let monitorCleanup: (() => void) | null = null;
   let tickCount: number = 10;
   let timelineDiv: HTMLDivElement;
   let timelineHistogramDiv: HTMLDivElement;
@@ -194,6 +177,40 @@
 
   $: drawWidth = clientWidth > 0 ? clientWidth - (timeline?.marginLeft ?? 0) - (timeline?.marginRight ?? 0) : 0;
   $: xAxisDrawHeight = 48 + 16 * ($plugins.time.additional.length ? Math.max($plugins.time.additional.length, 1) : 1);
+
+  // Everything a row needs that does not come from the row itself. Built once and spread at both
+  // placements - root level and inside a section - so the two cannot drift apart.
+  $: sharedRowProps = {
+    activityDirectives,
+    activityDirectivesMap,
+    constraintResults,
+    decimate,
+    dpr,
+    drawWidth,
+    externalEvents: externalEventsFilteredByDG,
+    hasUpdateDirectivePermission,
+    interpolateHoverValue,
+    limitTooltipToLine,
+    marginLeft: timeline?.marginLeft,
+    plan,
+    planEndTimeDoy,
+    planStartTimeYmd,
+    rowDragMoveDisabled,
+    rowHeaderDragHandleWidthPx,
+    selectedActivityDirectiveId,
+    selectedExternalEventId,
+    selectedSpanId,
+    simulationDataset,
+    spanUtilityMaps,
+    spansMap,
+    timelineInteractionMode,
+    timelineLockStatus,
+    timelineZoomTransform,
+    user,
+    viewTimeRange,
+    xScaleView,
+    xTicksView,
+  } satisfies TimelineRowSharedProps;
 
   // Compute number of ticks based off draw width
   $: if (drawWidth) {
@@ -234,15 +251,14 @@
 
   // Fallback for rapid or cancelled drags, where the library's own callbacks may not fire.
   function handleNativeDragEnd() {
-    cleanupAllDragStates();
+    clearDragFeedback(timelineDiv);
   }
 
   onDestroy(() => {
     if (removeDPRChangeListener !== null) {
       removeDPRChangeListener();
     }
-    cleanupFunctions.forEach(fn => fn());
-    cleanupFunctions.clear();
+    destroyAll();
     if (monitorCleanup) {
       monitorCleanup();
       monitorCleanup = null;
@@ -251,7 +267,7 @@
       window.removeEventListener('dragend', handleNativeDragEnd);
       window.removeEventListener('drop', handleNativeDragEnd);
     }
-    cleanupAllDragStates();
+    clearDragFeedback(timelineDiv);
   });
 
   onMount(() => {
@@ -261,24 +277,10 @@
     window.addEventListener('drop', handleNativeDragEnd);
 
     monitorCleanup = monitorForElements({
-      onDragStart: cleanupAllDragStates,
-      onDrop: cleanupAllDragStates,
+      onDragStart: handleNativeDragEnd,
+      onDrop: handleNativeDragEnd,
     });
   });
-
-  /**
-   * Clears drag feedback classes left behind when a drag is cancelled and the library's callbacks
-   * do not fire. Scoped to this timeline: the editor panel's drag targets use the same names.
-   */
-  function cleanupAllDragStates() {
-    if (!timelineDiv) {
-      return;
-    }
-
-    ['dragging', 'drop-target-active', 'drop-indicator-top', 'drop-indicator-bottom', 'section-accepting-row'].forEach(
-      cls => timelineDiv.querySelectorAll(`.${cls}`).forEach(element => element.classList.remove(cls)),
-    );
-  }
 
   function recomputeZoomTransform(
     viewTimeRange: TimeRange,
@@ -361,17 +363,20 @@
     tooltip.hide();
   }
 
-  function onEditSection(event: CustomEvent<TimelineSection>) {
+  // These take a section rather than an event: the section header knows which section it is and
+  // used to have to wrap it in a synthetic CustomEvent just to be unwrapped again here. The
+  // context menu, which does dispatch, unwraps at its own call site below.
+  function onEditSection(section: TimelineSection) {
     viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
-    viewSetSelectedSection(event.detail.id);
+    viewSetSelectedSection(section.id);
   }
 
-  function onAddRowToSection(event: CustomEvent<TimelineSection>) {
-    viewAddTimelineRow(timeline?.id, false, event.detail.id);
+  function onAddRowToSection(section: TimelineSection) {
+    viewAddTimelineRow(timeline?.id, false, section.id);
   }
 
-  function onDeleteSection(event: CustomEvent<TimelineSection>) {
-    viewDeleteSection(event.detail.id, true, timeline?.id);
+  function onDeleteSection(section: TimelineSection) {
+    viewDeleteSection(section.id, true, timeline?.id);
   }
 
   function onSetAllExpanded(event: CustomEvent<{ expanded: boolean }>) {
@@ -468,9 +473,9 @@
   }
 
   function handleTimelineItemDrop(
-    sourceData: DragData,
+    sourceData: TimelineDragData,
     targetItemId: number,
-    targetItemType: 'section' | 'row',
+    targetItemType: TimelineItemRef['type'],
     targetSectionId: number | null,
     edge: Edge | null,
   ) {
@@ -510,216 +515,19 @@
     return false;
   }
 
-  function makeTimelineItemDraggable(
-    node: HTMLElement,
-    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
-  ) {
-    const cleanup = draggable({
-      canDrag: ({ input }) => isRowDragHandle(document.elementFromPoint(input.clientX, input.clientY)),
-      element: node,
-      getInitialData: () =>
-        ({
-          itemId: params.itemId,
-          itemType: params.itemType,
-          sourceSectionId: params.sectionId,
-        }) as DragData,
-      onDragStart: () => {
-        node.classList.add('dragging');
-      },
-      onDrop: () => {
-        node.classList.remove('dragging');
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null }) {
-        params = newParams;
-      },
-    };
-  }
-
-  function makeTimelineItemDropTarget(
-    node: HTMLElement,
-    params: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null },
-  ) {
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => {
-        const sourceData = source.data as DragData;
-        // Only our own row and section draggables; activity drags land elsewhere.
-        if (sourceData.itemType !== 'section' && sourceData.itemType !== 'row') {
-          return false;
-        }
-        // Sections do not nest, and nothing drops onto itself.
-        if (sourceData.itemType === 'section' && params.sectionId !== null) {
-          return false;
-        }
-        if (sourceData.itemId === params.itemId && sourceData.itemType === params.itemType) {
-          return false;
-        }
-        return true;
-      },
-      element: node,
-      getData: ({ element, input }) => {
-        const data = {
-          itemId: params.itemId,
-          itemType: params.itemType,
-          sectionId: params.sectionId,
-        };
-        return attachClosestEdge(data, {
-          allowedEdges: ['top', 'bottom'],
-          element,
-          input,
-        });
-      },
-      onDrag: ({ self }) => {
-        const edge = extractClosestEdge(self.data);
-        updateDropIndicator(node, edge);
-      },
-      onDragEnter: ({ self }) => {
-        const edge = extractClosestEdge(self.data);
-        node.classList.add('drop-target-active');
-        updateDropIndicator(node, edge);
-      },
-      onDragLeave: () => {
-        node.classList.remove('drop-target-active');
-        removeDropIndicator(node);
-      },
-      onDrop: ({ self, source }) => {
-        const sourceData = source.data as DragData;
-        const edge = extractClosestEdge(self.data);
-        node.classList.remove('drop-target-active');
-        removeDropIndicator(node);
-
-        handleTimelineItemDrop(sourceData, params.itemId, params.itemType, params.sectionId, edge);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { itemId: number; itemType: 'section' | 'row'; sectionId: number | null }) {
-        params = newParams;
-      },
-    };
-  }
-
-  /** Reads the geometry off the DOM; the decision itself lives in a tested utility. */
-  function sectionDropEdge(element: Element, clientY: number, sourceData: DragData) {
-    return resolveSectionDropEdge(element.getBoundingClientRect(), clientY, sourceData.itemType);
-  }
-
-  /**
-   * A section is both a reorder target (its edges) and a container that accepts rows dropped into
-   * it. Both have to live in a SINGLE drop target: two registered on one element leaves only the
-   * last active, which swallowed the top edge and made the slot above a leading section
-   * unreachable.
-   */
-  function makeSectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
-    function showFeedback(edge: Edge | null) {
-      if (edge === null) {
-        removeDropIndicator(node);
-        node.classList.add('section-accepting-row');
-      } else {
-        node.classList.remove('section-accepting-row');
-        updateDropIndicator(node, edge);
-      }
-    }
-
-    function clearFeedback() {
-      node.classList.remove('section-accepting-row');
-      removeDropIndicator(node);
-    }
-
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => {
-        const sourceData = source.data as DragData;
-        if (sourceData.itemType !== 'row' && sourceData.itemType !== 'section') {
-          return false;
-        }
-        // A section cannot be dropped onto itself, but a row already inside this section can
-        // still be dragged to an edge to move it back out to the root level.
-        return !(sourceData.itemType === 'section' && sourceData.itemId === params.sectionId);
-      },
-      element: node,
-      onDrag: ({ location, self, source }) => {
-        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
-      },
-      onDragEnter: ({ location, self, source }) => {
-        showFeedback(sectionDropEdge(self.element, location.current.input.clientY, source.data as DragData));
-      },
-      onDragLeave: clearFeedback,
-      onDrop: ({ location, self, source }) => {
-        const sourceData = source.data as DragData;
-        const edge = sectionDropEdge(self.element, location.current.input.clientY, sourceData);
-        clearFeedback();
-        handleTimelineItemDrop(sourceData, params.sectionId, 'section', null, edge);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { sectionId: number }) {
-        params = newParams;
-      },
-    };
-  }
-
-  /**
-   * The "Drag a row here" placeholder, which otherwise pointed at a spot that accepted nothing.
-   * Everything landing here goes INTO the section (edge null); its header edges do the reordering.
-   */
-  function makeEmptySectionDropTarget(node: HTMLElement, params: { sectionId: number }) {
-    const cleanup = dropTargetForElements({
-      canDrop: ({ source }) => (source.data as DragData).itemType === 'row',
-      element: node,
-      onDragEnter: () => node.classList.add('section-accepting-row'),
-      onDragLeave: () => node.classList.remove('section-accepting-row'),
-      onDrop: ({ source }) => {
-        node.classList.remove('section-accepting-row');
-        handleTimelineItemDrop(source.data as DragData, params.sectionId, 'section', null, null);
-      },
-    });
-
-    cleanupFunctions.add(cleanup);
-
-    return {
-      destroy() {
-        cleanup();
-        cleanupFunctions.delete(cleanup);
-      },
-      update(newParams: { sectionId: number }) {
-        params = newParams;
-      },
-    };
-  }
-
-  function updateDropIndicator(node: HTMLElement, edge: Edge | null) {
-    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
-    if (edge === 'top') {
-      node.classList.add('drop-indicator-top');
-    } else if (edge === 'bottom') {
-      node.classList.add('drop-indicator-bottom');
-    }
-  }
-
-  function removeDropIndicator(node: HTMLElement) {
-    node.classList.remove('drop-indicator-top', 'drop-indicator-bottom');
-  }
+  // Shared with the timeline editor panel, which presents the same hierarchy and so needs the
+  // same four actions. Only the drag surfaces differ between the two.
+  const {
+    clearDragFeedback,
+    destroyAll,
+    makeDraggable,
+    makeDropTarget,
+    makeEmptySectionDropTarget,
+    makeSectionDropTarget,
+  } = createTimelineDragActions({
+    isDragSurface: isRowDragHandle,
+    onDrop: handleTimelineItemDrop,
+  });
 
   async function setRowsMaxHeight(
     timelineDiv: HTMLDivElement,
@@ -735,15 +543,29 @@
     }
   }
 
-  function onContextMenu(e: CustomEvent, row: Row) {
+  /** TimelineRowItem attaches the row, so this is wired once and reused at both placements. */
+  function onRowContextMenu(event: CustomEvent<MouseOver>) {
     // Allow right clicking on interactive tippy tooltips on the canvas
     // in order to copy text within the tooltips
-    const a = e.detail.e.target as HTMLElement;
+    const a = event.detail.e?.target as HTMLElement;
     if (a && a.classList.value && a.classList.value.indexOf('tippy') > -1) {
       return;
     }
-    contextMenu = { ...e.detail, row };
+    contextMenu = event.detail;
     tooltip.hide();
+  }
+
+  function onRowMouseOver(event: CustomEvent<MouseOver>) {
+    mouseOver = event.detail;
+  }
+
+  function onDiscreteTreeExpansionChange(event: CustomEvent<{ map: DiscreteTreeExpansionMap; rowId: number }>) {
+    const { map, rowId } = event.detail;
+    discreteTreeExpansionMapByRow = { ...discreteTreeExpansionMapByRow, [rowId]: map };
+  }
+
+  function onBuildDirective(event: CustomEvent<{ startTime: string; type: string }>) {
+    onBuildActivityDirective(event.detail.startTime, event.detail.type);
   }
 
   async function onZoom(e: CustomEvent<D3ZoomEvent<HTMLCanvasElement, any>>) {
@@ -850,218 +672,140 @@
       on:updateVerticalGuides
     />
 
-    {#if items.length > 0}
-      <!-- List semantics are declared here rather than inherited: svelte-dnd-action used to add
-           role="list" and role="listitem" itself, and they went away with it. -->
-      <div class="rows" style="max-height: {rowsMaxHeight}px" role="list" on:wheel={handleScroll}>
-        {#each items as item, i (`${item.type}-${item.id}`)}
-          {#if item.type === 'section'}
-            {@const section = sectionsById.get(item.id)}
-            {#if section}
-              <!-- One named group, so assistive tech (and tests) can address a section by name
-                   and reach only the rows it contains. -->
+    <!-- List semantics are declared here rather than inherited: svelte-dnd-action used to add
+         role="list" and role="listitem" itself, and they went away with it. Rendered
+         unconditionally: an empty timeline still needs its "New Row +" button, which used to sit
+         inside a guard on items.length and vanished once the last row was deleted. -->
+    <div class="rows" style="max-height: {rowsMaxHeight}px" role="list" on:wheel={handleScroll}>
+      {#each items as item, i (`${item.type}-${item.id}`)}
+        {#if item.type === 'section'}
+          {@const section = sectionsById.get(item.id)}
+          {#if section}
+            <!-- A listitem rather than a group: `list` may only own `listitem`, so a group here
+                 left the section's own rows as listitems with no owning list. The section is one
+                 item of the timeline's list, named so assistive tech (and tests) can address it. -->
+            <div
+              class="timeline-section-wrapper"
+              class:active-section={$selectedSectionId === section.id}
+              role="listitem"
+              aria-label={section.name}
+            >
+              <!-- On the header, not the wrapper: a wrapper target would enclose the section's
+                   own row targets, and every target in the hierarchy is notified - so a drop on
+                   a row would be handled twice, as a row and again as its section. -->
               <div
-                class="timeline-section-wrapper"
-                class:active-section={$selectedSectionId === section.id}
-                role="group"
-                aria-label={section.name}
+                class="timeline-section-header-drop"
+                use:makeDraggable={{ itemId: section.id, itemType: 'section', sectionId: null }}
+                use:makeSectionDropTarget={{ sectionId: section.id }}
               >
-                <!-- On the header, not the wrapper: a wrapper target would enclose the section's
-                     own row targets, and every target in the hierarchy is notified - so a drop on
-                     a row would be handled twice, as a row and again as its section. -->
-                <div
-                  class="timeline-section-header-drop"
-                  use:makeTimelineItemDraggable={{ itemId: section.id, itemType: 'section', sectionId: null }}
-                  use:makeSectionDropTarget={{ sectionId: section.id }}
-                >
-                  <TimelineSectionHeader
-                    {section}
-                    width={(timeline?.marginLeft ?? 0) + drawWidth}
-                    dragDisabled={sectionDragDisabled}
-                    on:toggleCollapsed={onToggleSectionCollapsed}
-                    on:mouseDownSectionMove={onMouseDownSectionMove}
-                    on:mouseUpSectionMove={onMouseUpSectionMove}
-                    on:contextMenu={e => onSectionContextMenu(e, section)}
-                    on:editSection={() => onEditSection(new CustomEvent('editSection', { detail: section }))}
-                    on:addRowToSection={() =>
-                      onAddRowToSection(new CustomEvent('addRowToSection', { detail: section }))}
-                    on:duplicateSection={() => dispatch('duplicateSection', section)}
-                    on:moveSection={e => moveTimelineItem('section', section.id, e.detail.direction)}
-                    on:deleteSection={() => onDeleteSection(new CustomEvent('deleteSection', { detail: section }))}
-                  />
-                </div>
-                {#if !section.collapsed && section.rowIds.length === 0}
-                  <!-- An empty section used to render as nothing, which read as broken. The whole
-                       strip accepts a row; the affordance is drawn in the row-header gutter. -->
-                  <div
-                    class="section-empty"
-                    style:--section-accent-color={section.color || ViewDefaultSectionColor}
-                    style:width={`${(timeline?.marginLeft ?? 0) + drawWidth}px`}
-                    use:makeEmptySectionDropTarget={{ sectionId: section.id }}
-                  >
-                    <div
-                      class="section-empty-hint st-typography-body"
-                      style:width={`${Math.max(120, (timeline?.marginLeft ?? 0) - 23)}px`}
-                    >
-                      Drag a row here
-                    </div>
-                  </div>
-                {/if}
-                {#if !section.collapsed}
-                  {#each section.rowIds as rowId, rowIndex (`section-${section.id}-row-${rowId}`)}
-                    {@const row = rowsById.get(rowId)}
-                    {#if row}
-                      <div
-                        class="timeline-row-wrapper timeline-row-in-section"
-                        role="listitem"
-                        class:selected-row-outline={$selectedRow?.id === row.id}
-                        style:--section-accent-color={section.color || ViewDefaultSectionColor}
-                        use:makeTimelineItemDraggable={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
-                        use:makeTimelineItemDropTarget={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
-                      >
-                        <TimelineRow
-                          {activityDirectives}
-                          {activityDirectivesMap}
-                          externalEvents={externalEventsFilteredByDG}
-                          discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
-                          on:discreteTreeExpansionChange={event => {
-                            discreteTreeExpansionMapByRow = {
-                              ...discreteTreeExpansionMapByRow,
-                              [row.id]: event.detail,
-                            };
-                          }}
-                          discreteOptions={row.discreteOptions}
-                          autoAdjustHeight={row.autoAdjustHeight}
-                          {constraintResults}
-                          {dpr}
-                          drawHeight={row.height}
-                          {drawWidth}
-                          expanded={row.expanded}
-                          {hasUpdateDirectivePermission}
-                          horizontalGuides={row.horizontalGuides}
-                          id={row.id}
-                          index={rowIndex}
-                          layers={row.layers}
-                          name={row.name}
-                          marginLeft={timeline?.marginLeft}
-                          {planEndTimeDoy}
-                          {plan}
-                          {planStartTimeYmd}
-                          {rowDragMoveDisabled}
-                          {decimate}
-                          {interpolateHoverValue}
-                          {limitTooltipToLine}
-                          {rowHeaderDragHandleWidthPx}
-                          {selectedActivityDirectiveId}
-                          {selectedExternalEventId}
-                          {selectedSpanId}
-                          {simulationDataset}
-                          {spanUtilityMaps}
-                          {spansMap}
-                          {timelineInteractionMode}
-                          {timelineLockStatus}
-                          {user}
-                          {viewTimeRange}
-                          {xScaleView}
-                          {xTicksView}
-                          yAxes={row.yAxes}
-                          {timelineZoomTransform}
-                          on:contextMenu={e => onContextMenu(e, row)}
-                          on:buildDirective={e => onBuildActivityDirective(e.detail.startTime, e.detail.type)}
-                          on:dblClick
-                          on:deleteActivityDirective
-                          on:mouseDown={onMouseDown}
-                          on:mouseDownRowMove={onMouseDownRowMove}
-                          on:mouseUpRowMove={onMouseUpRowMove}
-                          on:mouseOver={e => (mouseOver = { ...e.detail, row })}
-                          on:toggleRowExpansion={onToggleRowExpansion}
-                          on:updateRowHeight={onUpdateRowHeight}
-                          on:updateYAxes
-                          on:zoom={throttledZoom}
-                        />
-                      </div>
-                    {/if}
-                  {/each}
-                {/if}
-              </div>
-            {/if}
-          {:else}
-            {@const row = rowsById.get(item.id)}
-            {#if row}
-              <div
-                class="timeline-row-wrapper"
-                role="listitem"
-                use:makeTimelineItemDraggable={{ itemId: row.id, itemType: 'row', sectionId: null }}
-                use:makeTimelineItemDropTarget={{ itemId: row.id, itemType: 'row', sectionId: null }}
-              >
-                <TimelineRow
-                  {activityDirectives}
-                  {activityDirectivesMap}
-                  externalEvents={externalEventsFilteredByDG}
-                  discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
-                  on:discreteTreeExpansionChange={event => {
-                    discreteTreeExpansionMapByRow = { ...discreteTreeExpansionMapByRow, [row.id]: event.detail };
-                  }}
-                  discreteOptions={row.discreteOptions}
-                  autoAdjustHeight={row.autoAdjustHeight}
-                  {constraintResults}
-                  {dpr}
-                  drawHeight={row.height}
-                  {drawWidth}
-                  expanded={row.expanded}
-                  {hasUpdateDirectivePermission}
-                  horizontalGuides={row.horizontalGuides}
-                  id={row.id}
-                  index={i}
-                  layers={row.layers}
-                  name={row.name}
-                  marginLeft={timeline?.marginLeft}
-                  {planEndTimeDoy}
-                  {plan}
-                  {planStartTimeYmd}
-                  {rowDragMoveDisabled}
-                  {decimate}
-                  {interpolateHoverValue}
-                  {limitTooltipToLine}
-                  {rowHeaderDragHandleWidthPx}
-                  {selectedActivityDirectiveId}
-                  {selectedExternalEventId}
-                  {selectedSpanId}
-                  {simulationDataset}
-                  {spanUtilityMaps}
-                  {spansMap}
-                  {timelineInteractionMode}
-                  {timelineLockStatus}
-                  {user}
-                  {viewTimeRange}
-                  {xScaleView}
-                  {xTicksView}
-                  yAxes={row.yAxes}
-                  {timelineZoomTransform}
-                  on:contextMenu={e => onContextMenu(e, row)}
-                  on:buildDirective={e => onBuildActivityDirective(e.detail.startTime, e.detail.type)}
-                  on:dblClick
-                  on:deleteActivityDirective
-                  on:mouseDown={onMouseDown}
-                  on:mouseDownRowMove={onMouseDownRowMove}
-                  on:mouseUpRowMove={onMouseUpRowMove}
-                  on:mouseOver={e => (mouseOver = { ...e.detail, row })}
-                  on:toggleRowExpansion={onToggleRowExpansion}
-                  on:updateRowHeight={onUpdateRowHeight}
-                  on:updateYAxes
-                  on:zoom={throttledZoom}
+                <TimelineSectionHeader
+                  {section}
+                  width={(timeline?.marginLeft ?? 0) + drawWidth}
+                  dragDisabled={sectionDragDisabled}
+                  on:toggleCollapsed={onToggleSectionCollapsed}
+                  on:mouseDownSectionMove={onMouseDownSectionMove}
+                  on:mouseUpSectionMove={onMouseUpSectionMove}
+                  on:contextMenu={e => onSectionContextMenu(e, section)}
+                  on:editSection={() => onEditSection(section)}
+                  on:addRowToSection={() => onAddRowToSection(section)}
+                  on:duplicateSection={() => dispatch('duplicateSection', section)}
+                  on:moveSection={e => moveTimelineItem('section', section.id, e.detail.direction)}
+                  on:deleteSection={() => onDeleteSection(section)}
                 />
               </div>
-            {/if}
+              {#if !section.collapsed && section.rowIds.length === 0}
+                <!-- An empty section used to render as nothing, which read as broken. The whole
+                     strip accepts a row; the affordance is drawn in the row-header gutter. -->
+                <div
+                  class="section-empty"
+                  style:--section-accent-color={section.color || ViewDefaultSectionColor}
+                  style:width={`${(timeline?.marginLeft ?? 0) + drawWidth}px`}
+                  use:makeEmptySectionDropTarget={{ sectionId: section.id }}
+                >
+                  <div
+                    class="section-empty-hint st-typography-body"
+                    style:width={`${Math.max(120, (timeline?.marginLeft ?? 0) - 23)}px`}
+                  >
+                    Drag a row here
+                  </div>
+                </div>
+              {/if}
+              {#if !section.collapsed}
+                {#each section.rowIds as rowId, rowIndex (`section-${section.id}-row-${rowId}`)}
+                  {@const row = rowsById.get(rowId)}
+                  {#if row}
+                    <!-- No listitem role: these rows are content of the section's listitem, and a
+                         second listitem level would need a nested list to own it. -->
+                    <div
+                      class="timeline-row-wrapper timeline-row-in-section"
+                      class:selected-row-outline={$selectedRow?.id === row.id}
+                      style:--section-accent-color={section.color || ViewDefaultSectionColor}
+                      use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
+                      use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: section.id }}
+                    >
+                      <TimelineRowItem
+                        {row}
+                        index={rowIndex}
+                        sharedProps={sharedRowProps}
+                        discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
+                        on:buildDirective={onBuildDirective}
+                        on:contextMenu={onRowContextMenu}
+                        on:dblClick
+                        on:deleteActivityDirective
+                        on:discreteTreeExpansionChange={onDiscreteTreeExpansionChange}
+                        on:mouseDown={onMouseDown}
+                        on:mouseDownRowMove={onMouseDownRowMove}
+                        on:mouseOver={onRowMouseOver}
+                        on:mouseUpRowMove={onMouseUpRowMove}
+                        on:toggleRowExpansion={onToggleRowExpansion}
+                        on:updateRowHeight={onUpdateRowHeight}
+                        on:updateYAxes
+                        on:zoom={throttledZoom}
+                      />
+                    </div>
+                  {/if}
+                {/each}
+              {/if}
+            </div>
           {/if}
-        {/each}
-        <div class="new-row">
-          <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="st-button tertiary w-full">
-            New Row +
-          </button>
-        </div>
+        {:else}
+          {@const row = rowsById.get(item.id)}
+          {#if row}
+            <div
+              class="timeline-row-wrapper"
+              role="listitem"
+              use:makeDraggable={{ itemId: row.id, itemType: 'row', sectionId: null }}
+              use:makeDropTarget={{ itemId: row.id, itemType: 'row', sectionId: null }}
+            >
+              <TimelineRowItem
+                {row}
+                index={i}
+                sharedProps={sharedRowProps}
+                discreteTreeExpansionMap={discreteTreeExpansionMapByRow[row.id]}
+                on:buildDirective={onBuildDirective}
+                on:contextMenu={onRowContextMenu}
+                on:dblClick
+                on:deleteActivityDirective
+                on:discreteTreeExpansionChange={onDiscreteTreeExpansionChange}
+                on:mouseDown={onMouseDown}
+                on:mouseDownRowMove={onMouseDownRowMove}
+                on:mouseOver={onRowMouseOver}
+                on:mouseUpRowMove={onMouseUpRowMove}
+                on:toggleRowExpansion={onToggleRowExpansion}
+                on:updateRowHeight={onUpdateRowHeight}
+                on:updateYAxes
+                on:zoom={throttledZoom}
+              />
+            </div>
+          {/if}
+        {/if}
+      {/each}
+      <div class="new-row">
+        <button on:click={_ => viewAddTimelineRow(timeline?.id, true)} class="st-button tertiary w-full">
+          New Row +
+        </button>
       </div>
-    {/if}
+    </div>
   </div>
 
   <!-- Timeline Tooltip. -->
@@ -1100,11 +844,11 @@
     on:insertRow
     on:insertSection={onInsertSection}
     on:setAllExpanded={onSetAllExpanded}
-    on:editSection={onEditSection}
-    on:deleteSection={onDeleteSection}
+    on:editSection={e => onEditSection(e.detail)}
+    on:deleteSection={e => onDeleteSection(e.detail)}
     on:duplicateSection
     on:moveSection={onMoveSection}
-    on:addRowToSection={onAddRowToSection}
+    on:addRowToSection={e => onAddRowToSection(e.detail)}
   />
 </div>
 
