@@ -10,9 +10,9 @@
   import type { TimelineSection } from '../../types/timeline';
   import { getContrastingTextColor } from '../../utilities/timeline';
 
+  export let dragDisabled: boolean = true;
   export let section: TimelineSection;
   export let width: number = 0;
-  export let dragDisabled: boolean = true;
 
   const dispatch = createEventDispatcher<{
     addRowToSection: void;
@@ -52,8 +52,7 @@
   style:--section-foreground={foreground}
   class:collapsed={section.collapsed}
   aria-label="{section.name} controls"
-  role="toolbar"
-  tabindex="-1"
+  role="group"
   on:contextmenu={onContextMenu}
 >
   <!-- Caret, name and count are one target spanning the band, the way a row header's are: the
@@ -144,9 +143,15 @@
     width: 3px;
   }
 
-  /* Everything in the band inherits the contrast foreground. Targeting controls individually let
-     the caret keep a grey hover color and wash out against a saturated band. */
-  .section-header :global(*) {
+  /* Everything on the band takes its contrast foreground. Named individually rather than with a
+     universal selector, which would also flatten a child added later that is deliberately
+     colored. The two text elements have to be listed even though their parent button is already
+     covered: they carry .st-typography-label / .st-typography-body, which set a color of their
+     own, and a directly-matching declaration always beats an inherited value. */
+  .section-header :global(.st-button),
+  .section-header :global(svg),
+  .section-hidden-count,
+  .section-title {
     color: inherit;
   }
 
@@ -182,7 +187,7 @@
     flex-shrink: 0;
     font-size: 10px;
     font-weight: 600;
-    margin-left: 8px;
+    margin-right: 8px;
     opacity: 0.8;
     white-space: nowrap;
   }

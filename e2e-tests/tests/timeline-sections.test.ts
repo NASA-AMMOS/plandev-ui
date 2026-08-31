@@ -20,14 +20,14 @@ test.describe.serial('Timeline Collapsible Sections', () => {
 
   // Every section in the editor list has one Edit button, so counting them counts the sections.
   const editorSections = () => setup.page.getByRole('button', { name: 'Edit Section' });
-  // A section and its rows are one named group; every row renders a header.
-  const sectionGroup = () => setup.page.getByRole('group', { name: sectionName });
+  // A section is one named item of the timeline's list; every row it holds renders a header.
+  const sectionGroup = () => setup.page.getByRole('listitem', { name: sectionName });
   const sectionRows = () => sectionGroup().getByRole('banner');
-  // The colored band alone, as opposed to the group of band plus rows.
-  const sectionBand = () => sectionGroup().getByRole('toolbar', { name: `${sectionName} controls` });
+  // The colored band alone, as opposed to the section of band plus rows.
+  const sectionBand = () => sectionGroup().getByRole('group', { name: `${sectionName} controls` });
   const timelineRows = () => setup.page.getByRole('banner');
   // A section created without renaming it, which is what the two menu tests at the end make.
-  const defaultBand = () => setup.page.getByRole('toolbar', { name: 'Section controls' });
+  const defaultBand = () => setup.page.getByRole('group', { name: 'Section controls' });
 
   async function deleteAllSections() {
     if ((await editorSections().count()) === 0) {
@@ -126,6 +126,13 @@ test.describe.serial('Timeline Collapsible Sections', () => {
     await setup.page.getByRole('button', { name: 'preset color' }).nth(1).click();
 
     await expect(sectionBand()).toHaveCSS('background-color', 'rgb(252, 221, 143)');
+
+    // The name takes the contrast foreground picked against the band, not Stellar's own text
+    // color. It carries .st-typography-label, which sets a translucent grey of its own, and an
+    // inherited value loses to a directly-matching declaration - so the band's color has to reach
+    // it by a rule that names it. When that regressed the title stayed grey on every band.
+    await expect(sectionBand().getByText(sectionName, { exact: true })).toHaveCSS('color', 'rgb(27, 29, 31)');
+
     await setup.page.getByRole('button', { name: /Back to Timeline/ }).click();
   });
 
@@ -136,10 +143,10 @@ test.describe.serial('Timeline Collapsible Sections', () => {
     await setup.page.getByRole('button', { name: 'Duplicate Section' }).last().click();
     await expect(editorSections()).toHaveCount(existingSectionCount + 1);
 
-    const copy = setup.page.getByRole('group', { name: `${sectionName} (copy)` });
+    const copy = setup.page.getByRole('listitem', { name: `${sectionName} (copy)` });
     await expect(copy).toBeVisible();
     await expect(copy.getByRole('banner')).toHaveCount(existingRowCount);
-    await expect(copy.getByRole('toolbar', { name: `${sectionName} (copy) controls` })).toHaveCSS(
+    await expect(copy.getByRole('group', { name: `${sectionName} (copy) controls` })).toHaveCSS(
       'background-color',
       'rgb(252, 221, 143)',
     );

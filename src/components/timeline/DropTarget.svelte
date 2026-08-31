@@ -38,6 +38,12 @@
    * only be resized once.
    */
   function endDrag(e: Event) {
+    // One of these is bound per row header, so on a busy timeline every mouseup anywhere in the
+    // app reaches every instance. Leave immediately unless this one has a drag to end.
+    if (!isDragging && !isDropTarget && !dispatchedDragStart) {
+      return;
+    }
+
     isDragging = false;
     isDropTarget = false;
 

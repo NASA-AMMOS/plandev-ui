@@ -8,6 +8,7 @@ import {
   view,
   viewAddFilterToRow,
   viewAddSection,
+  viewAddTimelineRow,
   viewDeleteSection,
   viewReorderTimelineItems,
   viewSetAllExpanded,
@@ -189,6 +190,23 @@ describe('view section stores', () => {
     viewAddFilterToRow([{ name: '/a/resource' }] as never, 'activity');
 
     expect(currentTimeline().rows.length).toBe(before + 1);
+    expectConsistentHierarchy();
+  });
+
+  test('viewAddTimelineRow puts a row inside the section it names', () => {
+    const created = viewAddTimelineRow(0, false, 100);
+
+    expect(currentTimeline().sections[0].rowIds).toEqual([11, 12, created?.id]);
+    expect(currentTimeline().items.some(item => item.type === 'row' && item.id === created?.id)).toBe(false);
+    expectConsistentHierarchy();
+  });
+
+  test('viewAddTimelineRow falls back to the root when the named section is gone', () => {
+    // A row placed in no container at all exists in `rows` and renders nowhere, with no way back
+    // to it, so an unknown section id has to degrade to a visible row rather than a lost one.
+    const created = viewAddTimelineRow(0, false, 999);
+
+    expect(currentTimeline().items.at(-1)).toEqual({ id: created?.id, type: 'row' });
     expectConsistentHierarchy();
   });
 

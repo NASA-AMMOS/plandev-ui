@@ -962,16 +962,16 @@ export function viewAddTimelineRow(
         let newItems = [...(timeline.items || [])];
         let newSections = [...(timeline.sections || [])];
 
-        if (targetSectionId !== undefined && targetSectionId !== null) {
-          newSections = newSections.map(s => {
-            if (s.id === targetSectionId) {
-              return {
-                ...s,
-                rowIds: [...s.rowIds, row.id],
-              };
-            }
-            return s;
-          });
+        // A row has to land in exactly one container - a section's rowIds or the root items -
+        // or it exists in `rows` and renders nowhere, with no way back to it. So the root is the
+        // fallback whenever the named section is not actually there to receive it.
+        const targetSection =
+          targetSectionId !== undefined && targetSectionId !== null
+            ? newSections.find(s => s.id === targetSectionId)
+            : undefined;
+
+        if (targetSection) {
+          newSections = newSections.map(s => (s.id === targetSection.id ? { ...s, rowIds: [...s.rowIds, row.id] } : s));
         } else {
           newItems = [...newItems, { id: row.id, type: 'row' as const }];
         }
