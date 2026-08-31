@@ -32,10 +32,12 @@ export interface ActivityLayer extends Layer {
 export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
   /**
-   * Opacity of the drawn event. External events can carry a duration, so they are drawn as translucent
-   * bars by default to keep a busy row readable -- but that same translucency washes out a
-   * zero-duration event's marker, which is small enough to need the contrast. Exposed so a row that
-   * wants its events to read strongly can say so.
+   * Opacity of the drawn event, for events that have a duration. External events can carry one, so
+   * they are drawn as translucent bars by default to keep a busy row of overlapping events readable.
+   * Exposed so a row whose events do not overlap can have them read at full strength.
+   *
+   * Does not apply to a zero-duration event, whose marker always draws opaque: translucency is there
+   * to let overlapping bars be seen through, and a marker has no area to overlap.
    */
   opacity?: number;
 }
@@ -330,12 +332,17 @@ export type ExternalEventOptions = {
 /**
  * Shape used to mark a discrete item that occupies a single moment.
  *
- * - `line` is the 2px full-height tick such items have always been drawn with, and the default. Its
- *   left edge sits on the moment, reading as a boundary marker.
- * - `dot` reads as an event rather than a boundary, centered on the moment.
- * - `diamond` is the Gantt milestone convention, also centered.
+ * - `line` is the 2px full-height tick such items have always been drawn with, and the default. It
+ *   reads as a boundary marker rather than as an event.
+ * - `dot` reads as an event rather than a boundary.
+ * - `diamond` is the Gantt milestone convention.
  *
- * One vocabulary for both marker settings below, because the two defaults render identically today: a
+ * Every style is centered on the moment it marks, so switching between them never moves the mark --
+ * see `getMarkerGlyphExtents`, which owns that geometry. `line` therefore sits a pixel left of where a
+ * bar of the same width would start, because a bar represents an interval and anchors its *left edge*
+ * to the start time, while a marker represents a moment and anchors its center.
+ *
+ * One vocabulary for both marker settings below, because the two defaults render identically: a
  * directive tick and a zero-duration span's `Math.max(2, …)` bar are both a 2px full-height rect.
  */
 export type MarkerStyle = 'line' | 'dot' | 'diamond';

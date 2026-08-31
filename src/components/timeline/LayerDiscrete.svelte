@@ -715,14 +715,17 @@
       // raised it, so the packer saw every directive ending at x=2 and stacked none of them. Harmless
       // while a directive was a 2px tick and everything overlapped invisibly; not harmless once the
       // marker can be 14px wide.
-      boxEndX = startX + directiveGlyph.right;
+      // The packer gives a directive and its span one shared startX, so a zero-duration span always
+      // marks the same moment here and the directive always yields the glyph to it
+      const { glyph, labelOffset } = getDirectiveMarkerGeometry(spanOwnsTheMarker(span));
+      boxEndX = startX + glyph.right;
       if (discreteOptions.labelVisibility !== 'off') {
         const anchored = directive.anchor_id !== null;
         const directiveLabelWidth = measureText(directive.name, textMetricsCache).width + labelPaddingLeft;
         const finalWidth = anchored
           ? anchorIconWidth + anchorIconMarginLeft + directiveLabelWidth
           : directiveLabelWidth;
-        labelEndX = Math.max(startX, minRectSize) + directiveLabelOffset + finalWidth;
+        labelEndX = Math.max(startX, minRectSize) + labelOffset + finalWidth;
       }
     }
     if (span && showSpans && xScaleView) {
@@ -759,12 +762,34 @@
   }
 
   /**
+   * Geometry of the marker actually drawn at a directive's x: the glyph, and how far right of it a
+   * label has to start.
+   *
+   * A directive and a zero-duration span mark the same moment, and only one glyph is drawn there --
+   * the span's, see the suppression in drawRow. Everything that positions against that mark has to
+   * follow the glyph that survives rather than the setting that named it, or the two disagree in both
+   * directions: Directive 'line' with Instant 'diamond' leaves the label offset at zero while a 14px
+   * diamond sits under the text, and swapping the two pushes the label clear of a diamond that was
+   * never drawn.
+   */
+  function getDirectiveMarkerGeometry(yieldsToSpanMarker: boolean): { glyph: MarkerGlyph; labelOffset: number } {
+    return yieldsToSpanMarker
+      ? { glyph: zeroDurationGlyph, labelOffset: zeroDurationLabelOffset }
+      : { glyph: directiveGlyph, labelOffset: directiveLabelOffset };
+  }
+
+  /** Whether a span is the one drawing the marker at its item's start x, so the directive yields to it. */
+  function spanOwnsTheMarker(span: Span | undefined): boolean {
+    return !!span && showSpans && isZeroDurationSpan(span);
+  }
+
+  /**
    * Left edge an item occupies, which is its start x unless a centered marker overhangs it. The packer
    * compares this against the previous item's end, so without it two markers a pixel apart would be
    * packed into the same subrow and overlap.
    *
-   * An item can carry both a directive marker and a zero-duration span marker at the same x, and the
-   * two are configured independently, so the widest overhang wins.
+   * Only the glyph actually drawn counts. A directive whose zero-duration span is marking the same
+   * moment draws nothing, so reserving its overhang too would hold space for a mark that is not there.
    */
   function getItemStartX(item: {
     directive?: ActivityDirective;
@@ -773,14 +798,12 @@
     startX: number;
   }) {
     const { span, directive, externalEvent, startX } = item;
+    const spanMarks = spanOwnsTheMarker(span);
     let overhang = 0;
-    if (directive && showDirectives) {
+    if (directive && showDirectives && !spanMarks) {
       overhang = directiveGlyph.left;
     }
-    if (
-      (span && showSpans && isZeroDurationSpan(span)) ||
-      (externalEvent && isZeroDurationExternalEvent(externalEvent))
-    ) {
+    if (spanMarks || (externalEvent && isZeroDurationExternalEvent(externalEvent))) {
       overhang = Math.max(overhang, zeroDurationGlyph.left);
     }
     return startX - overhang;
@@ -841,8 +864,12 @@
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
-          const opacity =
-            externalEventOpacities[getExternalEventRowId(externalEvent.pkey)] ?? DEFAULT_EXTERNAL_EVENT_OPACITY;
+          // A marker draws at full strength whatever the layer's opacity, for the same reason a span's
+          // does: the translucency is there to keep overlapping *bars* readable, and a marker has no
+          // area to overlap. The layer opacity still governs every event that has a duration.
+          const opacity = isZeroDuration
+            ? 1
+            : (externalEventOpacities[getExternalEventRowId(externalEvent.pkey)] ?? DEFAULT_EXTERNAL_EVENT_OPACITY);
           ctx.fillStyle = getRGBAFromHex(externalEventColor, opacity);
         }
         if (isZeroDuration) {
@@ -903,6 +930,7 @@
         const spanColor = idToColorMaps.spans[span.span_id] || discreteDefaultColor;
         const isSelected =
           selectedSpanId === span.span_id || (directive && selectedActivityDirectiveId === directive.id);
+        const isZeroDuration = isZeroDurationSpan(span);
         if (isSelected) {
           if (unfinished) {
             ctx.fillStyle = activityUnfinishedSelectedColor;
@@ -912,10 +940,12 @@
         } else if (unfinished) {
           ctx.fillStyle = shadeColor(activityUnfinishedColor, 1.2);
         } else {
-          const color = getRGBAFromHex(spanColor, 0.5);
-          ctx.fillStyle = color;
+          // A bar is drawn translucent so a row of overlapping spans stays readable. A marker has no
+          // area to overlap, and at a dot's size that same translucency washes it out to nothing --
+          // which is why a marker was only ever legible with a directive tick drawn on top of it.
+          // Full strength here, so an instant carries itself.
+          ctx.fillStyle = isZeroDuration ? spanColor : getRGBAFromHex(spanColor, 0.5);
         }
-        const isZeroDuration = isZeroDurationSpan(span);
         const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
         if (isZeroDuration) {
           drawMarker(spanStartX, y, zeroDurationMarker, zeroDurationGlyph);
@@ -969,9 +999,29 @@
         } else {
           ctx.fillStyle = color;
         }
-        // Unconditional: a directive marks a start time and has no duration of its own. The span it
-        // produces is drawn separately, above, with its own marker setting.
-        drawMarker(directiveStartX, y, directiveMarker, directiveGlyph);
+        // Under composition 'both' a directive and its span are two marks for one activity, and when
+        // the span occupies a single moment they mark the same one. While both were 2px ticks they
+        // landed exactly on top of each other and the duplication was invisible; now that the two
+        // styles are set separately it shows as a diamond with a tick through it.
+        //
+        // The span's marker wins. It is the one an operator picked to make instants legible, and the
+        // directive loses no representation by yielding it -- its label and anchor still draw, and its
+        // own hit box is unchanged.
+        //
+        // Compared in pixels rather than in time, deliberately. A directive moved since simulation is
+        // exactly what this annotation exists to report, so the tick comes back as soon as the move is
+        // wide enough to see; at a zoom where the two land on the same pixel, drawing both is only ink.
+        const spanAlreadyMarksThisMoment =
+          spanOwnsTheMarker(span) &&
+          typeof spanStartX === 'number' &&
+          Math.round(spanStartX) === Math.round(directiveStartX);
+        // Everything below positions against the glyph that is actually drawn here, which is the span's
+        // whenever the directive has yielded to it
+        const { glyph: markerGlyph, labelOffset: markerLabelOffset } =
+          getDirectiveMarkerGeometry(spanAlreadyMarksThisMoment);
+        if (!spanAlreadyMarksThisMoment) {
+          drawMarker(directiveStartX, y, directiveMarker, directiveGlyph);
+        }
 
         // Determine if label has space to draw
         if (drawLabels) {
@@ -985,7 +1035,7 @@
               : directiveLabelWidth;
             // TODO could consider both? That said an item could have a span at the start of a plan and a directive at the beginning...
             const nextX = nextItem?.spanStartX || nextItem?.directiveStartX || null;
-            if (typeof nextX === 'number' && directiveStartX + directiveLabelOffset + finalWidth >= nextX) {
+            if (typeof nextX === 'number' && directiveStartX + markerLabelOffset + finalWidth >= nextX) {
               shouldDrawLabel = false;
               directiveLabelWidth = 0;
             }
@@ -993,7 +1043,7 @@
           if (shouldDrawLabel) {
             drawLabel(
               label,
-              directiveStartX + directiveLabelOffset,
+              directiveStartX + markerLabelOffset,
               y,
               directiveLabelWidth,
               directiveColor,
@@ -1005,7 +1055,7 @@
             if (anchored) {
               const anchorOpacity = selectedActivityDirectiveId !== null || selectedSpanId !== null ? 0.4 : 1;
               drawAnchorIcon(
-                directiveStartX + directiveLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
+                directiveStartX + markerLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
                 y + rowHeight / 2 - anchorIconWidth / 2,
                 isSelected ? 1 : anchorOpacity,
               );
@@ -1020,8 +1070,8 @@
             directive.id,
             directiveStartX,
             y,
-            directiveLabelWidth + directiveLabelOffset + labelPaddingLeft,
-            directiveGlyph,
+            directiveLabelWidth + markerLabelOffset + labelPaddingLeft,
+            markerGlyph,
           ),
         );
       }
