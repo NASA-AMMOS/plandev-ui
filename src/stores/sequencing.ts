@@ -2,8 +2,8 @@ import type {
   ChannelDictionary as AmpcsChannelDictionary,
   CommandDictionary as AmpcsCommandDictionary,
   ParameterDictionary as AmpcsParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
-import type { UserSequence } from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-ampcs';
+import type { UserSequence } from '@nasa-jpl/plandev-sequence-languages';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { SequenceFilter } from '../types/expansion';
@@ -26,8 +26,6 @@ export const parsedChannelDictionaries: Writable<Record<string, AmpcsChannelDict
 export const parsedCommandDictionaries: Writable<Record<string, AmpcsCommandDictionary>> = writable({});
 
 export const parsedParameterDictionaries: Writable<Record<string, AmpcsParameterDictionary>> = writable({});
-
-export const selectedSequence: Writable<string | null> = writable(null);
 
 export const creatingWorkspace: Writable<boolean> = writable(false);
 

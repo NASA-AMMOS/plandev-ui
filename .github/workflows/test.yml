@@ -6,7 +6,7 @@ on:
       - develop
       - dev-[0-9]+.[0-9]+.[0-9]+
     types:
-      # defaults + 'edited', to handle changes to flags like ___REQUIRES_AERIE_PR___ in the PR body
+      # defaults + 'edited', to handle changes to flags like ___REQUIRES_PLANDEV_PR___ in the PR body
       [opened, synchronize, reopened, edited]
   push:
     branches:
@@ -40,6 +40,10 @@ env:
   SEQUENCING_PASSWORD: '${{secrets.SEQUENCING_PASSWORD}}'
   PR_BODY: '${{github.event.pull_request.body}}'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -49,17 +53,24 @@ jobs:
     steps:
       - name: Checkout Repo (UI)
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
       - name: Setup Node (UI)
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
           cache: npm
+
       - name: Install Dependencies (UI)
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild --strict-allow-scripts
+
       - name: Build (UI)
         run: npm run build
+
       - name: Test (unit)
         run: npm run test:unit:coverage
+
       - name: Upload Results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -67,6 +78,7 @@ jobs:
           name: Unit Test Results
           path: |
             **/unit-test-results
+
   e2e-test:
     runs-on: ubuntu-latest
     environment: ${{ inputs.env || 'test-workflow' }}
@@ -78,31 +90,40 @@ jobs:
         with:
           node-version: '22.22.0'
           cache: npm
+
       - name: Extract PlanDev backend docker tag from PR body
-        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # look in the PR body for eg. the string ___REQUIRES_PLANDEV_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
-        if: ${{ contains(env.PR_BODY, '___REQUIRES_AERIE_PR___=') }}
+        if: ${{ contains(env.PR_BODY, '___REQUIRES_PLANDEV_PR___=') }}
         run: |
-          echo "AERIE_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_AERIE_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
+          echo "PLANDEV_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_PLANDEV_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
+
       - name: Extract PlanDev gateway docker tag from PR body
-        # look in the PR body for eg. the string ___REQUIRES_AERIE_PR___=9999, extract the number & save to env var
+        # look in the PR body for eg. the string ___REQUIRES_PLANDEV_PR___=9999, extract the number & save to env var
         # if backend PR is labeled correctly, it will publish a docker tag called 'pr-9999' to use in tests
         if: ${{ contains(env.PR_BODY, '___REQUIRES_GATEWAY_PR___=') }}
         run: |
           echo "GATEWAY_IMAGE_TAG=pr-$(echo "$PR_BODY" | sed -n 's/.*___REQUIRES_GATEWAY_PR___=\"\([0-9]\+\)\".*/\1/p')" >> "$GITHUB_ENV"
+
       - name: Start Services (PlanDev)
         run: |
-          echo "AERIE_IMAGE_TAG: $AERIE_IMAGE_TAG"
+          echo "PLANDEV_IMAGE_TAG: $PLANDEV_IMAGE_TAG"
           echo "GATEWAY_IMAGE_TAG: $GATEWAY_IMAGE_TAG"
           docker compose -f docker-compose-test.yml up -d --quiet-pull
           docker images
           docker ps -a --no-trunc
+
       - name: Install Dependencies (UI)
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild --strict-allow-scripts
+
       - name: Build (UI)
         run: npm run build
+
       - name: Install Playwright Dependencies (Test - e2e)
         run: npx playwright install chromium --with-deps
+
       - name: Wait for Backend Services (PlanDev)
         # Defense-in-depth alongside the compose healthcheck: don't start tests until Hasura is
         # actually serving, so runs no longer race a slow-to-start backend. Bounded (no hang).
@@ -119,8 +140,10 @@ jobs:
           docker compose -f docker-compose-test.yml ps
           docker compose -f docker-compose-test.yml logs --tail 100
           exit 1
+
       - name: Test (e2e)
         run: npm run test:e2e
+
       - name: Upload Results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -128,15 +151,18 @@ jobs:
           name: E2E Test Results
           path: |
             **/e2e-test-results
+
       - name: Print Logs for Services (PlanDev)
         if: always()
         run: docker compose -f docker-compose-test.yml logs -t
+
       - name: Stop Services (PlanDev)
         if: always()
         run: |
           docker ps -a
           docker compose -f docker-compose-test.yml down
           docker ps -a
+
       - name: Prune Volumes (PlanDev)
         if: always()
         run: docker volume prune --force

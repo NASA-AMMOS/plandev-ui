@@ -83,8 +83,8 @@ Before you can run plandev-ui you must install and configure the following produ
   ```sh
   ./gradlew assemble
 
-  # Notice we exclude the aerie_ui since we run it locally (i.e. not in Docker) for development.
-  docker-compose up --build --detach aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing hasura postgres
+  # Notice we exclude the plandev_ui since we run it locally (i.e. not in Docker) for development.
+  docker-compose up --build --detach plandev_gateway plandev_merlin plandev_scheduler plandev_merlin_worker_1 plandev_merlin_worker_2 plandev_scheduler_worker_1 plandev_scheduler_worker_2 plandev_sequencing hasura postgres
   ```
 
   To stop and clean the PlanDev services:
@@ -96,7 +96,7 @@ Before you can run plandev-ui you must install and configure the following produ
   ```sh
   cd plandev
   docker-compose down
-  docker rmi aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing
+  docker rmi plandev_merlin plandev_scheduler plandev_merlin_worker_1 plandev_merlin_worker_2 plandev_scheduler_worker_1 plandev_scheduler_worker_2 plandev_sequencing
   docker volume prune --force
   ./gradlew clean
   ```

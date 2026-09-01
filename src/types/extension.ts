@@ -19,7 +19,7 @@ export type ExtensionResponse = {
   message: string;
   success: boolean;
   trace?: string;
-  url: string;
+  url?: string;
 };
 
 export type ExtensionRole = {

@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FswCommandArgument } from '@nasa-jpl/aerie-ampcs';
+  import type { FswCommandArgument } from '@nasa-jpl/plandev-ampcs';
   import {
     isFswCommandArgumentBoolean,
     isFswCommandArgumentEnum,

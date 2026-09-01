@@ -38,10 +38,8 @@
   import PlanGrid from '../../../components/ui/PlanGrid.svelte';
   import ProgressLinear from '../../../components/ui/ProgressLinear.svelte';
   import StatusBadge from '../../../components/ui/StatusBadge.svelte';
-  import { SEQUENCE_EXPANSION_MODE } from '../../../constants/command-expansion';
   import { PlanStatusMessages } from '../../../enums/planStatusMessages';
   import { SearchParameters } from '../../../enums/searchParameters';
-  import { SequencingMode } from '../../../enums/sequencing';
   import { Status } from '../../../enums/status';
   import {
     activityArgumentDefaults,
@@ -51,16 +49,6 @@
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../../stores/activities';
-  import {
-    cachedConstraintsStatus,
-    checkConstraintsStatus,
-    constraintResponses,
-    constraintsStatus,
-    resetConstraintStores,
-    resetPlanConstraintStores,
-    uncheckedConstraintCount,
-  } from '../../../stores/constraints';
-  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
   import {
     activityErrorRollups,
     allLogs,
@@ -75,11 +63,17 @@
     simulationErrors,
   } from '../../../stores/console';
   import {
-    lastExpandedSimulationDatasetId,
-    planExpansionStatus,
-    resetExpansionStores,
-    selectedExpansionSetId,
-  } from '../../../stores/expansion';
+    cachedConstraintsStatus,
+    checkConstraintsStatus,
+    constraintResponses,
+    constraintsStatus,
+    resetConstraintStores,
+    resetPlanConstraintStores,
+    uncheckedConstraintCount,
+  } from '../../../stores/constraints';
+  import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
+  import { resetExpansionStores, expansionSequences } from '../../../stores/expansion';
+  import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -116,7 +110,6 @@
     schedulingGoalCount,
   } from '../../../stores/scheduling';
   import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
-  import { selectedSequence } from '../../../stores/sequencing';
   import {
     enableSimulation,
     externalResourceNames,
@@ -205,6 +198,7 @@
   let simulationDataAbortController: AbortController;
   let schedulingStatusText: string = '';
   let lastSimulationDatasetId: number | null = null;
+  let latestExpansionSequenceIds: string[] = [];
   let consolePaneApi: PaneAPI;
   let isConsoleExpanded: boolean = false;
   let selectedConsoleTab: PlanConsoleTab = 'all';
@@ -285,7 +279,7 @@
     hasCheckConstraintsPermission =
       featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasExpandPermission =
-      featurePermissions.expansionSequences.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasScheduleAnalysisPermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
@@ -503,10 +497,14 @@
       modelErrorCount += 1;
     }
   }
-  $: lastSimulationDatasetId =
-    SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING
-      ? $lastTemplatedSimulationDatasetId
-      : $lastExpandedSimulationDatasetId;
+  $: lastSimulationDatasetId = $lastTemplatedSimulationDatasetId;
+
+  $: latestExpansionSequenceIds =
+    $simulationDatasetLatest === null
+      ? []
+      : $expansionSequences
+          .filter(sequence => sequence.simulation_dataset_id === $simulationDatasetLatest.id)
+          .map(sequence => sequence.seq_id);
 
   onDestroy(() => {
     resetActivityStores();
@@ -515,6 +513,7 @@
     resetConstraintStores();
     resetPlanSchedulingStores();
     resetExpansionStores();
+    resetSequenceTemplateStores();
     resetPlanStores();
     resetPlanSnapshotStores();
     resetSimulationStores();
@@ -609,14 +608,8 @@
   }
 
   async function onHandleExpansion() {
-    if (SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT) {
-      if ($selectedExpansionSetId != null && $plan) {
-        effects.expand($selectedExpansionSetId, $simulationDatasetLatest?.id || -1, $plan, $user);
-      }
-    } else if (SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING) {
-      if ($selectedSequence !== null && $plan !== null && $simulationDatasetLatest !== null) {
-        effects.expandTemplates([$selectedSequence], $simulationDatasetLatest.dataset_id, $plan, $user);
-      }
+    if ($plan !== null && $simulationDatasetLatest !== null && latestExpansionSequenceIds.length > 0) {
+      await effects.expandTemplates(latestExpansionSequenceIds, $simulationDatasetLatest.id, $plan, $user);
     }
   }
 
@@ -818,25 +811,18 @@
             />
             <PlanNavButton
               title={!compactNavMode ? 'Expansion' : ''}
-              buttonText="Expand Activities"
+              buttonText="Expand All Sequences"
               hasPermission={hasExpandPermission}
               permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to expand activities'}
-              menuTitle={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-                ? 'Command Expansion Status'
-                : 'Template Expansion Status'}
-              disabled={SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT
-                ? $selectedExpansionSetId === null
-                : $selectedSequence === null || $simulationDatasetId === null}
-              status={$planExpansionStatus}
+                : 'You do not have permission to expand sequences'}
+              menuTitle="Template Expansion Status"
+              disabled={$simulationDatasetLatest === null || latestExpansionSequenceIds.length === 0}
+              status={$sequenceTemplateExpansionStatus}
               on:click={() => onHandleExpansion()}
             >
               <ChevronsLeftRight size={20} />
               <svelte:fragment slot="metadata">
-                {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-                  <div>Expansion Set ID: {$selectedExpansionSetId || 'None'}</div>
-                {/if}
                 {#if !lastSimulationDatasetId}
                   <div>No expansions exist yet.</div>
                 {:else}

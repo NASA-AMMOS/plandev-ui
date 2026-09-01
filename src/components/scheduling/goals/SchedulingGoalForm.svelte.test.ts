@@ -3,13 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ADMIN_ROLE } from '../../../utilities/permissions';
 import SchedulingGoalForm from './SchedulingGoalForm.svelte';
 
-vi.mock('$env/dynamic/public', () => {
-  return {
-    env: {
-      PUBLIC_COMMAND_EXPANSION_MODE: 'typescript',
-    },
-  };
-}); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
 vi.mock('$app/stores', () => {
   const page = {
     subscribe: vi.fn((callback: (value: { url: URL }) => void) => {

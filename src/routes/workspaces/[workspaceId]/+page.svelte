@@ -7,13 +7,13 @@
   import { page } from '$app/stores';
   import { env } from '$env/dynamic/public';
   import type { Extension } from '@codemirror/state';
-  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/aerie-ampcs';
+  import type { ChannelDictionary, CommandDictionary, ParameterDictionary } from '@nasa-jpl/plandev-ampcs';
   import type {
     CommandInfoMapper,
     LibrarySequenceSignature,
     PhoenixContext,
     UserSequence,
-  } from '@nasa-jpl/aerie-sequence-languages';
+  } from '@nasa-jpl/plandev-sequence-languages';
   import { Button, Checkbox, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import type { EditorView } from 'codemirror';
   import { capitalize, startCase } from 'lodash-es';

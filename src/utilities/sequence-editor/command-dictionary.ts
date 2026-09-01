@@ -11,7 +11,7 @@ import {
   type FswCommandArgumentRepeat,
   type FswCommandArgumentUnsigned,
   type FswCommandArgumentVarString,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import { logError } from './logger';
 
 /**

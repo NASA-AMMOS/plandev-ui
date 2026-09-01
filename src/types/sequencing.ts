@@ -3,7 +3,7 @@ import type {
   FswCommandArgumentInteger,
   FswCommandArgumentNumeric,
   FswCommandArgumentUnsigned,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import type { DictionaryTypes } from '../enums/dictionaryTypes';
 import type { UserId } from './app';

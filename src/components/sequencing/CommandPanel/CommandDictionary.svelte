@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary, FswCommand, HwCommand } from '@nasa-jpl/plandev-ampcs';
   import ChevronRightIcon from '@nasa-jpl/stellar/icons/chevron_right.svg?component';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import SearchIcon from '@nasa-jpl/stellar/icons/search.svg?component';

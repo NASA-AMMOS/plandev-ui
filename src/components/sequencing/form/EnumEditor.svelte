@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/aerie-ampcs';
+  import type { CommandDictionary, FswCommandArgumentEnum } from '@nasa-jpl/plandev-ampcs';
   import type { SelectedDropdownOptionValue } from '../../../types/dropdown';
   import SearchableDropdown from '../../ui/SearchableDropdown.svelte';
 

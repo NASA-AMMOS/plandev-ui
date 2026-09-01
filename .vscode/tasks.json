@@ -76,7 +76,7 @@
     {
       "label": "PlanDev Backend",
       "type": "shell",
-      "command": "cd ../plandev && docker compose up --build aerie_gateway aerie_merlin aerie_scheduler aerie_merlin_worker_1 aerie_merlin_worker_2 aerie_scheduler_worker_1 aerie_scheduler_worker_2 aerie_sequencing aerie_workspace aerie_action hasura postgres",
+      "command": "cd ../plandev && docker compose up --build plandev_gateway plandev_merlin plandev_scheduler plandev_merlin_worker_1 plandev_merlin_worker_2 plandev_scheduler_worker_1 plandev_scheduler_worker_2 plandev_sequencing plandev_workspace plandev_action hasura postgres",
       "detail": "Task to start up PlanDev containers.",
       "isBackground": true,
       "problemMatcher": [],

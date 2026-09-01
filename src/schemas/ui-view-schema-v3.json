@@ -252,7 +252,7 @@
       "type": ["number", "null"]
     }
   },
-  "description": "JSON schema definition used for configuring the Aerie UI",
+  "description": "JSON schema definition used for configuring the PlanDev UI",
   "properties": {
     "version": {
       "type": "number"

@@ -99,12 +99,25 @@ test.describe.serial('Sequence Templates', () => {
     await plan.showPanel(PanelNames.EXPANSION);
     await plan.createSequenceFilter(sequenceFilterName);
     await plan.applySequenceFilter(sequenceFilterName, plans.planId);
+
+    // can expand either by clicking the "Expand Sequence" button on the sequence row in Expansion panel, or via the top nav
     const expansionSequenceItem = setup.page.locator('.sne-items').getByText(`${sequenceFilterName} Sequence`);
     await expansionSequenceItem.hover();
-    await setup.page.getByLabel('Expand Sequence').click();
+    const expandSequenceButton = setup.page.getByLabel('Expand Sequence');
+    await expect(expandSequenceButton).toBeVisible();
+    await expect(expandSequenceButton).toBeEnabled();
+
+    const expansionNavButton = setup.page.locator('.nav-button').filter({ hasText: 'Expansion' });
+    await expansionNavButton.click();
+    const expandAllButton = setup.page.getByRole('button', { name: 'Expand All Sequences' });
+    await expect(expandAllButton).toBeEnabled();
+    await expandAllButton.click();
+
     // Sequence templating can take a while - increase timeout to 30 seconds
     await plan.waitForToast('Sequence Templating Succeeded', 30000);
+    await expansionSequenceItem.hover();
     await setup.page.getByLabel('Show Expanded Sequence').click();
+
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'attached' });
     await plan.sequenceExpansionOutputModal.waitFor({ state: 'visible' });
     await setup.page.getByText('Loading Editor...').waitFor({ state: 'detached' });

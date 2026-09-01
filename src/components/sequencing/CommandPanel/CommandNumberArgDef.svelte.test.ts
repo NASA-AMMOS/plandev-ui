@@ -3,7 +3,7 @@ import type {
   FswCommandArgumentInteger,
   FswCommandArgumentNumeric,
   FswCommandArgumentUnsigned,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import CommandNumberArgDef from './CommandNumberArgDef.svelte';

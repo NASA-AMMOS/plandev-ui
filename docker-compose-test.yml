@@ -4,8 +4,8 @@
 
 version: '3.7'
 services:
-  aerie_action:
-    container_name: aerie_action
+  plandev_action:
+    container_name: plandev_action
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,13 +25,13 @@ services:
       ACTION_LOCAL_STORE: /usr/src/app/action_file_store
       ACTION_WORKER_NUM: 8
       ACTION_MAX_WORKER_NUM: 8
-    image: 'ghcr.io/nasa-ammos/aerie-action:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-action:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27186:27186']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/action_file_store
-  aerie_gateway:
-    container_name: aerie_gateway
+      - plandev_file_store:/usr/src/app/action_file_store
+  plandev_gateway:
+    container_name: plandev_gateway
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,13 +47,13 @@ services:
       AERIE_DB_PORT: 5432
       GATEWAY_DB_USER: '${GATEWAY_USERNAME}'
       GATEWAY_DB_PASSWORD: '${GATEWAY_PASSWORD}'
-    image: 'ghcr.io/nasa-ammos/aerie-gateway:${GATEWAY_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-gateway:${GATEWAY_IMAGE_TAG:-develop}'
     ports: ['9000:9000']
     restart: always
     volumes:
-      - aerie_file_store:/app/files
-  aerie_merlin:
-    container_name: aerie_merlin
+      - plandev_file_store:/app/files
+  plandev_merlin:
+    container_name: plandev_merlin
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,13 +72,13 @@ services:
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO
         -Dorg.slf4j.simpleLogger.logFile=System.err
       UNTRUE_PLAN_START: '2000-01-01T11:58:55.816Z'
-    image: 'ghcr.io/nasa-ammos/aerie-merlin:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-merlin:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27183:27183']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/merlin_file_store
-  aerie_merlin_worker:
-    container_name: aerie_merlin_worker
+      - plandev_file_store:/usr/src/app/merlin_file_store
+  plandev_merlin_worker:
+    container_name: plandev_merlin_worker
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,15 +94,15 @@ services:
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO
         -Dorg.slf4j.simpleLogger.logFile=System.err
       UNTRUE_PLAN_START: '2000-01-01T11:58:55.816Z'
-    image: 'ghcr.io/nasa-ammos/aerie-merlin-worker:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-merlin-worker:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27187:8080']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/merlin_file_store:ro
-  aerie_scheduler:
-    container_name: aerie_scheduler
+      - plandev_file_store:/usr/src/app/merlin_file_store:ro
+  plandev_scheduler:
+    container_name: plandev_scheduler
     depends_on:
-      aerie_merlin:
+      plandev_merlin:
         condition: service_started
       postgres:
         condition: service_healthy
@@ -118,13 +118,13 @@ services:
         -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO
         -Dorg.slf4j.simpleLogger.logFile=System.err
-    image: 'ghcr.io/nasa-ammos/aerie-scheduler:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-scheduler:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27185:27185']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/merlin_file_store
-  aerie_scheduler_worker:
-    container_name: aerie_scheduler_worker
+      - plandev_file_store:/usr/src/app/merlin_file_store
+  plandev_scheduler_worker:
+    container_name: plandev_scheduler_worker
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,13 +143,13 @@ services:
         -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO
         -Dorg.slf4j.simpleLogger.logFile=System.err
-    image: 'ghcr.io/nasa-ammos/aerie-scheduler-worker:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-scheduler-worker:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27189:8080']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/merlin_file_store:ro
-  aerie_sequencing:
-    container_name: aerie_sequencing
+      - plandev_file_store:/usr/src/app/merlin_file_store:ro
+  plandev_sequencing:
+    container_name: plandev_sequencing
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,21 +165,21 @@ services:
       SEQUENCING_LOCAL_STORE: /usr/src/app/sequencing_file_store
       SEQUENCING_SERVER_PORT: 27184
       SEQUENCING_LANGUAGE: 'SEQN'
-    image: 'ghcr.io/nasa-ammos/aerie-sequencing:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-sequencing:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['27184:27184']
     restart: always
     volumes:
-      - aerie_file_store:/usr/src/app/sequencing_file_store
+      - plandev_file_store:/usr/src/app/sequencing_file_store
   hasura:
-    container_name: aerie_hasura
+    container_name: plandev_hasura
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       AERIE_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie?options=-c%20search_path%3Dutil_functions%2Chasura%2Cpermissions%2Ctags%2Cmerlin%2Cscheduler%2Csequencing%2Cpublic'
-      AERIE_MERLIN_URL: 'http://aerie_merlin:27183'
-      AERIE_SCHEDULER_URL: 'http://aerie_scheduler:27185'
-      AERIE_SEQUENCING_URL: 'http://aerie_sequencing:27184'
+      AERIE_MERLIN_URL: 'http://plandev_merlin:27183'
+      AERIE_SCHEDULER_URL: 'http://plandev_scheduler:27185'
+      AERIE_SEQUENCING_URL: 'http://plandev_sequencing:27184'
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_DEV_MODE: 'true'
       HASURA_GRAPHQL_ENABLE_CONSOLE: 'true'
@@ -191,11 +191,11 @@ services:
       HASURA_GRAPHQL_METADATA_DIR: /hasura-metadata
       # Default is 30s; give migrations more room when Postgres is slow to accept connections.
       HASURA_GRAPHQL_MIGRATIONS_SERVER_TIMEOUT: '60'
-    image: 'ghcr.io/nasa-ammos/aerie-hasura:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-hasura:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['8080:8080']
     restart: always
   postgres:
-    container_name: aerie_postgres
+    container_name: plandev_postgres
     environment:
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
@@ -210,13 +210,13 @@ services:
       SCHEDULER_DB_PASSWORD: '${SCHEDULER_PASSWORD}'
       SEQUENCING_DB_USER: '${SEQUENCING_USERNAME}'
       SEQUENCING_DB_PASSWORD: '${SEQUENCING_PASSWORD}'
-    image: 'ghcr.io/nasa-ammos/aerie-postgres:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-postgres:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['5432:5432']
     restart: always
     # Gate dependents on Postgres actually accepting connections. Without this, every service
     # (hasura, merlin, gateway, ...) starts immediately and races Postgres, logging "connection
     # refused" retries and, for Hasura, risking a migration timeout on a slow runner. start_period
-    # covers the aerie-postgres image's first-run DB/schema initialization.
+    # covers the plandev-postgres image's first-run DB/schema initialization.
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 5s
@@ -225,8 +225,8 @@ services:
       start_period: 40s
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  aerie_workspace:
-    container_name: aerie_workspace
+  plandev_workspace:
+    container_name: plandev_workspace
     depends_on:
       postgres:
         condition: service_healthy
@@ -245,12 +245,12 @@ services:
         -Dorg.slf4j.simpleLogger.defaultLogLevel=INFO
         -Dorg.slf4j.simpleLogger.log.com.zaxxer.hikari=INFO
         -Dorg.slf4j.simpleLogger.logFile=System.err
-    image: 'ghcr.io/nasa-ammos/aerie-workspace:${AERIE_IMAGE_TAG:-develop}'
+    image: 'ghcr.io/nasa-ammos/plandev-workspace:${PLANDEV_IMAGE_TAG:-develop}'
     ports: ['28000:28000', '5015:5005']
     restart: always
     volumes:
       - workspace_file_store:/usr/src/ws
 volumes:
-  aerie_file_store:
+  plandev_file_store:
   postgres_data:
   workspace_file_store:

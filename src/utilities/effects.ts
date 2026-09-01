@@ -1,19 +1,19 @@
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
-import type { ActionValueSchema } from '@nasa-jpl/aerie-actions';
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import {
   type ChannelDictionary as AmpcsChannelDictionary,
   type CommandDictionary as AmpcsCommandDictionary,
   type ParameterDictionary as AmpcsParameterDictionary,
-} from '@nasa-jpl/aerie-ampcs';
+} from '@nasa-jpl/plandev-ampcs';
 import {
   parseCdlDictionary,
   toAmpcsXml,
   type PhoenixAdaptation,
   type PhoenixContext,
   type UserSequence,
-} from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-sequence-languages';
 import type { SeqJson } from '@nasa-jpl/seq-json-schema/types';
 import { chunk } from 'lodash-es';
 import { get } from 'svelte/store';
@@ -32,13 +32,7 @@ import {
   checkConstraintsQueryStatus as checkConstraintsQueryStatusStore,
   resetConstraintStoresForSimulation,
 } from '../stores/constraints';
-import {
-  createExpansionRuleError as createExpansionRuleErrorStore,
-  creatingExpansionSequence as creatingExpansionSequenceStore,
-  planExpansionStatus as planExpansionStatusStore,
-  savingExpansionRule as savingExpansionRuleStore,
-  savingExpansionSet as savingExpansionSetStore,
-} from '../stores/expansion';
+import { creatingExpansionSequence as creatingExpansionSequenceStore } from '../stores/expansion';
 import {
   createDerivationGroupError as createDerivationGroupErrorStore,
   createExternalSourceError as createExternalSourceErrorStore,
@@ -95,7 +89,6 @@ import type {
   ActivityPresetSetInput,
   ActivitySearchResponse,
   ActivityType,
-  ActivityTypeExpansionRules,
   PlanSnapshotActivity,
 } from '../types/activity';
 import type { ActivityMetadata } from '../types/activity-metadata';
@@ -116,16 +109,9 @@ import type {
   ConstraintResult,
 } from '../types/constraint';
 import type {
-  ExpandedSequence,
-  ExpansionRule,
-  ExpansionRuleInsertInput,
-  ExpansionRuleSetInput,
-  ExpansionRun,
-  ExpansionRunSlim,
   ExpansionSequence,
   ExpansionSequenceInsertInput,
   ExpansionSequenceToActivityInsertInput,
-  ExpansionSet,
   SeqId,
   SequenceFilter,
   SequenceFilterInsertInput,
@@ -237,7 +223,6 @@ import type {
   ConstraintDefinitionTagsInsertInput,
   ConstraintMetadataTagsInsertInput,
   ConstraintTagsInsertInput,
-  ExpansionRuleTagsInsertInput,
   PlanSnapshotTagsInsertInput,
   PlanTagsInsertInput,
   SchedulingConditionDefinitionTagsInsertInput,
@@ -687,7 +672,9 @@ const effects = {
       if (response.success) {
         showSuccessToast(response.message);
         logMessage('log', `Executed extension "${extension.label}" (ID=${extension.id}).`);
-        window.open(response.url, '_blank');
+        if (response.url) {
+          window.open(response.url, '_blank');
+        }
       } else {
         throw new Error(response.message, { cause: response.trace });
       }
@@ -1024,7 +1011,7 @@ const effects = {
       const actionRunInsertInput: Record<string, unknown> = {
         action_definition_id: actionDefinitionId,
         // we are now sending secrets on every run, to provide JWT token to actions
-        // todo: future refactor - use hasura actions to run aerie actions & avoid need for secrets call
+        // todo: future refactor - use hasura actions to run plandev actions & avoid need for secrets call
         has_secrets: true,
         parameters: nonSecretParameters,
         settings,
@@ -1397,66 +1384,6 @@ const effects = {
     }
   },
 
-  async createExpansionRule(rule: ExpansionRuleInsertInput, user: User | null): Promise<number | null> {
-    try {
-      createExpansionRuleErrorStore.set(null);
-
-      if (!queryPermissions.CREATE_EXPANSION_RULE(user)) {
-        throwPermissionError('create an expansion rule');
-      }
-
-      savingExpansionRuleStore.set(true);
-      const data = await reqHasura<ExpansionRule>(gql.CREATE_EXPANSION_RULE, { rule }, user);
-      const { createExpansionRule } = data;
-      if (createExpansionRule != null) {
-        const { id } = createExpansionRule;
-        showSuccessToast('Expansion Rule Created Successfully');
-        logMessage(
-          'log',
-          `Created expansion rule "${rule.name}" (ID=${createExpansionRule.id}) for parcel ID=${rule.parcel_id}.`,
-        );
-        savingExpansionRuleStore.set(false);
-        return id;
-      } else {
-        throw Error(`Unable to create expansion rule "${rule.name}"`);
-      }
-    } catch (e) {
-      catchError('log', 'Expansion Rule Create Failed', e as Error);
-      showFailureToast('Expansion Rule Create Failed');
-      savingExpansionRuleStore.set(false);
-      createExpansionRuleErrorStore.set((e as Error).message);
-      return null;
-    }
-  },
-
-  async createExpansionRuleTags(tags: ExpansionRuleTagsInsertInput[], user: User | null): Promise<number | null> {
-    try {
-      if (!queryPermissions.CREATE_EXPANSION_RULE_TAGS(user)) {
-        throwPermissionError('create expansion rule tags');
-      }
-
-      const data = await reqHasura<{ affected_rows: number }>(gql.CREATE_EXPANSION_RULE_TAGS, { tags }, user);
-      const { insert_expansion_rule_tags: insertExpansionRuleTags } = data;
-      if (insertExpansionRuleTags != null) {
-        const { affected_rows: affectedRows } = insertExpansionRuleTags;
-
-        if (affectedRows !== tags.length) {
-          throw Error('Some expansion rule tags were not successfully created');
-        }
-        tags.forEach(tag => {
-          logMessage('log', `Created expansion rule tag ID=${tag.tag_id} for rule ID=${tag.rule_id}.`);
-        });
-        return affectedRows;
-      } else {
-        throw Error(`Unable to create expansion rule tags`);
-      }
-    } catch (e) {
-      catchError('log', 'Create Expansion Rule Tags Failed', e as Error);
-      showFailureToast('Create Expansion Rule Tags Failed');
-      return null;
-    }
-  },
-
   async createExpansionSequence(seqId: string, simulationDatasetId: number, user: User | null): Promise<string | null> {
     try {
       if (!queryPermissions.CREATE_EXPANSION_SEQUENCE(user)) {
@@ -1472,7 +1399,7 @@ const effects = {
       const data = await reqHasura<SeqId>(gql.CREATE_EXPANSION_SEQUENCE, { sequence }, user);
       if (data.createExpansionSequence != null) {
         showSuccessToast('Expansion Sequence Created Successfully');
-        logMessage('log', `Created expansion rule sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
+        logMessage('log', `Created expansion sequence "${seqId}" for simulation ID=${simulationDatasetId}.`);
         creatingExpansionSequenceStore.set(false);
         return data.createExpansionSequence.seq_id;
       } else {
@@ -1482,53 +1409,6 @@ const effects = {
       catchError('log', 'Expansion Sequence Create Failed', e as Error);
       showFailureToast('Expansion Sequence Create Failed');
       creatingExpansionSequenceStore.set(false);
-      return null;
-    }
-  },
-
-  async createExpansionSet(
-    parcelId: number,
-    model: ModelSlim,
-    expansionRuleIds: number[],
-    user: User | null,
-    plans: PlanSlim[],
-    name?: string,
-    description?: string,
-  ): Promise<number | null> {
-    try {
-      if (!queryPermissions.CREATE_EXPANSION_SET(user, plans, model)) {
-        throwPermissionError('create an expansion set');
-      }
-
-      savingExpansionSetStore.set(true);
-      const data = await reqHasura<ExpansionSet>(
-        gql.CREATE_EXPANSION_SET,
-        {
-          expansionRuleIds,
-          modelId: model.id,
-          ...(name && { name }),
-          parcelId,
-          ...(description && { description }),
-        },
-        user,
-      );
-      const { createExpansionSet } = data;
-      if (createExpansionSet != null) {
-        const { id } = createExpansionSet;
-        showSuccessToast('Expansion Set Created Successfully');
-        logMessage(
-          'log',
-          `Created expansion set "${createExpansionSet.name ?? 'unnamed'}" (ID=${createExpansionSet.id}) for parcel ID=${parcelId}.`,
-        );
-        savingExpansionSetStore.set(false);
-        return id;
-      } else {
-        throw Error('Unable to create expansion set');
-      }
-    } catch (e) {
-      catchError('log', 'Expansion Set Create Failed', e as Error);
-      showFailureToast('Expansion Set Create Failed');
-      savingExpansionSetStore.set(false);
       return null;
     }
   },
@@ -3130,65 +3010,6 @@ const effects = {
     }
   },
 
-  async deleteExpansionRule(rule: ExpansionRule, user: User | null): Promise<boolean> {
-    try {
-      if (!queryPermissions.DELETE_EXPANSION_RULE(user, rule)) {
-        throwPermissionError('delete an expansion rule');
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `Are you sure you want to delete "${rule.name}"?`,
-        'Delete Expansion Rule',
-      );
-
-      if (confirm) {
-        const data = await reqHasura(gql.DELETE_EXPANSION_RULE, { id: rule.id }, user);
-
-        if (data.deleteExpansionRule != null) {
-          logMessage('log', `Deleted expansion rule "${rule.name}" (ID=${rule.id}).`);
-          showSuccessToast('Expansion Rule Deleted Successfully');
-          return true;
-        } else {
-          throw Error(`Unable to delete expansion rule "${rule.name}"`);
-        }
-      }
-    } catch (e) {
-      catchError('log', 'Expansion Rule Delete Failed', e as Error);
-      showFailureToast('Expansion Rule Delete Failed');
-    }
-
-    return false;
-  },
-
-  async deleteExpansionRuleTags(tagIds: Tag['id'][], ruleId: number, user: User | null): Promise<number | null> {
-    try {
-      if (!queryPermissions.DELETE_EXPANSION_RULE_TAGS(user)) {
-        throwPermissionError('delete expansion rule tags');
-      }
-
-      const data = await reqHasura<{ affected_rows: number }>(
-        gql.DELETE_EXPANSION_RULE_TAGS,
-        { rule_id: ruleId, tag_ids: tagIds },
-        user,
-      );
-      const { delete_expansion_rule_tags: deleteExpansionRuleTags } = data;
-      if (deleteExpansionRuleTags != null) {
-        const { affected_rows: affectedRows } = deleteExpansionRuleTags;
-        tagIds.forEach(tagId => {
-          logMessage('log', `Removed tag ID=${tagId} from expansion rule ID=${ruleId}.`);
-        });
-        return affectedRows;
-      } else {
-        throw Error('Unable to delete expansion rule tags');
-      }
-    } catch (e) {
-      catchError('log', 'Delete Expansion Rule Tags Failed', e as Error);
-      showFailureToast('Delete Expansion Rule Tags Failed');
-      return null;
-    }
-  },
-
   async deleteExpansionSequence(sequence: ExpansionSequence, user: User | null): Promise<void> {
     try {
       if (!queryPermissions.DELETE_EXPANSION_SEQUENCE(user)) {
@@ -3253,37 +3074,6 @@ const effects = {
     } catch (e) {
       catchError('log', 'Delete Expansion Sequence From Activity Failed', e as Error);
       showFailureToast('Delete Expansion Sequence From Activity Failed');
-      return false;
-    }
-  },
-
-  async deleteExpansionSet(set: ExpansionSet, user: User | null): Promise<boolean> {
-    try {
-      if (!queryPermissions.DELETE_EXPANSION_SET(user, set)) {
-        throwPermissionError('delete an expansion set');
-      }
-
-      const { confirm } = await showConfirmModal(
-        'Delete',
-        `Are you sure you want to delete "${set.name}"?`,
-        'Delete Expansion Set',
-      );
-
-      if (confirm) {
-        const data = await reqHasura<{ id: number }>(gql.DELETE_EXPANSION_SET, { id: set.id }, user);
-        if (data.deleteExpansionSet != null) {
-          logMessage('log', `Deleted expansion set "${set.name}" (ID=${set.id}).`);
-          showSuccessToast('Expansion Set Deleted Successfully');
-          return true;
-        } else {
-          throw Error(`Unable to delete expansion set "${set.name}"`);
-        }
-      }
-
-      return false;
-    } catch (e) {
-      catchError('log', 'Expansion Set Delete Failed', e as Error);
-      showFailureToast('Expansion Set Delete Failed');
       return false;
     }
   },
@@ -4257,34 +4047,6 @@ const effects = {
     return false;
   },
 
-  async expand(expansionSetId: number, simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
-    try {
-      planExpansionStatusStore.set(Status.Incomplete);
-
-      if (!queryPermissions.EXPAND(user, plan, plan.model)) {
-        throwPermissionError('expand this plan');
-      }
-
-      const startTime = performance.now();
-      const data = await reqHasura<{ id: number }>(gql.EXPAND, { expansionSetId, simulationDatasetId }, user);
-      if (data.expand != null) {
-        planExpansionStatusStore.set(Status.Complete);
-        showSuccessToast('Plan Expanded Successfully');
-        logMessage(
-          'log',
-          `Expanded plan with expansion set ID=${expansionSetId} for simulation ID=${simulationDatasetId}.`,
-          { duration: performance.now() - startTime },
-        );
-      } else {
-        throw Error('Unable to expand plan');
-      }
-    } catch (e) {
-      catchError('log', 'Plan Expansion Failed', e as Error);
-      planExpansionStatusStore.set(Status.Failed);
-      showFailureToast('Plan Expansion Failed');
-    }
-  },
-
   async expandTemplates(seqIds: string[], simulationDatasetId: number, plan: Plan, user: User | null): Promise<void> {
     try {
       if (!plan.model) {
@@ -4434,33 +4196,6 @@ const effects = {
     }
   },
 
-  async getActivityTypesExpansionRules(
-    modelId: number | null | undefined,
-    user: User | null,
-  ): Promise<ActivityTypeExpansionRules[]> {
-    if (modelId !== null && modelId !== undefined) {
-      try {
-        const data = await reqHasura<ActivityTypeExpansionRules[]>(
-          gql.GET_ACTIVITY_TYPES_EXPANSION_RULES,
-          { modelId },
-          user,
-        );
-        const { activity_types: activityTypes } = data;
-        if (activityTypes != null) {
-          logMessage('log', `Retrieved expansion rule activity types for model ID=${modelId}.`);
-          return activityTypes;
-        } else {
-          throw Error('No activity types found');
-        }
-      } catch (e) {
-        catchError('log', 'Failed to retrieve expansion rule activity types', e as Error);
-        return [];
-      }
-    } else {
-      return [];
-    }
-  },
-
   async getConstraint(id: number, user: User | null): Promise<ConstraintMetadata | null> {
     try {
       const data = await reqHasura<ConstraintMetadata>(convertToQuery(gql.SUB_CONSTRAINT), { id }, user);
@@ -4599,61 +4334,6 @@ const effects = {
     }
   },
 
-  async getExpansionRule(id: number, user: User | null): Promise<ExpansionRule | null> {
-    try {
-      const data = await reqHasura<ExpansionRule>(gql.GET_EXPANSION_RULE, { id }, user);
-      const { expansionRule } = data;
-      if (expansionRule) {
-        logMessage('log', `Retrieved expansion rule "${expansionRule.name}" (ID=${id}).`);
-      }
-      return expansionRule;
-    } catch (e) {
-      catchError('log', 'Failed to get expansion rule', e as Error);
-      return null;
-    }
-  },
-
-  async getExpansionRun(
-    id: number,
-    user: User | null,
-    signal?: AbortSignal,
-  ): Promise<{ aborted: boolean; expansionRun: ExpansionRun | null }> {
-    try {
-      const data = await reqHasura<ExpansionRun>(gql.GET_EXPANSION_RUN, { id }, user, signal);
-      const { expansionRun } = data;
-      if (expansionRun) {
-        logMessage('log', `Retrieved expansion run (ID=${id}).`);
-        return { aborted: false, expansionRun };
-      } else {
-        return { aborted: false, expansionRun: null };
-      }
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') {
-        return { aborted: true, expansionRun: null };
-      }
-      catchError('log', 'Failed to get expansion run', e as Error);
-      showFailureToast('Expansion Run Details Retrieval Failed');
-      return { aborted: false, expansionRun: null };
-    }
-  },
-
-  async getExpansionRuns(user: User | null): Promise<ExpansionRunSlim[]> {
-    try {
-      const data = await reqHasura<ExpansionRunSlim[]>(gql.GET_EXPANSION_RUNS, {}, user);
-      const { expansionRuns } = data;
-      if (expansionRuns) {
-        logMessage('log', `Retrieved ${expansionRuns.length} expansion run${pluralize(expansionRuns.length)}.`);
-        return expansionRuns;
-      } else {
-        return [];
-      }
-    } catch (e) {
-      catchError('log', 'Failed to get expansion runs', e as Error);
-      showFailureToast('Expansion Runs Retrieval Failed');
-      return [];
-    }
-  },
-
   async getExpansionSequenceId(
     simulatedActivityId: number,
     simulationDatasetId: number,
@@ -4682,35 +4362,6 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Failed to retrieve expansion sequence ID', e as Error);
-      return null;
-    }
-  },
-
-  async getExpansionSequenceSeqJson(
-    seqId: string,
-    simulationDatasetId: number,
-    user: User | null,
-  ): Promise<string | null> {
-    try {
-      const data = await reqHasura<ExpandedSequence[]>(
-        gql.GET_EXPANSION_SEQUENCE_SEQ_JSON,
-        {
-          seqId,
-          simulationDatasetId,
-        },
-        user,
-      );
-
-      const { expanded_sequences } = data;
-      if (expanded_sequences != null && expanded_sequences.length === 1) {
-        const { expanded_sequence } = expanded_sequences[0];
-        logMessage('log', `Retrieved expansion sequence SeqJson for sequence "${seqId}".`);
-        return JSON.stringify(expanded_sequence, null, 2);
-      } else {
-        throw Error(`Unable to get expansion sequence seq json for seq ID "${seqId}"`);
-      }
-    } catch (e) {
-      catchError('log', 'Failed to get expansion sequence seq json', e as Error);
       return null;
     }
   },
@@ -5531,76 +5182,6 @@ const effects = {
       }
     } catch (e) {
       catchError('log', 'Unable to retrieve tags', e as Error);
-      return [];
-    }
-  },
-
-  async getTsFilesActivityType(
-    activityTypeName: string | null | undefined,
-    modelId: number | null | undefined,
-    user: User | null,
-  ): Promise<TypeScriptFile[]> {
-    if (activityTypeName !== null && activityTypeName !== undefined && modelId !== null && modelId !== undefined) {
-      try {
-        const data = await reqHasura<DslTypeScriptResponse>(
-          gql.GET_TYPESCRIPT_ACTIVITY_TYPE,
-          {
-            activityTypeName,
-            modelId,
-          },
-          user,
-        );
-        const { dslTypeScriptResponse } = data;
-        if (dslTypeScriptResponse != null) {
-          const { reason, status, typescriptFiles } = dslTypeScriptResponse;
-
-          if (status === 'success') {
-            logMessage('log', `Retrieved TypeScript activity type "${activityTypeName}".`);
-            return typescriptFiles;
-          } else {
-            throw new Error(reason);
-          }
-        } else {
-          throw Error(`Unable to get TypeScript activity type "${activityTypeName}"`);
-        }
-      } catch (e) {
-        catchError('log', 'Unable to retrieve TypeScript activity type', e as Error);
-        return [];
-      }
-    } else {
-      return [];
-    }
-  },
-
-  async getTsFilesCommandDictionary(
-    commandDictionaryId: number | null | undefined,
-    user: User | null,
-  ): Promise<TypeScriptFile[]> {
-    if (commandDictionaryId !== null && commandDictionaryId !== undefined) {
-      try {
-        const data = await reqHasura<DslTypeScriptResponse>(
-          gql.GET_TYPESCRIPT_COMMAND_DICTIONARY,
-          { commandDictionaryId },
-          user,
-        );
-        const { dslTypeScriptResponse } = data;
-        if (dslTypeScriptResponse != null) {
-          const { reason, status, typescriptFiles } = dslTypeScriptResponse;
-
-          if (status === 'success') {
-            logMessage('log', `Retrieved TypeScript command dictionary "${commandDictionaryId}".`);
-            return typescriptFiles;
-          } else {
-            throw new Error(reason);
-          }
-        } else {
-          throw Error(`Unable to get TypeScript command dictionary with ID: "${commandDictionaryId}"`);
-        }
-      } catch (e) {
-        catchError('log', 'Unable to retrieve TypeScript command dictionary', e as Error);
-        return [];
-      }
-    } else {
       return [];
     }
   },
@@ -7944,35 +7525,6 @@ const effects = {
     }
   },
 
-  async updateExpansionRule(id: number, rule: ExpansionRuleSetInput, user: User | null): Promise<string | null> {
-    try {
-      savingExpansionRuleStore.set(true);
-      createExpansionRuleErrorStore.set(null);
-
-      if (!queryPermissions.UPDATE_EXPANSION_RULE(user, rule)) {
-        throwPermissionError('update this expansion rule');
-      }
-
-      const data = await reqHasura(gql.UPDATE_EXPANSION_RULE, { id, rule }, user);
-      const { updateExpansionRule } = data;
-      if (updateExpansionRule != null) {
-        const { updated_at: updatedAt } = updateExpansionRule;
-        showSuccessToast('Expansion Rule Updated Successfully');
-        logMessage('log', `Updated expansion rule "${rule.name}" (ID=${id}).`);
-        savingExpansionRuleStore.set(false);
-        return updatedAt;
-      } else {
-        throw Error(`Unable to update expansion rule with ID: "${id}"`);
-      }
-    } catch (e) {
-      catchError('log', 'Expansion Rule Update Failed', e as Error);
-      showFailureToast('Expansion Rule Update Failed');
-      savingExpansionRuleStore.set(false);
-      createExpansionRuleErrorStore.set((e as Error).message);
-      return null;
-    }
-  },
-
   async updateModel(
     id: number,
     model: Partial<ModelSetInput>,
@@ -8781,7 +8333,7 @@ const effects = {
       }
 
       if (dictionary.split('\n').find(line => /^PROJECT\s*:\s*"([^"]*)"/.test(line))) {
-        // convert cdl to ampcs format, consider moving to aerie backend after decision on XTCE
+        // convert cdl to ampcs format, consider moving to plandev backend after decision on XTCE
         // eslint-disable-next-line no-control-regex
         dictionary = toAmpcsXml(parseCdlDictionary(dictionary)).replaceAll(/[^\x00-\x7F]+/g, '');
       }
@@ -8902,14 +8454,15 @@ const effects = {
         }
       }
 
-      // The aerie gateway mangles the names of uploaded files to ensure uniqueness.
+      // The plandev gateway mangles the names of uploaded files to ensure uniqueness.
       // Here, we use the ids of the files we just uploaded to look up the generated filenames
       const generatedFilenames: Record<string, string> = {};
       for (const newFile of files) {
         const id = originalFilenameToId[newFile.name];
         const response = (await reqHasura<[{ name: string }]>(gql.GET_UPLOADED_FILENAME, { id }, user)).uploaded_file;
         if (response !== null) {
-          generatedFilenames[newFile.name] = `${env.PUBLIC_AERIE_FILE_STORE_PREFIX}${response[0].name}`;
+          const fileStorePrefix = env.PUBLIC_PLANDEV_FILE_STORE_PREFIX || env.PUBLIC_AERIE_FILE_STORE_PREFIX;
+          generatedFilenames[newFile.name] = `${fileStorePrefix}${response[0].name}`;
         }
       }
 

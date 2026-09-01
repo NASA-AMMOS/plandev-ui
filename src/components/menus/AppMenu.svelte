@@ -26,8 +26,6 @@
   } from 'lucide-svelte';
   import PlanDevWordmarkDark from '../../assets/plandev-logo-dark.svg?component';
   import SeqDevWordmarkDark from '../../assets/seqdev-logo-dark.svg?component';
-  import { SEQUENCE_EXPANSION_MODE } from '../../constants/command-expansion';
-  import { SequencingMode } from '../../enums/sequencing';
   import type { User } from '../../types/app';
   import { getAppBrand } from '../../utilities/branding';
   import { logout } from '../../utilities/login';
@@ -113,18 +111,10 @@
             <BookA size={16} />
             Dictionaries
           </MenuLink>
-          {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TYPESCRIPT}
-            <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/expansion/rules">
-              <ChevronsLeftRight size={16} />
-              Expansion
-            </MenuLink>
-          {/if}
-          {#if SEQUENCE_EXPANSION_MODE === SequencingMode.TEMPLATING}
-            <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequence-templates">
-              <ChevronsLeftRight size={16} />
-              Sequence Templates
-            </MenuLink>
-          {/if}
+          <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/sequence-templates">
+            <ChevronsLeftRight size={16} />
+            Sequence Templates
+          </MenuLink>
           <MenuLink on:click={closeMenu} className="text-sm py-1.5" href="{base}/parcels">
             <Archive size={16} />
             Parcels

@@ -5,7 +5,7 @@ import {
   seqnParser,
   seqnToSeqJson,
   type PhoenixAdaptation,
-} from '@nasa-jpl/aerie-sequence-languages';
+} from '@nasa-jpl/plandev-sequence-languages';
 import { writable, type Writable } from 'svelte/store';
 import type { SequenceAdaptationMetadata } from '../types/sequencing';
 import gql from '../utilities/gql';

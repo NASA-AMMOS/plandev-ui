@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { FswCommandArgumentVarString } from '@nasa-jpl/aerie-ampcs';
+  import type { FswCommandArgumentVarString } from '@nasa-jpl/plandev-ampcs';
   import { isQuoted, quoteEscape, unquoteUnescape } from '../../../utilities/sequence-editor/sequence-utils';
 
   export let argDef: FswCommandArgumentVarString;

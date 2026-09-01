@@ -1,7 +1,7 @@
 import { indentService, LRLanguage } from '@codemirror/language';
 import { linter } from '@codemirror/lint';
 import { hoverTooltip, ViewPlugin } from '@codemirror/view';
-import type { CreateTooltip, PhoenixResources } from '@nasa-jpl/aerie-sequence-languages';
+import type { CreateTooltip, PhoenixResources } from '@nasa-jpl/plandev-sequence-languages';
 import { EditorView } from 'codemirror';
 import StringTooltip from '../../components/sequencing/StringTooltip.svelte';
 
