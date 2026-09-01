@@ -6995,7 +6995,7 @@ const effects = {
   async sendSequenceToWorkspace(
     sequence: ExpansionSequence | null,
     expandedSequence: string | null,
-    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
+    metadata: Partial<Pick<WorkspaceFileMetadata, 'user'>>,
     user: User | null,
   ): Promise<string | null> {
     try {
