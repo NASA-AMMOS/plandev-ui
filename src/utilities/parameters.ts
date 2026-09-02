@@ -1,6 +1,7 @@
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import type { JSONType, SchemaObject } from 'ajv';
 import { isEqual, omitBy } from 'lodash-es';
+import picomatch from 'picomatch';
 import type { ActionParametersMap } from '../types/actions';
 import type {
   Argument,
@@ -171,28 +172,26 @@ export function getArguments(argumentsMap: ArgumentsMap, formParameter: FormPara
   return omitBy({ ...argumentsMap, ...newArgument }, isEmpty);
 }
 
-const extensionRegExp = /\*?\.?(?<extension>.*)$/;
-
-export function pathMatchesExtensionPattern(path: string, pattern: string): boolean {
+export function pathMatchesPattern(path: string, pattern: string): boolean {
   if (!pattern.length || pattern === '*') {
     return true;
   }
+  // preserve back-compatibility with extension patterns - `.txt` is treated as `*.txt`
+  const normalizedPattern = pattern.startsWith('.') ? `*${pattern}` : pattern;
 
-  const match = pattern.match(extensionRegExp);
-  // Check if the pattern is in the expected "*.ext" format
-  if (match && match.groups?.extension) {
-    // Extract the extension part from path, e.g., ".sh" from "*.sh"
-    return path.toLowerCase().endsWith(match.groups.extension.toLowerCase());
-  }
-  return false;
+  return picomatch.isMatch(path, normalizedPattern, {
+    basename: true, // only match against filename if full path is passed
+    dot: true, // allow matching .dotfiles
+    nocase: true, // case-insensitive
+  });
 }
 
-function filterByExtensionPattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
-  // Handle the "match all" wildcard
+function filterByFilePattern(options: ValueSchemaOption[], pattern: string): ValueSchemaOption[] {
   if (!pattern.length || pattern === '*') {
-    return [...options]; // Return a shallow copy of all options
+    return [...options];
   }
-  return options.filter(option => pathMatchesExtensionPattern(option.value, pattern));
+
+  return options.filter(option => pathMatchesPattern(option.value, pattern));
 }
 
 export function getFormParameters(
@@ -238,7 +237,7 @@ export function getFormParameters(
       } else {
         const fileOptions = dropdownOptions.filter(({ type }) => type !== 'DIRECTORY');
         if (schema.pattern) {
-          options = filterByExtensionPattern(fileOptions, schema.pattern);
+          options = filterByFilePattern(fileOptions, schema.pattern);
         } else {
           options = fileOptions;
         }
