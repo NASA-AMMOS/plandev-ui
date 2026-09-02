@@ -7,6 +7,7 @@ import {
   getCleansedStructArguments,
   getValueSchemaDefaultValue,
   isRecParameter,
+  pathMatchesPattern,
 } from './parameters';
 
 describe('getArgument', () => {
@@ -545,5 +546,45 @@ describe('applyRequiredErrors', () => {
     const result = applyRequiredErrors(formParameters, touchedNames);
 
     expect(result[0].errors).toEqual(['This field is required']);
+  });
+});
+
+describe('pathMatchesPattern', () => {
+  test('Should preserve existing extension pattern matching', () => {
+    expect(pathMatchesPattern('thing.seq', '*.seq')).toBe(true);
+    expect(pathMatchesPattern('THING.SEQ', '*.seq')).toBe(true);
+    expect(pathMatchesPattern('thing.seqn.txt', '*.txt')).toBe(true);
+    expect(pathMatchesPattern('thing.seqn.txt', '*.seqn.txt')).toBe(true);
+    expect(pathMatchesPattern('thing.txt', '*.seq')).toBe(false);
+    expect(pathMatchesPattern('bad.txt', '*.seqn.txt')).toBe(false);
+  });
+
+  test('Should support legacy dot-prefixed extension patterns', () => {
+    expect(pathMatchesPattern('thing.seq', '.seq')).toBe(true);
+    expect(pathMatchesPattern('THING.SEQ', '.seq')).toBe(true);
+    expect(pathMatchesPattern('thing.txt', '.seq')).toBe(false);
+
+    // Bare extensions are not part of the supported API.
+    expect(pathMatchesPattern('thing.seq', 'seq')).toBe(false);
+  });
+
+  test('Should support glob matching against filenames', () => {
+    expect(pathMatchesPattern('seq_alpha_nav.seq', 'seq_*_nav.seq')).toBe(true);
+    expect(pathMatchesPattern('folder/seq_alpha_nav.seq', 'seq_*_nav.seq')).toBe(true);
+    expect(pathMatchesPattern('seq_alpha_other.seq', 'seq_*_nav.seq')).toBe(false);
+  });
+
+  test('Should support arbitrary numbers of digits with extglobs', () => {
+    const pattern = 'thing_+([0-9]).seq';
+
+    expect(pathMatchesPattern('thing_1.seq', pattern)).toBe(true);
+    expect(pathMatchesPattern('thing_12345.seq', pattern)).toBe(true);
+    expect(pathMatchesPattern('thing_.seq', pattern)).toBe(false);
+    expect(pathMatchesPattern('thing_12a.seq', pattern)).toBe(false);
+  });
+
+  test('Should support match-all patterns', () => {
+    expect(pathMatchesPattern('anything.seq', '')).toBe(true);
+    expect(pathMatchesPattern('anything.seq', '*')).toBe(true);
   });
 });
