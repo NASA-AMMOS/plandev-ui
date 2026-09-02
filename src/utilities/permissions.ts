@@ -35,10 +35,10 @@ import type { View, ViewSlim } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import gql from './gql';
+import { ADMIN_ROLE } from './roles';
 import { showFailureToast } from './toast';
 import type { WorkspaceApi } from './workspaces';
 
-export const ADMIN_ROLE = 'aerie_admin';
 export const VIEWER_ROLE = 'viewer';
 
 export const INVALID_JWT = 'invalid-jwt';

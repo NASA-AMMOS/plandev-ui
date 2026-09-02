@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
 import {
-  ADMIN_ROLE,
   hasNoAuthorization,
   isAdminRole,
   isPlanCollaborator,
@@ -8,6 +7,7 @@ import {
   isUserAdmin,
   isUserOwner,
 } from './permissions';
+import { ADMIN_ROLE } from './roles';
 
 describe('hasNoAuthorization', () => {
   test('Should return whether or not the user has authorization', () => {
