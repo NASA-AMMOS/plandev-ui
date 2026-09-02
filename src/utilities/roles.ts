@@ -1,6 +1,7 @@
 import type { UserRole } from '../types/app';
 
 export const ADMIN_ROLE = 'aerie_admin';
+export const VIEWER_ROLE = 'viewer';
 
 /**
  * Display-only aliases for role names.
