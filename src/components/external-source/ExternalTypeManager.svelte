@@ -656,7 +656,7 @@
 
               <Collapse defaultExpanded={false} title="Sources" tooltipContent="View Contained External Sources">
                 {#each associatedDerivationGroup.sources as source}
-                  <i class="st-typography-body">{source[0]}</i>
+                  <i class="st-typography-body">{source}</i>
                 {/each}
               </Collapse>
             </Collapse>
