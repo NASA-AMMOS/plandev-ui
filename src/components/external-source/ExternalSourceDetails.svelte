@@ -9,26 +9,24 @@
   export let source: ExternalSourceSlim;
   export let user: User | null = null;
 
-  let isExpanded = false;
   let hasFetched = false;
   let sourceEvents: number | null = null;
 
-  $: if (isExpanded && !hasFetched) {
+  effects.getExternalSourceEventCount(source, user).then(eventCount => {
+    sourceEvents = eventCount;
     hasFetched = true;
-    effects.getExternalSourceEventCount(source, user).then(eventCount => (sourceEvents = eventCount));
-  }
+  });
 </script>
 
-<Collapse
-  title={source.key}
-  tooltipContent={source.key}
-  defaultExpanded={false}
-  on:collapse={e => (isExpanded = !e.detail)}
->
+<Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
   <svelte:fragment slot="right">
-    <p class="st-typography-body derived-event-count">
-      {#if sourceEvents !== null}
-        {sourceEvents} events
+    <p class="st-typography-body derived-event-count whitespace-nowrap">
+      {#if hasFetched}
+        {#if sourceEvents !== null}
+          {sourceEvents} events
+        {:else}
+          <span class="text-red-500">Error fetching event count</span>
+        {/if}
       {:else}
         Loading...
       {/if}

@@ -4534,7 +4534,7 @@ const effects = {
     }
   },
 
-  async getExternalSourceEventCount(externalSource: ExternalSourceSlim, user: User | null): Promise<number> {
+  async getExternalSourceEventCount(externalSource: ExternalSourceSlim, user: User | null): Promise<number | null> {
     try {
       const data = await reqHasura<ExternalSourceExternalEventCountResponse>(
         gql.GET_EXTERNAL_SOURCE_EXTERNAL_EVENT_COUNT,
@@ -4552,7 +4552,7 @@ const effects = {
       }
     } catch (e) {
       catchError('log', `Failed to get external events for external source: ${externalSource.key}`, e as Error);
-      return 0;
+      return null;
     }
   },
 
