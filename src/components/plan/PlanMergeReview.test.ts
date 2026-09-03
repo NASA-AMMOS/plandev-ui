@@ -11,7 +11,7 @@ import type {
   PlanMergeRequestSchema,
 } from '../../types/plan';
 import effects from '../../utilities/effects';
-import { ADMIN_ROLE } from '../../utilities/permissions';
+import { ADMIN_ROLE } from '../../utilities/roles';
 import PlanMergeReview from './PlanMergeReview.svelte';
 
 vi.mock('svelte', async importOriginal => {
