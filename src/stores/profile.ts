@@ -117,7 +117,6 @@ export function createProfileSubscription(
       error: lastError,
       loading: !resolved && !lastError,
       resource,
-      segmentCount: accumulator.length,
     });
   }
 

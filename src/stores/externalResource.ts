@@ -60,6 +60,7 @@ export function createExternalResourceSubscription(
   let resolved = false;
   let lastError = '';
   let inFlight = false;
+  let requestGeneration = 0;
   // Re-fire once from the finally block if a refetch was requested while
   // another was in flight, so we don't miss the tail if the request
   // happened to be the last meaningful trigger (e.g. ingestion finished
@@ -145,7 +146,6 @@ export function createExternalResourceSubscription(
       error: lastError,
       loading: !resolved && !lastError,
       resource,
-      segmentCount: accumulator.length,
     };
     setState(nextState);
   }
@@ -159,6 +159,7 @@ export function createExternalResourceSubscription(
       return;
     }
     inFlight = true;
+    const requestGenerationAtStart = requestGeneration;
     try {
       const segments = await effects.getExternalProfileSegmentsSince(
         currentMeta.datasetId,
@@ -167,7 +168,7 @@ export function createExternalResourceSubscription(
         user,
         abortController.signal,
       );
-      if (disposed) {
+      if (disposed || requestGenerationAtStart !== requestGeneration) {
         return;
       }
       if (segments && segments.length > 0) {
@@ -178,7 +179,7 @@ export function createExternalResourceSubscription(
       lastError = '';
       emit();
     } catch (e) {
-      if (disposed) {
+      if (disposed || requestGenerationAtStart !== requestGeneration) {
         return;
       }
       const err = e as Error;
@@ -197,6 +198,7 @@ export function createExternalResourceSubscription(
   }
 
   function resetForNewProfile() {
+    requestGeneration += 1;
     accumulator.length = 0;
     sampler.reset();
     sinceOffset = INITIAL_SINCE;

@@ -17,7 +17,7 @@ import { describe, expect, test } from 'vitest';
 import type { Profile, ProfileSegment, Resource, ResourceValue } from '../types/simulation';
 import type { Axis, Layer, LinePoint, TimeRange } from '../types/timeline';
 import { createProfileSampler, sampleProfiles } from './resources';
-import { getResourceForLayer, getYAxisBounds, lowerBoundByX, minMaxDecimation, upperBoundByX } from './timeline';
+import { getResourceForLayer, getYAxisBounds, lowerBoundByX, upperBoundByX } from './timeline';
 
 const START = '2026-01-01T00:00:00';
 const startMs = new Date(START).getTime();
@@ -399,16 +399,6 @@ describe.skipIf(!process.env.PERF)('timeline performance', () => {
       }, 7);
 
       lines.push(row(`${size / 1000}k segments`, before, after));
-    }
-
-    lines.push('', '=== context: minMaxDecimation over in-view points (unchanged) ===');
-    for (const size of SIZES) {
-      const resource = sampleProfiles([mkProfile(mkSegments(size))], START)[0];
-      const pts = resource.values.map(v => ({ x: v.x, y: v.y as number }));
-      const ms = timeMs(() => minMaxDecimation(pts, 0, pts.length, 1200), 5);
-      lines.push(
-        `${`${size / 1000}k segments (${(size * 2) / 1000}k points)`.padEnd(42)}${`${ms.toFixed(2)} ms`.padStart(11)}`,
-      );
     }
 
     // eslint-disable-next-line no-console
