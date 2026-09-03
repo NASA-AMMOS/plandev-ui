@@ -265,7 +265,7 @@
       headerName: 'Associated External Sources',
       sortable: true,
       valueFormatter: params => {
-        return params?.value.size;
+        return params?.value.length;
       },
       width: 250,
     },
