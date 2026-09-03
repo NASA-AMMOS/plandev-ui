@@ -4545,7 +4545,7 @@ const effects = {
         user,
       );
       const externalSourceCount = data.external_source_by_pk?.external_events_aggregate.aggregate.count;
-      if (externalSourceCount) {
+      if (externalSourceCount !== undefined) {
         return externalSourceCount;
       } else {
         return 0;
