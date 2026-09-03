@@ -2103,3 +2103,66 @@ describe('hover neighbour search bounding', () => {
     }
   });
 });
+
+/**
+ * getYAxisBounds memoizes per-array facts keyed on the values array. That is only sound because the
+ * sampler copies on emit, and nothing in the type system enforces it — so the cache carries a witness
+ * and revalidates. These pin that the witness actually works, since the failure it prevents is a
+ * silently wrong chart rather than a slow one.
+ */
+describe('getYAxisBounds cache revalidation', () => {
+  function fixture() {
+    const timelines = generateTimelines();
+    populateTimelineRows(timelines);
+    populateTimelineYAxes(timelines);
+    populateTimelineLayers(timelines);
+    const layers = timelines[0].rows[0].layers;
+    layers[1].filter.resource = 'r';
+    const yAxis: Axis = { ...timelines[0].rows[0].yAxes[0], domainFitMode: 'fitPlan' };
+    return { layers, yAxis };
+  }
+
+  test('appending to the same array is not served from the stale entry', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+
+    // Reuse the identity, as a producer that dropped its copy-on-emit would.
+    values.push({ x: 20, y: 99 });
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 99]);
+  });
+
+  test('rewriting the final sample in place is not served from the stale entry', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+
+    // Same length, changed last sample — this is what an advancing `duration` does to the provisional
+    // closing value, so it has to invalidate.
+    values[1] = { x: 10, y: -3 };
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([-3, 5]);
+  });
+
+  test('an unchanged array still uses the cache', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+    // Repeated identical calls must agree; this is the path every zoom/pan frame takes.
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+  });
+});

@@ -29,6 +29,10 @@ const SEGMENT_COUNTS = (process.env.PERF_SEGMENT_COUNTS ?? '100000,500000,200000
   .filter(n => Number.isFinite(n) && n > 0);
 
 const RESOURCE_NAME = '/stress/real/0';
+// How many resources carry the full segment count. 1c and 1d run per Row, so their benefit is
+// expected to scale with the number of *heavy* rows -- one heavy row does not exercise that at all,
+// which is exactly the claim this knob exists to test. Capped at the model's pool size of 4.
+const REAL_RESOURCE_COUNT = Math.min(Number(process.env.PERF_REAL_RESOURCES ?? 1), 4);
 const PLAN_START = '2026-001T00:00:00';
 const PLAN_DURATION = '48:00:00';
 // The activity spans half the plan, so the profile has data alongside empty time on either side --
@@ -189,7 +193,7 @@ test.describe.serial('timeline resource rendering performance', () => {
       const lines = [
         '',
         '=== timeline resource rendering, real browser ===',
-        `resource: ${RESOURCE_NAME}   (p95 / max frame time per interaction, ms)`,
+        `resource: ${RESOURCE_NAME}   (p95 / max frame time per interaction, ms)   heavy rows: ${REAL_RESOURCE_COUNT}`,
         // p50 is deliberately omitted: input is paced with a delay between steps, so most sampled
         // frames are idle ones and p50 pins to the display refresh interval at every size. p95 and
         // max are the figures that reflect redraw cost.
@@ -245,7 +249,7 @@ test.describe.serial('timeline resource rendering performance', () => {
                 arguments: {
                   discreteResourceCount: 0,
                   duration: ACTIVITY_DURATION_MICROS,
-                  realResourceCount: 1,
+                  realResourceCount: REAL_RESOURCE_COUNT,
                   segmentCount,
                 },
                 name: 'stress',

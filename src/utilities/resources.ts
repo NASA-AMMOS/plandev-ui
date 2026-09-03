@@ -102,7 +102,7 @@ export type ProfileSampleRequest = {
   /** Offset applied to every x, for external datasets. Changing it forces a full re-sample. */
   offsetInterval?: string;
   profileType: Profile['type'];
-  /** Only the segments not yet sampled. The sampler retains what it needs from earlier calls. */
+  /** Every segment received so far; the sampler re-samples only the tail it needs. */
   segments: ProfileSegment[];
 };
 
@@ -132,20 +132,14 @@ export function createProfileSampler(startTimeYmd: string): ProfileSampler {
   const baseStart = new Date(startTimeYmd).getTime();
 
   let values: ResourceValue[] = [];
+  let sampledSegments = 0;
   let lastType: string | null = null;
   let lastOffsetInterval: string | undefined;
   let lastStart = baseStart;
 
-  // The last appended segment, whose closing value is provisional: it sits at `duration`, which
-  // advances while a simulation runs. Rewriting it needs that segment's own dynamics, so exactly one
-  // segment is retained -- which is what lets callers stop retaining all of them. The raw
-  // ProfileSegment[] accumulator measured 202 B/segment, the largest of the three retained
-  // representations of a profile.
-  let pending: { offsetMs: number; segment: ProfileSegment } | null = null;
-
   function reset() {
     values = [];
-    pending = null;
+    sampledSegments = 0;
   }
 
   return {
@@ -154,64 +148,44 @@ export function createProfileSampler(startTimeYmd: string): ProfileSampler {
       const { schema, type } = profileType;
 
       // Anything that shifts or reinterprets already-sampled values invalidates them: a changed
-      // x offset (external datasets can repoint at a different plan_dataset row), or a changed
-      // profile type.
+      // x offset (external datasets can repoint at a different plan_dataset row), a changed
+      // profile type, or an accumulator that shrank beneath what we already sampled.
+      //
+      // Discarding is safe precisely because the caller retains every segment: the next call
+      // re-samples the whole profile. An append-only variant that let callers drop their segments
+      // was tried and reverted -- it turned this discard into unrecoverable data loss, and measured
+      // no memory saving, because the segments were owned by the retained header rather than by the
+      // caller's array.
       if (offsetInterval !== lastOffsetInterval) {
         lastOffsetInterval = offsetInterval;
         lastStart = baseStart + getIntervalInMs(offsetInterval);
         reset();
       }
-      if (type !== lastType) {
+      if (type !== lastType || segments.length < sampledSegments) {
         reset();
       }
       lastType = type;
 
-      const durationMs = getIntervalInMs(duration);
+      // The most recently sampled segment closed at the then-current durationMs, which the next
+      // arriving segment (or an advancing extent) supersedes. Drop that pair and re-sample it.
+      const fromSegment = sampledSegments > 0 ? sampledSegments - 1 : 0;
+      values.length = fromSegment * 2;
 
-      function valueAt(segment: ProfileSegment, startOffsetMs: number, endOffsetMs: number) {
-        const { dynamics } = segment;
-        if (type === 'real') {
-          return dynamics === null ? null : dynamics.initial + dynamics.rate * ((endOffsetMs - startOffsetMs) / 1000);
-        }
-        return dynamics;
-      }
+      appendSegmentSamples(values, segments, fromSegment, type, lastStart, getIntervalInMs(duration));
+      sampledSegments = segments.length;
 
-      // Discard the pending segment's provisional closing value, then rewrite it against whatever
-      // now follows: the first newly-arrived segment, or an advanced duration if none arrived.
-      if (pending !== null && values.length > 0) {
-        values.length -= 1;
-      }
-
-      const firstNewOffset = segments.length > 0 ? getIntervalInMs(segments[0].start_offset) : durationMs;
-
-      if (pending !== null) {
-        values.push({
-          is_gap: pending.segment.is_gap,
-          x: lastStart + firstNewOffset,
-          y: valueAt(pending.segment, pending.offsetMs, firstNewOffset),
-        });
-      }
-
-      let offset = firstNewOffset;
-      for (let i = 0; i < segments.length; ++i) {
-        const segment = segments[i];
-        const nextSegment = segments[i + 1];
-        const nextOffset = nextSegment ? getIntervalInMs(nextSegment.start_offset) : durationMs;
-        const { is_gap } = segment;
-
-        values.push({ is_gap, x: lastStart + offset, y: valueAt(segment, offset, offset) });
-        values.push({ is_gap, x: lastStart + nextOffset, y: valueAt(segment, offset, nextOffset) });
-
-        if (i === segments.length - 1) {
-          pending = { offsetMs: offset, segment };
-        }
-        offset = nextOffset;
-      }
-
-      // Hand out a snapshot rather than the retained array. Consumers (notably the rAF
-      // time-sliced point conversion in LayerLine) iterate `values` across frames, so mutating
-      // an array they already hold would let them observe a torn state. This copies pointers
-      // only — no per-value allocation, which is the expensive part being avoided.
+      // Hand out a snapshot rather than the retained array. Copies pointers only -- no per-value
+      // allocation, which is the expensive part being avoided. Two consumers depend on this, so it
+      // must not be "optimized" into returning the retained array:
+      //
+      //  - LayerLine's rAF time-sliced point conversion iterates `values` across frames, and would
+      //    observe a torn state if the array it holds were mutated underneath it.
+      //  - `getYAxisBounds` memoizes per-array facts keyed on this array's identity (see
+      //    `getResourceValuesMeta` in timeline.ts). That cache revalidates against a witness, so a
+      //    reused array costs a recompute rather than a wrong axis -- but the copy is still the
+      //    intended contract.
+      //
+      // Pinned by the "hands out a snapshot" test in resources.test.ts.
       return { name, schema, values: values.slice() };
     },
   };

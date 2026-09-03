@@ -700,6 +700,10 @@ export function createTimelineXRangeLayer(
 type ResourceValuesMeta = {
   /** Gaps make the left/right neighbour search order-dependent, forcing the full scan. */
   hasGap: boolean;
+  /** Witness fields — see `getResourceValuesMeta`. Not facts about the data. */
+  lastX: number;
+  lastY: number | string | null;
+  length: number;
   maxY: number | undefined;
   minY: number | undefined;
   sorted: boolean;
@@ -707,15 +711,30 @@ type ResourceValuesMeta = {
 
 /**
  * Per-values-array facts needed to bound `getYAxisBounds`, computed once per array rather than on
- * every zoom/pan frame. Keyed weakly on the array itself: the resource samplers hand out a fresh
- * array per emit, so a new entry is computed exactly when the data changes and reused for every
- * frame in between.
+ * every zoom/pan frame. Keyed weakly on the array itself, since the resource sampler hands out a
+ * fresh array per emit.
  */
 const resourceValuesMetaCache = new WeakMap<ResourceValue[], ResourceValuesMeta>();
 
+/**
+ * Keying a cache on array identity alone would make this silently wrong if a producer ever reused an
+ * array — every lookup would hit against stale bounds, drawing a wrong chart rather than a slow one,
+ * and nothing would flag it. So each entry carries a witness (length plus the last sample's x and y)
+ * that is checked on every lookup, which is O(1).
+ *
+ * That covers how this data actually changes: samples are appended, and the final sample is rewritten
+ * in place as `duration` advances — the first changes `length`, the second changes `lastX`/`lastY`.
+ * A same-length edit to a *middle* sample would still slip through, but nothing in this pipeline does
+ * that. The point is not to make the cache infallible; it is to ensure that breaking the producer's
+ * copy-on-emit costs performance instead of correctness.
+ */
 function getResourceValuesMeta(values: ResourceValue[]): ResourceValuesMeta {
+  const length = values.length;
+  const lastX = length > 0 ? values[length - 1].x : 0;
+  const lastY = length > 0 ? values[length - 1].y : null;
+
   const cached = resourceValuesMetaCache.get(values);
-  if (cached !== undefined) {
+  if (cached !== undefined && cached.length === length && cached.lastX === lastX && cached.lastY === lastY) {
     return cached;
   }
 
@@ -742,7 +761,7 @@ function getResourceValuesMeta(values: ResourceValue[]): ResourceValuesMeta {
     }
   }
 
-  const meta: ResourceValuesMeta = { hasGap, maxY, minY, sorted };
+  const meta: ResourceValuesMeta = { hasGap, lastX, lastY, length, maxY, minY, sorted };
   resourceValuesMetaCache.set(values, meta);
   return meta;
 }
