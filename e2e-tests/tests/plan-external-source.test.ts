@@ -188,9 +188,9 @@ test.describe.serial('Plan External Sources', () => {
 
     await expect(setup.page.getByText('Key: ExampleExternalSource:')).toBeVisible();
     await expect(setup.page.getByText('Source Type: Example External')).toBeVisible();
-    await expect(setup.page.getByText('Start Time: 2022-01-01T00:00:00+00:00')).toBeVisible();
-    await expect(setup.page.getByText('End Time: 2022-01-02T00:00:00+00:00')).toBeVisible();
-    await expect(setup.page.getByText('Valid At: 2022-01-01T00:00:00+00:00')).toBeVisible();
+    await expect(setup.page.getByText('Start Time: 2022-01-01T00:00:00')).toBeVisible();
+    await expect(setup.page.getByText('End Time: 2022-01-02T00:00:00')).toBeVisible();
+    await expect(setup.page.getByText('Valid At: 2022-01-01T00:00:00')).toBeVisible();
     await expect(setup.page.getByText('Created At')).toBeVisible();
   });
 
@@ -209,9 +209,9 @@ test.describe.serial('Plan External Sources', () => {
       setup.page.locator('#svelte-modal').getByText('Key: ExampleExternalSource:example-external-source.json'),
     ).toBeVisible();
     await expect(setup.page.locator('#svelte-modal').getByText('Source Type: Example External Source')).toBeVisible();
-    await expect(setup.page.locator('#svelte-modal').getByText('Start Time: 2022-01-01T00:00:00+00:00')).toBeVisible();
-    await expect(setup.page.locator('#svelte-modal').getByText('End Time: 2022-01-02T00:00:00+00:00')).toBeVisible();
-    await expect(setup.page.locator('#svelte-modal').getByText('Valid At: 2022-01-01T00:00:00+00:00')).toBeVisible();
+    await expect(setup.page.locator('#svelte-modal').getByText('Start Time: 2022-01-01T00:00:00')).toBeVisible();
+    await expect(setup.page.locator('#svelte-modal').getByText('End Time: 2022-01-02T00:00:00')).toBeVisible();
+    await expect(setup.page.locator('#svelte-modal').getByText('Valid At: 2022-01-01T00:00:00')).toBeVisible();
     await expect(setup.page.locator('#svelte-modal').getByText('Created At')).toBeVisible();
   });
 });
