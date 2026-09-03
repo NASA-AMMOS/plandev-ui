@@ -4,6 +4,12 @@ import { pickEffectiveDuration } from './profile';
 import { createProfileSampler, sampleProfiles } from './resources';
 import { getIntervalInMs } from './time';
 
+function appendAllLocal<T>(target: T[], source: readonly T[]) {
+  for (let i = 0; i < source.length; ++i) {
+    target.push(source[i]);
+  }
+}
+
 const START = '2024-01-01T00:00:00';
 const startMs = new Date(START).getTime();
 
@@ -488,27 +494,22 @@ describe('createProfileSampler', () => {
       const boundaries = [...cuts].sort((a, b) => a - b);
 
       const sampler = createProfileSampler(START);
-      let appended = 0;
+      const accumulator: ProfileSegment[] = [];
       let incremental: Resource | null = null;
 
       for (let b = 0; b < boundaries.length; ++b) {
         const upTo = boundaries[b];
         const isLastBatch = b === boundaries.length - 1;
-        const arrived = allSegments.slice(0, upTo);
+        accumulator.length = 0;
+        appendAllLocal(accumulator, allSegments.slice(0, upTo));
+        const arrived = accumulator;
 
         // Mirror the stores: while streaming, close at the last received offset; once terminal,
         // use the header duration.
         const headerDuration = formatInterval(offsets[segmentCount - 1] + 500_000, style);
         const duration = pickEffectiveDuration(headerDuration, arrived[arrived.length - 1].start_offset, !isLastBatch);
 
-        // Only the delta is handed over; the caller retains nothing.
-        incremental = sampler.sample({
-          duration,
-          name: 'r',
-          profileType,
-          segments: allSegments.slice(appended, upTo),
-        });
-        appended = upTo;
+        incremental = sampler.sample({ duration, name: 'r', profileType, segments: accumulator });
 
         // Every intermediate emit must also equal a full pass over what has arrived so far.
         const expectedSoFar = sampleProfiles(
@@ -556,8 +557,6 @@ describe('createProfileSampler', () => {
     ];
     const short = [makeSegment('00:00:00', { initial: 9, rate: 0 })];
 
-    // Now that only deltas are passed, an explicit reset is the only way to repoint the sampler at a
-    // different profile -- it can no longer infer it from a shrinking accumulator.
     const sampler = createProfileSampler(START);
     sampler.sample({ duration: '00:00:30', name: 'r', profileType, segments: long });
     sampler.reset();
@@ -595,6 +594,9 @@ describe('createProfileSampler', () => {
     ]);
   });
 
+  // Load-bearing for two consumers: LayerLine iterates values across rAF frames, and
+  // getYAxisBounds memoizes per-array facts in a WeakMap keyed on array identity — a reused array
+  // would be a cache hit against stale bounds, producing a wrong chart rather than a slow one.
   test('hands out a snapshot so a prior emit is not mutated by the next', () => {
     const profileType = { schema: { type: 'real' }, type: 'real' } as Profile['type'];
     const sampler = createProfileSampler(START);
@@ -603,13 +605,8 @@ describe('createProfileSampler', () => {
     const first = sampler.sample({ duration: '00:00:10', name: 'r', profileType, segments });
     const firstSnapshot = first.values.map(v => ({ ...v }));
 
-    // Delta only, per the append-only contract.
-    const second = sampler.sample({
-      duration: '00:00:20',
-      name: 'r',
-      profileType,
-      segments: [makeSegment('00:00:10', { initial: 2, rate: 0 })],
-    });
+    segments.push(makeSegment('00:00:10', { initial: 2, rate: 0 }));
+    const second = sampler.sample({ duration: '00:00:20', name: 'r', profileType, segments });
 
     expect(second.values).toHaveLength(4);
     expect(first.values).toEqual(firstSnapshot);

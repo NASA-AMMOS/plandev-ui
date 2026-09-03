@@ -50,16 +50,12 @@ export function createProfileSubscription(
     setTimelineResourceState(datasetId, name, 'sim', next);
   }
 
-  // The sampler is append-only and retains what it needs from earlier batches, so fetched segments
-  // are handed over and dropped rather than accumulated. That removes the largest retained
-  // representation of a profile — measured 202 B/segment, more than either array derived from it —
-  // leaving only the two scalars below, which is all the size guardrail and pickEffectiveDuration
-  // need.
+  const accumulator: ProfileSegment[] = [];
+  // Retains samples across emits and re-samples only the tail, so per-tick cost tracks the segment
+  // delta rather than the whole accumulated profile. The accumulator is still held here: the sampler
+  // discards its samples whenever the x offset or profile type changes, and that is only recoverable
+  // because every segment is still available to re-sample.
   const sampler = createProfileSampler(planStartTimeYmd);
-  let segmentCount = 0;
-  let lastSegmentOffset: string | null = null;
-  // Fetched but not yet handed to the sampler; emptied on every emit.
-  let pendingSegments: ProfileSegment[] = [];
   let header: ProfileHeader | null = null;
   let sinceOffset = INITIAL_SINCE;
   // Settled on a final state. Set when we receive a profile, OR when the sim
@@ -95,7 +91,7 @@ export function createProfileSubscription(
     aggregateLogged = true;
     logMessage(
       'log',
-      `Retrieved profile "${name}" (${segmentCount} segment${pluralize(segmentCount)}) for dataset ID=${datasetId}.`,
+      `Retrieved profile "${name}" (${accumulator.length} segment${pluralize(accumulator.length)}) for dataset ID=${datasetId}.`,
       { duration: performance.now() - createdAt },
     );
   }
@@ -108,21 +104,20 @@ export function createProfileSubscription(
     // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
     // time rather than emitting NaN x values.
     if (header && resolved && planStartTimeYmd) {
-      const lastOffset = lastSegmentOffset;
+      const lastOffset = accumulator.length > 0 ? accumulator[accumulator.length - 1].start_offset : null;
       const duration = pickEffectiveDuration(header.duration, lastOffset, streamingActive);
       resource = sampler.sample({
         duration,
         name: header.name,
         profileType: header.type,
-        segments: pendingSegments,
+        segments: accumulator,
       });
-      pendingSegments = [];
     }
     setState({
       error: lastError,
       loading: !resolved && !lastError,
       resource,
-      segmentCount,
+      segmentCount: accumulator.length,
     });
   }
 
@@ -142,10 +137,8 @@ export function createProfileSubscription(
       }
       if (profile) {
         if (profile.profile_segments.length > 0) {
-          appendAll(pendingSegments, profile.profile_segments);
-          segmentCount += profile.profile_segments.length;
+          appendAll(accumulator, profile.profile_segments);
           sinceOffset = profile.profile_segments[profile.profile_segments.length - 1].start_offset;
-          lastSegmentOffset = sinceOffset;
         }
         // Copy the header fields rather than keeping the fetched object. ProfileHeader is typed to
         // exclude profile_segments, but assigning the whole `profile` satisfies that type while
