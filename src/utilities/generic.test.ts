@@ -5,6 +5,7 @@ vi.mock('$app/environment', () => ({
 }));
 
 import {
+  appendAll,
   attemptStringConversion,
   clamp,
   classNames,
@@ -178,5 +179,34 @@ describe('Generic utility function tests', () => {
         text: '{{QUOTE}} {{QUOTE}} {{QUOTE}}',
       });
     });
+  });
+});
+
+describe('appendAll', () => {
+  test('appends every element in order', () => {
+    const target = [1, 2];
+    appendAll(target, [3, 4, 5]);
+    expect(target).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  test('handles an empty source', () => {
+    const target = [1];
+    appendAll(target, []);
+    expect(target).toEqual([1]);
+  });
+
+  test('handles more elements than the spread-argument limit', () => {
+    // `target.push(...source)` throws "Maximum call stack size exceeded" once the element count
+    // exceeds the available stack depth — around 125k arguments in a browser tab, which is how a
+    // large profile used to fail on first load. The exact threshold varies with stack size (it is
+    // higher under the vitest worker than in a browser), and that unpredictability is the reason to
+    // avoid spreading entirely rather than assuming a safe size. This pins a count comfortably past
+    // the browser limit.
+    const source = new Array(200_000).fill(7);
+    const target: number[] = [];
+    appendAll(target, source);
+    expect(target.length).toEqual(200_000);
+    expect(target[0]).toEqual(7);
+    expect(target[199_999]).toEqual(7);
   });
 });

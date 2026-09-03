@@ -351,3 +351,17 @@ export function extractQuotes(message: string): { quotes: string[]; text: string
 
   return { quotes, text };
 }
+
+/**
+ * Appends every element of `source` onto `target` in place.
+ *
+ * Use this instead of `target.push(...source)` for arrays that can be large. Spreading passes each
+ * element as a separate function argument, and V8 throws "Maximum call stack size exceeded" past
+ * roughly 125k arguments — so a spread push is a latent hard failure whose threshold depends on the
+ * data, not the code. A profile with a few hundred thousand segments hits it on first load.
+ */
+export function appendAll<T>(target: T[], source: readonly T[]): void {
+  for (let i = 0; i < source.length; ++i) {
+    target.push(source[i]);
+  }
+}
