@@ -32,16 +32,8 @@ export type TimelineResourceOversized = {
 };
 
 /**
- * Segment count above which a single profile measurably degrades timeline interaction.
- *
- * Segment count is driven by how a resource is modeled, not by simulation duration: an
- * event-driven resource emits one segment per dynamics change, so even a multi-year horizon stays
- * small, while a fixed-cadence resource (e.g. `DiscreteResources.sampled(..., 1 second)`) emits
- * `duration / period` — millions of segments for a month-long sim. That is a modeling problem, and
- * it is invisible today, so surface it.
- *
- * Starting value is the point where zoom/pan frame times begin to slip; refine it against measured
- * numbers from the scale fixtures.
+ * Segment count above which a profile measurably degrades timeline interaction.
+ * This is a warning about resource modeling, not simulation duration.
  */
 export const OVERSIZED_PROFILE_SEGMENT_COUNT = 250_000;
 
