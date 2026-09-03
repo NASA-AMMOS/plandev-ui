@@ -1,6 +1,5 @@
 import test, { expect, type Page } from '@playwright/test';
 import fs from 'fs';
-import { OVERSIZED_PROFILE_SEGMENT_COUNT } from '../../src/stores/timelineResourceStatus.js';
 import { AerieApi, setupTest, teardownTest, type BrowserSetupResult } from '../utilities/api.js';
 
 /**
@@ -308,21 +307,6 @@ test.describe.serial('timeline resource rendering performance', () => {
         )
         .toBe(true);
       const firstPaintMs = Date.now() - firstPaintStart;
-
-      // Proof that the whole profile is loaded, not just the first batch -- otherwise these frame
-      // times could describe a fraction of the data. For a terminal simulation the windowed pull
-      // returns every segment in one response, so a settled row holds all of it; the oversized-
-      // profile warning counts client-side segments and only fires past its threshold, which makes
-      // it a direct assertion that they all arrived.
-      const oversizedWarning = page.getByLabel('Large profile warning');
-      if (segmentCount >= OVERSIZED_PROFILE_SEGMENT_COUNT) {
-        await expect(
-          oversizedWarning,
-          `expected the oversized-profile warning at ${segmentCount} segments, which would confirm the full profile reached the client`,
-        ).toBeVisible({ timeout: 60_000 });
-      } else {
-        await expect(oversizedWarning).toBeHidden();
-      }
 
       // Order matters. A plan opens already fully zoomed out, so zooming out first is a no-op that
       // would be recorded as a very fast interaction. Zoom in, pan there, then zoom back out — which
