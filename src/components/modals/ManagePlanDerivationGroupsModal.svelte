@@ -264,7 +264,7 @@
           </svelte:fragment>
           <svelte:fragment slot="body">
             {#if selectedDerivationGroupSources.length > 0}
-              {#each selectedDerivationGroupSources as source}
+              {#each selectedDerivationGroupSources as source (source.key)}
                 <ExternalSourceDetails {source} {user} />
               {/each}
             {:else}

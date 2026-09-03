@@ -74,7 +74,7 @@
     </svelte:fragment>
 
     {#if relevantSources.length}
-      {#each relevantSources as source}
+      {#each relevantSources as source (source.key)}
         <ExternalSourceDetails {source} {user} />
       {/each}
     {:else}

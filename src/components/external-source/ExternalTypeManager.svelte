@@ -629,7 +629,7 @@
         </div>
       {:else if selectedDerivationGroup !== undefined}
         {#if selectedDerivationGroupSources.length > 0}
-          {#each selectedDerivationGroupSources as source}
+          {#each selectedDerivationGroupSources as source (source.key)}
             <ExternalSourceDetails {source} {user} />
           {/each}
         {:else}
