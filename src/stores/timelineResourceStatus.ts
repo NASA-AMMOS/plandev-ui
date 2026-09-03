@@ -14,6 +14,8 @@ export type TimelineResourceState = {
   error: string;
   loading: boolean;
   resource: Resource | null;
+  /** Segments accumulated so far, when the writer tracks it. Drives the oversized-profile warning. */
+  segmentCount?: number;
 };
 
 export type TimelineResourceError = {
@@ -23,11 +25,47 @@ export type TimelineResourceError = {
   name: string;
 };
 
+export type TimelineResourceOversized = {
+  kind: TimelineResourceKind;
+  name: string;
+  segmentCount: number;
+};
+
+/**
+ * Segment count above which a single profile measurably degrades timeline interaction.
+ *
+ * Segment count is driven by how a resource is modeled, not by simulation duration: an
+ * event-driven resource emits one segment per dynamics change, so even a multi-year horizon stays
+ * small, while a fixed-cadence resource (e.g. `DiscreteResources.sampled(..., 1 second)`) emits
+ * `duration / period` — millions of segments for a month-long sim. That is a modeling problem, and
+ * it is invisible today, so surface it.
+ *
+ * Starting value is the point where zoom/pan frame times begin to slip; refine it against measured
+ * numbers from the scale fixtures.
+ */
+export const OVERSIZED_PROFILE_SEGMENT_COUNT = 250_000;
+
 // datasetId/name are carried on the entry (not parsed back out of the key)
 // so the key format stays an internal detail and the id space we keyed on
 // (dataset_id for sim, simulation_dataset id for external) is preserved
 // verbatim for error reporting.
 type StoredState = TimelineResourceState & { datasetId: number; kind: TimelineResourceKind; name: string };
+
+/** Deduped by name: the same profile on two rows is one modeling problem, not two. */
+function collectOversized(states: Map<string, StoredState>): TimelineResourceOversized[] {
+  const byName = new Map<string, TimelineResourceOversized>();
+  for (const state of states.values()) {
+    const segmentCount = state.segmentCount ?? 0;
+    if (segmentCount < OVERSIZED_PROFILE_SEGMENT_COUNT) {
+      continue;
+    }
+    const existing = byName.get(state.name);
+    if (existing === undefined || segmentCount > existing.segmentCount) {
+      byName.set(state.name, { kind: state.kind, name: state.name, segmentCount });
+    }
+  }
+  return [...byName.values()].sort((a, b) => b.segmentCount - a.segmentCount);
+}
 
 const resourceStates = writable<Map<string, StoredState>>(new Map());
 
@@ -63,6 +101,11 @@ export const timelineResourcesErroring: Readable<TimelineResourceError[]> = deri
   }
   return errors;
 });
+
+export const timelineResourcesOversized: Readable<TimelineResourceOversized[]> = derived(
+  resourceStates,
+  collectOversized,
+);
 
 function registryKey(datasetId: number, name: string): string {
   return `${datasetId}:${name}`;

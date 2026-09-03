@@ -4,7 +4,7 @@ import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
 import { pickEffectiveDuration } from '../utilities/profile';
-import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
+import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
 import { pluralize } from '../utilities/text';
 import { catchError, logMessage } from './console';
@@ -50,6 +50,9 @@ export function createProfileSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
+  // Retains samples across emits and re-samples only the tail, so per-tick cost tracks the
+  // segment delta rather than the whole accumulated profile.
+  const sampler = createProfileSampler(planStartTimeYmd);
   let header: ProfileHeader | null = null;
   let sinceOffset = INITIAL_SINCE;
   // Settled on a final state. Set when we receive a profile, OR when the sim
@@ -95,12 +98,24 @@ export function createProfileSubscription(
       return;
     }
     let resource: Resource | null = null;
-    if (header && resolved) {
+    // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
+    // time rather than emitting NaN x values.
+    if (header && resolved && planStartTimeYmd) {
       const lastOffset = accumulator.length > 0 ? accumulator[accumulator.length - 1].start_offset : null;
       const duration = pickEffectiveDuration(header.duration, lastOffset, streamingActive);
-      resource = sampleProfiles([{ ...header, duration, profile_segments: accumulator }], planStartTimeYmd)[0] ?? null;
+      resource = sampler.sample({
+        duration,
+        name: header.name,
+        profileType: header.type,
+        segments: accumulator,
+      });
     }
-    setState({ error: lastError, loading: !resolved && !lastError, resource });
+    setState({
+      error: lastError,
+      loading: !resolved && !lastError,
+      resource,
+      segmentCount: accumulator.length,
+    });
   }
 
   async function refetch() {

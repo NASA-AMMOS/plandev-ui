@@ -14,7 +14,14 @@
     TimeRange,
   } from '../../types/timeline';
   import { filterNullish } from '../../utilities/generic';
-  import { CANVAS_PADDING_Y, getYScale, minMaxDecimation } from '../../utilities/timeline';
+  import {
+    CANVAS_PADDING_Y,
+    getYScale,
+    isSortedByX,
+    lowerBoundByX,
+    minMaxDecimation,
+    upperBoundByX,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let dpr: number = 1;
@@ -55,6 +62,9 @@
   let tempPoints: LinePoint[];
   let processingRequest: number;
   let scaledYCache: Record<number | string, number | undefined>;
+  // Recomputed once per `points` rebuild, not per frame, so the draw path can binary-search the
+  // in-view window when the precondition holds.
+  let pointsSorted = true;
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -148,31 +158,65 @@
       let prevPoint: LinePoint | null = null;
       const gapPoints: LinePoint[] = [];
       const deferProcessingPoints = !ordinalScale && decimate;
-      points.forEach(point => {
-        if (point.x >= viewTimeRange.start && !leftPoint && prevPoint) {
-          leftPoint = processPoint(prevPoint, yScale);
-        }
-        if (point.x > viewTimeRange.end && !rightPoint && prevPoint) {
-          rightPoint = processPoint(point, yScale);
-        }
-        if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
-          // Ignore gaps
-          if (point.y === null) {
-            gapPoints.push(processPoint(point, yScale));
+
+      const collectPoint = (point: LinePoint) => {
+        // Ignore gaps
+        if (point.y === null) {
+          gapPoints.push(processPoint(point, yScale));
+        } else {
+          // If not using ordinal scale and we're decimating we can defer processing the points until after
+          // decimation has occurred to limit the number of expensive yScale calls to the actual decimated point set
+          if (deferProcessingPoints) {
+            pointsInView.push(point);
           } else {
-            // If not using ordinal scale and we're decimating we can defer processing the points until after
-            // decimation has occurred to limit the number of expensive yScale calls to the actual decimated point set
-            if (deferProcessingPoints) {
-              pointsInView.push(point);
-            } else {
-              // For ordinal scale we have to process the point in order to have a numerical y value for the
-              // decimation to operate on.
-              pointsInView.push(processPoint(point, yScale));
-            }
+            // For ordinal scale we have to process the point in order to have a numerical y value for the
+            // decimation to operate on.
+            pointsInView.push(processPoint(point, yScale));
           }
         }
-        prevPoint = point;
-      });
+      };
+
+      if (pointsSorted) {
+        // Sorted points let us binary-search the in-view window instead of touching every point
+        // on every zoom/pan frame, making frame cost track what is visible rather than how much
+        // data the resource has in total.
+        const pointCount = points.length;
+        const firstInView = lowerBoundByX(points, viewTimeRange.start);
+        const firstAfterView = upperBoundByX(points, viewTimeRange.end);
+
+        for (let i = firstInView; i < firstAfterView; ++i) {
+          collectPoint(points[i]);
+        }
+
+        // Index arithmetic below reproduces the previous linear scan exactly, including its
+        // behavior that these were only assigned once a preceding point had been seen. So when
+        // the view starts at or before the first point, leftPoint is points[0] itself rather
+        // than null — a harmless zero-length leading segment we preserve deliberately.
+        const leftIndex = Math.max(firstInView, 1);
+        if (firstInView < pointCount && leftIndex < pointCount) {
+          leftPoint = processPoint(points[leftIndex - 1], yScale);
+        }
+        const rightIndex = Math.max(firstAfterView, 1);
+        if (firstAfterView < pointCount && rightIndex < pointCount) {
+          rightPoint = processPoint(points[rightIndex], yScale);
+        }
+      } else {
+        // Unsorted points (a profile whose duration lands before its last segment offset) break
+        // the search's precondition, and in-view points are not contiguous. Fall back to the
+        // original full scan.
+        points.forEach(point => {
+          if (point.x >= viewTimeRange.start && !leftPoint && prevPoint) {
+            leftPoint = processPoint(prevPoint, yScale);
+          }
+          if (point.x > viewTimeRange.end && !rightPoint && prevPoint) {
+            rightPoint = processPoint(point, yScale);
+          }
+          if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
+            collectPoint(point);
+          }
+          prevPoint = point;
+        });
+      }
       finalPoints = pointsInView;
       // Perform decimation if requested
       if (pointsInView.length > 0 && decimate) {
@@ -503,6 +547,7 @@
     window.cancelAnimationFrame(processingRequest);
 
     points = [];
+    pointsSorted = true;
     tempPoints = [];
 
     processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources));
@@ -597,6 +642,7 @@
     }
 
     points = tempPoints;
+    pointsSorted = isSortedByX(points);
   }
 
   function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | HTMLCanvasElement | null {
