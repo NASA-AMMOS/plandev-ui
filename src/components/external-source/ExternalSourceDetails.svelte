@@ -9,7 +9,7 @@
   export let source: ExternalSourceSlim;
   export let user: User | null = null;
 
-  let sourceEvents: number = 0;
+  let sourceEvents: number | null = null;
 
   $: effects.getExternalSourceEventCount(source, user).then(eventCount => (sourceEvents = eventCount));
 </script>
@@ -17,7 +17,11 @@
 <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
   <svelte:fragment slot="right">
     <p class="st-typography-body derived-event-count">
-      {sourceEvents} events
+      {#if sourceEvents !== null}
+        {sourceEvents} events
+      {:else}
+        Loading...
+      {/if}
     </p>
   </svelte:fragment>
   <div class="st-typography-body">
