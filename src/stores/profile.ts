@@ -3,6 +3,7 @@ import { Status } from '../enums/status';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
+import { appendAll } from '../utilities/generic';
 import { pickEffectiveDuration } from '../utilities/profile';
 import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
@@ -134,7 +135,7 @@ export function createProfileSubscription(
       }
       if (profile) {
         if (profile.profile_segments.length > 0) {
-          accumulator.push(...profile.profile_segments);
+          appendAll(accumulator, profile.profile_segments);
           sinceOffset = profile.profile_segments[profile.profile_segments.length - 1].start_offset;
         }
         header = profile;

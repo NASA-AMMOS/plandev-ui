@@ -2,6 +2,7 @@ import { derived, writable, type Readable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
+import { appendAll } from '../utilities/generic';
 import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { catchError } from './console';
 import { planDatasets } from './plan';
@@ -170,7 +171,7 @@ export function createExternalResourceSubscription(
         return;
       }
       if (segments && segments.length > 0) {
-        accumulator.push(...segments);
+        appendAll(accumulator, segments);
         sinceOffset = segments[segments.length - 1].start_offset;
       }
       resolved = true;
