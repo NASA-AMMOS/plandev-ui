@@ -151,11 +151,8 @@ export function createProfileSampler(startTimeYmd: string): ProfileSampler {
       // x offset (external datasets can repoint at a different plan_dataset row), a changed
       // profile type, or an accumulator that shrank beneath what we already sampled.
       //
-      // Discarding is safe precisely because the caller retains every segment: the next call
-      // re-samples the whole profile. An append-only variant that let callers drop their segments
-      // was tried and reverted -- it turned this discard into unrecoverable data loss, and measured
-      // no memory saving, because the segments were owned by the retained header rather than by the
-      // caller's array.
+      // Discarding is safe because the caller retains every segment, so the next call can
+      // re-sample the whole profile.
       if (offsetInterval !== lastOffsetInterval) {
         lastOffsetInterval = offsetInterval;
         lastStart = baseStart + getIntervalInMs(offsetInterval);

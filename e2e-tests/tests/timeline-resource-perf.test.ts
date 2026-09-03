@@ -128,16 +128,13 @@ async function canvasSignature(canvases: ReturnType<Page['locator']>): Promise<s
 /**
  * Sweeps the pointer across the row, which drives the hover readout.
  *
- * Measured separately from zoom and pan because it is the interaction that fires most often and the
- * one whose cost scales with the *whole* profile rather than what is visible: the neighbour lookup
- * walks from the first point, and the exact-x lookup used to scan every point. Not gated by Navigate
- * interaction mode — only d3-zoom's filter is.
+ * Measured separately from zoom and pan because it is the interaction that fires most often and
+ * exercises the profile hit-testing path. It is not gated by Navigate interaction mode.
  */
 async function hoverAcrossRow(page: Page, box: { height: number; width: number; x: number; y: number }) {
   const y = box.y + box.height / 2;
   for (let i = 0; i < 12; i++) {
-    // Sweep left-to-right: cost grew with distance from the left edge, so the right half is where the
-    // old forward scan was most expensive.
+    // Sweep left-to-right to exercise hit-testing across the visible row.
     await page.mouse.move(box.x + box.width * (0.08 + i * 0.075), y);
     await page.waitForTimeout(30);
   }
