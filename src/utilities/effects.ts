@@ -4552,7 +4552,6 @@ const effects = {
       }
     } catch (e) {
       catchError('log', `Failed to get external events for external source: ${externalSource.key}`, e as Error);
-      showFailureToast('Failed to get external source event count');
       return 0;
     }
   },
