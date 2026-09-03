@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { plugins } from '../../stores/plugins';
   import type { User } from '../../types/app';
   import type { ExternalSourceSlim } from '../../types/external-source';
   import effects from '../../utilities/effects';
+  import { formatDate } from '../../utilities/time';
   import Collapse from '../Collapse.svelte';
 
   export let source: ExternalSourceSlim;
@@ -30,21 +32,21 @@
 
   <div class="st-typography-body">
     <div class="st-typography-bold">Start Time:</div>
-    {source.start_time}
+    {formatDate(new Date(source.start_time), $plugins.time.primary.format)}
   </div>
 
   <div class="st-typography-body">
     <div class="st-typography-bold">End Time:</div>
-    {source.end_time}
+    {formatDate(new Date(source.end_time), $plugins.time.primary.format)}
   </div>
 
   <div class="st-typography-body">
     <div class="st-typography-bold">Valid At:</div>
-    {source.valid_at}
+    {formatDate(new Date(source.valid_at), $plugins.time.primary.format)}
   </div>
 
   <div class="st-typography-body">
     <div class="st-typography-bold">Created At:</div>
-    {source.created_at}
+    {formatDate(new Date(source.created_at), $plugins.time.primary.format)}
   </div>
 </Collapse>
