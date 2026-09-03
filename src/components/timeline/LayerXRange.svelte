@@ -26,7 +26,7 @@
     XRangePoint,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { searchQuadtreeRect } from '../../utilities/timeline';
+  import { isSortedByX, lowerBoundByX, searchQuadtreeRect } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
@@ -58,6 +58,7 @@
   let maxXWidth: number;
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
+  let pointsSorted = true;
   let drawPointsRequest: number;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, XRangePoint> = {};
@@ -83,6 +84,9 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
+  // Once per data change rather than per frame, so the draw path can bound its scan to the
+  // visible window when the precondition holds.
+  $: pointsSorted = isSortedByX(points);
 
   onMount(() => {
     if (canvas) {
@@ -125,7 +129,32 @@
 
     const [viewStart, viewEnd] = xScaleView.domain().map(x => x.getTime());
 
-    for (let i = pointsStartIndex; i < points.length; ++i) {
+    // Skip the leading boxes that end before the view starts.
+    //
+    // A run's box ends where the *next* run begins, so the earliest run that can still be visible
+    // is the one containing the point just before the first in-view point — not the one containing
+    // the first in-view point itself. Starting any later would drop a box that straddles the left
+    // edge of the view.
+    //
+    // Boxes are also keyed off the first point of a same-label run, so we walk back to that run's
+    // start; resuming mid-run would move the box's left edge. (The rAF continuation below relies
+    // on the same alignment — the threshold check sits at the top of the loop, where `i` is always
+    // a run start.)
+    let scanFrom = pointsStartIndex;
+    if (pointsSorted && pointsStartIndex === 0 && points.length > 0) {
+      const firstInView = lowerBoundByX(points, viewStart);
+      let index = Math.min(Math.max(firstInView - 1, 0), points.length - 1);
+      while (
+        index > 0 &&
+        points[index - 1].label.text === points[index].label.text &&
+        points[index - 1].is_gap === points[index].is_gap
+      ) {
+        index--;
+      }
+      scanFrom = index;
+    }
+
+    for (let i = scanFrom; i < points.length; ++i) {
       if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
         drawPointsRequest = window.requestAnimationFrame(() => drawPoints(points, i));
         return;
@@ -149,7 +178,15 @@
       const endMs = nextPoint ? nextPoint.x : points[i].x;
 
       // Do not draw if box is out of view
-      if (startMs > viewEnd || endMs < viewStart) {
+      if (startMs > viewEnd) {
+        // Sorted points mean every later run starts later still, so nothing beyond this can be
+        // in view. Stopping here avoids walking the whole trailing tail on every frame.
+        if (pointsSorted) {
+          break;
+        }
+        continue;
+      }
+      if (endMs < viewStart) {
         continue;
       }
 

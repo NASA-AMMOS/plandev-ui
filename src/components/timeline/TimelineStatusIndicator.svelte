@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { LoaderCircle, TriangleAlert } from 'lucide-svelte';
+  import { ChartSpline, LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { derived, type Readable } from 'svelte/store';
   import { Status } from '../../enums/status';
   import { activityDirectivesDB } from '../../stores/activities';
@@ -9,7 +9,11 @@
   import { selectedExternalEventsRaw } from '../../stores/external-event';
   import { schedulingAnalysisStatus } from '../../stores/scheduling';
   import { initialSpansLoading, simulationStatus } from '../../stores/simulation';
-  import { timelineResourcesErroring, timelineResourcesLoading } from '../../stores/timelineResourceStatus';
+  import {
+    timelineResourcesErroring,
+    timelineResourcesLoading,
+    timelineResourcesOversized,
+  } from '../../stores/timelineResourceStatus';
   import { tooltip } from '../../utilities/tooltip';
 
   type StatusError = { message: string; source: string };
@@ -68,6 +72,21 @@
   // `\n` renders as a line break — tooltip.css sets white-space: pre-line
   // on .tippy-content globally.
   $: errorTooltip = hasError ? $errors.map(e => `${e.source}: ${e.message}`).join('\n') : '';
+
+  // Surfaced separately from errors: nothing is broken, but a profile this large slows the
+  // timeline down and almost always indicates a fixed-cadence resource in the mission model.
+  $: oversizedCount = $timelineResourcesOversized.length;
+  $: hasOversized = oversizedCount > 0;
+  $: oversizedTooltip = hasOversized
+    ? [
+        oversizedCount === 1
+          ? 'A profile on this timeline is large enough to slow rendering:'
+          : `${oversizedCount} profiles on this timeline are large enough to slow rendering:`,
+        ...$timelineResourcesOversized.map(r => `• ${r.name} — ${r.segmentCount.toLocaleString()} segments`),
+        '',
+        'Profiles this size usually come from a fixed-cadence resource in the mission model, where segment count grows with simulation duration rather than with the number of value changes.',
+      ].join('\n')
+    : '';
 </script>
 
 {#if hasError}
@@ -88,5 +107,17 @@
     aria-label="Timeline loading"
   >
     <LoaderCircle size={14} class="animate-spin" />
+  </div>
+{/if}
+
+{#if hasOversized}
+  <div
+    class="ml-2 inline-flex items-center gap-1 text-muted-foreground"
+    use:tooltip={{ content: oversizedTooltip, placement: 'bottom' }}
+    role="status"
+    aria-label="Large profile warning"
+  >
+    <ChartSpline size={14} />
+    <span class="text-xs font-medium">{oversizedCount}</span>
   </div>
 {/if}

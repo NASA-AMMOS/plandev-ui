@@ -697,6 +697,56 @@ export function createTimelineXRangeLayer(
   };
 }
 
+type ResourceValuesMeta = {
+  /** Gaps make the left/right neighbour search order-dependent, forcing the full scan. */
+  hasGap: boolean;
+  maxY: number | undefined;
+  minY: number | undefined;
+  sorted: boolean;
+};
+
+/**
+ * Per-values-array facts needed to bound `getYAxisBounds`, computed once per array rather than on
+ * every zoom/pan frame. Keyed weakly on the array itself: the resource samplers hand out a fresh
+ * array per emit, so a new entry is computed exactly when the data changes and reused for every
+ * frame in between.
+ */
+const resourceValuesMetaCache = new WeakMap<ResourceValue[], ResourceValuesMeta>();
+
+function getResourceValuesMeta(values: ResourceValue[]): ResourceValuesMeta {
+  const cached = resourceValuesMetaCache.get(values);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  let hasGap = false;
+  let sorted = true;
+  let minY: number | undefined = undefined;
+  let maxY: number | undefined = undefined;
+
+  for (let i = 0; i < values.length; ++i) {
+    const value = values[i];
+    if (value.is_gap) {
+      hasGap = true;
+    }
+    if (i > 0 && value.x < values[i - 1].x) {
+      sorted = false;
+    }
+    if (typeof value.y === 'number') {
+      if (minY === undefined || value.y < minY) {
+        minY = value.y;
+      }
+      if (maxY === undefined || value.y > maxY) {
+        maxY = value.y;
+      }
+    }
+  }
+
+  const meta: ResourceValuesMeta = { hasGap, maxY, minY, sorted };
+  resourceValuesMetaCache.set(values, meta);
+  return meta;
+}
+
 /**
  * Returns the max bounds of the resources associated with an axis
  */
@@ -717,53 +767,117 @@ export function getYAxisBounds(
     if (layerResource) {
       let leftValue: ResourceValue | undefined;
       let rightValue: ResourceValue | undefined;
-      layerResource.values.forEach(value => {
-        const isNumber = typeof value.y === 'number';
-        // Identify the first value to the left of the viewTimeRange
-        if (viewTimeRange && value.x < viewTimeRange.start) {
-          // TODO shouldn't we continue on to next value if this is a gap?
-          if (value.is_gap) {
-            leftValue = undefined;
-          } else {
-            if (isNumber) {
-              if (!leftValue) {
-                leftValue = value;
-              } else if (value.x >= leftValue.x) {
-                leftValue = value;
+      const values = layerResource.values;
+      const meta = getResourceValuesMeta(values);
+      // Gaps reset the left/right neighbour mid-scan, which makes the result depend on the whole
+      // array rather than just the values adjacent to the view, so those fall back to the full scan.
+      const bounded = meta.sorted && !meta.hasGap;
+
+      if (bounded) {
+        if (viewTimeRange && yAxis.domainFitMode === 'fitTimeWindow') {
+          // Only values inside the window count, and the window is a contiguous index range.
+          const firstInView = lowerBoundByX(values, viewTimeRange.start);
+          const firstAfterView = upperBoundByX(values, viewTimeRange.end);
+          for (let i = firstInView; i < firstAfterView; ++i) {
+            const y = values[i].y;
+            if (typeof y === 'number') {
+              if (minY === undefined || y < minY) {
+                minY = y;
+              }
+              if (maxY === undefined || y > maxY) {
+                maxY = y;
+              }
+            }
+          }
+          // Without gaps the neighbours are simply the nearest numeric value on each side.
+          for (let i = firstInView - 1; i >= 0; --i) {
+            if (typeof values[i].y === 'number') {
+              leftValue = values[i];
+              break;
+            }
+          }
+          for (let i = firstAfterView; i < values.length; ++i) {
+            if (typeof values[i].y === 'number') {
+              rightValue = values[i];
+              break;
+            }
+          }
+        } else {
+          // Every value counts regardless of the window, so reuse the cached whole-array extent.
+          if (meta.minY !== undefined && (minY === undefined || meta.minY < minY)) {
+            minY = meta.minY;
+          }
+          if (meta.maxY !== undefined && (maxY === undefined || meta.maxY > maxY)) {
+            maxY = meta.maxY;
+          }
+          if (viewTimeRange) {
+            const firstInView = lowerBoundByX(values, viewTimeRange.start);
+            const firstAfterView = upperBoundByX(values, viewTimeRange.end);
+            for (let i = firstInView - 1; i >= 0; --i) {
+              if (typeof values[i].y === 'number') {
+                leftValue = values[i];
+                break;
+              }
+            }
+            for (let i = firstAfterView; i < values.length; ++i) {
+              if (typeof values[i].y === 'number') {
+                rightValue = values[i];
+                break;
               }
             }
           }
         }
-        // Identify the first value to the right of the viewTimeRange
-        if (viewTimeRange && value.x > viewTimeRange.end) {
-          if (value.is_gap) {
-            rightValue = undefined;
-          } else {
-            if (isNumber) {
-              if (!rightValue) {
-                rightValue = value;
-              } else if (value.x < rightValue.x) {
-                rightValue = value;
+      }
+
+      if (!bounded) {
+        values.forEach(value => {
+          const isNumber = typeof value.y === 'number';
+          // Identify the first value to the left of the viewTimeRange
+          if (viewTimeRange && value.x < viewTimeRange.start) {
+            // TODO shouldn't we continue on to next value if this is a gap?
+            if (value.is_gap) {
+              leftValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!leftValue) {
+                  leftValue = value;
+                } else if (value.x >= leftValue.x) {
+                  leftValue = value;
+                }
               }
             }
           }
-        }
-        // Consider a value for min and max if it is a number and it falls within the time range or
-        // no time range is supplied or the domain fit mode is not fitTimeWindow
-        if (
-          typeof value.y === 'number' &&
-          (!viewTimeRange ||
-            yAxis.domainFitMode !== 'fitTimeWindow' ||
-            (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
-        ) {
-          if (minY === undefined || value.y < minY) {
-            minY = value.y;
+          // Identify the first value to the right of the viewTimeRange
+          if (viewTimeRange && value.x > viewTimeRange.end) {
+            if (value.is_gap) {
+              rightValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!rightValue) {
+                  rightValue = value;
+                } else if (value.x < rightValue.x) {
+                  rightValue = value;
+                }
+              }
+            }
           }
-          if (maxY === undefined || value.y > maxY) {
-            maxY = value.y;
+          // Consider a value for min and max if it is a number and it falls within the time range or
+          // no time range is supplied or the domain fit mode is not fitTimeWindow
+          if (
+            typeof value.y === 'number' &&
+            (!viewTimeRange ||
+              yAxis.domainFitMode !== 'fitTimeWindow' ||
+              (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
+          ) {
+            if (minY === undefined || value.y < minY) {
+              minY = value.y;
+            }
+            if (maxY === undefined || value.y > maxY) {
+              maxY = value.y;
+            }
           }
-        }
-      });
+        });
+      }
       // Account for the neighboring left and right values as these values are connected to in line drawing
       if (viewTimeRange) {
         minY = Math.min(
@@ -854,6 +968,59 @@ export function duplicateRow(row: Row, timelines: Timeline[], timelineId: number
   });
 
   return newRow;
+}
+
+/**
+ * Index of the first point with `x >= target`, or `points.length` if none. Requires `points`
+ * sorted ascending by `x` — check with `isSortedByX`.
+ */
+export function lowerBoundByX(points: { x: number }[], target: number): number {
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (points[mid].x < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+/**
+ * Index of the first point with `x > target`, or `points.length` if none. Requires `points`
+ * sorted ascending by `x` — check with `isSortedByX`.
+ */
+export function upperBoundByX(points: { x: number }[], target: number): number {
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (points[mid].x <= target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+/**
+ * Whether `points` is non-decreasing in `x`.
+ *
+ * Sampled resources are sorted by construction, but a profile whose `duration` lands before its
+ * last segment offset produces an unsorted array (documented garbage-in case, pinned by
+ * `resources.test.ts`). Compute this once per data change so the per-frame draw path can decide
+ * between binary search and a full scan.
+ */
+export function isSortedByX(points: { x: number }[]): boolean {
+  for (let i = 1; i < points.length; ++i) {
+    if (points[i].x < points[i - 1].x) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

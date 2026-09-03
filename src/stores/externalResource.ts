@@ -2,7 +2,7 @@ import { derived, writable, type Readable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
-import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
+import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { catchError } from './console';
 import { planDatasets } from './plan';
 import {
@@ -52,6 +52,9 @@ export function createExternalResourceSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
+  // Retains samples across emits and re-samples only the tail. Reset via resetForNewProfile
+  // whenever the accumulator is cleared or repointed at a different plan_dataset row.
+  const sampler = createProfileSampler(planStartTimeYmd);
   let sinceOffset = INITIAL_SINCE;
   let resolved = false;
   let lastError = '';
@@ -126,18 +129,23 @@ export function createExternalResourceSubscription(
       return;
     }
     let resource: Resource | null = null;
-    if (currentMeta && resolved) {
-      const synthesised: Profile = {
-        dataset_id: currentMeta.datasetId,
+    // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
+    // time rather than emitting NaN x values.
+    if (currentMeta && resolved && planStartTimeYmd) {
+      resource = sampler.sample({
         duration: currentMeta.duration,
-        id: currentMeta.profileId,
         name,
-        profile_segments: accumulator,
-        type: currentMeta.type,
-      };
-      resource = sampleProfiles([synthesised], planStartTimeYmd, currentMeta.offsetFromPlanStart)[0] ?? null;
+        offsetInterval: currentMeta.offsetFromPlanStart,
+        profileType: currentMeta.type,
+        segments: accumulator,
+      });
     }
-    const nextState: TimelineResourceState = { error: lastError, loading: !resolved && !lastError, resource };
+    const nextState: TimelineResourceState = {
+      error: lastError,
+      loading: !resolved && !lastError,
+      resource,
+      segmentCount: accumulator.length,
+    };
     setState(nextState);
   }
 
@@ -189,6 +197,7 @@ export function createExternalResourceSubscription(
 
   function resetForNewProfile() {
     accumulator.length = 0;
+    sampler.reset();
     sinceOffset = INITIAL_SINCE;
     resolved = false;
   }
