@@ -1999,9 +1999,7 @@ describe('getYAxisBounds bounded scan', () => {
         const yAxis: Axis = { ...baseAxis, domainFitMode };
 
         // No view range at all.
-        expect(getYAxisBounds(yAxis, layers, resources)).toEqual(
-          referenceGetYAxisBounds(yAxis, layers, resources),
-        );
+        expect(getYAxisBounds(yAxis, layers, resources)).toEqual(referenceGetYAxisBounds(yAxis, layers, resources));
 
         for (let start = -2; start <= maxX + 2; start += 2) {
           for (const span of [0, 3, 11, maxX + 4]) {
@@ -2011,6 +2009,96 @@ describe('getYAxisBounds bounded scan', () => {
             );
           }
         }
+      }
+    }
+  });
+});
+
+/**
+ * LayerLine's hover path ran two scans over every point on each mousemove: a forward walk to find the
+ * cursor's neighbours, and a full filter to collect points sharing an exact x. Both are now bounded
+ * by binary search. Hover fires far more often than zoom, so these have to stay exactly equivalent.
+ */
+describe('hover neighbour search bounding', () => {
+  type P = { x: number; y: number | null };
+
+  function linearNeighbours(points: P[], xDate: number) {
+    let leftPoint: P | null = null;
+    let rightPoint: P | null = null;
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      if (point.x <= xDate) {
+        if (!leftPoint) {
+          leftPoint = point;
+        } else if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+          leftPoint = point;
+        }
+      } else if (!rightPoint) {
+        rightPoint = point;
+        break;
+      }
+    }
+    return { leftPoint, rightPoint };
+  }
+
+  function boundedNeighbours(points: P[], xDate: number) {
+    let leftPoint: P | null = null;
+    let rightPoint: P | null = null;
+    const firstAfter = upperBoundByX(points, xDate);
+    if (firstAfter > 0) {
+      leftPoint = points[firstAfter - 1];
+    }
+    if (firstAfter < points.length) {
+      rightPoint = points[firstAfter];
+    }
+    return { leftPoint, rightPoint };
+  }
+
+  function linearAtX(points: P[], x: number) {
+    return points.filter(p => p.y !== null && p.x === x);
+  }
+
+  function boundedAtX(points: P[], x: number) {
+    const out: P[] = [];
+    const end = upperBoundByX(points, x);
+    for (let i = lowerBoundByX(points, x); i < end; ++i) {
+      if (points[i].y !== null) {
+        out.push(points[i]);
+      }
+    }
+    return out;
+  }
+
+  test('bounded neighbour and exact-x lookups match the scans they replaced', () => {
+    const datasets: P[][] = [
+      [],
+      [{ x: 50, y: 1 }],
+      // Duplicate x values are the interesting case: the scan preferred later points on a tie, and
+      // consecutive profile segments genuinely share an x.
+      [
+        { x: 10, y: 1 },
+        { x: 10, y: 2 },
+        { x: 20, y: 3 },
+        { x: 20, y: 4 },
+        { x: 30, y: 5 },
+      ],
+      // Gaps must be excluded from the exact-x set but still count as neighbours.
+      [
+        { x: 0, y: 1 },
+        { x: 10, y: null },
+        { x: 10, y: 2 },
+        { x: 20, y: null },
+        { x: 30, y: 3 },
+      ],
+      Array.from({ length: 40 }, (_, i) => ({ x: i * 5, y: i })),
+    ];
+
+    for (const points of datasets) {
+      for (let cursor = -10; cursor <= 220; cursor += 1) {
+        expect(boundedNeighbours(points, cursor)).toEqual(linearNeighbours(points, cursor));
+      }
+      for (const x of [-5, 0, 10, 15, 20, 30, 195, 500]) {
+        expect(boundedAtX(points, x)).toEqual(linearAtX(points, x));
       }
     }
   });

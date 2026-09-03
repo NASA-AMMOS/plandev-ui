@@ -50,10 +50,16 @@ export function createProfileSubscription(
     setTimelineResourceState(datasetId, name, 'sim', next);
   }
 
-  const accumulator: ProfileSegment[] = [];
-  // Retains samples across emits and re-samples only the tail, so per-tick cost tracks the
-  // segment delta rather than the whole accumulated profile.
+  // The sampler is append-only and retains what it needs from earlier batches, so fetched segments
+  // are handed over and dropped rather than accumulated. That removes the largest retained
+  // representation of a profile — measured 202 B/segment, more than either array derived from it —
+  // leaving only the two scalars below, which is all the size guardrail and pickEffectiveDuration
+  // need.
   const sampler = createProfileSampler(planStartTimeYmd);
+  let segmentCount = 0;
+  let lastSegmentOffset: string | null = null;
+  // Fetched but not yet handed to the sampler; emptied on every emit.
+  let pendingSegments: ProfileSegment[] = [];
   let header: ProfileHeader | null = null;
   let sinceOffset = INITIAL_SINCE;
   // Settled on a final state. Set when we receive a profile, OR when the sim
@@ -61,7 +67,7 @@ export function createProfileSubscription(
   // more ticks will fire to retry, so we stop showing loading.
   let resolved = false;
   let lastError = '';
-  // Drives whether sampleProfiles closes the last segment at header.duration
+  // Drives whether the sampler closes the last segment at header.duration
   // (terminal sim) or the last-seen offset (streaming, so header.duration
   // would project past actual data).
   let streamingActive = false;
@@ -89,7 +95,7 @@ export function createProfileSubscription(
     aggregateLogged = true;
     logMessage(
       'log',
-      `Retrieved profile "${name}" (${accumulator.length} segment${pluralize(accumulator.length)}) for dataset ID=${datasetId}.`,
+      `Retrieved profile "${name}" (${segmentCount} segment${pluralize(segmentCount)}) for dataset ID=${datasetId}.`,
       { duration: performance.now() - createdAt },
     );
   }
@@ -102,20 +108,21 @@ export function createProfileSubscription(
     // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
     // time rather than emitting NaN x values.
     if (header && resolved && planStartTimeYmd) {
-      const lastOffset = accumulator.length > 0 ? accumulator[accumulator.length - 1].start_offset : null;
+      const lastOffset = lastSegmentOffset;
       const duration = pickEffectiveDuration(header.duration, lastOffset, streamingActive);
       resource = sampler.sample({
         duration,
         name: header.name,
         profileType: header.type,
-        segments: accumulator,
+        segments: pendingSegments,
       });
+      pendingSegments = [];
     }
     setState({
       error: lastError,
       loading: !resolved && !lastError,
       resource,
-      segmentCount: accumulator.length,
+      segmentCount,
     });
   }
 
@@ -135,10 +142,23 @@ export function createProfileSubscription(
       }
       if (profile) {
         if (profile.profile_segments.length > 0) {
-          appendAll(accumulator, profile.profile_segments);
+          appendAll(pendingSegments, profile.profile_segments);
+          segmentCount += profile.profile_segments.length;
           sinceOffset = profile.profile_segments[profile.profile_segments.length - 1].start_offset;
+          lastSegmentOffset = sinceOffset;
         }
-        header = profile;
+        // Copy the header fields rather than keeping the fetched object. ProfileHeader is typed to
+        // exclude profile_segments, but assigning the whole `profile` satisfies that type while
+        // retaining the segments array at runtime — which kept every segment alive and made
+        // dropping the accumulator save nothing, since that only ever held references to these
+        // same objects.
+        header = {
+          dataset_id: profile.dataset_id,
+          duration: profile.duration,
+          id: profile.id,
+          name: profile.name,
+          type: profile.type,
+        };
         resolved = true;
         lastError = '';
       } else if (!streamingActive) {

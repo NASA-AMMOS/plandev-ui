@@ -306,7 +306,21 @@
     yScale: ScaleLinear<number, number> | ScalePoint<string>,
   ): LinePoint | null {
     /* TODO this could potentially include some pixel buffer around x? */
-    const pointsAtX = points.filter(p => p.y !== null && p.x === x);
+    // Points sharing an x are contiguous when sorted, so the exact-match set is a bounded slice
+    // rather than a full scan. This runs on every mousemove, so scanning every point here cost an
+    // O(total) pass plus an allocation per pointer event.
+    let pointsAtX: LinePoint[];
+    if (pointsSorted) {
+      pointsAtX = [];
+      const end = upperBoundByX(points, x);
+      for (let i = lowerBoundByX(points, x); i < end; ++i) {
+        if (points[i].y !== null) {
+          pointsAtX.push(points[i]);
+        }
+      }
+    } else {
+      pointsAtX = points.filter(p => p.y !== null && p.x === x);
+    }
     const closest = pointsAtX.reduce((closestPoint: LinePoint | null, nextPoint) => {
       if (closestPoint === null) {
         return nextPoint;
@@ -361,21 +375,37 @@
       let rightPoint: LinePoint | null = null;
       const yScale = computeYScale(yAxes);
 
-      // Find the points that neighbor mouse x
-      for (let i = 0; i < points.length; i++) {
-        const point = points[i];
-        if (point.x <= xDate) {
-          if (!leftPoint) {
-            leftPoint = point;
-          } else {
-            if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+      // Find the points that neighbor mouse x.
+      //
+      // The scan below walks forward from index 0 until it passes the cursor, so it cost up to a full
+      // pass on every mousemove — worst case with the pointer near the right edge of a large profile.
+      // When sorted, the same two neighbours come from one binary search: everything at or before the
+      // cursor ends at `firstAfter - 1`, and because the scan preferred later points on a distance
+      // tie, that last index is exactly the left neighbour it would have chosen.
+      if (pointsSorted) {
+        const firstAfter = upperBoundByX(points, xDate);
+        if (firstAfter > 0) {
+          leftPoint = points[firstAfter - 1];
+        }
+        if (firstAfter < points.length) {
+          rightPoint = points[firstAfter];
+        }
+      } else {
+        for (let i = 0; i < points.length; i++) {
+          const point = points[i];
+          if (point.x <= xDate) {
+            if (!leftPoint) {
               leftPoint = point;
+            } else {
+              if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+                leftPoint = point;
+              }
             }
-          }
-        } else {
-          if (!rightPoint) {
-            rightPoint = point;
-            break; // Exit loop since points are sorted in time so this will be the closest point on the right
+          } else {
+            if (!rightPoint) {
+              rightPoint = point;
+              break; // Exit loop since points are sorted in time so this will be the closest point on the right
+            }
           }
         }
       }

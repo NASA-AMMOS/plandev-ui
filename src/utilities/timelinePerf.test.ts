@@ -351,6 +351,56 @@ describe.skipIf(!process.env.PERF)('timeline performance', () => {
       lines.push(row(`${size / 1000}k segments`, before, after));
     }
 
+    lines.push('', '=== Phase 1e: hover lookups, per mousemove with the cursor near the right edge ===', header());
+    for (const size of SIZES) {
+      const resource = sampleProfiles([mkProfile(mkSegments(size))], START)[0];
+      const points: LinePoint[] = resource.values.map((v, i) => ({
+        id: i,
+        name: 'r',
+        type: 'line',
+        x: v.x,
+        y: v.y as number,
+      }));
+      // Cursor at 90% across: the old forward scan's cost grew with distance from the first point,
+      // so this is close to its worst case and is a perfectly ordinary place to put the pointer.
+      const cursor = points[Math.floor(points.length * 0.9)].x;
+
+      const before = timeMs(() => {
+        let leftPoint: LinePoint | null = null;
+        let rightPoint: LinePoint | null = null;
+        for (let i = 0; i < points.length; i++) {
+          const point = points[i];
+          if (point.x <= cursor) {
+            if (!leftPoint || Math.abs(point.x - cursor) <= Math.abs(leftPoint.x - cursor)) {
+              leftPoint = point;
+            }
+          } else if (!rightPoint) {
+            rightPoint = point;
+            break;
+          }
+        }
+        // The exact-x collection that ran alongside it: a full scan plus an allocation.
+        const atX = points.filter(p => p.y !== null && p.x === cursor);
+        return [leftPoint, rightPoint, atX.length];
+      }, 7);
+
+      const after = timeMs(() => {
+        const firstAfter = upperBoundByX(points, cursor);
+        const leftPoint = firstAfter > 0 ? points[firstAfter - 1] : null;
+        const rightPoint = firstAfter < points.length ? points[firstAfter] : null;
+        const atX: LinePoint[] = [];
+        const end = upperBoundByX(points, cursor);
+        for (let i = lowerBoundByX(points, cursor); i < end; ++i) {
+          if (points[i].y !== null) {
+            atX.push(points[i]);
+          }
+        }
+        return [leftPoint, rightPoint, atX.length];
+      }, 7);
+
+      lines.push(row(`${size / 1000}k segments`, before, after));
+    }
+
     lines.push('', '=== context: minMaxDecimation over in-view points (unchanged) ===');
     for (const size of SIZES) {
       const resource = sampleProfiles([mkProfile(mkSegments(size))], START)[0];
