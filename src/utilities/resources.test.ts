@@ -488,29 +488,31 @@ describe('createProfileSampler', () => {
       const boundaries = [...cuts].sort((a, b) => a - b);
 
       const sampler = createProfileSampler(START);
-      const accumulator: ProfileSegment[] = [];
+      let appended = 0;
       let incremental: Resource | null = null;
 
       for (let b = 0; b < boundaries.length; ++b) {
         const upTo = boundaries[b];
         const isLastBatch = b === boundaries.length - 1;
-        accumulator.length = 0;
-        accumulator.push(...allSegments.slice(0, upTo));
+        const arrived = allSegments.slice(0, upTo);
 
         // Mirror the stores: while streaming, close at the last received offset; once terminal,
         // use the header duration.
         const headerDuration = formatInterval(offsets[segmentCount - 1] + 500_000, style);
-        const duration = pickEffectiveDuration(
-          headerDuration,
-          accumulator[accumulator.length - 1].start_offset,
-          !isLastBatch,
-        );
+        const duration = pickEffectiveDuration(headerDuration, arrived[arrived.length - 1].start_offset, !isLastBatch);
 
-        incremental = sampler.sample({ duration, name: 'r', profileType, segments: accumulator });
+        // Only the delta is handed over; the caller retains nothing.
+        incremental = sampler.sample({
+          duration,
+          name: 'r',
+          profileType,
+          segments: allSegments.slice(appended, upTo),
+        });
+        appended = upTo;
 
         // Every intermediate emit must also equal a full pass over what has arrived so far.
         const expectedSoFar = sampleProfiles(
-          [{ dataset_id: 1, duration, id: 1, name: 'r', profile_segments: accumulator, type: profileType }],
+          [{ dataset_id: 1, duration, id: 1, name: 'r', profile_segments: arrived, type: profileType }],
           START,
         )[0];
         expect(incremental.values).toEqual(expectedSoFar.values);
@@ -522,7 +524,10 @@ describe('createProfileSampler', () => {
 
   test('applies and re-bases offsetInterval, resampling when it changes', () => {
     const profileType = { schema: { type: 'real' }, type: 'real' } as Profile['type'];
-    const segments = [makeSegment('00:00:00', { initial: 1, rate: 0 }), makeSegment('00:00:10', { initial: 2, rate: 0 })];
+    const segments = [
+      makeSegment('00:00:00', { initial: 1, rate: 0 }),
+      makeSegment('00:00:10', { initial: 2, rate: 0 }),
+    ];
     const sampler = createProfileSampler(START);
 
     const noOffset = sampler.sample({ duration: '00:00:20', name: 'r', profileType, segments });
@@ -551,6 +556,8 @@ describe('createProfileSampler', () => {
     ];
     const short = [makeSegment('00:00:00', { initial: 9, rate: 0 })];
 
+    // Now that only deltas are passed, an explicit reset is the only way to repoint the sampler at a
+    // different profile -- it can no longer infer it from a shrinking accumulator.
     const sampler = createProfileSampler(START);
     sampler.sample({ duration: '00:00:30', name: 'r', profileType, segments: long });
     sampler.reset();
@@ -596,8 +603,13 @@ describe('createProfileSampler', () => {
     const first = sampler.sample({ duration: '00:00:10', name: 'r', profileType, segments });
     const firstSnapshot = first.values.map(v => ({ ...v }));
 
-    segments.push(makeSegment('00:00:10', { initial: 2, rate: 0 }));
-    const second = sampler.sample({ duration: '00:00:20', name: 'r', profileType, segments });
+    // Delta only, per the append-only contract.
+    const second = sampler.sample({
+      duration: '00:00:20',
+      name: 'r',
+      profileType,
+      segments: [makeSegment('00:00:10', { initial: 2, rate: 0 })],
+    });
 
     expect(second.values).toHaveLength(4);
     expect(first.values).toEqual(firstSnapshot);

@@ -52,10 +52,13 @@ export function createExternalResourceSubscription(
     setTimelineResourceState(simDatasetId, name, 'external', next);
   }
 
-  const accumulator: ProfileSegment[] = [];
-  // Retains samples across emits and re-samples only the tail. Reset via resetForNewProfile
-  // whenever the accumulator is cleared or repointed at a different plan_dataset row.
+  // Append-only: fetched segments are handed to the sampler and dropped rather than accumulated,
+  // which removes the largest retained representation of a profile (measured 202 B/segment). Reset
+  // via resetForNewProfile whenever this repoints at a different plan_dataset row.
   const sampler = createProfileSampler(planStartTimeYmd);
+  let segmentCount = 0;
+  // Fetched but not yet handed to the sampler; emptied on every emit.
+  let pendingSegments: ProfileSegment[] = [];
   let sinceOffset = INITIAL_SINCE;
   let resolved = false;
   let lastError = '';
@@ -138,14 +141,15 @@ export function createExternalResourceSubscription(
         name,
         offsetInterval: currentMeta.offsetFromPlanStart,
         profileType: currentMeta.type,
-        segments: accumulator,
+        segments: pendingSegments,
       });
+      pendingSegments = [];
     }
     const nextState: TimelineResourceState = {
       error: lastError,
       loading: !resolved && !lastError,
       resource,
-      segmentCount: accumulator.length,
+      segmentCount,
     };
     setState(nextState);
   }
@@ -171,7 +175,8 @@ export function createExternalResourceSubscription(
         return;
       }
       if (segments && segments.length > 0) {
-        appendAll(accumulator, segments);
+        appendAll(pendingSegments, segments);
+        segmentCount += segments.length;
         sinceOffset = segments[segments.length - 1].start_offset;
       }
       resolved = true;
@@ -197,7 +202,8 @@ export function createExternalResourceSubscription(
   }
 
   function resetForNewProfile() {
-    accumulator.length = 0;
+    pendingSegments = [];
+    segmentCount = 0;
     sampler.reset();
     sinceOffset = INITIAL_SINCE;
     resolved = false;
@@ -241,7 +247,7 @@ export function createExternalResourceSubscription(
       const { meta } = next;
       currentMeta = meta;
       // If we switched to a different profile row (different dataset or id),
-      // reset accumulator and sinceOffset before refetching.
+      // reset the sampler and sinceOffset before refetching.
       const switched =
         lastMeta !== null && (lastMeta.datasetId !== meta.datasetId || lastMeta.profileId !== meta.profileId);
       if (switched) {
@@ -261,7 +267,7 @@ export function createExternalResourceSubscription(
         emit();
       }
       // Otherwise: meta unchanged, no error pending, no need to re-sample
-      // the full accumulator and re-push identical state downstream.
+      // the profile and re-push identical state downstream.
     }),
   );
 

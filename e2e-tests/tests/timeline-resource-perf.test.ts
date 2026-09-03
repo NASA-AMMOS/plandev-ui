@@ -39,6 +39,7 @@ type FrameStats = { frames: number; max: number; p50: number; p95: number };
 type Measurement = {
   firstPaintMs: number;
   heapMb: number | null;
+  hover: FrameStats;
   pan: FrameStats;
   segmentCount: number;
   zoomIn: FrameStats;
@@ -107,13 +108,35 @@ async function canvasSignature(canvases: ReturnType<Page['locator']>): Promise<s
         }
         const { data } = ctx.getImageData(0, 0, el.width, el.height);
         let sum = 0;
-        for (let i = 3; i < data.length; i += 4 * 16) {
+        // Every pixel's alpha, not a sample. Hover draws a marker only a few dozen pixels across, so
+        // a sparse stride missed it and reported the interaction as a no-op even though it had
+        // happened. Zoom and pan redraw the whole canvas and would survive any stride; hover would
+        // not, so the guard has to be exact.
+        for (let i = 3; i < data.length; i += 4) {
           sum = (sum + data[i] * ((i % 251) + 1)) % 2147483647;
         }
         return String(sum);
       })
       .join(':'),
   );
+}
+
+/**
+ * Sweeps the pointer across the row, which drives the hover readout.
+ *
+ * Measured separately from zoom and pan because it is the interaction that fires most often and the
+ * one whose cost scales with the *whole* profile rather than what is visible: the neighbour lookup
+ * walks from the first point, and the exact-x lookup used to scan every point. Not gated by Navigate
+ * interaction mode — only d3-zoom's filter is.
+ */
+async function hoverAcrossRow(page: Page, box: { height: number; width: number; x: number; y: number }) {
+  const y = box.y + box.height / 2;
+  for (let i = 0; i < 12; i++) {
+    // Sweep left-to-right: cost grew with distance from the left edge, so the right half is where the
+    // old forward scan was most expensive.
+    await page.mouse.move(box.x + box.width * (0.08 + i * 0.075), y);
+    await page.waitForTimeout(30);
+  }
 }
 
 /**
@@ -173,17 +196,19 @@ test.describe.serial('timeline resource rendering performance', () => {
         '',
         pad('segments', 12) +
           pad('first paint', 14) +
+          pad('hover', 22) +
           pad('zoom out', 22) +
           pad('zoom in', 22) +
           pad('pan', 22) +
           'heap',
-        '-'.repeat(100),
+        '-'.repeat(122),
       ];
       for (const m of measurements) {
         lines.push(
           pad(m.segmentCount.toLocaleString(), 12) +
             num(m.firstPaintMs) +
             '    ' +
+            pad(`${m.hover.p95.toFixed(1)} / ${m.hover.max.toFixed(1)}`, 22) +
             pad(`${m.zoomedOut.p95.toFixed(1)} / ${m.zoomedOut.max.toFixed(1)}`, 22) +
             pad(`${m.zoomIn.p95.toFixed(1)} / ${m.zoomIn.max.toFixed(1)}`, 22) +
             pad(`${m.pan.p95.toFixed(1)} / ${m.pan.max.toFixed(1)}`, 22) +
@@ -309,9 +334,36 @@ test.describe.serial('timeline resource rendering performance', () => {
       // guard is what caught the ordering bug above.
       const initial = await canvasSignature(canvases);
 
+      // Only hover needs pointer coordinates; zoom and pan go through keyboard shortcuts.
+      //
+      // Scroll again here rather than reusing the earlier call: rows grow as their resources load, so
+      // a box captured before the data settled can be stale by hundreds of pixels. Measured at 2M,
+      // the row ended up at y=1412 in a 720px viewport, which put every synthetic mouse move outside
+      // the window -- hover never fired, and only the canvas-signature guard revealed it.
+      await row.scrollIntoViewIfNeeded();
+      const box = await canvases.first().boundingBox();
+      expect(box, 'row canvas has no bounding box').not.toBeNull();
+      const rowBox = box as { height: number; width: number; x: number; y: number };
+
+      // Pointer events go nowhere if the target is off-screen, and that reads as a fast interaction
+      // rather than a failure, so require the row to actually be within the viewport.
+      const viewport = page.viewportSize();
+      expect(viewport, 'no viewport size').not.toBeNull();
+      const { height: viewportHeight } = viewport as { height: number; width: number };
+      expect(
+        rowBox.y >= 0 && rowBox.y + rowBox.height <= viewportHeight,
+        `row is outside the viewport (y=${rowBox.y}, height=${rowBox.height}, viewport=${viewportHeight}) so pointer events would not reach it`,
+      ).toBe(true);
+
+      // Hover first, while the row is still fully zoomed out and every point is loaded -- the worst
+      // case for lookups that scale with total point count rather than with the visible window.
+      const hover = await measureFrames(page, () => hoverAcrossRow(page, rowBox));
+      const afterHover = await canvasSignature(canvases);
+      expect(afterHover, 'hover did not change what the row drew').not.toEqual(initial);
+
       const zoomIn = await measureFrames(page, () => pressShortcut(page, '=', 12));
       const afterZoomIn = await canvasSignature(canvases);
-      expect(afterZoomIn, 'zoom-in did not change what the row drew').not.toEqual(initial);
+      expect(afterZoomIn, 'zoom-in did not change what the row drew').not.toEqual(afterHover);
 
       const pan = await measureFrames(page, () => pressShortcut(page, ']', 12));
       const afterPan = await canvasSignature(canvases);
@@ -336,7 +388,7 @@ test.describe.serial('timeline resource rendering performance', () => {
         heapMb = null;
       }
 
-      measurements.push({ firstPaintMs, heapMb, pan, segmentCount, zoomIn, zoomedOut });
+      measurements.push({ firstPaintMs, heapMb, hover, pan, segmentCount, zoomIn, zoomedOut });
 
       // The harness reports numbers rather than enforcing thresholds -- machines differ too much for
       // a wall-clock assertion to mean anything in CI. What is asserted is that frames were actually
@@ -344,6 +396,7 @@ test.describe.serial('timeline resource rendering performance', () => {
       expect(zoomedOut.frames, 'no frames sampled while zooming out').toBeGreaterThan(0);
       expect(zoomIn.frames, 'no frames sampled while zooming in').toBeGreaterThan(0);
       expect(pan.frames, 'no frames sampled while panning').toBeGreaterThan(0);
+      expect(hover.frames, 'no frames sampled while hovering').toBeGreaterThan(0);
     });
   }
 });
