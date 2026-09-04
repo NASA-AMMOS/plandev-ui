@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { base } from '$app/paths';
 import { env } from '$env/dynamic/public';
@@ -251,7 +252,7 @@ import {
   bulkShiftActivityDirectivesInPlan,
   packActivityDirectivesInPlan,
 } from './activities';
-import { convertToQuery } from './generic';
+import { convertToQuery, downloadBlob } from './generic';
 import gql, { convertToGQLArray } from './gql';
 import {
   showApplySequenceFilterModal,
@@ -8420,6 +8421,42 @@ const effects = {
       if ('parameter' in uploadedDictionaries) {
         showSuccessToast('Parameter Dictionary Created Successfully');
       }
+    }
+  },
+
+  async uploadSimulationDataset(plan: Plan, file: File, user: User | null): Promise<number | null> {
+    try {
+      const body = new FormData();
+      body.append('plan_id', `${plan.id}`);
+      body.append('simulation_results_file', file, file.name);
+
+      const simulationDatasetId = await reqGateway<number | null>('/uploadSimulationDataset', 'POST', body, user, true);
+
+      if (simulationDatasetId != null) {
+        showSuccessToast('Simulation Dataset Uploaded Successfully');
+        logMessage('log', `Uploaded simulation dataset ID=${simulationDatasetId}.`);
+        return simulationDatasetId;
+      }
+
+      throw Error('Uploaded simulation dataset not found');
+    } catch (e) {
+      catchError('Unable to upload simulation dataset', e as Error);
+      showFailureToast('Simulation Dataset Upload Failed');
+      return null;
+    }
+  },
+
+  async downloadSimulationDataset(plan: Plan, simulationDatasetId: number, user: User | null): Promise<void> {
+    try {
+      const url = `/downloadSimulationDataset?plan_id=${plan.id}&simulation_dataset_id=${simulationDatasetId}`;
+      const blob = await reqGateway<Blob>(url, 'GET', null, user, false, undefined, false, true);
+      downloadBlob(blob, `simulation_dataset_${simulationDatasetId}.json`);
+
+      showSuccessToast('Simulation Dataset Downloaded Successfully');
+      logMessage('log', `Downloaded simulation dataset ID=${simulationDatasetId}.`);
+    } catch (e) {
+      catchError('Unable to download simulation dataset', e as Error);
+      showFailureToast('Simulation Dataset Download Failed');
     }
   },
 

@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import PlanLeftArrow from '@nasa-jpl/stellar/icons/plan_with_left_arrow.svg?component';
   import PlanRightArrow from '@nasa-jpl/stellar/icons/plan_with_right_arrow.svg?component';
   import RefreshIcon from '@nasa-jpl/stellar/icons/refresh.svg?component';
@@ -72,6 +73,9 @@
   let startTimeField: FieldStore<string>;
   let modelParametersMap: ParametersMap = {};
   let filteredSimulationDatasets: SimulationDataset[] = [];
+  let isUploadVisible: boolean = false;
+  let uploadFile: File | undefined;
+  let uploadFileInput: HTMLInputElement;
   let { loading: simulationDatasetsPlanLoading, error: simulationDatasetsPlanError } = simulationDatasetsPlan;
 
   function validateStartTimeField(startTime: string) {
@@ -343,12 +347,49 @@
   function onCancelSimulation(event: CustomEvent) {
     effects.cancelSimulation(event.detail.id, user);
   }
+
+  function onDownloadSimulationDataset(event: CustomEvent<{ id: number }>) {
+    if ($plan) {
+      effects.downloadSimulationDataset($plan, event.detail.id, user);
+    }
+  }
+
+  function onShowUpload() {
+    isUploadVisible = true;
+  }
+
+  function onHideUpload() {
+    isUploadVisible = false;
+    uploadFile = undefined;
+    if (uploadFileInput) {
+      uploadFileInput.value = '';
+    }
+  }
+
+  function onFileSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      uploadFile = target.files[0];
+    }
+  }
+
+  async function onConfirmUpload() {
+    if (uploadFile && $plan) {
+      await effects.uploadSimulationDataset($plan, uploadFile, user);
+      onHideUpload();
+    }
+  }
 </script>
 
 <Panel padBody={false}>
   <svelte:fragment slot="header">
     <GridMenu {gridSection} title="Simulation" />
     <PanelHeaderActions>
+      <PanelHeaderActionButton
+        title="Upload Simulation Results"
+        showLabel
+        on:click={onShowUpload}
+      />
       {#if enableReSimulation}
         <PanelHeaderActionButton
           disabled={!enableReSimulation || $startTimeField.invalid || $endTimeField.invalid}
@@ -391,6 +432,29 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    <div class="upload-container" hidden={!isUploadVisible}>
+      <button class="close-upload" type="button" on:click={onHideUpload}>
+        <CloseIcon />
+      </button>
+      <label>
+        Simulation Results File
+        <input
+          bind:this={uploadFileInput}
+          type="file"
+          accept=".json"
+          on:change={onFileSelected}
+        />
+      </label>
+      <div class="upload-button-container">
+        <button
+          class="st-button secondary"
+          disabled={!uploadFile}
+          on:click={onConfirmUpload}
+        >
+          Upload
+        </button>
+      </div>
+    </div>
     <fieldset>
       <Collapse title="General">
         <DatePickerField
@@ -517,6 +581,7 @@
                   viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'PlanMetadataPanel' } });
                 }}
                 on:cancel={onCancelSimulation}
+                on:download={onDownloadSimulationDataset}
               />
             {/each}
           </AsyncContentState>
@@ -527,6 +592,37 @@
 </Panel>
 
 <style>
+  .upload-container {
+    background: var(--st-gray-15);
+    border-radius: 5px;
+    margin: 5px;
+    padding: 8px;
+    position: relative;
+  }
+
+  .upload-container[hidden] {
+    display: none;
+  }
+
+  .upload-container {
+    display: grid;
+    row-gap: 8px;
+  }
+
+  .upload-container :global(.upload-button-container) {
+    display: flex;
+    flex-flow: row-reverse;
+  }
+
+  .upload-container :global(.close-upload) {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+  }
+
   .simulation-history {
     display: flex;
     flex-direction: column;
