@@ -5,14 +5,12 @@
   import type { CellEditingStoppedEvent, ValueGetterParams } from 'ag-grid-community';
   import ExternalSourceIcon from '../../assets/external-source-box.svg?component';
   import { derivationGroups, externalSources } from '../../stores/external-source';
-  import { plugins } from '../../stores/plugins';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { DerivationGroup, ExternalSourceSlim } from '../../types/external-source';
   import { getDerivationGroupRowId } from '../../utilities/externalEvents';
   import { featurePermissions } from '../../utilities/permissions';
-  import { formatDate } from '../../utilities/time';
-  import Collapse from '../Collapse.svelte';
+  import ExternalSourceDetails from '../external-source/ExternalSourceDetails.svelte';
   import Input from '../form/Input.svelte';
   import CssGrid from '../ui/CssGrid.svelte';
   import CssGridGutter from '../ui/CssGridGutter.svelte';
@@ -185,44 +183,8 @@
     </svelte:fragment>
     <svelte:fragment slot="body">
       {#if selectedDerivationGroupSources.length > 0}
-        {#each selectedDerivationGroupSources as source}
-          <!-- Collapsible details -->
-          <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
-            <svelte:fragment slot="right">
-              <p class="st-typography-body derived-event-count">
-                {selectedDerivationGroup?.sources.get(source.key)?.event_counts} events
-              </p>
-            </svelte:fragment>
-            <div class="st-typography-body">
-              <div class="st-typography-bold">Key:</div>
-              {source.key}
-            </div>
-
-            <div class="st-typography-body">
-              <div class="st-typography-bold">Source Type:</div>
-              {source.source_type_name}
-            </div>
-
-            <div class="st-typography-body">
-              <div class="st-typography-bold">Start Time:</div>
-              {formatDate(new Date(source.start_time), $plugins.time.primary.format)}
-            </div>
-
-            <div class="st-typography-body">
-              <div class="st-typography-bold">End Time:</div>
-              {formatDate(new Date(source.end_time), $plugins.time.primary.format)}
-            </div>
-
-            <div class="st-typography-body">
-              <div class="st-typography-bold">Valid At:</div>
-              {formatDate(new Date(source.valid_at), $plugins.time.primary.format)}
-            </div>
-
-            <div class="st-typography-body">
-              <div class="st-typography-bold">Created At:</div>
-              {formatDate(new Date(source.created_at), $plugins.time.primary.format)}
-            </div>
-          </Collapse>
+        {#each selectedDerivationGroupSources as source (source.key)}
+          <ExternalSourceDetails {source} {user} />
         {/each}
       {:else}
         <p class="st-typography-body">
@@ -257,10 +219,6 @@
 
   .derivation-groups-modal-table-container {
     padding: 0 1rem 0.5rem;
-  }
-
-  .derived-event-count {
-    color: var(--st-gray-60);
   }
 
   .new-external-source-button {

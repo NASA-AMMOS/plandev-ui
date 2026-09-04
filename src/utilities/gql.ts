@@ -1261,6 +1261,18 @@ const gql = {
     }
   `,
 
+  GET_EXTERNAL_SOURCE_EXTERNAL_EVENT_COUNT: `#graphql
+    query GetExternalSourceExternalEventCount($externalSourceKey: String!, $derivationGroupName: String!) {
+      external_source_by_pk(derivation_group_name: $derivationGroupName, key: $externalSourceKey) {
+        external_events_aggregate {
+          aggregate {
+            count
+          }
+        }
+      }
+    }
+  `,
+
   GET_MODELS: `#graphql
     query GetModels {
       models: ${Queries.MISSION_MODELS} {
@@ -2366,11 +2378,6 @@ const gql = {
         }
         external_sources {
           key
-          external_events_aggregate {
-            aggregate {
-              count
-            }
-          }
         }
       }
     }
