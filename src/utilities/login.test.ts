@@ -2,7 +2,7 @@ import { goto } from '$app/navigation';
 import { env } from '$env/dynamic/public';
 import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
 import { logout, shouldRedirectToLogin } from './login';
-import { ADMIN_ROLE } from './permissions';
+import { ADMIN_ROLE } from './roles';
 
 // $app/* and $env/* are virtual modules provided by the SvelteKit Vite plugin. Mock them so
 // `logout()` runs in the browser branch with a controllable SSO flag and a spyable navigation.

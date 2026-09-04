@@ -14,7 +14,7 @@ import type {
   WorkspaceTreeNodeWithFullPath,
 } from '../types/workspace-tree-view';
 import { filterEmpty } from './generic';
-import { pathMatchesExtensionPattern } from './parameters';
+import { pathMatchesPattern } from './parameters';
 import { CompoundError, reqWorkspace, reqWorkspaceMetadata, reqWorkspaceWithEtag } from './requests';
 import { pluralize } from './text';
 
@@ -393,7 +393,7 @@ function nodesMatchParamSchema(
 ): boolean {
   if ((schema.type === 'file' || schema.type === 'fileList') && schema.pattern) {
     return nodes.every(node => {
-      return pathMatchesExtensionPattern(node.name || '', schema.pattern || '');
+      return pathMatchesPattern(node.name || '', schema.pattern || '');
     });
   }
   return true;

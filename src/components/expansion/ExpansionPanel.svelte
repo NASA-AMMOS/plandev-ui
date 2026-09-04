@@ -7,6 +7,7 @@
   import TrashIcon from '@nasa-jpl/stellar/icons/trash.svg?component';
   import { Download, FileCode2, SquareCode } from 'lucide-svelte';
   import { expansionSequences, filteredExpansionSequences } from '../../stores/expansion';
+  import { selectedPlanDerivationGroupNames } from '../../stores/external-source';
   import { plan } from '../../stores/plan';
   import { expandedTemplates } from '../../stores/sequence-template';
   import { sequenceFilters } from '../../stores/sequencing';
@@ -16,6 +17,7 @@
   import type { ActivityLayerFilter } from '../../types/timeline';
   import type { ViewGridSection } from '../../types/view';
   import effects from '../../utilities/effects';
+  import { getExpandedTemplateForSequence } from '../../utilities/expansion';
   import { downloadBlob } from '../../utilities/generic';
   import { showExpansionSequenceModal, showNewSequenceModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -26,7 +28,6 @@
   import ActivityFilterBuilder from '../timeline/form/TimelineEditor/ActivityFilterBuilder.svelte';
   import ListItem from '../ui/ListItem.svelte';
   import Panel from '../ui/Panel.svelte';
-  import { getExpandedTemplateForSequence } from '../../utilities/expansion';
 
   export let gridSection: ViewGridSection;
   export let user: User | null;
@@ -157,8 +158,23 @@
   async function onSendExpandedSequenceToWorkspace(sequence: ExpansionSequence) {
     const expandedTemplate = getExpandedTemplateForSequence($expandedTemplates, sequence);
     const expandedResult = expandedTemplate?.expanded_template ?? `No output found for sequence "${sequence.seq_id}"`;
-
-    await effects.sendSequenceToWorkspace(sequence, expandedResult, user);
+    const newFileMetadata = {
+      user: {
+        model: {
+          id: $plan?.model_id ?? -1,
+          name: $plan?.model?.name ?? '',
+        },
+        plan: {
+          derivationGroups: $selectedPlanDerivationGroupNames,
+          end: $plan?.end_time_doy ?? '',
+          name: $plan?.name ?? '',
+          start: $plan?.start_time_doy ?? '',
+        },
+        sequence_metadata: sequence.metadata,
+        simulation_dataset_id: sequence.simulation_dataset_id,
+      },
+    };
+    await effects.sendSequenceToWorkspace(sequence, expandedResult, newFileMetadata, user);
   }
 
   function onShowExpandedSequence(sequence: ExpansionSequence) {

@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ADMIN_ROLE } from '../../../utilities/permissions';
+import { ADMIN_ROLE } from '../../../utilities/roles';
 import SchedulingGoalForm from './SchedulingGoalForm.svelte';
 
 vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
