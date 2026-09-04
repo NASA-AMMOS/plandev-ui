@@ -1,25 +1,55 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import type { Placement } from 'tippy.js';
   import { getTarget } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
-  import Menu from '../menus/Menu.svelte';
+  import Menu, { type MenuType } from '../menus/Menu.svelte';
   import ColorPicker from './ColorPicker.svelte';
 
   export let value: string = '';
+  /** Makes a sibling `<label for>` resolve to the trigger. The accessible name still comes from
+   * `tooltipText`, which the tooltip action writes to aria-label. */
+  export let id: string | undefined = undefined;
   export let tooltipText: string = 'Color';
   export let placement: Placement = 'bottom-end';
   export let presetColors: string[] = ['#ef8b8c', '#febd85'];
+  /**
+   * Trigger swatch size in px. Only the trigger -- the preset swatches inside the menu stay full size,
+   * since those are a palette to aim at rather than an indicator. Defaults to the size every existing
+   * caller was already getting.
+   */
+  export let size: number = 24;
+  // Menus of the same type hide each other, so a picker nested inside another menu
+  // must not share that menu's type or opening it would close its own parent.
+  export let type: MenuType = 'dropdown';
 
   let pickerMenu: Menu;
+  let triggerElement: HTMLButtonElement;
 
   $: colorIsCustom = presetColors.indexOf(value) < 0;
 
   const dispatch = createEventDispatcher<{
     input: { value: string };
   }>();
+
+  onMount(() => {
+    // Menu dismisses itself from a click listener on the body, but a Menu that this picker is
+    // nested inside stops click propagation on its own content. That leaves the picker stuck open
+    // when clicking elsewhere in the parent menu, so listen on the capture phase instead, which
+    // runs before any ancestor can stop the event.
+    document.addEventListener('click', onDocumentClickCapture, true);
+    return () => document.removeEventListener('click', onDocumentClickCapture, true);
+  });
+
+  // The Menu renders inside the trigger button, so a click anywhere in the trigger subtree is a
+  // click on the picker itself: either the toggle, a preset, or the custom color input.
+  function onDocumentClickCapture(event: MouseEvent) {
+    if (pickerMenu?.isShown() && !triggerElement?.contains(event.target as Node)) {
+      pickerMenu.hide();
+    }
+  }
 
   function onInput(value: string) {
     dispatch('input', { value });
@@ -32,13 +62,15 @@
 </script>
 
 <button
+  bind:this={triggerElement}
+  {id}
   type="button"
   class="st-button color-preset-picker color relative dark:border-white/20"
   use:tooltip={{ content: tooltipText, placement: 'top' }}
-  style={`background: ${value}`}
+  style={`background: ${value}; height: ${size}px; width: ${size}px`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
-  <Menu bind:this={pickerMenu} hideAfterClick={false} {placement}>
+  <Menu escapeScrollBoundary bind:this={pickerMenu} hideAfterClick={false} {placement} {type}>
     <div class="colors bg-popover">
       {#each presetColors as color}
         <button

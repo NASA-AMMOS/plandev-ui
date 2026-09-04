@@ -13,6 +13,12 @@
   import { classNames } from '../../../utilities/generic';
 
   export { className as class };
+  /**
+   * Accessible name for the group. A `role="radiogroup"` takes no name from a sibling `<label for>` --
+   * only a labelable element does -- so without this a labelled group of radio buttons is announced,
+   * and matched by role-based tests, with no name at all.
+   */
+  export let ariaLabel: string | undefined = undefined;
   export let radioButtonContextKey: string = DefaultRadioButtonContextKey;
   export let radioButtonContainerClassName: string | undefined = undefined;
   export let selectedButtonId: RadioButtonId | undefined = undefined;
@@ -82,6 +88,7 @@
     ...(radioButtonContainerClassName ? { [radioButtonContainerClassName]: !!radioButtonContainerClassName } : {}),
   })}
   role="radiogroup"
+  aria-label={ariaLabel}
   {id}
 >
   <div class="radio-buttons-background"></div>
@@ -89,12 +96,16 @@
 </div>
 
 <style>
+  /* Equal columns where every option fits in its share, and only the columns that need more take it.
+     Plain 1fr forced the widest option into 1/n of the container, so one long label clipped every
+     option in the group -- which is what pushed narrow-panel controls to dropdowns in the first place.
+     Still fills the width, so a column of these keeps a straight right edge. */
   .radio-buttons {
     align-items: center;
     background-color: var(--st-gray-10);
     border-radius: 4px;
     display: grid;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(min-content, 1fr);
     grid-auto-flow: column;
     position: relative;
     width: 100%;

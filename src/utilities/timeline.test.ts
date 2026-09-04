@@ -8,18 +8,28 @@ import {
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
-import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
-import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type { ValueSchema } from '../types/schema';
+import type { DiscreteTreeNode, InterpolationMode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
+  DEFAULT_INTERPOLATION,
+  DEFAULT_LINE_FILL_OPACITY,
   applyActivityLayerFilter,
   createHorizontalGuide,
   createRow,
   createTimeline,
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
+  DEFAULT_LINE_OPACITY,
+  DEFAULT_LINE_STYLE,
+  DEFAULT_POINT_SHAPE,
+  DEFAULT_SHOW_POINTS_MODE,
+  clampGuideBand,
+  clampLineSize,
+  clampOpacity,
   createTimelineLineLayer,
   createTimelineXRangeLayer,
   createVerticalGuide,
@@ -27,21 +37,40 @@ import {
   directiveInView,
   duplicateRow,
   externalEventInView,
+  formatBandDuration,
   generateDiscreteTreeUtil,
+  getHorizontalGuideBand,
+  getMarkerGlyphExtents,
+  getLineCurve,
+  getLineDashArray,
+  getLogConstant,
+  getLogTickValues,
+  getLineFillBaselineY,
+  getLineLayerStacks,
   getMatchingTypesForActivityLayerFilter,
+  getPointSpriteSize,
+  getPointSymbolSize,
   getResourceForLayer,
+  getSmallestMagnitudeForAxis,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
   getUniqueColorSchemeForXRangeLayer,
+  getXRangeColorScale,
+  getXRangeValueDomain,
   getYAxisBounds,
+  getYScale,
   isActivityLayer,
+  isDroppableHoldPoint,
   isExternalEventLayer,
+  isNumericResourceSchema,
   isLineLayer,
   isXRangeLayer,
   matchesDynamicFilter,
   paginateNodes,
   spanInView,
+  stackLineLayerValues,
+  thinTicksByPixelSpacing,
 } from './timeline';
 
 const testActivityTypes: ActivityType[] = [
@@ -418,6 +447,59 @@ test('createTimelineLayers', () => {
   expect(timelines[1].rows[0].layers[3].chartType).toBe('externalEvent');
   expect(timelines[1].rows[0].layers[3].id).toBe(11);
   expect(timelines[1].rows[0].layers[3].yAxisId).toBe(null);
+});
+
+test('createTimelineLineLayer', () => {
+  const layer = createTimelineLineLayer([], []);
+  expect(layer.showFill).toBe(false);
+  expect(layer.fillColor).toBeUndefined();
+  expect(layer.fillOpacity).toBe(DEFAULT_LINE_FILL_OPACITY);
+
+  const filledLayer = createTimelineLineLayer([], [], { fillColor: '#ff0000', fillOpacity: 0.5, showFill: true });
+  expect(filledLayer.showFill).toBe(true);
+  expect(filledLayer.fillColor).toBe('#ff0000');
+  expect(filledLayer.fillOpacity).toBe(0.5);
+
+  // A fully transparent fill is a valid choice and must not fall back to the default
+  expect(createTimelineLineLayer([], [], { fillOpacity: 0 }).fillOpacity).toBe(0);
+});
+
+describe('clampOpacity with the area fill default', () => {
+  test('Should pass through values already within 0-1', () => {
+    expect(clampOpacity(0, DEFAULT_LINE_FILL_OPACITY)).toBe(0);
+    expect(clampOpacity(0.25, DEFAULT_LINE_FILL_OPACITY)).toBe(0.25);
+    expect(clampOpacity(1, DEFAULT_LINE_FILL_OPACITY)).toBe(1);
+  });
+
+  test('Should clamp values outside 0-1 since canvas ignores an out of range globalAlpha', () => {
+    expect(clampOpacity(1.5, DEFAULT_LINE_FILL_OPACITY)).toBe(1);
+    expect(clampOpacity(-1, DEFAULT_LINE_FILL_OPACITY)).toBe(0);
+  });
+
+  test('Should fall back to the supplied default for non-finite values', () => {
+    // A cleared number input reports NaN, which canvas would ignore and leave the fill opaque
+    expect(clampOpacity(NaN, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampOpacity(Infinity, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
+    expect(clampOpacity(-Infinity, DEFAULT_LINE_FILL_OPACITY)).toBe(DEFAULT_LINE_FILL_OPACITY);
+  });
+});
+
+describe('getLineFillBaselineY', () => {
+  const drawHeight = 100; // Yields a y scale range of [92, 8] given CANVAS_PADDING_Y
+
+  test('Should return the position of zero when zero is within the scale domain', () => {
+    expect(getLineFillBaselineY(getYScale([0, 10], drawHeight), drawHeight)).toBe(92);
+    expect(getLineFillBaselineY(getYScale([-10, 10], drawHeight), drawHeight)).toBe(50);
+  });
+
+  test('Should clamp to the canvas when zero is outside of the scale domain', () => {
+    expect(getLineFillBaselineY(getYScale([10, 20], drawHeight), drawHeight)).toBe(drawHeight);
+    expect(getLineFillBaselineY(getYScale([-20, -10], drawHeight), drawHeight)).toBe(0);
+  });
+
+  test('Should return null when the scale domain is empty', () => {
+    expect(getLineFillBaselineY(getYScale([], drawHeight), drawHeight)).toBeNull();
+  });
 });
 
 test('createTimelineHorizontalGuides', () => {
@@ -1656,4 +1738,1209 @@ test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
   // @ts-expect-error forcing the case where an invalid operator is specified
   expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
+});
+
+describe('clampOpacity', () => {
+  test('leaves in-range values untouched', () => {
+    expect(clampOpacity(0)).toEqual(0);
+    expect(clampOpacity(0.35)).toEqual(0.35);
+    expect(clampOpacity(1)).toEqual(1);
+  });
+
+  test('clamps out-of-range values into 0-1', () => {
+    expect(clampOpacity(-2)).toEqual(0);
+    expect(clampOpacity(4)).toEqual(1);
+  });
+
+  test('falls back for non-finite input, since canvas ignores a bad globalAlpha', () => {
+    expect(clampOpacity(NaN)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(Infinity)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(undefined)).toEqual(DEFAULT_LINE_OPACITY);
+    expect(clampOpacity(NaN, 0.5)).toEqual(0.5);
+  });
+});
+
+describe('clampLineSize', () => {
+  test('leaves valid sizes untouched', () => {
+    expect(clampLineSize(0, 1)).toEqual(0);
+    expect(clampLineSize(3.5, 1)).toEqual(3.5);
+  });
+
+  test('falls back for negative or non-finite sizes', () => {
+    expect(clampLineSize(-1, 1)).toEqual(1);
+    expect(clampLineSize(NaN, 1)).toEqual(1);
+    expect(clampLineSize(undefined, 2)).toEqual(2);
+  });
+});
+
+describe('getLineDashArray', () => {
+  test('returns an empty pattern for solid lines', () => {
+    expect(getLineDashArray('solid')).toEqual([]);
+  });
+
+  test('returns a pattern for dashed and dotted lines', () => {
+    expect(getLineDashArray('dashed').length).toBeGreaterThan(0);
+    expect(getLineDashArray('dotted').length).toBeGreaterThan(0);
+    expect(getLineDashArray('dashed')).not.toEqual(getLineDashArray('dotted'));
+  });
+
+  test('falls back to solid for an unknown style so a stale pattern is not reused', () => {
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown style
+    expect(getLineDashArray('squiggly')).toEqual([]);
+    expect(getLineDashArray(undefined)).toEqual([]);
+  });
+});
+
+describe('getLineCurve', () => {
+  test('step and linear share a curve, since the staircase comes from the data', () => {
+    expect(getLineCurve('step')).toBe(getLineCurve('linear'));
+  });
+
+  test('smooth uses a different curve than the other modes', () => {
+    expect(getLineCurve('smooth')).not.toBe(getLineCurve('linear'));
+  });
+
+  test('falls back to the default curve for a missing or unknown mode', () => {
+    expect(getLineCurve(undefined)).toBe(getLineCurve(DEFAULT_INTERPOLATION));
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown mode
+    expect(getLineCurve('bezier')).toBe(getLineCurve(DEFAULT_INTERPOLATION));
+  });
+});
+
+describe('getMarkerGlyphExtents', () => {
+  test('line keeps its historical 2px of ink, centered on the moment it marks', () => {
+    const { left, right, size } = getMarkerGlyphExtents('line', 16);
+    expect(size).toEqual(2);
+    expect(left).toEqual(right);
+    expect(left + right).toEqual(size);
+  });
+
+  // A dot, a diamond and a line at the same x must share a center, or switching style visibly nudges
+  // the mark sideways -- which is exactly what a left-anchored line used to do
+  test('every style straddles the moment, so switching style never moves the mark', () => {
+    for (const style of ['line', 'dot', 'diamond'] as const) {
+      const { left, right } = getMarkerGlyphExtents(style, 16);
+      expect(left).toEqual(right);
+    }
+  });
+
+  test('an unknown or missing style falls back to line rather than to a point shape', () => {
+    expect(getMarkerGlyphExtents(undefined, 16)).toEqual(getMarkerGlyphExtents('line', 16));
+    // @ts-expect-error forcing the case where a hand-edited view supplies an unknown style
+    expect(getMarkerGlyphExtents('star', 16)).toEqual(getMarkerGlyphExtents('line', 16));
+  });
+
+  test('point styles straddle the instant, so they do not read as arriving late', () => {
+    for (const style of ['dot', 'diamond'] as const) {
+      const { left, right, size } = getMarkerGlyphExtents(style, 16);
+      expect(left + right).toEqual(size);
+      expect(size).toBeGreaterThan(2);
+    }
+  });
+
+  // Equal bounding boxes would not read as equal weight: a diamond fills half its box where a circle
+  // fills about 0.785 of it, so matching their boxes makes the diamond look lighter
+  test('a diamond is drawn larger than a dot, to carry the same visual weight', () => {
+    const dot = getMarkerGlyphExtents('dot', 16);
+    const diamond = getMarkerGlyphExtents('diamond', 16);
+    expect(diamond.size).toBeGreaterThan(dot.size);
+    // Areas within a few percent of each other: pi*(d/2)^2 for the circle, D^2/2 for the diamond
+    const dotArea = Math.PI * (dot.size / 2) ** 2;
+    const diamondArea = diamond.size ** 2 / 2;
+    expect(Math.abs(diamondArea - dotArea) / dotArea).toBeLessThan(0.1);
+  });
+
+  test('point styles scale with the subrow height', () => {
+    expect(getMarkerGlyphExtents('dot', 24).size).toBeGreaterThan(getMarkerGlyphExtents('dot', 16).size);
+  });
+
+  // Unclamped, a tall subrow gets a marker that collides with its neighbour and a short one gets a
+  // marker too small to click.
+  test('point styles stay within a usable size at extreme subrow heights', () => {
+    expect(getMarkerGlyphExtents('dot', 1).size).toBeGreaterThanOrEqual(4);
+    expect(getMarkerGlyphExtents('dot', 5000).size).toBeLessThanOrEqual(14);
+  });
+
+  test('never returns a fractional total width, which would blur the marker', () => {
+    for (const height of [16, 17, 18, 21, 24, 33]) {
+      expect(Number.isInteger(getMarkerGlyphExtents('dot', height).size)).toBe(true);
+    }
+  });
+});
+
+describe('stackLineLayerValues', () => {
+  function series(layerId: number, values: [number, number | null][], interpolation: 'step' | 'linear' = 'step') {
+    return {
+      interpolation,
+      layerId,
+      resourceName: `r${layerId}`,
+      values: values.map(([x, y]) => ({ x, y })),
+    };
+  }
+
+  test('stacks in the order supplied, so the first series is the bottom', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    expect(bottom.values.map(v => [v.y0, v.y])).toEqual([
+      [0, 1],
+      [0, 1],
+    ]);
+    expect(top.values.map(v => [v.y0, v.y])).toEqual([
+      [1, 3],
+      [1, 3],
+    ]);
+  });
+
+  test('each layer fills between the total below it and the total through it, leaving no seams', () => {
+    const stacked = stackLineLayerValues([
+      series(0, [
+        [0, 5],
+        [10, 5],
+      ]),
+      series(1, [
+        [0, 3],
+        [10, 3],
+      ]),
+      series(2, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    for (let i = 1; i < stacked.length; i++) {
+      expect(stacked[i].values.map(v => v.y0)).toEqual(stacked[i - 1].values.map(v => v.y));
+    }
+    // Topmost series is the stack total
+    expect(stacked[2].values[0].y).toEqual(10);
+  });
+
+  // The union grid is what makes this exact. On any other spacing the sum of two piecewise-linear
+  // series is only an approximation of the true sum.
+  test('resamples onto the union of every x, and sums linear series exactly there', () => {
+    const [, top] = stackLineLayerValues([
+      series(
+        0,
+        [
+          [0, 0],
+          [10, 10],
+        ],
+        'linear',
+      ),
+      series(
+        1,
+        [
+          [0, 100],
+          [4, 100],
+          [10, 100],
+        ],
+        'linear',
+      ),
+    ]);
+    expect(top.values.map(v => v.x)).toEqual([0, 4, 10]);
+    // Bottom series ramps 0->10 over 0..10, so it is exactly 4 at x=4
+    expect(top.values[1].y).toEqual(104);
+  });
+
+  test('a step series holds its value across another series x values', () => {
+    const [bottom] = stackLineLayerValues([
+      series(0, [
+        [0, 7],
+        [10, 7],
+      ]),
+      series(1, [
+        [0, 0],
+        [5, 0],
+        [10, 0],
+      ]),
+    ]);
+    expect(bottom.values.map(v => [v.x, v.y])).toEqual([
+      [0, 7],
+      [5, 7],
+      [10, 7],
+    ]);
+  });
+
+  // A discrete segment boundary has two values at the same x. Taking the incoming segment's value is
+  // what matches the drawn staircase; taking the outgoing one would lag the stack by a segment.
+  test('at a shared x a step series takes the incoming segment value', () => {
+    const [bottom] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [5, 9],
+        [10, 9],
+      ]),
+    ]);
+    expect(bottom.values.find(v => v.x === 5)?.y).toEqual(9);
+  });
+
+  test('a gap low in the stack makes every total above it unknown, rather than closing up', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, null],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 4],
+        [5, 4],
+        [10, 4],
+      ]),
+    ]);
+    expect(bottom.values.find(v => v.x === 5)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 5)?.y).toBeNull();
+    // and recovers once the lower series is defined again
+    expect(top.values.find(v => v.x === 10)?.y).toEqual(5);
+  });
+
+  test('a gap high in the stack leaves the totals below it intact', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 4],
+        [5, null],
+        [10, 4],
+      ]),
+    ]);
+    expect(bottom.values.every(v => v.y === 1)).toBe(true);
+    expect(top.values.find(v => v.x === 5)?.y).toBeNull();
+  });
+
+  test('is undefined outside a series own time range rather than extrapolating', () => {
+    const [, top] = stackLineLayerValues([
+      series(0, [
+        [5, 1],
+        [8, 1],
+      ]),
+      series(1, [
+        [0, 2],
+        [10, 2],
+      ]),
+    ]);
+    expect(top.values.find(v => v.x === 0)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 10)?.y).toBeNull();
+    expect(top.values.find(v => v.x === 5)?.y).toEqual(3);
+  });
+
+  test('negative values reduce the running total so the top reads as the net sum', () => {
+    const [, top] = stackLineLayerValues([
+      series(0, [
+        [0, 10],
+        [10, 10],
+      ]),
+      series(1, [
+        [0, -4],
+        [10, -4],
+      ]),
+    ]);
+    expect(top.values[0].y).toEqual(6);
+  });
+
+  test('drops hold values for an interpolating series before summing', () => {
+    // Same data, read two ways: as a staircase it is 1 until x=5, as a ramp it is 3 at x=5
+    const stepped = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, 1],
+        [5, 5],
+        [10, 5],
+      ]),
+    ]);
+    const ramped = stackLineLayerValues([
+      series(
+        0,
+        [
+          [0, 1],
+          [5, 1],
+          [5, 5],
+          [10, 5],
+        ],
+        'linear',
+      ),
+    ]);
+    expect(stepped[0].values.find(v => v.x === 0)?.y).toEqual(1);
+    expect(ramped[0].values.find(v => v.x === 0)?.y).toEqual(1);
+    // The staircase holds 1 right up to the boundary; the ramp is already climbing before it
+    const steppedMid = stepped[0].values.filter(v => v.x > 0 && v.x < 5).every(v => v.y === 1);
+    expect(steppedMid).toBe(true);
+    expect(ramped[0].values.find(v => v.x === 10)?.y).toEqual(5);
+  });
+
+  test('a single series stacks to itself, so enabling stacking on one layer changes nothing', () => {
+    const values: [number, number][] = [
+      [0, 3],
+      [5, 7],
+      [10, 2],
+    ];
+    const [only] = stackLineLayerValues([series(0, values)]);
+    expect(only.values.map(v => v.y)).toEqual([3, 7, 2]);
+    expect(only.values.every(v => v.y0 === 0)).toBe(true);
+  });
+
+  test('returns an empty list for no series and empty values for an empty series', () => {
+    expect(stackLineLayerValues([])).toEqual([]);
+    expect(stackLineLayerValues([series(0, [])])[0].values).toEqual([]);
+  });
+
+  test('every series shares the same grid, which is what keeps y0 index-aligned to y', () => {
+    const stacked = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [3, 1],
+      ]),
+      series(1, [
+        [1, 1],
+        [4, 1],
+      ]),
+      series(2, [
+        [2, 1],
+        [5, 1],
+      ]),
+    ]);
+    const grid = stacked[0].values.map(v => v.x);
+    expect(grid).toEqual([0, 1, 2, 3, 4, 5]);
+    for (const s of stacked) {
+      expect(s.values.map(v => v.x)).toEqual(grid);
+    }
+  });
+});
+
+describe('getYAxisBounds with a stacked axis', () => {
+  const resource: Resource = {
+    name: 'r',
+    schema: { type: 'real' },
+    values: [
+      { x: 0, y: 200 },
+      { x: 10, y: 230 },
+    ],
+  };
+  const layer = { chartType: 'line', filter: { resource: 'r' }, id: 1, name: '', yAxisId: 7 } as any;
+  const stacks = {
+    1: {
+      baseline: [0, 0],
+      resource: {
+        ...resource,
+        values: [
+          { x: 0, y: 200 },
+          { x: 10, y: 230 },
+        ],
+      },
+    },
+  };
+
+  test('measures a stacked layer by its cumulative series, not its own values', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    const bounds = getYAxisBounds(axis, [layer], [resource], undefined, {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          ...resource,
+          values: [
+            { x: 0, y: 999 },
+            { x: 10, y: 999 },
+          ],
+        },
+      },
+    });
+    expect(bounds[1]).toEqual(999);
+  });
+
+  // A stacked band covering 95% of the total renders as a sliver of it if the baseline is off-axis
+  test('pulls zero into the domain so the bands encode proportion', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, stacks)).toEqual([0, 230]);
+  });
+
+  test('leaves a manual domain alone, since that is the operator overriding the fit', () => {
+    const axis = { domainFitMode: 'manual', id: 7, scaleDomain: [200, 230], stack: true } as any;
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, stacks)).toEqual([200, 230]);
+  });
+
+  test('keeps zero as the upper bound when a stack total is negative', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7, stack: true } as any;
+    const negative = {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          ...resource,
+          values: [
+            { x: 0, y: -5 },
+            { x: 10, y: -20 },
+          ],
+        },
+      },
+    };
+    expect(getYAxisBounds(axis, [layer], [resource], undefined, negative)).toEqual([-20, 0]);
+  });
+
+  test('does not pull zero in for an unstacked axis', () => {
+    const axis = { domainFitMode: 'fitPlan', id: 7 } as any;
+    expect(getYAxisBounds(axis, [layer], [resource])).toEqual([200, 230]);
+  });
+});
+
+describe('clampGuideBand', () => {
+  const SIZE = 100;
+
+  /** Everything but the anchor, which order deliberately does change. */
+  const geometry = (band: ReturnType<typeof clampGuideBand>) => {
+    const { anchorAtStart, ...rest } = band ?? {};
+    void anchorAtStart;
+    return rest;
+  };
+
+  test('normalizes edge order, so a region dragged backwards is not empty', () => {
+    expect(geometry(clampGuideBand(70, 20, SIZE))).toEqual(geometry(clampGuideBand(20, 70, SIZE)));
+    expect(clampGuideBand(70, 20, SIZE)).toEqual({
+      anchorAtStart: false,
+      end: 70,
+      showEndEdge: true,
+      showStartEdge: true,
+      start: 20,
+    });
+  });
+
+  // The one thing normalizing the order destroys, and the render needs it: the solid edge marks the
+  // guide's own value, so a band typed backwards has to come back solid on the right.
+  test('reports which edge the first argument ended up on', () => {
+    expect(clampGuideBand(20, 70, SIZE)?.anchorAtStart).toBe(true);
+    expect(clampGuideBand(70, 20, SIZE)?.anchorAtStart).toBe(false);
+    // Equal bounds are one edge, so calling it the start keeps a solid line rather than a dashed one
+    expect(clampGuideBand(50, 50, SIZE)?.anchorAtStart).toBe(true);
+  });
+
+  // Clamping must not move the anchor: the guide's value is still the one it always was, even with that
+  // edge scrolled out of view
+  test('keeps the anchor edge through clamping', () => {
+    expect(clampGuideBand(-50, 40, SIZE)?.anchorAtStart).toBe(true);
+    expect(clampGuideBand(40, -50, SIZE)?.anchorAtStart).toBe(false);
+  });
+
+  test('clamps to the drawable extent and reports the clamped edge as not shown', () => {
+    expect(geometry(clampGuideBand(-50, 40, SIZE))).toEqual({
+      end: 40,
+      showEndEdge: true,
+      showStartEdge: false,
+      start: 0,
+    });
+    expect(geometry(clampGuideBand(60, 500, SIZE))).toEqual({
+      end: SIZE,
+      showEndEdge: false,
+      showStartEdge: true,
+      start: 60,
+    });
+  });
+
+  test('reports neither edge when the band engulfs the whole extent', () => {
+    expect(geometry(clampGuideBand(-100, 500, SIZE))).toEqual({
+      end: SIZE,
+      showEndEdge: false,
+      showStartEdge: false,
+      start: 0,
+    });
+  });
+
+  test('returns null when the band is entirely outside the extent', () => {
+    expect(clampGuideBand(-200, -100, SIZE)).toBeNull();
+    expect(clampGuideBand(200, 300, SIZE)).toBeNull();
+  });
+
+  test('returns null for non-finite edges rather than a NaN geometry', () => {
+    expect(clampGuideBand(NaN, 40, SIZE)).toBeNull();
+    expect(clampGuideBand(40, Infinity, SIZE)).toBeNull();
+  });
+
+  test('keeps a zero-width band, so equal bounds stay visible as a line', () => {
+    expect(geometry(clampGuideBand(50, 50, SIZE))).toEqual({
+      end: 50,
+      showEndEdge: true,
+      showStartEdge: true,
+      start: 50,
+    });
+  });
+
+  test('keeps a band flush against either boundary', () => {
+    expect(clampGuideBand(0, 10, SIZE)?.showStartEdge).toBe(true);
+    expect(clampGuideBand(90, SIZE, SIZE)?.showEndEdge).toBe(true);
+  });
+});
+
+describe('getHorizontalGuideBand', () => {
+  const DRAW_HEIGHT = 100;
+  // Domain 0-100 over a 100px row, so a value maps to (100 - value) in pixels
+  const scale = getYScale([0, 100], DRAW_HEIGHT) as ReturnType<typeof getYScale>;
+
+  test('returns null for a single-value guide, which stays a line', () => {
+    expect(getHorizontalGuideBand(50, undefined, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('spans between the two values', () => {
+    const band = getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band?.height).toBeGreaterThan(0);
+  });
+
+  // An operator typing the bounds of a nominal range should not have to know which box is which
+  test('has the same geometry whichever order the two values are given in', () => {
+    const forward = getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT);
+    const reversed = getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT);
+    expect(forward?.y).toEqual(reversed?.y);
+    expect(forward?.height).toEqual(reversed?.height);
+  });
+
+  // A y scale runs the opposite way from the values it maps, so the guide's own value is the *upper*
+  // edge only when it is the larger of the two. Pin it: getting this backwards would draw the solid
+  // edge at y2 and contradict the editor row, which shows y.
+  test('puts the anchor at the upper edge only when the guide value is the larger', () => {
+    expect(getHorizontalGuideBand(80, 40, scale, DRAW_HEIGHT)?.anchorAtStart).toBe(true);
+    expect(getHorizontalGuideBand(40, 80, scale, DRAW_HEIGHT)?.anchorAtStart).toBe(false);
+  });
+
+  test('clamps to the row so a half-off-scale band still shades the part that is on scale', () => {
+    const band = getHorizontalGuideBand(50, 5000, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.y).toBeGreaterThanOrEqual(0);
+    expect(band!.y + band!.height).toBeLessThanOrEqual(DRAW_HEIGHT);
+  });
+
+  test('returns null when the band is entirely off scale, rather than a zero-height rect', () => {
+    expect(getHorizontalGuideBand(5000, 6000, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(-6000, -5000, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('returns null for non-finite bounds rather than painting a NaN rect', () => {
+    expect(getHorizontalGuideBand(NaN, 50, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(50, NaN, scale, DRAW_HEIGHT)).toBeNull();
+    expect(getHorizontalGuideBand(50, Infinity, scale, DRAW_HEIGHT)).toBeNull();
+  });
+
+  test('works on a log axis, where zero and negatives still have a position', () => {
+    const logScale = getYScale([-100, 100], DRAW_HEIGHT, 'log', 1);
+    const band = getHorizontalGuideBand(-10, 10, logScale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.height).toBeGreaterThan(0);
+  });
+
+  test('a zero-width band still produces a rect, so equal bounds do not silently vanish', () => {
+    const band = getHorizontalGuideBand(50, 50, scale, DRAW_HEIGHT);
+    expect(band).not.toBeNull();
+    expect(band!.height).toEqual(0);
+  });
+});
+
+describe('isDroppableHoldPoint', () => {
+  const holdA = { is_hold: true, x: 20, y: 1 };
+  const holdB = { is_hold: true, x: 40, y: 2 };
+  const values: ResourceValue[] = [{ x: 10, y: 1 }, holdA, { x: 20, y: 2 }, holdB];
+
+  test('drops a hold value that is not the last', () => {
+    expect(isDroppableHoldPoint(values, 1)).toBe(true);
+  });
+
+  test('keeps values that are not holds', () => {
+    expect(isDroppableHoldPoint(values, 0)).toBe(false);
+    expect(isDroppableHoldPoint(values, 2)).toBe(false);
+  });
+
+  // Without this the plotted line would stop at the last segment's start rather than the profile's
+  // end, visibly truncating every interpolated layer by one segment.
+  test('keeps the final value even when it is a hold', () => {
+    expect(isDroppableHoldPoint(values, 3)).toBe(false);
+  });
+
+  test('keeps a lone hold value, which is also a profile end', () => {
+    expect(isDroppableHoldPoint([holdA], 0)).toBe(false);
+  });
+
+  test('is false out of range rather than throwing', () => {
+    expect(isDroppableHoldPoint(values, 99)).toBe(false);
+    expect(isDroppableHoldPoint([], 0)).toBe(false);
+  });
+});
+
+describe('getPointSpriteSize', () => {
+  test('leaves room around the point so taller shapes are not clipped', () => {
+    expect(getPointSpriteSize(2)).toBeGreaterThan(4);
+    expect(getPointSpriteSize(10)).toBeGreaterThan(20);
+  });
+
+  test('returns whole pixels so the sprite canvas is not fractionally sized', () => {
+    expect(Number.isInteger(getPointSpriteSize(2))).toBe(true);
+    expect(Number.isInteger(getPointSpriteSize(3))).toBe(true);
+  });
+
+  test('grows with the radius', () => {
+    expect(getPointSpriteSize(4)).toBeGreaterThan(getPointSpriteSize(2));
+  });
+});
+
+describe('getPointSymbolSize', () => {
+  test('returns the area of the equivalent circle, since d3 symbols are sized by area', () => {
+    expect(getPointSymbolSize(2)).toBeCloseTo(Math.PI * 4);
+    expect(getPointSymbolSize(0)).toEqual(0);
+  });
+});
+
+describe('createTimelineLineLayer', () => {
+  test('defaults every style option to the current rendering so saved views are unchanged', () => {
+    const layer = createTimelineLineLayer([], []);
+    expect(layer.interpolation).toEqual(DEFAULT_INTERPOLATION);
+    expect(layer.interpolation).toEqual('step');
+    expect(layer.lineStyle).toEqual(DEFAULT_LINE_STYLE);
+    expect(layer.lineStyle).toEqual('solid');
+    expect(layer.opacity).toEqual(DEFAULT_LINE_OPACITY);
+    expect(layer.opacity).toEqual(1);
+    expect(layer.pointShape).toEqual(DEFAULT_POINT_SHAPE);
+    expect(layer.pointShape).toEqual('circle');
+    expect(layer.showPoints).toEqual(DEFAULT_SHOW_POINTS_MODE);
+    expect(layer.showPoints).toEqual('auto');
+    // Left unset so points and fill track lineColor until the user overrides them, matching how the
+    // layer rendered when point and fill color were not separately configurable
+    expect(layer.pointColor).toBeUndefined();
+    expect(layer.fillColor).toBeUndefined();
+  });
+
+  test('allows the style options to be overridden', () => {
+    const layer = createTimelineLineLayer([], [], {
+      interpolation: 'linear',
+      lineStyle: 'dashed',
+      opacity: 0.5,
+      pointShape: 'diamond',
+      showPoints: 'never',
+    });
+    expect(layer.opacity).toEqual(0.5);
+    expect(layer.interpolation).toEqual('linear');
+    expect(layer.lineStyle).toEqual('dashed');
+    expect(layer.pointShape).toEqual('diamond');
+    expect(layer.showPoints).toEqual('never');
+  });
+});
+
+describe('thinTicksByPixelSpacing', () => {
+  // Identity scale so tick values double as pixel positions, keeping the spacing math readable
+  const identity = (value: number) => value;
+
+  test('keeps ticks that are far enough apart', () => {
+    expect(thinTicksByPixelSpacing([0, 20, 40, 60], identity, 14)).toEqual([0, 20, 40, 60]);
+  });
+
+  test('drops ticks that would overlap, keeping the first of each cluster', () => {
+    expect(thinTicksByPixelSpacing([0, 2, 4, 20, 22, 40], identity, 14)).toEqual([0, 20, 40]);
+  });
+
+  test('always keeps both extremes, evicting a neighbor that collides with the last', () => {
+    const thinned = thinTicksByPixelSpacing([0, 20, 39, 40], identity, 14);
+    expect(thinned[0]).toEqual(0);
+    expect(thinned.at(-1)).toEqual(40);
+    expect(thinned).not.toContain(39);
+  });
+
+  test('passes through short tick lists untouched', () => {
+    expect(thinTicksByPixelSpacing([], identity, 14)).toEqual([]);
+    expect(thinTicksByPixelSpacing([5], identity, 14)).toEqual([5]);
+    expect(thinTicksByPixelSpacing([5, 6], identity, 14)).toEqual([5, 6]);
+  });
+
+  test('drops ticks the scale cannot place at all', () => {
+    // A log axis now places zero, so the only unplottable case left is a scale with no domain
+    const emptyScale = getYScale([], 100, 'log');
+    expect(thinTicksByPixelSpacing([0, 1, 100], value => emptyScale(value))).toEqual([]);
+    const logScale = getYScale([0, 100], 100, 'log', getLogConstant(0.5));
+    expect(thinTicksByPixelSpacing([0, 1, 100], value => logScale(value))).toContain(0);
+  });
+});
+
+describe('getLogConstant', () => {
+  test('uses the smallest non-zero magnitude in the data', () => {
+    expect(getLogConstant(0.01)).toBeCloseTo(0.01);
+    expect(getLogConstant(1)).toBeCloseTo(1);
+    expect(getLogConstant(2500)).toBeCloseTo(2500);
+  });
+
+  test('falls back to d3 default when there is nothing to derive from', () => {
+    // All-zero data offers no magnitude to size the linear region with
+    expect(getLogConstant(undefined)).toEqual(1);
+    expect(getLogConstant(0)).toEqual(1);
+    expect(getLogConstant(NaN)).toEqual(1);
+    expect(getLogConstant(-5)).toEqual(1);
+  });
+});
+
+describe('getYScale log axis', () => {
+  const drawHeight = 100; // Yields a range of [92, 8] given CANVAS_PADDING_Y
+
+  test('places zero instead of dropping it, which a true log scale cannot do', () => {
+    // The bug this whole design exists to avoid: on a true log scale yScale(0) is -Infinity, so every
+    // sample sitting at zero silently vanished from the plot
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    expect(scale(0)).toEqual(92);
+    expect(Number.isFinite(scale(0))).toBe(true);
+  });
+
+  test('places negative values, so a signed resource keeps its full trace', () => {
+    const scale = getYScale([-100, 30], drawHeight, 'log', getLogConstant(0.1));
+    for (const value of [-100, -10, -1, 0, 1, 10, 30]) {
+      expect(Number.isFinite(scale(value))).toBe(true);
+    }
+    expect(scale(-100)).toBeGreaterThan(scale(30));
+  });
+
+  test('spaces decades near-uniformly, the way a log axis should', () => {
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    const positions = [0.01, 0.1, 1, 10, 100, 1000, 10000].map(value => scale(value));
+    const gaps = positions.slice(1).map((position, index) => positions[index] - position);
+    // A true log scale over this domain and range spaces decades exactly 14px apart. Every decade
+    // above the lowest must land within a pixel of that, which is what makes symlog an honest
+    // stand-in; only the lowest is allowed to compress where the linear region blends in.
+    for (const gap of gaps.slice(1)) {
+      expect(gap).toBeGreaterThan(13);
+      expect(gap).toBeLessThan(15);
+    }
+    expect(gaps[0]).toBeGreaterThan(9);
+  });
+
+  test('never returns a non-finite position for any real value in the domain', () => {
+    // Guards the extrema-jitter symptom: which samples survive decimation shifts with zoom, so any
+    // unplottable value made troughs flicker in and out as bin boundaries moved
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    for (const value of [0, 1e-9, 0.005, 0.01, 1, 9999, 10000]) {
+      expect(Number.isFinite(scale(value))).toBe(true);
+    }
+  });
+
+  test('defaults to linear when no scale type is given', () => {
+    const scale = getYScale([0, 100], drawHeight);
+    expect(scale(50)).toEqual(50);
+  });
+});
+
+describe('getLogTickValues', () => {
+  test('returns a ladder of powers of the base within the domain', () => {
+    expect(getLogTickValues([1, 1000], 10)).toEqual([1, 10, 100, 1000]);
+    expect(getLogTickValues([1, 64], 2)).toEqual([1, 2, 4, 8, 16, 32, 64]);
+  });
+
+  test('includes zero when the domain contains it', () => {
+    expect(getLogTickValues([0, 1000], 10)).toContain(0);
+  });
+
+  test('ladders both sides of zero for a signed domain', () => {
+    const ticks = getLogTickValues([-1000, 1000], 10);
+    expect(ticks).toContain(-100);
+    expect(ticks).toContain(0);
+    expect(ticks).toContain(100);
+    expect(ticks).toEqual([...ticks].sort((a, b) => a - b));
+  });
+
+  test('always anchors the domain extremes', () => {
+    const ticks = getLogTickValues([0.5, 750], 10);
+    expect(ticks[0]).toEqual(0.5);
+    expect(ticks.at(-1)).toEqual(750);
+  });
+
+  test('falls back to base 10 for a nonsensical base rather than looping or dividing by zero', () => {
+    expect(getLogTickValues([1, 1000], 1)).toEqual(getLogTickValues([1, 1000], 10));
+    expect(getLogTickValues([1, 1000], 0)).toEqual(getLogTickValues([1, 1000], 10));
+    expect(getLogTickValues([1, 1000], NaN)).toEqual(getLogTickValues([1, 1000], 10));
+  });
+
+  test('handles degenerate domains without throwing', () => {
+    expect(getLogTickValues([], 10)).toEqual([]);
+    expect(getLogTickValues([NaN, 10], 10)).toEqual([]);
+  });
+
+  // A constant-valued resource makes both bounds the same number. Returning nothing left the axis with
+  // no labels at all, which is worse than the linear scale it replaced -- that still labels its one
+  // value.
+  test('labels the single value of a constant resource rather than leaving the axis blank', () => {
+    expect(getLogTickValues([5, 5], 10)).toEqual([5]);
+    expect(getLogTickValues([0, 0], 10)).toEqual([0]);
+  });
+});
+
+describe('getLineFillBaselineY on a log axis', () => {
+  const drawHeight = 100;
+
+  test('fills to zero, which symlog can place', () => {
+    const scale = getYScale([0, 10000], drawHeight, 'log', getLogConstant(0.01));
+    expect(getLineFillBaselineY(scale, drawHeight)).toEqual(92);
+  });
+
+  test('still returns null for an empty domain', () => {
+    expect(getLineFillBaselineY(getYScale([], drawHeight, 'log'), drawHeight)).toBeNull();
+  });
+});
+
+describe('getSmallestMagnitudeForAxis', () => {
+  const resource: Resource = {
+    name: 'signed',
+    schema: { type: 'real' },
+    values: [
+      { x: 1, y: 0 },
+      { x: 2, y: -0.25 },
+      { x: 3, y: 100 },
+    ],
+  };
+
+  test('ignores zero and uses absolute value, so a negative sample can set the floor', () => {
+    const layer = createTimelineLineLayer([], []);
+    layer.filter.resource = 'signed';
+    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
+    expect(getSmallestMagnitudeForAxis(axis, [layer], [resource])).toEqual(0.25);
+  });
+
+  test('returns undefined when an axis has no non-zero data to derive from', () => {
+    const layer = createTimelineLineLayer([], []);
+    layer.filter.resource = 'allZero';
+    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
+    const allZero: Resource = { name: 'allZero', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
+  });
+});
+
+describe('isNumericResourceSchema', () => {
+  // This is the gate that decides whether a layer can join a stack, so a wrong answer here does not
+  // throw -- it silently leaves a layer out of a total, or sums something meaningless into one.
+  test('accepts the schemas that plot against a numeric scale', () => {
+    expect(isNumericResourceSchema({ type: 'int' })).toBe(true);
+    expect(isNumericResourceSchema({ type: 'real' })).toBe(true);
+    expect(isNumericResourceSchema({ type: 'duration' })).toBe(true);
+  });
+
+  test('accepts a real-valued struct, which is how a profile carries initial and rate', () => {
+    expect(
+      isNumericResourceSchema({
+        items: { initial: { type: 'real' }, rate: { type: 'real' } },
+        type: 'struct',
+      } as ValueSchema),
+    ).toBe(true);
+  });
+
+  test('rejects a struct that is not a real profile', () => {
+    expect(isNumericResourceSchema({ items: { initial: { type: 'real' } }, type: 'struct' } as ValueSchema)).toBe(
+      false,
+    );
+    expect(
+      isNumericResourceSchema({
+        items: { initial: { type: 'string' }, rate: { type: 'real' } },
+        type: 'struct',
+      } as ValueSchema),
+    ).toBe(false);
+  });
+
+  // A boolean's 0/1 encodes false/true and an enum's y position is an arbitrary rung, so summing
+  // either produces a number that means nothing
+  test('rejects the schemas whose values are categorical rather than magnitudes', () => {
+    expect(isNumericResourceSchema({ type: 'boolean' })).toBe(false);
+    expect(isNumericResourceSchema({ type: 'string' })).toBe(false);
+    expect(isNumericResourceSchema({ type: 'variant', variants: [] } as unknown as ValueSchema)).toBe(false);
+  });
+});
+
+describe('getLineLayerStacks', () => {
+  function lineLayer(id: number, resourceName: string, yAxisId: number, interpolation?: InterpolationMode) {
+    return { chartType: 'line', filter: { resource: resourceName }, id, interpolation, name: '', yAxisId } as any;
+  }
+  function numericResource(name: string, values: { x: number; y: number }[]): Resource {
+    return { name, schema: { type: 'real' }, values };
+  }
+
+  const axisStacked = createYAxis([], { domainFitMode: 'fitPlan', id: 1, stack: true });
+  const axisPlain = createYAxis([], { domainFitMode: 'fitPlan', id: 1 });
+  const a = numericResource('a', [
+    { x: 0, y: 10 },
+    { x: 10, y: 20 },
+  ]);
+  const b = numericResource('b', [
+    { x: 0, y: 1 },
+    { x: 10, y: 2 },
+  ]);
+
+  test('returns nothing for an axis that has not opted in, so nothing changes by default', () => {
+    expect(getLineLayerStacks([axisPlain], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b])).toEqual({});
+  });
+
+  // Stacking one series against nothing is the identity, and the resample would be pure cost
+  test('returns nothing when fewer than two layers would be stacked', () => {
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1)], [a])).toEqual({});
+  });
+
+  test('keys the result by layer id, with a baseline index-aligned to its own values', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b]);
+    expect(Object.keys(stacks).sort()).toEqual(['1', '2']);
+    expect(stacks[1].resource.values).toEqual([
+      { x: 0, y: 10 },
+      { x: 10, y: 20 },
+    ]);
+    expect(stacks[1].baseline).toEqual([0, 0]);
+    // The second layer sits on the first, so its line is the running total and its baseline is layer 1
+    expect(stacks[2].resource.values).toEqual([
+      { x: 0, y: 11 },
+      { x: 10, y: 22 },
+    ]);
+    expect(stacks[2].baseline).toEqual([10, 20]);
+    expect(stacks[2].baseline.length).toEqual(stacks[2].resource.values.length);
+  });
+
+  // Layer order is stack order, so reversing the layers has to reverse which one is on the bottom
+  test('stacks bottom-up in layer order', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(2, 'b', 1), lineLayer(1, 'a', 1)], [a, b]);
+    expect(stacks[2].baseline).toEqual([0, 0]);
+    expect(stacks[1].baseline).toEqual([1, 2]);
+  });
+
+  test('carries each layer own resource name and schema onto its stacked series', () => {
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1)], [a, b]);
+    expect(stacks[1].resource.name).toEqual('a');
+    expect(stacks[2].resource.name).toEqual('b');
+    expect(stacks[2].resource.schema).toEqual({ type: 'real' });
+  });
+
+  // The stacking pass emits values already in the shape the layer draws, so tagging them would make
+  // LayerLine drop points and pull the line out of alignment with its own baseline
+  test('leaves the stacked values untagged so they are not thinned a second time', () => {
+    const held = numericResource('held', [
+      { x: 0, y: 5 },
+      { x: 10, y: 5 },
+    ]);
+    (held.values[1] as ResourceValue).is_hold = true;
+    const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'held', 1), lineLayer(2, 'b', 1)], [held, b]);
+    expect(stacks[1].resource.values.every(value => value.is_hold === undefined)).toBe(true);
+  });
+
+  // A layer whose resource cannot be summed is left out entirely rather than contributing a
+  // meaningless number, which also means it keeps drawing normally
+  test('skips a layer whose resource is not numeric, and gives up if that leaves one layer', () => {
+    const enumResource: Resource = { name: 'e', schema: { type: 'string' }, values: [{ x: 0, y: 'ON' }] };
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'e', 1)], [a, enumResource])).toEqual(
+      {},
+    );
+    const stacks = getLineLayerStacks(
+      [axisStacked],
+      [lineLayer(1, 'a', 1), lineLayer(2, 'e', 1), lineLayer(3, 'b', 1)],
+      [a, enumResource, b],
+    );
+    expect(Object.keys(stacks).sort()).toEqual(['1', '3']);
+    expect(stacks[3].baseline).toEqual([10, 20]);
+  });
+
+  test('skips a layer with no loaded resource', () => {
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'missing', 1)], [a])).toEqual({});
+  });
+
+  test('ignores layers bound to a different axis, and layers that are not line layers', () => {
+    const otherAxisLayer = lineLayer(3, 'b', 2);
+    const xRangeLayer = { chartType: 'x-range', filter: { resource: 'b' }, id: 4, name: '', yAxisId: 1 } as any;
+    expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), otherAxisLayer, xRangeLayer], [a, b])).toEqual({});
+  });
+
+  test('stacks each axis independently', () => {
+    const secondAxis = createYAxis([], { domainFitMode: 'fitPlan', id: 2, stack: true });
+    const c = numericResource('c', [
+      { x: 0, y: 100 },
+      { x: 10, y: 100 },
+    ]);
+    const stacks = getLineLayerStacks(
+      [axisStacked, secondAxis],
+      [lineLayer(1, 'a', 1), lineLayer(2, 'b', 1), lineLayer(3, 'c', 2), lineLayer(4, 'b', 2)],
+      [a, b, c],
+    );
+    expect(stacks[2].baseline).toEqual([10, 20]);
+    // Layer 4 stacks on c, not on anything from the first axis
+    expect(stacks[4].baseline).toEqual([100, 100]);
+  });
+
+  // Each series resamples with its own interpolation mode, so a step resource and a linear one stack
+  // together correctly instead of one being forced into the other shape
+  test('respects each layer own interpolation mode', () => {
+    const stepped = numericResource('stepped', [
+      { x: 0, y: 10 },
+      { x: 10, y: 10 },
+      { x: 10, y: 20 },
+      { x: 20, y: 20 },
+    ]);
+    const ramp = numericResource('ramp', [
+      { x: 0, y: 0 },
+      { x: 20, y: 20 },
+    ]);
+    const stacks = getLineLayerStacks(
+      [axisStacked],
+      [lineLayer(1, 'stepped', 1, 'step'), lineLayer(2, 'ramp', 1, 'linear')],
+      [stepped, ramp],
+    );
+    // At x=10 the step layer is still 10 on the way in, and the ramp has reached its own midpoint
+    const atTen = stacks[2].resource.values.filter(value => value.x === 10);
+    expect(atTen[atTen.length - 1].y).toEqual(30);
+  });
+});
+
+describe('getYAxisBounds stats', () => {
+  const signed: Resource = {
+    name: 'signed',
+    schema: { type: 'real' },
+    values: [
+      { x: 1, y: 0 },
+      { x: 2, y: -0.25 },
+      { x: 3, y: 100 },
+    ],
+  };
+  const layer = { chartType: 'line', filter: { resource: 'signed' }, id: 1, name: '', yAxisId: 7 } as any;
+  const axis = createYAxis([], { domainFitMode: 'fitPlan', id: 7 });
+
+  // Collected during the domain walk so a log axis costs one pass over its values rather than two
+  test('collects the smallest non-zero magnitude alongside the domain', () => {
+    const stats: { smallestMagnitude?: number } = {};
+    expect(getYAxisBounds(axis, [layer], [signed], undefined, {}, stats)).toEqual([-0.25, 100]);
+    expect(stats.smallestMagnitude).toEqual(0.25);
+  });
+
+  test('leaves the stat unset when there is no non-zero data to derive it from', () => {
+    const allZero: Resource = { name: 'signed', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    const stats: { smallestMagnitude?: number } = {};
+    getYAxisBounds(axis, [layer], [allZero], undefined, {}, stats);
+    expect(stats.smallestMagnitude).toBeUndefined();
+  });
+
+  test('collects nothing when no stats object is passed, which is the default', () => {
+    expect(() => getYAxisBounds(axis, [layer], [signed])).not.toThrow();
+  });
+
+  // The domain of a stacked axis comes off the cumulative series, so the constant that sizes the
+  // scale linear region has to be read off the same values
+  test('reads a stacked layer stat off its cumulative series, matching the domain', () => {
+    const stacks = {
+      1: {
+        baseline: [0, 0],
+        resource: {
+          name: 'signed',
+          schema: { type: 'real' as const },
+          values: [
+            { x: 1, y: 4 },
+            { x: 2, y: 8 },
+          ],
+        },
+      },
+    };
+    const stats: { smallestMagnitude?: number } = {};
+    expect(getYAxisBounds(axis, [layer], [signed], undefined, stacks, stats)).toEqual([4, 8]);
+    expect(stats.smallestMagnitude).toEqual(4);
+  });
+
+  // fitTimeWindow narrows the domain, and the constant has to narrow with it or the scale linear
+  // region will not match what is on screen
+  test('honors the fitTimeWindow window, so the stat matches the domain on screen', () => {
+    const windowed = createYAxis([], { domainFitMode: 'fitTimeWindow', id: 7 });
+    const stats: { smallestMagnitude?: number } = {};
+    getYAxisBounds(windowed, [layer], [signed], { end: 3, start: 3 }, {}, stats);
+    expect(stats.smallestMagnitude).toEqual(100);
+  });
+});
+
+describe('getXRangeValueDomain', () => {
+  test('enumerates a boolean schema as the strings the layer draws', () => {
+    expect(getXRangeValueDomain({ type: 'boolean' })).toEqual(['TRUE', 'FALSE']);
+  });
+
+  test('takes a variant schema in declaration order, since that is what fixes each value a color', () => {
+    const schema = {
+      type: 'variant' as const,
+      variants: [
+        { key: 'ON', label: 'ON' },
+        { key: 'OFF', label: 'OFF' },
+      ],
+    };
+    expect(getXRangeValueDomain(schema)).toEqual(['ON', 'OFF']);
+  });
+
+  // The whole point of returning null rather than []: a free-form resource has values, they are just
+  // not knowable from the schema, and the form has to say so instead of showing an empty list
+  test('returns null for a schema that cannot enumerate its values', () => {
+    expect(getXRangeValueDomain({ type: 'string' })).toBeNull();
+    expect(getXRangeValueDomain({ type: 'int' })).toBeNull();
+    expect(getXRangeValueDomain({ type: 'real' })).toBeNull();
+    expect(getXRangeValueDomain(undefined)).toBeNull();
+  });
+});
+
+describe('getXRangeColorScale', () => {
+  const domain = ['ON', 'OFF', 'SAFE'];
+
+  test('assigns a color per value and repeats the scheme once it runs out', () => {
+    const scale = getXRangeColorScale('schemeAccent', domain);
+    expect(scale('ON')).not.toEqual(scale('OFF'));
+    // schemeAccent has 8 entries, so the ninth value wraps onto the first color
+    const long = Array.from({ length: 9 }, (_, i) => `v${i}`);
+    const wrapping = getXRangeColorScale('schemeAccent', long);
+    expect(wrapping('v8')).toEqual(wrapping('v0'));
+  });
+
+  // A value's color has to survive a re-render, or pinning colors would be pointless
+  test('is stable for the same scheme and domain', () => {
+    expect(getXRangeColorScale('schemeSet1', domain)('SAFE')).toEqual(
+      getXRangeColorScale('schemeSet1', domain)('SAFE'),
+    );
+  });
+
+  // Pin: the form previews inherited colors with this same function, so a divergence here would show an
+  // operator a swatch the canvas never paints
+  test('depends on position in the domain, not on the value itself', () => {
+    const scale = getXRangeColorScale('schemeDark2', domain);
+    const reordered = getXRangeColorScale('schemeDark2', ['OFF', 'ON', 'SAFE']);
+    expect(reordered('OFF')).toEqual(scale('ON'));
+  });
+
+  test('falls back to a real scheme for an unknown scheme name', () => {
+    const unknown = getXRangeColorScale('schemeNope' as never, domain);
+    expect(unknown('ON')).toEqual(getXRangeColorScale('schemeTableau10', domain)('ON'));
+  });
+});
+
+describe('formatBandDuration', () => {
+  const s = 1000;
+  const m = 60 * s;
+  const h = 60 * m;
+  const d = 24 * h;
+
+  test('caps at two units, so the readout fits inside the band it measures', () => {
+    expect(formatBandDuration(6 * h)).toEqual('6h 00m');
+    expect(formatBandDuration(6 * h + 30 * m)).toEqual('6h 30m');
+    // The units below the second one are dropped rather than rounded into it
+    expect(formatBandDuration(6 * h + 30 * m + 59 * s + 999)).toEqual('6h 30m');
+  });
+
+  test('zero-pads the smaller unit, so a column of caps stays one width', () => {
+    expect(formatBandDuration(2 * d + 4 * h)).toEqual('2d 04h');
+    expect(formatBandDuration(1 * h + 5 * m)).toEqual('1h 05m');
+    expect(formatBandDuration(1 * m + 5 * s)).toEqual('1m 05s');
+    expect(formatBandDuration(1 * s + 5)).toEqual('1s 005ms');
+  });
+
+  test('steps down to whatever the largest non-zero unit is', () => {
+    expect(formatBandDuration(45 * m)).toEqual('45m 00s');
+    expect(formatBandDuration(30 * s)).toEqual('30s 000ms');
+    expect(formatBandDuration(250)).toEqual('250ms');
+    expect(formatBandDuration(0)).toEqual('0ms');
+  });
+
+  // Order is normalized before the band is drawn, so a region typed backwards still lasts as long as it
+  // lasts -- a negative readout would be an artifact of the typing, not of the region
+  test('reads the same whichever way round the two ends were given', () => {
+    expect(formatBandDuration(-6 * h)).toEqual(formatBandDuration(6 * h));
+  });
+
+  test('does not roll hours into days below a full day, nor lose a day boundary', () => {
+    expect(formatBandDuration(23 * h + 59 * m)).toEqual('23h 59m');
+    expect(formatBandDuration(d)).toEqual('1d 00h');
+  });
 });

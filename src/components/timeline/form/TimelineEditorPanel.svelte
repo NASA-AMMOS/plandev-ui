@@ -7,24 +7,9 @@
   import PenIcon from '@nasa-jpl/stellar/icons/pen.svg?component';
   import { GripVertical } from 'lucide-svelte';
   import { dndzone } from 'svelte-dnd-action';
-  import {
-    default as ExternalEventIcon,
-    default as ExternalSourceIcon,
-  } from '../../../assets/external-source-box.svg?component';
-  import ActivityModeTextNoneIcon from '../../../assets/text-none.svg?component';
-  import ActivityModeTextIcon from '../../../assets/text.svg?component';
-  import ActivityModeCompactIcon from '../../../assets/timeline-activity-mode-compact.svg?component';
-  import ActivityModeGroupedIcon from '../../../assets/timeline-activity-mode-grouped.svg?component';
-  import DirectiveAndSpanIcon from '../../../assets/timeline-directive-and-span.svg?component';
-  import DirectiveIcon from '../../../assets/timeline-directive.svg?component';
-  import HierarchyModeDirectiveIcon from '../../../assets/timeline-hierarchy-mode-directive.svg?component';
-  import HierarchyModeFlatIcon from '../../../assets/timeline-hierarchy-mode-flat.svg?component';
-  import SpanIcon from '../../../assets/timeline-span.svg?component';
-  import ActivityModeWidthIcon from '../../../assets/width.svg?component';
   import { ViewDefaultDiscreteOptions } from '../../../constants/view';
   import { ViewConstants } from '../../../enums/view';
-  import { maxTimeRange, viewTimeRange } from '../../../stores/plan';
-  import { plugins } from '../../../stores/plugins';
+  import { viewTimeRange } from '../../../stores/plan';
   import { yAxesWithScaleDomainsCache } from '../../../stores/simulation';
   import {
     selectedRowId,
@@ -36,7 +21,6 @@
     viewUpdateRow,
     viewUpdateTimeline,
   } from '../../../stores/views';
-  import type { RadioButtonId } from '../../../types/radio-buttons';
   import type {
     ActivityLayer,
     ActivityOptions,
@@ -58,6 +42,7 @@
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime } from '../../../utilities/time';
   import {
+    DEFAULT_MARKER_STYLE,
     createHorizontalGuide,
     createTimelineActivityLayer,
     createTimelineExternalEventLayer,
@@ -72,23 +57,28 @@
     isXRangeLayer,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
-  import ColorPicker from '../../form/ColorPicker.svelte';
   import Input from '../../form/Input.svelte';
   import GridMenu from '../../menus/GridMenu.svelte';
   import ParameterUnits from '../../parameters/ParameterUnits.svelte';
   import CssGrid from '../../ui/CssGrid.svelte';
-  import DatePicker from '../../ui/DatePicker/DatePicker.svelte';
+  import InfoTip from '../../ui/InfoTip.svelte';
   import Panel from '../../ui/Panel.svelte';
-  import RadioButton from '../../ui/RadioButtons/RadioButton.svelte';
-  import RadioButtons from '../../ui/RadioButtons/RadioButtons.svelte';
   import EditorSection from './TimelineEditor/EditorSection.svelte';
+  import TimelineEditorGuideRow from './TimelineEditorGuideRow.svelte';
+  import TimelineEditorOptionButtons from './TimelineEditorOptionButtons.svelte';
   import TimelineLayerEditor from './TimelineEditor/TimelineLayerEditor.svelte';
   import TimelineEditorYAxisSettings from './TimelineEditorYAxisSettings.svelte';
 
   export let gridSection: ViewGridSection;
 
+  /** Shared by the directive and zero-duration marker controls, which offer the same shapes. */
+  const MARKER_STYLE_OPTIONS: { id: string; label: string }[] = [
+    { id: 'line', label: 'Line' },
+    { id: 'dot', label: 'Dot' },
+    { id: 'diamond', label: 'Diamond' },
+  ];
+
   let horizontalGuides: HorizontalGuide[] = [];
-  let editorWidth: number;
   let layers: Layer[] = [];
   let activityLayers: ActivityLayer[] = [];
   let resourceLayers: (LineLayer | XRangeLayer)[] = [];
@@ -237,28 +227,31 @@
     viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
-  function handleOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof DiscreteOptions) {
-    const { id } = event.detail;
-    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: id });
+  /**
+   * Discrete option writers, split from their event adapters so the segmented controls and the
+   * remaining dropdowns share one path to the view rather than each reimplementing the merge.
+   */
+  function applyDiscreteOption(name: keyof DiscreteOptions, value: unknown) {
+    viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value });
   }
 
-  function handleActivityOptionRadioChange(event: CustomEvent<{ id: RadioButtonId }>, name: keyof ActivityOptions) {
-    const { id } = event.detail;
+  function applyActivityOption(name: keyof ActivityOptions, value: unknown) {
     viewUpdateRow('discreteOptions', {
       ...discreteOptions,
-      activityOptions: { ...discreteOptions.activityOptions, [name]: id },
+      activityOptions: { ...discreteOptions.activityOptions, [name]: value },
     });
   }
 
-  function handleExternalEventOptionRadioChange(
-    event: CustomEvent<{ id: RadioButtonId }>,
-    name: keyof ExternalEventOptions,
-  ) {
-    const { id } = event.detail;
+  function applyExternalEventOption(name: keyof ExternalEventOptions, value: unknown) {
     viewUpdateRow('discreteOptions', {
       ...discreteOptions,
-      externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: id },
+      externalEventOptions: { ...discreteOptions.externalEventOptions, [name]: value },
     });
+  }
+
+  function handleActivityOptionSelectChange(event: Event, name: keyof ActivityOptions) {
+    const { value } = getTarget(event);
+    applyActivityOption(name, value);
   }
 
   function addTimelineRow() {
@@ -305,66 +298,68 @@
     viewUpdateRow('horizontalGuides', filteredHorizontalGuides);
   }
 
-  function updateVerticalGuideTimestamp(event: CustomEvent, verticalGuide: VerticalGuide) {
-    const value = event.detail.value;
-    const newVerticalGuides = verticalGuides.map(guide => {
-      if (guide.id === verticalGuide.id) {
-        guide.timestamp = value as string;
-      }
-      return guide;
-    });
-    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
+  /**
+   * Guide row fields that live inside the guide's nested `label` rather than on the guide itself, keyed
+   * by the name the row emits. Flattened at the row so it emits one shape of event for every field it
+   * owns, instead of the caller having to know which fields are nested.
+   */
+  const LABEL_FIELDS: Record<string, string> = {
+    labelColor: 'color',
+    labelText: 'text',
+  };
+
+  /**
+   * One field change from a guide row. `null` is only ever the band's second bound being cleared, which
+   * is how a band is turned back into a line -- the writers below remove the field rather than store it.
+   */
+  type GuideRowChange = { name: string; value: string | number | null };
+
+  /**
+   * Applies one field change from a guide row. A null for the band's second bound removes the field
+   * rather than storing it, which is the only way to turn a band back into a line.
+   */
+  function onHorizontalGuideInput(event: CustomEvent<GuideRowChange>, horizontalGuide: HorizontalGuide) {
+    applyHorizontalGuideChange(event.detail.name, event.detail.value, horizontalGuide);
   }
 
-  function handleUpdateVerticalGuideLabel(event: Event, verticalGuide: VerticalGuide) {
-    const { name, value } = getTarget(event);
-    const newVerticalGuides = verticalGuides.map(guide => {
-      if (guide.id === verticalGuide.id) {
-        return {
-          ...guide,
-          label: {
-            ...guide.label,
-            [name]: value,
-          },
-        };
-      }
-      return guide;
-    });
-    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-  }
-
-  function handleUpdateHorizontalGuideLabel(event: Event, horizontalGuide: HorizontalGuide) {
-    const { name, value } = getTarget(event);
+  function applyHorizontalGuideChange(name: string, value: GuideRowChange['value'], horizontalGuide: HorizontalGuide) {
     const newHorizontalGuides = horizontalGuides.map(guide => {
-      if (guide.id === horizontalGuide.id) {
-        return {
-          ...guide,
-          label: {
-            ...guide.label,
-            [name]: value,
-          },
-        };
+      if (guide.id !== horizontalGuide.id) {
+        return guide;
       }
-      return guide;
+      if (name === 'y2' && value === null) {
+        const { y2: _removed, ...rest } = guide;
+        return rest;
+      }
+      const labelField = LABEL_FIELDS[name];
+      if (labelField) {
+        return { ...guide, label: { ...guide.label, [labelField]: value } };
+      }
+      return { ...guide, [name]: value };
     });
     viewUpdateRow('horizontalGuides', newHorizontalGuides);
   }
 
-  function handleUpdateHorizontalGuideNumberValue(event: Event, horizontalGuide: HorizontalGuide) {
-    const { name, value } = getTarget(event);
-    if (isNaN(value as number)) {
-      return;
-    }
-    const newHorizontalGuides = horizontalGuides.map(guide => {
-      if (guide.id === horizontalGuide.id) {
-        return {
-          ...guide,
-          [name]: value,
-        };
+  function onVerticalGuideInput(event: CustomEvent<GuideRowChange>, verticalGuide: VerticalGuide) {
+    applyVerticalGuideChange(event.detail.name, event.detail.value, verticalGuide);
+  }
+
+  function applyVerticalGuideChange(name: string, value: GuideRowChange['value'], verticalGuide: VerticalGuide) {
+    const newVerticalGuides = verticalGuides.map(guide => {
+      if (guide.id !== verticalGuide.id) {
+        return guide;
       }
-      return guide;
+      if (name === 'timestamp2' && !value) {
+        const { timestamp2: _removed, ...rest } = guide;
+        return rest;
+      }
+      const labelField = LABEL_FIELDS[name];
+      if (labelField) {
+        return { ...guide, label: { ...guide.label, [labelField]: value } };
+      }
+      return { ...guide, [name]: value };
     });
-    viewUpdateRow('horizontalGuides', newHorizontalGuides);
+    viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
   }
 
   function handleUpdateLayerProperty(property: string, value: string | number | boolean | object | null, layer: Layer) {
@@ -459,7 +454,7 @@
     <GridMenu {gridSection} title="Timeline Editor" />
   </svelte:fragment>
 
-  <div slot="body" bind:clientWidth={editorWidth} class="timeline-editor" class:compact={editorWidth < 360}>
+  <div slot="body" class="timeline-editor">
     {#if !selectedRow}
       <!-- Select Timeline. -->
       <div class="timeline-select-container">
@@ -524,63 +519,14 @@
           on:removeAll={handleRemoveAllVerticalGuidesClick}
         >
           {#if verticalGuides.length}
-            <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
-                <div>Label</div>
-                <div>Date ({$plugins.time.primary.label})</div>
-              </CssGrid>
-              <div class="guides timeline-elements">
-                {#each verticalGuides as verticalGuide (verticalGuide.id)}
-                  <div class="guide timeline-element">
-                    <CssGrid columns="1fr 168px 24px 24px" gap="8px" class="editor-section-grid">
-                      <Input layout="stacked" class="editor-input">
-                        <label for="text">Label</label>
-                        <input
-                          value={verticalGuide.label.text}
-                          on:input={event => {
-                            const { value } = getTarget(event);
-                            const newVerticalGuides = verticalGuides.map(guide => {
-                              if (guide.id === verticalGuide.id) {
-                                guide.label.text = value?.toString() ?? '';
-                              }
-                              return guide;
-                            });
-                            viewUpdateTimeline('verticalGuides', newVerticalGuides, $selectedTimelineId);
-                          }}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="text"
-                          placeholder="Label"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <DatePicker
-                          name="timestamp"
-                          minDate={new Date($maxTimeRange.start)}
-                          maxDate={new Date($maxTimeRange.end)}
-                          dateString={verticalGuide.timestamp}
-                          on:change={event => updateVerticalGuideTimestamp(event, verticalGuide)}
-                          on:keydown={event => updateVerticalGuideTimestamp(event, verticalGuide)}
-                        />
-                      </Input>
-                      <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
-                        <ColorPicker
-                          value={verticalGuide.label.color}
-                          on:input={event => handleUpdateVerticalGuideLabel(event, verticalGuide)}
-                          name="color"
-                        />
-                      </div>
-                      <button
-                        on:click={() => handleDeleteVerticalGuideClick(verticalGuide)}
-                        use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
-                        class="st-button icon"
-                      >
-                        <CloseIcon />
-                      </button>
-                    </CssGrid>
-                  </div>
-                {/each}
-              </div>
+            <div class="guides timeline-elements">
+              {#each verticalGuides as verticalGuide (verticalGuide.id)}
+                <TimelineEditorGuideRow
+                  guide={verticalGuide}
+                  on:input={event => onVerticalGuideInput(event, verticalGuide)}
+                  on:delete={() => handleDeleteVerticalGuideClick(verticalGuide)}
+                />
+              {/each}
             </div>
           {/if}
         </EditorSection>
@@ -739,70 +685,15 @@
           on:removeAll={handleRemoveAllHorizontalGuidesClick}
         >
           {#if horizontalGuides.length}
-            <div class="editor-section-labeled-grid-container">
-              <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
-                <div>Label</div>
-                <div>Y Value</div>
-                <div>Y Axis</div>
-              </CssGrid>
-              <div class="guides timeline-elements">
-                {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
-                  <div class="guide timeline-element">
-                    <CssGrid columns="1fr 1fr 1fr 24px 24px" gap="8px" class="editor-section-grid">
-                      <Input layout="stacked" class="editor-input">
-                        <label for="text">Label</label>
-                        <input
-                          value={horizontalGuide.label.text}
-                          on:input={event => handleUpdateHorizontalGuideLabel(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="text"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="y">Y Value</label>
-                        <input
-                          value={horizontalGuide.y}
-                          on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
-                          autocomplete="off"
-                          class="st-input w-full"
-                          name="y"
-                          type="number"
-                        />
-                      </Input>
-                      <Input layout="stacked" class="editor-input">
-                        <label for="yAxisId">Y Axis</label>
-                        <select
-                          on:input={event => handleUpdateHorizontalGuideNumberValue(event, horizontalGuide)}
-                          class="st-select w-full"
-                          data-type="number"
-                          name="yAxisId"
-                        >
-                          {#each yAxes as axis}
-                            <option value={axis.id} selected={horizontalGuide.yAxisId === axis.id}>
-                              {axis.label.text}
-                            </option>
-                          {/each}
-                        </select>
-                      </Input>
-                      <div use:tooltip={{ content: 'Guide Color', placement: 'top' }}>
-                        <ColorPicker
-                          value={horizontalGuide.label.color}
-                          on:input={event => handleUpdateHorizontalGuideLabel(event, horizontalGuide)}
-                          name="color"
-                        />
-                      </div>
-                      <button
-                        on:click={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
-                        use:tooltip={{ content: 'Delete Guide', placement: 'top' }}
-                        class="st-button icon"
-                      >
-                        <CloseIcon />
-                      </button>
-                    </CssGrid>
-                  </div>
-                {/each}
-              </div>
+            <div class="guides timeline-elements">
+              {#each horizontalGuides as horizontalGuide (horizontalGuide.id)}
+                <TimelineEditorGuideRow
+                  guide={horizontalGuide}
+                  yAxes={$yAxesWithScaleDomainsCache[selectedRow?.id ?? -1] ?? yAxes}
+                  on:input={event => onHorizontalGuideInput(event, horizontalGuide)}
+                  on:delete={() => handleDeleteHorizontalGuideClick(horizontalGuide)}
+                />
+              {/each}
             </div>
           {/if}
         </EditorSection>
@@ -836,127 +727,116 @@
             </Input>
           </form>
           <Input layout="inline" class="editor-input">
-            <label for="activity-composition">Display</label>
-            <RadioButtons
-              selectedButtonId={discreteOptions.displayMode}
-              on:select-radio-button={event => {
-                handleOptionRadioChange(event, 'displayMode');
-              }}
-            >
-              <RadioButton
-                use={[[tooltip, { content: 'Group activities by type in collapsible rows', placement: 'top' }]]}
-                id="grouped"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeGroupedIcon />
-                  <span class="timeline-editor-responsive-label">Grouped</span>
-                </div>
-              </RadioButton>
-              <RadioButton
-                use={[[tooltip, { content: 'Pack activities into a single row', placement: 'top' }]]}
-                id="compact"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeCompactIcon />
-                  <span class="timeline-editor-responsive-label">Compact</span>
-                </div>
-              </RadioButton>
-            </RadioButtons>
+            <div class="flex min-w-0 items-center gap-1">
+              <label for="display-mode">Display</label>
+              <InfoTip
+                content="Grouped puts activities into collapsible rows by type. Compact packs them into as few rows as will fit."
+              />
+            </div>
+            <TimelineEditorOptionButtons
+              ariaLabel="Display"
+              id="display-mode"
+              options={[
+                { id: 'grouped', label: 'Grouped' },
+                { id: 'compact', label: 'Compact' },
+              ]}
+              selectedId={discreteOptions.displayMode}
+              on:change={({ detail }) => applyDiscreteOption('displayMode', detail.id)}
+            />
           </Input>
           <Input layout="inline" class="editor-input">
-            <label for="activity-composition">Labels</label>
-            <RadioButtons
-              selectedButtonId={discreteOptions.labelVisibility}
-              on:select-radio-button={event => handleOptionRadioChange(event, 'labelVisibility')}
-            >
-              <RadioButton use={[[tooltip, { content: 'Always show labels', placement: 'top' }]]} id="on">
-                <div class="radio-button-icon">
-                  <ActivityModeTextIcon />
-                  <span class="timeline-editor-responsive-label">On</span>
-                </div>
-              </RadioButton>
-              <RadioButton use={[[tooltip, { content: 'Never show labels', placement: 'top' }]]} id="off">
-                <div class="radio-button-icon">
-                  <ActivityModeTextNoneIcon />
-                  <span class="timeline-editor-responsive-label">Off</span>
-                </div>
-              </RadioButton>
-              <RadioButton
-                use={[[tooltip, { content: 'Show labels that do not overlap', placement: 'top' }]]}
-                id="auto"
-              >
-                <div class="radio-button-icon">
-                  <ActivityModeWidthIcon />
-                  <span class="timeline-editor-responsive-label">Auto</span>
-                </div>
-              </RadioButton>
-            </RadioButtons>
+            <div class="flex min-w-0 items-center gap-1">
+              <label for="label-visibility">Labels</label>
+              <InfoTip
+                content="On always draws item labels. Off never does. Auto draws only the labels that do not overlap the next item."
+              />
+            </div>
+            <TimelineEditorOptionButtons
+              ariaLabel="Labels"
+              id="label-visibility"
+              options={[
+                { id: 'auto', label: 'Auto' },
+                { id: 'on', label: 'On' },
+                { id: 'off', label: 'Off' },
+              ]}
+              selectedId={discreteOptions.labelVisibility}
+              on:change={({ detail }) => applyDiscreteOption('labelVisibility', detail.id)}
+            />
+          </Input>
+          {#if rowHasActivityLayer}
+            <Input layout="inline" class="editor-input">
+              <div class="flex min-w-0 items-center gap-1">
+                <label for="directive-marker">Directive</label>
+                <InfoTip
+                  content="Shape every activity directive is drawn with. Directives mark a start time and have no duration of their own."
+                />
+              </div>
+              <TimelineEditorOptionButtons
+                ariaLabel="Directive Marker"
+                id="directive-marker"
+                options={MARKER_STYLE_OPTIONS}
+                selectedId={discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE}
+                on:change={({ detail }) => applyDiscreteOption('directiveMarker', detail.id)}
+              />
+            </Input>
+          {/if}
+          <Input layout="inline" class="editor-input">
+            <div class="flex min-w-0 items-center gap-1">
+              <label for="zero-duration-marker">Instant</label>
+              <InfoTip
+                content="Shape for spans and external events whose duration is zero. Anything with a duration keeps its bar."
+              />
+            </div>
+            <TimelineEditorOptionButtons
+              ariaLabel="Instant Marker"
+              id="zero-duration-marker"
+              options={MARKER_STYLE_OPTIONS}
+              selectedId={discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE}
+              on:change={({ detail }) => applyDiscreteOption('zeroDurationMarker', detail.id)}
+            />
           </Input>
           {#if rowHasActivityLayer}
             <div class="editor-section-header activity-options">
               <div class="st-typography-label">Activity Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Show</label>
-              <RadioButtons
+              <div class="flex min-w-0 items-center gap-1">
+                <label for="activity-composition">Show</label>
+                <InfoTip
+                  content="Directives shows only what is planned. Simulated shows only what simulation produced. The third draws the simulated span with its directive marked on it."
+                />
+              </div>
+              <select
+                class="st-select w-full"
                 id="activity-composition"
-                selectedButtonId={discreteOptions?.activityOptions?.composition}
-                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'composition')}
+                name="composition"
+                value={discreteOptions?.activityOptions?.composition}
+                on:change={event => handleActivityOptionSelectChange(event, 'composition')}
               >
-                <RadioButton use={[[tooltip, { content: 'Only show directives', placement: 'top' }]]} id="directives">
-                  <div class="radio-button-icon">
-                    <DirectiveIcon /><span class="timeline-editor-responsive-label">Directives</span>
-                  </div>
-                </RadioButton>
-                <RadioButton use={[[tooltip, { content: 'Only show simulated', placement: 'top' }]]} id="spans">
-                  <div class="radio-button-icon">
-                    <SpanIcon />
-                    <span class="timeline-editor-responsive-label">Simulated</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[[tooltip, { content: 'Show directives and simulated activities', placement: 'top' }]]}
-                  id="both"
-                >
-                  <div class="radio-button-icon">
-                    <DirectiveAndSpanIcon />
-                    <span class="timeline-editor-responsive-label">Both</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+                <option value="directives">Directives</option>
+                <option value="spans">Simulated</option>
+                <option value="both">Directives + Simulated</option>
+              </select>
             </Input>
           {/if}
           {#if rowHasActivityLayer && discreteOptions.displayMode === 'grouped'}
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Hierarchy</label>
-              <RadioButtons
-                selectedButtonId={discreteOptions?.activityOptions?.hierarchyMode}
-                on:select-radio-button={event => handleActivityOptionRadioChange(event, 'hierarchyMode')}
-              >
-                <RadioButton
-                  use={[[tooltip, { content: 'Group starting with directives', placement: 'top' }]]}
-                  id="directive"
-                >
-                  <div class="radio-button-icon">
-                    <HierarchyModeDirectiveIcon />
-                    <span class="timeline-editor-responsive-label">By Directive</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[
-                    [
-                      tooltip,
-                      { content: 'Group starting with directives and spans regardless of depth', placement: 'top' },
-                    ],
-                  ]}
-                  id="flat"
-                >
-                  <div class="radio-button-icon">
-                    <HierarchyModeFlatIcon />
-                    <span class="timeline-editor-responsive-label">Flat</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+              <div class="flex min-w-0 items-center gap-1">
+                <label for="hierarchy-mode">Hierarchy</label>
+                <InfoTip
+                  content="By Directive groups starting from each directive. Flat groups directives and spans together regardless of how deeply nested they are."
+                />
+              </div>
+              <TimelineEditorOptionButtons
+                ariaLabel="Hierarchy"
+                id="hierarchy-mode"
+                options={[
+                  { id: 'flat', label: 'Flat' },
+                  { id: 'directive', label: 'By Directive' },
+                ]}
+                selectedId={discreteOptions?.activityOptions?.hierarchyMode}
+                on:change={({ detail }) => applyActivityOption('hierarchyMode', detail.id)}
+              />
             </Input>
           {/if}
           {#if rowHasExternalEventLayer && discreteOptions.displayMode === 'grouped'}
@@ -964,30 +844,22 @@
               <div class="st-typography-label">External Event Options</div>
             </div>
             <Input layout="inline" class="editor-input">
-              <label for="activity-composition">Group By</label>
-              <RadioButtons
-                selectedButtonId={discreteOptions?.externalEventOptions?.groupBy}
-                on:select-radio-button={event => handleExternalEventOptionRadioChange(event, 'groupBy')}
-              >
-                <RadioButton
-                  use={[[tooltip, { content: 'Group according to external source', placement: 'top' }]]}
-                  id="source_key"
-                >
-                  <div class="radio-button-icon">
-                    <ExternalSourceIcon />
-                    <span class="timeline-editor-responsive-label">By Source</span>
-                  </div>
-                </RadioButton>
-                <RadioButton
-                  use={[[tooltip, { content: 'Group according to event type', placement: 'top' }]]}
-                  id="event_type_name"
-                >
-                  <div class="radio-button-icon">
-                    <ExternalEventIcon />
-                    <span class="timeline-editor-responsive-label">By Event Type</span>
-                  </div>
-                </RadioButton>
-              </RadioButtons>
+              <div class="flex min-w-0 items-center gap-1">
+                <label for="group-by">Group By</label>
+                <InfoTip
+                  content="Groups external events into rows either by the source file they came from, or by their event type."
+                />
+              </div>
+              <TimelineEditorOptionButtons
+                ariaLabel="Group By"
+                id="group-by"
+                options={[
+                  { id: 'source_key', label: 'By Source' },
+                  { id: 'event_type_name', label: 'By Event Type' },
+                ]}
+                selectedId={discreteOptions?.externalEventOptions?.groupBy}
+                on:change={({ detail }) => applyExternalEventOption('groupBy', detail.id)}
+              />
             </Input>
           {/if}
         </EditorSection>
@@ -1186,7 +1058,6 @@
   }
 
   .timeline-row .st-button.icon,
-  .guide .st-button.icon,
   .timeline-y-axis .st-button.icon,
   :global(.timeline-editor-layer-settings.st-button.icon),
   :global(.timeline-editor-axis-settings.st-button.icon) {
@@ -1274,21 +1145,19 @@
     padding: 4px 16px;
   }
 
+  /* No gap: each guide row draws its own separator, so spacing between them would break the list into
+     floating cards rather than reading as one list. Negative margins escape EditorSection's 16px so a
+     row spans the panel edge to edge -- 32px that the date fields inside it need far more than the
+     margin does. */
   .guides {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    margin: 0 -16px;
   }
 
-  .guide,
   .timeline-y-axis {
     align-items: flex-end;
     display: flex;
-  }
-
-  .guide :global(.date-picker) {
-    flex: 1;
-    min-width: 168px;
   }
 
   :global(.input.input-stacked.editor-input) {
@@ -1301,8 +1170,11 @@
     display: none;
   }
 
+  /* Wide enough for the longest label in this panel ("Margin Right"). At the previous 60px, five
+     existing labels were already ellipsized -- Margin Right, Margin Left, Resize Mode, Row Height and
+     Hierarchy -- so this is the column being too narrow rather than any one label being too long. */
   :global(.input.input-inline.editor-input) {
-    grid-template-columns: 60px auto;
+    grid-template-columns: 84px auto;
     padding: 0;
   }
 
@@ -1312,14 +1184,5 @@
     gap: 8px;
     height: 32px;
     justify-content: flex-start;
-  }
-
-  .radio-button-icon {
-    display: flex;
-    gap: 4px;
-  }
-
-  .compact .timeline-editor-responsive-label {
-    display: none;
   }
 </style>

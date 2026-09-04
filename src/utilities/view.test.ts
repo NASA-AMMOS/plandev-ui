@@ -72,6 +72,43 @@ describe('generateDefaultViewWithEvents', () => {
   });
 });
 
+describe('validateViewJSONAgainstSchema - line layer area fill', () => {
+  function getViewWithLineLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines
+      .flatMap((timeline: any) => timeline.rows)
+      .find((row: any) => row.layers.some((layer: any) => layer.chartType === 'line'));
+    const layer = row.layers.find((layer: any) => layer.chartType === 'line');
+    Object.assign(layer, props);
+    return view;
+  }
+
+  test('Should accept line layers with area fill properties', async () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      getViewWithLineLayerProps({ fillColor: '#ff0000', fillOpacity: 0.25, showFill: true }),
+    );
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject a line layer fill color that is not a hex color', async () => {
+    const { valid } = validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillColor: 'red', showFill: true }));
+    expect(valid).toBe(false);
+  });
+
+  test('Should reject a line layer fill opacity outside of 0-1', async () => {
+    expect(validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillOpacity: 1.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(getViewWithLineLayerProps({ fillOpacity: -1 })).valid).toBe(false);
+  });
+
+  test('Should reject a null line layer fill opacity, the form a NaN takes once serialized', async () => {
+    // JSON.stringify turns NaN into null, so an unsanitized number input would make a view
+    // that can no longer be exported or re-imported
+    const view = getViewWithLineLayerProps({ fillOpacity: NaN });
+    expect(validateViewJSONAgainstSchema(JSON.parse(JSON.stringify(view))).valid).toBe(false);
+  });
+});
+
 describe('applyViewDefinitionMigrations', () => {
   test('Should migrate a view from v0 -> v1', async () => {
     const migratedView = migrateViewDefinitionV0toV1(viewV0 as any);
@@ -100,5 +137,321 @@ describe('migrateViewDefinition', () => {
     expect(anyMigrationsApplied).toBeFalsy();
     expect(error).not.toBeNull();
     expect(migratedViewDefinition).toBeNull();
+  });
+});
+
+describe('y axis scale type validation', () => {
+  function viewWithYAxisProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const axis = view.plan.timelines[0].rows[1].yAxes[0];
+    view.plan.timelines[0].rows[1].yAxes[0] = { ...axis, ...props };
+    return view;
+  }
+
+  test.each(['linear', 'log'])('Should accept scaleType "%s"', scaleType => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject an unknown scaleType', () => {
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'logarithmic' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'log10' })).valid).toBe(false);
+    // symlog was collapsed into 'log', which is symlog-backed, so it is no longer a separate option
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ scaleType: 'symlog' })).valid).toBe(false);
+  });
+
+  // Integer bases of 2 or more, the same bound the Log Base input enforces. A base of 1 or less has no
+  // logarithm, and a fractional one labels values nobody reads a plot in.
+  test('Should accept an integer logBase of 2 or more and reject anything else', () => {
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 10 })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 2 })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 1.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 1 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: 0 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logBase: -10 })).valid).toBe(false);
+  });
+
+  test('Should reject a derived field that must never be persisted', () => {
+    // logConstant lives on ComputedAxis only; additionalProperties: false is what enforces that
+    expect(validateViewJSONAgainstSchema(viewWithYAxisProps({ logConstant: 0.01 })).valid).toBe(false);
+  });
+
+  test('An axis saved before scaleType existed is still valid', () => {
+    // The v3 mock carries no scaleType, so omitting it must remain legal
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[1].yAxes[0].scaleType).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+  });
+});
+
+describe('line layer style validation', () => {
+  /**
+   * Returns the v3 mock view with the given properties merged into its first line layer. The mock's
+   * line layer carries none of the style fields, so it doubles as the "view saved before these
+   * options existed" case.
+   */
+  function viewWithLineLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const layer = view.plan.timelines[0].rows[1].layers[0];
+    view.plan.timelines[0].rows[1].layers[0] = { ...layer, ...props };
+    return view;
+  }
+
+  /** Merges the given properties into the discreteOptions of the mock view's activity row. */
+  function viewWithDiscreteOptions(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows[0];
+    row.discreteOptions = { ...row.discreteOptions, ...props };
+    return view;
+  }
+
+  function viewWithXRangeLayerProps(props: Record<string, unknown>) {
+    const view = structuredClone(viewV3) as any;
+    const layer = view.plan.timelines[0].rows[2].layers[0];
+    view.plan.timelines[0].rows[2].layers[0] = { ...layer, ...props };
+    return view;
+  }
+
+  test('A view saved before the style options existed is still valid', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewV3 as any);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should accept every style option', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      viewWithLineLayerProps({
+        interpolation: 'linear',
+        lineStyle: 'dashed',
+        opacity: 0.5,
+        pointShape: 'diamond',
+        showPoints: 'always',
+      }),
+    );
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test.each(['step', 'linear', 'smooth'])('Should accept interpolation "%s"', mode => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: mode })).valid).toBe(true);
+  });
+
+  test.each(['line', 'dot', 'diamond'])('Should accept a row directiveMarker of "%s"', style => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ directiveMarker: style }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test.each(['line', 'dot', 'diamond'])('Should accept a row zeroDurationMarker of "%s"', style => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithDiscreteOptions({ zeroDurationMarker: style }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // The two are independent on purpose: turning zero-duration spans into milestones must not also put
+  // a diamond on every directive in the plan
+  test('Should accept the two markers set differently', () => {
+    const { valid, errors } = validateViewJSONAgainstSchema(
+      viewWithDiscreteOptions({ directiveMarker: 'line', zeroDurationMarker: 'diamond' }),
+    );
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should accept a stacked y axis, and reject a non-boolean stack', () => {
+    const view = structuredClone(viewV3) as any;
+    const axis = view.plan.timelines[0].rows[1].yAxes[0];
+    expect(axis.stack).toBeUndefined(); // saved before stacking existed
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    axis.stack = true;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    axis.stack = 'yes';
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
+  test('Should accept a banded horizontal guide and reject a non-numeric y2', () => {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows[1];
+    row.horizontalGuides = [{ id: 0, label: { text: 'nominal' }, y: 10, y2: 90, yAxisId: row.yAxes[0].id }];
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+
+    // A guide with no y2 is an ordinary line guide and must stay valid
+    delete row.horizontalGuides[0].y2;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+
+    row.horizontalGuides[0].y2 = 'top';
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
+  test('Should accept a banded vertical guide and reject a non-string timestamp2', () => {
+    const view = structuredClone(viewV3) as any;
+    const timeline = view.plan.timelines[0];
+    timeline.verticalGuides = [
+      { id: 0, label: { text: 'eclipse' }, timestamp: '2022-001T00:00:00', timestamp2: '2022-001T06:00:00' },
+    ];
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+
+    // A guide with no timestamp2 is an ordinary line guide and must stay valid
+    delete timeline.verticalGuides[0].timestamp2;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+
+    timeline.verticalGuides[0].timestamp2 = 12345;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
+  test('Should accept an external event layer opacity and reject one outside 0-1', () => {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows.find((r: any) =>
+      r.layers.some((l: any) => l.chartType === 'externalEvent'),
+    );
+    const layer = row.layers.find((l: any) => l.chartType === 'externalEvent');
+    expect(layer.opacity).toBeUndefined(); // saved before the option existed
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    layer.opacity = 0.8;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+    layer.opacity = 1.5;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
+  test('Should reject an unknown marker style', () => {
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ directiveMarker: 'triangle' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ zeroDurationMarker: 'triangle' })).valid).toBe(
+      false,
+    );
+    // The pre-split field name must no longer validate
+    expect(validateViewJSONAgainstSchema(viewWithDiscreteOptions({ instantStyle: 'dot' })).valid).toBe(false);
+  });
+
+  // The mock's rows carry neither marker field, so this is also the "row saved before markers existed"
+  // case -- it has to keep validating and fall back to 'line' at render time.
+  test('A row with no marker fields is still valid', () => {
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[0].discreteOptions.directiveMarker).toBeUndefined();
+    expect(view.plan.timelines[0].rows[0].discreteOptions.zeroDurationMarker).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+  });
+
+  test.each(['solid', 'dashed', 'dotted'])('Should accept lineStyle "%s"', style => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineStyle: style })).valid).toBe(true);
+  });
+
+  test.each(['circle', 'square', 'diamond', 'triangle', 'cross'])('Should accept pointShape "%s"', shape => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointShape: shape })).valid).toBe(true);
+  });
+
+  test.each(['auto', 'always', 'never'])('Should accept showPoints "%s"', mode => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: mode })).valid).toBe(true);
+  });
+
+  test('Should accept a pointColor and reject a malformed one', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointColor: '#ff0000' })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointColor: 'red' })).valid).toBe(false);
+  });
+
+  test('Should reject unknown enum values', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ interpolation: 'stepBefore' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineStyle: 'squiggly' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointShape: 'hexagon' })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ showPoints: 'sometimes' })).valid).toBe(false);
+  });
+
+  test('Should reject a opacity outside 0-1', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ opacity: -0.5 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ opacity: 1.5 })).valid).toBe(false);
+  });
+
+  test('Should reject a negative lineWidth or pointRadius', () => {
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ lineWidth: -1 })).valid).toBe(false);
+    expect(validateViewJSONAgainstSchema(viewWithLineLayerProps({ pointRadius: -1 })).valid).toBe(false);
+  });
+
+  test('Should reject an x-range opacity outside 0-1', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ opacity: 1.5 })).valid).toBe(false);
+  });
+
+  test.each(['auto', 'off'])('Should accept an x-range labelVisibility of "%s"', visibility => {
+    const { valid, errors } = validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ labelVisibility: visibility }));
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // There is no 'on': a box cannot grow to fit its text the way a discrete row's bar can, so 'on' would
+  // promise something the renderer cannot do
+  test('Should reject an x-range labelVisibility of "on"', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ labelVisibility: 'on' })).valid).toBe(false);
+  });
+
+  test('Should accept a per-value label override', () => {
+    const view = viewWithXRangeLayerProps({
+      valueAppearance: { SUBSYSTEM_STATE_NOMINAL: { color: '#00ff00', label: 'NOM' } },
+    });
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  test('Should reject a non-string label override', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { label: 3 } } })).valid) //
+      .toBe(false);
+  });
+
+  test('Should accept a per-value appearance map on an x-range layer', () => {
+    const view = viewWithXRangeLayerProps({
+      valueAppearance: {
+        // Values are free-form strings, so the map's keys cannot be constrained -- including keys with
+        // the spaces and slashes that resource values really contain
+        'DOWNLINK/IDLE': { color: '#00ff00' },
+        NOMINAL: { color: '#ff0000', hidden: false },
+        'SAFE MODE': { hidden: true },
+      },
+    });
+    const { valid, errors } = validateViewJSONAgainstSchema(view);
+    expect(errors).to.deep.equal([]);
+    expect(valid).toBe(true);
+  });
+
+  // An entry with neither field is what the form leaves behind if it ever stops pruning empties, and it
+  // must not invalidate the whole view
+  test('Should accept an empty appearance entry and an empty map', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: {} })).valid).toBe(true);
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: {} } })).valid).toBe(true);
+  });
+
+  test('Should reject a malformed appearance entry', () => {
+    expect(validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: 'grey' } })).valid).toBe(
+      false,
+    );
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { color: 'grey' } } })).valid,
+    ).toBe(false);
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { hidden: 'yes' } } })).valid,
+    ).toBe(false);
+    // Typos in an entry are silent otherwise: the value would just keep its scheme color
+    expect(
+      validateViewJSONAgainstSchema(viewWithXRangeLayerProps({ valueAppearance: { OFF: { colour: '#cccccc' } } }))
+        .valid,
+    ).toBe(false);
+  });
+
+  // The mock's x-range layer carries no map, so this is also the "layer saved before per-value colors
+  // existed" case
+  test('An x-range layer with no appearance map is still valid', () => {
+    const view = structuredClone(viewV3) as any;
+    expect(view.plan.timelines[0].rows[2].layers[0].valueAppearance).toBeUndefined();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(true);
+  });
+
+  test('Should reject a NaN opacity, which serializes to null rather than a number', () => {
+    // A cleared number input yields NaN, and JSON.stringify turns NaN into null, so an unsanitized
+    // form value makes the whole view unexportable rather than just rendering oddly.
+    const view = JSON.parse(JSON.stringify(viewWithLineLayerProps({ opacity: NaN })));
+    expect(view.plan.timelines[0].rows[1].layers[0].opacity).toBeNull();
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 });

@@ -65,12 +65,14 @@
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
     TimelineInteractionMode,
     applyActivityLayerFilter,
     applyExternalEventLayerFilter,
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
+    getLineLayerStacks,
     getMatchingTypesForActivityLayerFilter,
     getYAxesWithScaleDomains,
     isActivityLayer,
@@ -144,6 +146,7 @@
       rowId: number;
       wasAutoAdjusted?: boolean;
     };
+    updateValueDomain: { domain: string[]; resourceName: string };
     updateYAxes: {
       axes: Axis[];
       id: number;
@@ -197,6 +200,9 @@
     external_events: {},
     spans: {},
   };
+  // Kept beside idToColorMaps rather than folded into it: opacity is only configurable on external
+  // event layers, and a map whose other two branches were always empty would read as an oversight
+  let externalEventOpacities: Record<ExternalEventId, number> = {};
   let timeFilteredActivityDirectives: ActivityDirective[] = [];
   let timeFilteredSpans: Span[] = [];
   let timeFilteredExternalEvents: ExternalEvent[] = [];
@@ -357,9 +363,14 @@
     anyResourcesLoading = anyLoading;
   }
 
+  // Stacking is the one thing a layer cannot compute for itself, since it depends on every other layer
+  // on the same axis. Empty unless an axis opts in.
+  $: lineLayerStacks = loadedResources && yAxes ? getLineLayerStacks(yAxes, layers, loadedResources) : {};
+
   // Compute scale domains for axes since it is optionally defined in the view
   $: if (loadedResources && yAxes) {
-    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange);
+    // Stacks are passed in so a stacked axis is sized to the stack total rather than its largest series
+    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange, lineLayerStacks);
     dispatch('updateYAxes', { axes: yAxesWithScaleDomains, id });
   }
 
@@ -465,14 +476,26 @@
           timeFilteredSpans = [];
         }
 
-        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+        // Second term was a copy of the first, so a layer matching only orphan spans and no directives
+        // reported as having no activity content and was allocated no space
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredSpans.length > 0;
       } else {
+        // Cleared, not just flagged: the collapsed draw path reads these lists, so leaving the last
+        // layer's items in them keeps a removed layer on screen
+        filteredActivityDirectives = [];
+        filteredSpans = [];
+        timeFilteredActivityDirectives = [];
+        timeFilteredSpans = [];
         hasActivityLayer = false;
       }
     }
 
     if (hasExternalEventsLayer) {
       filteredExternalEvents = [];
+      // Cleared with the list it is keyed against, so it holds an entry only for an event still being
+      // rendered. Every rendered event is rewritten below before it is read, so keeping the stale keys
+      // would not misdraw anything -- it would just grow without bound across recomputes.
+      externalEventOpacities = {};
 
       // Filter what LINKED Derivation Groups are to be shown
       let filteredDerivationGroups = $planDerivationGroupLinks
@@ -500,13 +523,18 @@
             externalEventsFilteredByDG,
           );
           matchingExternalEvents.forEach(externalEvent => {
-            idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] = layer.externalEventColor;
+            const externalEventRowId = getExternalEventRowId(externalEvent.pkey);
+            idToColorMaps.external_events[externalEventRowId] = layer.externalEventColor;
+            externalEventOpacities[externalEventRowId] = layer.opacity ?? DEFAULT_EXTERNAL_EVENT_OPACITY;
           });
           filteredExternalEvents = [...filteredExternalEvents, ...matchingExternalEvents];
           filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
           timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
         }
       });
+      // The map above is filled by mutation, which Svelte cannot see. Reassigning marks it changed so
+      // an opacity edit reaches LayerDiscrete, which is immutable and only re-renders on new references
+      externalEventOpacities = externalEventOpacities;
     }
   }
 
@@ -980,12 +1008,14 @@
             {xScaleView}
             on:mouseOver={onMouseOver}
             on:contextMenu
+            on:updateValueDomain
           />
         {/each}
         {#if hasActivityLayer || hasExternalEventsLayer}
           <LayerDiscrete
             {discreteOptions}
             {idToColorMaps}
+            {externalEventOpacities}
             {discreteTree}
             activityDirectives={filteredActivityDirectives}
             externalEvents={filteredExternalEvents}
@@ -1055,7 +1085,10 @@
             filter={layer.filter.resource}
             {mousemove}
             {mouseout}
-            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            resources={lineLayerStacks[layer.id]
+              ? [lineLayerStacks[layer.id].resource]
+              : getResourcesForLayer(layer, resourceRequestMap)}
+            stackBaseline={lineLayerStacks[layer.id]?.baseline ?? null}
             {viewTimeRange}
             {xScaleView}
             yAxes={yAxesWithScaleDomains}
