@@ -58,7 +58,7 @@ npm run dev
 
 ## Want to help?
 
-Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
+Want to file a bug, contribute some code or improve documentation? Excellent! Read up on our
 guidelines for [contributing][contributing] and our [code of conduct][coc]. If you are a developer you can get started quickly by reading the [developer documentation][dev].
 
 [coc]: ./CODE_OF_CONDUCT.md
