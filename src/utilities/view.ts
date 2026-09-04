@@ -42,6 +42,7 @@ export function generateDefaultView(
     name: 'Activities by Type',
   });
   timeline.rows.push(activityRow);
+  timeline.items.push({ id: activityRow.id, type: 'row' });
 
   // IF derivation groups with event_types are associated, make an external event row
   // If there are empty derivation groups associated without any event types, this row is not added
@@ -64,6 +65,7 @@ export function generateDefaultView(
       name: 'External Events',
     });
     timeline.rows.push(externalEventRow);
+    timeline.items.push({ id: externalEventRow.id, type: 'row' });
   }
 
   // Generate a Resource row for up to the limit specified by ViewTimelineResourceRowsLimit
@@ -80,6 +82,7 @@ export function generateDefaultView(
     });
 
     timeline.rows.push(resourceRow);
+    timeline.items.push({ id: resourceRow.id, type: 'row' });
   });
 
   return {
@@ -526,6 +529,7 @@ export function applyViewDefinitionMigrations(viewDefinition: ViewDefinition): {
       0: migrateViewDefinitionV0toV1,
       1: migrateViewDefinitionV1toV2,
       2: migrateViewDefinitionV2toV3,
+      3: migrateViewDefinitionV3toV4,
     };
 
     // Iterate through versions between view version and latest view version
@@ -698,5 +702,41 @@ export function migrateViewDefinitionV2toV3(viewDefinition: ViewDefinition) {
       }),
     },
     version: 3,
+  };
+}
+
+export function migrateViewDefinitionV3toV4(viewDefinition: ViewDefinition) {
+  /*
+    Summary of migrations:
+    - Add 'items' array to timelines (ordered list of sections and root-level rows)
+    - Add 'sections' array to timelines (section definitions)
+    - Existing rows become root-level items
+  */
+  return {
+    ...viewDefinition,
+    plan: {
+      ...viewDefinition.plan,
+      timelines: viewDefinition.plan.timelines.map(timeline => {
+        // Already migrated, or written by a build that had items.
+        if (timeline.items && timeline.items.length > 0) {
+          return {
+            ...timeline,
+            sections: timeline.sections || [],
+          };
+        }
+
+        const items = timeline.rows.map(row => ({
+          id: row.id,
+          type: 'row' as const,
+        }));
+
+        return {
+          ...timeline,
+          items,
+          sections: [],
+        };
+      }),
+    },
+    version: 4,
   };
 }

@@ -45,6 +45,12 @@ const config = ({ mode }) => {
         ignored: ['**/e2e-test-results/**', '**/e2e-tests/**'],
       },
     },
+    ssr: {
+      // Bundled into the server build rather than left external. These packages publish
+      // directory entry points (…/element/adapter), which Vite resolves in dev but Node's ESM
+      // loader rejects in a built server - every SSR render of a page importing them 500s.
+      noExternal: ['@atlaskit/pragmatic-drag-and-drop', '@atlaskit/pragmatic-drag-and-drop-hitbox'],
+    },
     test: {
       alias: [{ find: /^svelte$/, replacement: 'svelte/internal' }], // https://github.com/vitest-dev/vitest/issues/2834
       coverage: {

@@ -19,6 +19,7 @@
     MouseOverOrigin,
     Row,
     Timeline,
+    TimelineSection,
     TimeRange,
     VerticalGuide,
   } from '../../types/timeline';
@@ -51,17 +52,24 @@
   export let user: User | null;
 
   const dispatch = createEventDispatcher<{
+    addRowToSection: TimelineSection;
     collapseDiscreteTree: Row;
     createActivityDirectives: ActivityDirective[];
     deleteActivityDirective: number;
     deleteRow: Row;
+    deleteSection: TimelineSection;
     duplicateRow: Row;
+    duplicateSection: TimelineSection;
     editRow: Row;
+    editSection: TimelineSection;
     insertRow: Row;
+    insertSection: { row: Row | null };
     jumpToActivityDirective: number;
     jumpToSpan: number;
     moveRow: { direction: 'up' | 'down'; row: Row };
+    moveSection: { direction: 'up' | 'down'; section: TimelineSection };
     pasteActivityDirectivesAtTime: Date | null;
+    setAllExpanded: { expanded: boolean };
     toggleActivityComposition: { composition: ActivityOptions['composition']; row: Row };
     updateVerticalGuides: VerticalGuide[];
     viewTimeRangeChanged: TimeRange;
@@ -80,14 +88,16 @@
   let mouseOverOrigin: MouseOverOrigin | undefined = undefined;
   let permissionErrorText: string | null = null;
   let row: Row | undefined = undefined;
+  let timelineSection: TimelineSection | undefined = undefined;
   let offsetX: number | undefined;
 
   // TODO imports here could be better, should we handle the vertical guide creation in Timeline?
   $: timelines = $view?.definition.plan.timelines ?? [];
 
   $: if (contextMenu && contextMenuComponent) {
-    const { e, selectedActivityDirectiveId, selectedSpanId, origin, row: selectedRow } = contextMenu;
+    const { e, selectedActivityDirectiveId, selectedSpanId, origin, row: selectedRow, section } = contextMenu;
     row = selectedRow;
+    timelineSection = section;
     mouseOverOrigin = origin;
     contextMenuComponent.show(e);
     activityDirective = null;
@@ -113,6 +123,10 @@
     activityOptions = undefined;
     activityDirectiveSpans = null;
     hasActivityLayer = false;
+    // timelineSection and mouseOverOrigin survive here, the same way `row` does. Re-opening the
+    // menu hides the previous one first, and that hide runs this - so clearing them here wiped
+    // them while the new menu was being shown, and every right-click after the first fell through
+    // to the generic menu. The next contextMenu replaces both wholesale.
   }
 
   $: startYmd = simulationDataset?.simulation_start_time ?? planStartTimeYmd;
@@ -246,6 +260,45 @@
     }
   }
 
+  function onEditSection() {
+    if (timelineSection) {
+      dispatch('editSection', timelineSection);
+    }
+  }
+
+  function onAddRowToSection() {
+    if (timelineSection) {
+      dispatch('addRowToSection', timelineSection);
+    }
+  }
+
+  function onMoveSection(direction: 'up' | 'down') {
+    if (timelineSection) {
+      dispatch('moveSection', { direction, section: timelineSection });
+    }
+  }
+
+  function onDuplicateSection() {
+    if (timelineSection) {
+      dispatch('duplicateSection', timelineSection);
+    }
+  }
+
+  function onDeleteSection() {
+    if (timelineSection) {
+      dispatch('deleteSection', timelineSection);
+    }
+  }
+
+  function onSetAllExpanded(expanded: boolean) {
+    dispatch('setAllExpanded', { expanded });
+  }
+
+  function onInsertSection() {
+    // The row under the cursor, so the section lands there rather than at the end of the timeline.
+    dispatch('insertSection', { row: row ?? null });
+  }
+
   function onShowDirectivesAndActivitiesChange(value: string | undefined) {
     if (row) {
       dispatch('toggleActivityComposition', { composition: value as ActivityOptions['composition'], row });
@@ -278,271 +331,295 @@
 </script>
 
 <ContextMenuInternal on:hide bind:this={contextMenuComponent}>
-  {#if mouseOverOrigin !== 'row-header'}
-    {#if activityDirective}
-      {#if activityDirectiveSpans && activityDirectiveSpans.length}
+  {#if mouseOverOrigin === 'section-header' && timelineSection}
+    <!-- Kept in step with the section header's own actions menu: same items, same order. -->
+    <ContextMenu.Item size="sm" on:click={onEditSection}>Edit Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onAddRowToSection}>Add Row to Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onDuplicateSection}>Duplicate Section</ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item size="sm" on:click={() => onMoveSection('up')}>Move Section Up</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onMoveSection('down')}>Move Section Down</ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand Timeline</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse Timeline</ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item size="sm" on:click={onDeleteSection}>Delete Section</ContextMenu.Item>
+  {:else}
+    {#if mouseOverOrigin !== 'row-header'}
+      {#if activityDirective}
+        {#if activityDirectiveSpans && activityDirectiveSpans.length}
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger size="sm">Jump to Simulated Activities</ContextMenu.SubTrigger>
+            <ContextMenu.SubContent class="w-48">
+              {#each activityDirectiveSpans as activityDirectiveSpan}
+                <ContextMenu.Item size="sm" on:click={() => dispatch('jumpToSpan', activityDirectiveSpan.span_id)}>
+                  {activityDirectiveSpan.type} ({activityDirectiveSpan.span_id})
+                </ContextMenu.Item>
+              {/each}
+            </ContextMenu.SubContent>
+          </ContextMenu.Sub>
+          <ContextMenu.Separator />
+        {/if}
+        {#if activityDirective.anchor_id !== null}
+          <ContextMenu.Item
+            size="sm"
+            on:click={() => {
+              if (activityDirective !== null && activityDirective.anchor_id !== null) {
+                dispatch('jumpToActivityDirective', activityDirective.anchor_id);
+              }
+            }}
+          >
+            Jump to Anchor Directive ({activityDirective.anchor_id})
+          </ContextMenu.Item>
+        {/if}
+        <ContextMenu.Item
+          size="sm"
+          on:click={() => {
+            if (activityDirectiveStartDate !== null) {
+              addVerticalGuide(activityDirectiveStartDate);
+            }
+          }}
+        >
+          Place Guide at Directive Start
+        </ContextMenu.Item>
+        <ContextMenu.Separator />
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update this simulation',
+          }}
+        >
+          <ContextMenu.Item
+            size="sm"
+            disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+            on:click={() => updateSimulationStartTime(activityDirectiveStartDate)}
+          >
+            Set Simulation Start at Directive Start
+          </ContextMenu.Item>
+        </div>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update this simulation',
+          }}
+        >
+          <ContextMenu.Item
+            size="sm"
+            disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+            on:click={() => updateSimulationEndTime(activityDirectiveStartDate)}
+          >
+            Set Simulation End at Directive Start
+          </ContextMenu.Item>
+        </div>
+        <ContextMenu.Separator />
+        <ContextMenu.Item
+          size="sm"
+          on:click={() => activityDirective !== null && copyActivityDirective(activityDirective)}
+        >
+          Copy Activity Directive
+        </ContextMenu.Item>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdateDirectivePermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to delete this activity',
+          }}
+        >
+          <ContextMenu.Item
+            size="sm"
+            disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+            on:click={() => {
+              if (activityDirective !== null) {
+                dispatch('deleteActivityDirective', activityDirective.id);
+              }
+            }}
+          >
+            Delete Activity Directive
+          </ContextMenu.Item>
+        </div>
+      {:else if span}
+        <ContextMenu.Item size="sm" on:click={jumpToActivityDirective}>Jump to Activity Directive</ContextMenu.Item>
+        <ContextMenu.Separator />
         <ContextMenu.Sub>
-          <ContextMenu.SubTrigger size="sm">Jump to Simulated Activities</ContextMenu.SubTrigger>
+          <ContextMenu.SubTrigger size="sm">Place Guide</ContextMenu.SubTrigger>
           <ContextMenu.SubContent class="w-48">
-            {#each activityDirectiveSpans as activityDirectiveSpan}
-              <ContextMenu.Item size="sm" on:click={() => dispatch('jumpToSpan', activityDirectiveSpan.span_id)}>
-                {activityDirectiveSpan.type} ({activityDirectiveSpan.span_id})
-              </ContextMenu.Item>
-            {/each}
+            <ContextMenu.Item size="sm" on:click={() => span && addVerticalGuide(getSpanDate(span))}>
+              At Simulated Activity Start
+            </ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => span && addVerticalGuide(getSpanDate(span, true))}>
+              At Simulated Activity End
+            </ContextMenu.Item>
+          </ContextMenu.SubContent>
+        </ContextMenu.Sub>
+
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger size="sm">Set Simulation Start</ContextMenu.SubTrigger>
+          <ContextMenu.SubContent class="w-48">
+            <ContextMenu.Item size="sm" on:click={() => span && updateSimulationStartTime(getSpanDate(span))}>
+              At Simulated Activity Start
+            </ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => span && updateSimulationStartTime(getSpanDate(span, true))}>
+              At Simulated Activity End
+            </ContextMenu.Item>
+          </ContextMenu.SubContent>
+        </ContextMenu.Sub>
+
+        <ContextMenu.Separator />
+
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger size="sm">Set Simulation End</ContextMenu.SubTrigger>
+          <ContextMenu.SubContent class="w-48">
+            <ContextMenu.Item size="sm" on:click={() => span && updateSimulationEndTime(getSpanDate(span))}>
+              At Simulated Activity Start
+            </ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => span && updateSimulationEndTime(getSpanDate(span, true))}>
+              At Simulated Activity End
+            </ContextMenu.Item>
+          </ContextMenu.SubContent>
+        </ContextMenu.Sub>
+      {:else}
+        <ContextMenu.Item
+          size="sm"
+          on:click={() => xScaleView && offsetX !== undefined && addVerticalGuide(xScaleView.invert(offsetX))}
+        >
+          Place Guide
+        </ContextMenu.Item>
+        <ContextMenu.Separator />
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update the simulation',
+          }}
+        >
+          <ContextMenu.Item
+            size="sm"
+            disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+            on:click={() =>
+              xScaleView && offsetX !== undefined && updateSimulationStartTime(xScaleView.invert(offsetX))}
+          >
+            Set Simulation Start
+          </ContextMenu.Item>
+        </div>
+        <div
+          use:permissionHandler={{
+            hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
+            permissionError: $planReadOnly
+              ? PlanStatusMessages.READ_ONLY
+              : 'You do not have permission to update the simulation',
+          }}
+        >
+          <ContextMenu.Item
+            size="sm"
+            disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+            on:click={() => xScaleView && offsetX !== undefined && updateSimulationEndTime(xScaleView.invert(offsetX))}
+          >
+            Set Simulation End
+          </ContextMenu.Item>
+        </div>
+        <ContextMenu.Separator />
+        <PasteActivitiesContextMenu
+          atTime={getDateUnderMouse()}
+          {hasCreatePermission}
+          {plan}
+          planPermissionErrorText={permissionErrorText}
+          on:createActivityDirectives={createActivityDirectives}
+        />
+      {/if}
+      <ContextMenu.Separator />
+      {#if span}
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger size="sm">Zoom around Simulated Activity</ContextMenu.SubTrigger>
+          <ContextMenu.SubContent class="w-48">
+            <ContextMenu.Item size="sm" on:click={() => onZoomHome()}>Reset Zoom</ContextMenu.Item>
+            <ContextMenu.Separator />
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND)}>
+              1 Millisecond Padding</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND * 10)}>
+              10 Millisecond Padding</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND * 50)}>
+              50 Millisecond Padding</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.SECOND)}>1 Second Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.SECOND * 30)}
+              >30 Second Padding</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MINUTE)}>1 Minute Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MINUTE * 30)}
+              >30 Minute Padding</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.HOUR)}>1 Hour Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.HOUR * 12)}>12 Hour Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY)}>1 Day Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY * 3)}>3 Day Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY * 7)}>1 Week Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MONTH)}>1 Month Padding</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.YEAR)}>1 Year Padding</ContextMenu.Item>
+          </ContextMenu.SubContent>
+        </ContextMenu.Sub>
+        <ContextMenu.Separator />
+      {:else}
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger size="sm"
+            >Zoom{activityDirective ? ' around Activity Directive' : ''}</ContextMenu.SubTrigger
+          >
+          <ContextMenu.SubContent class="w-48">
+            <ContextMenu.Item size="sm" on:click={() => onZoomHome()}>Reset Zoom</ContextMenu.Item>
+            <ContextMenu.Separator />
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND)}>1 Millisecond</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND * 10)}>
+              10 Milliseconds</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND * 50)}>
+              50 Milliseconds</ContextMenu.Item
+            >
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.SECOND)}>1 Second</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.SECOND * 30)}>30 Seconds</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MINUTE)}>1 Minute</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MINUTE * 30)}>30 Minutes</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.HOUR)}>1 Hour</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.HOUR * 12)}>12 Hours</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY)}>1 Day</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY * 3)}>3 Days</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY * 7)}>1 Week</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MONTH)}>1 Month</ContextMenu.Item>
+            <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.YEAR)}>1 Year</ContextMenu.Item>
           </ContextMenu.SubContent>
         </ContextMenu.Sub>
         <ContextMenu.Separator />
       {/if}
-      {#if activityDirective.anchor_id !== null}
-        <ContextMenu.Item
-          size="sm"
-          on:click={() => {
-            if (activityDirective !== null && activityDirective.anchor_id !== null) {
-              dispatch('jumpToActivityDirective', activityDirective.anchor_id);
-            }
-          }}
-        >
-          Jump to Anchor Directive ({activityDirective.anchor_id})
-        </ContextMenu.Item>
+    {/if}
+    <ContextMenu.Item size="sm" on:click={onEditRow}>Edit Row</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onMoveRowUp}>Move Row Up</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onMoveRowDown}>Move Row Down</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onInsertRow}>Insert Row</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onDuplicateRow}>Duplicate Row</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={onDeleteRow}>Delete Row</ContextMenu.Item>
+    {#if hasActivityLayer}
+      {#if discreteOptions?.displayMode === 'grouped'}
+        <ContextMenu.Separator />
+        <ContextMenu.Item size="sm" on:click={onCollapseDiscreteTree}>Collapse All Hierarchies</ContextMenu.Item>
       {/if}
-      <ContextMenu.Item
-        size="sm"
-        on:click={() => {
-          if (activityDirectiveStartDate !== null) {
-            addVerticalGuide(activityDirectiveStartDate);
-          }
-        }}
-      >
-        Place Guide at Directive Start
-      </ContextMenu.Item>
       <ContextMenu.Separator />
-      <div
-        use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to update this simulation',
-        }}
-      >
-        <ContextMenu.Item
-          size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={() => updateSimulationStartTime(activityDirectiveStartDate)}
+      <ContextMenu.RadioGroup onValueChange={onShowDirectivesAndActivitiesChange} value={activityOptions?.composition}>
+        <ContextMenu.RadioItem size="sm" value="directives" id="directives"
+          >Show activity directives</ContextMenu.RadioItem
         >
-          Set Simulation Start at Directive Start
-        </ContextMenu.Item>
-      </div>
-      <div
-        use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to update this simulation',
-        }}
-      >
-        <ContextMenu.Item
-          size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={() => updateSimulationEndTime(activityDirectiveStartDate)}
-        >
-          Set Simulation End at Directive Start
-        </ContextMenu.Item>
-      </div>
-      <ContextMenu.Separator />
-      <ContextMenu.Item
-        size="sm"
-        on:click={() => activityDirective !== null && copyActivityDirective(activityDirective)}
-      >
-        Copy Activity Directive
-      </ContextMenu.Item>
-      <div
-        use:permissionHandler={{
-          hasPermission: hasUpdateDirectivePermission && !$planReadOnly,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to delete this activity',
-        }}
-      >
-        <ContextMenu.Item
-          size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={() => {
-            if (activityDirective !== null) {
-              dispatch('deleteActivityDirective', activityDirective.id);
-            }
-          }}
-        >
-          Delete Activity Directive
-        </ContextMenu.Item>
-      </div>
-    {:else if span}
-      <ContextMenu.Item size="sm" on:click={jumpToActivityDirective}>Jump to Activity Directive</ContextMenu.Item>
-      <ContextMenu.Separator />
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger size="sm">Place Guide</ContextMenu.SubTrigger>
-        <ContextMenu.SubContent class="w-48">
-          <ContextMenu.Item size="sm" on:click={() => span && addVerticalGuide(getSpanDate(span))}>
-            At Simulated Activity Start
-          </ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => span && addVerticalGuide(getSpanDate(span, true))}>
-            At Simulated Activity End
-          </ContextMenu.Item>
-        </ContextMenu.SubContent>
-      </ContextMenu.Sub>
-
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger size="sm">Set Simulation Start</ContextMenu.SubTrigger>
-        <ContextMenu.SubContent class="w-48">
-          <ContextMenu.Item size="sm" on:click={() => span && updateSimulationStartTime(getSpanDate(span))}>
-            At Simulated Activity Start
-          </ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => span && updateSimulationStartTime(getSpanDate(span, true))}>
-            At Simulated Activity End
-          </ContextMenu.Item>
-        </ContextMenu.SubContent>
-      </ContextMenu.Sub>
-
-      <ContextMenu.Separator />
-
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger size="sm">Set Simulation End</ContextMenu.SubTrigger>
-        <ContextMenu.SubContent class="w-48">
-          <ContextMenu.Item size="sm" on:click={() => span && updateSimulationEndTime(getSpanDate(span))}>
-            At Simulated Activity Start
-          </ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => span && updateSimulationEndTime(getSpanDate(span, true))}>
-            At Simulated Activity End
-          </ContextMenu.Item>
-        </ContextMenu.SubContent>
-      </ContextMenu.Sub>
-    {:else}
-      <ContextMenu.Item
-        size="sm"
-        on:click={() => xScaleView && offsetX !== undefined && addVerticalGuide(xScaleView.invert(offsetX))}
-      >
-        Place Guide
-      </ContextMenu.Item>
-      <ContextMenu.Separator />
-      <div
-        use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to update the simulation',
-        }}
-      >
-        <ContextMenu.Item
-          size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={() => xScaleView && offsetX !== undefined && updateSimulationStartTime(xScaleView.invert(offsetX))}
-        >
-          Set Simulation Start
-        </ContextMenu.Item>
-      </div>
-      <div
-        use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
-            ? PlanStatusMessages.READ_ONLY
-            : 'You do not have permission to update the simulation',
-        }}
-      >
-        <ContextMenu.Item
-          size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
-          on:click={() => xScaleView && offsetX !== undefined && updateSimulationEndTime(xScaleView.invert(offsetX))}
-        >
-          Set Simulation End
-        </ContextMenu.Item>
-      </div>
-      <ContextMenu.Separator />
-      <PasteActivitiesContextMenu
-        atTime={getDateUnderMouse()}
-        {hasCreatePermission}
-        {plan}
-        planPermissionErrorText={permissionErrorText}
-        on:createActivityDirectives={createActivityDirectives}
-      />
+        <ContextMenu.RadioItem size="sm" value="spans" id="spans">Show simulated activities</ContextMenu.RadioItem>
+        <ContextMenu.RadioItem size="sm" value="both" id="both">Show both</ContextMenu.RadioItem>
+      </ContextMenu.RadioGroup>
     {/if}
     <ContextMenu.Separator />
-    {#if span}
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger size="sm">Zoom around Simulated Activity</ContextMenu.SubTrigger>
-        <ContextMenu.SubContent class="w-48">
-          <ContextMenu.Item size="sm" on:click={() => onZoomHome()}>Reset Zoom</ContextMenu.Item>
-          <ContextMenu.Separator />
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND)}>
-            1 Millisecond Padding</ContextMenu.Item
-          >
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND * 10)}>
-            10 Millisecond Padding</ContextMenu.Item
-          >
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MILLISECOND * 50)}>
-            50 Millisecond Padding</ContextMenu.Item
-          >
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.SECOND)}>1 Second Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.SECOND * 30)}>30 Second Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MINUTE)}>1 Minute Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MINUTE * 30)}>30 Minute Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.HOUR)}>1 Hour Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.HOUR * 12)}>12 Hour Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY)}>1 Day Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY * 3)}>3 Day Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.DAY * 7)}>1 Week Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.MONTH)}>1 Month Padding</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onFocus(TIME_MS.YEAR)}>1 Year Padding</ContextMenu.Item>
-        </ContextMenu.SubContent>
-      </ContextMenu.Sub>
-      <ContextMenu.Separator />
-    {:else}
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger size="sm"
-          >Zoom{activityDirective ? ' around Activity Directive' : ''}</ContextMenu.SubTrigger
-        >
-        <ContextMenu.SubContent class="w-48">
-          <ContextMenu.Item size="sm" on:click={() => onZoomHome()}>Reset Zoom</ContextMenu.Item>
-          <ContextMenu.Separator />
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND)}>1 Millisecond</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND * 10)}>
-            10 Milliseconds</ContextMenu.Item
-          >
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MILLISECOND * 50)}>
-            50 Milliseconds</ContextMenu.Item
-          >
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.SECOND)}>1 Second</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.SECOND * 30)}>30 Seconds</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MINUTE)}>1 Minute</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MINUTE * 30)}>30 Minutes</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.HOUR)}>1 Hour</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.HOUR * 12)}>12 Hours</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY)}>1 Day</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY * 3)}>3 Days</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.DAY * 7)}>1 Week</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.MONTH)}>1 Month</ContextMenu.Item>
-          <ContextMenu.Item size="sm" on:click={() => onZoom(TIME_MS.YEAR)}>1 Year</ContextMenu.Item>
-        </ContextMenu.SubContent>
-      </ContextMenu.Sub>
-      <ContextMenu.Separator />
-    {/if}
-  {/if}
-  <ContextMenu.Item size="sm" on:click={onEditRow}>Edit Row</ContextMenu.Item>
-  <ContextMenu.Item size="sm" on:click={onMoveRowUp}>Move Row Up</ContextMenu.Item>
-  <ContextMenu.Item size="sm" on:click={onMoveRowDown}>Move Row Down</ContextMenu.Item>
-  <ContextMenu.Item size="sm" on:click={onInsertRow}>Insert Row</ContextMenu.Item>
-  <ContextMenu.Item size="sm" on:click={onDuplicateRow}>Duplicate Row</ContextMenu.Item>
-  <ContextMenu.Item size="sm" on:click={onDeleteRow}>Delete Row</ContextMenu.Item>
-  {#if hasActivityLayer}
-    {#if discreteOptions?.displayMode === 'grouped'}
-      <ContextMenu.Separator />
-      <ContextMenu.Item size="sm" on:click={onCollapseDiscreteTree}>Collapse All Hierarchies</ContextMenu.Item>
-    {/if}
-    <ContextMenu.Separator />
-    <ContextMenu.RadioGroup onValueChange={onShowDirectivesAndActivitiesChange} value={activityOptions?.composition}>
-      <ContextMenu.RadioItem size="sm" value="directives" id="directives"
-        >Show activity directives</ContextMenu.RadioItem
-      >
-      <ContextMenu.RadioItem size="sm" value="spans" id="spans">Show simulated activities</ContextMenu.RadioItem>
-      <ContextMenu.RadioItem size="sm" value="both" id="both">Show both</ContextMenu.RadioItem>
-    </ContextMenu.RadioGroup>
+    <ContextMenu.Item size="sm" on:click={onInsertSection}>Insert Section</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(true)}>Expand Timeline</ContextMenu.Item>
+    <ContextMenu.Item size="sm" on:click={() => onSetAllExpanded(false)}>Collapse Timeline</ContextMenu.Item>
   {/if}
 </ContextMenuInternal>
