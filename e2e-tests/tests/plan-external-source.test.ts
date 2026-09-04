@@ -158,7 +158,9 @@ test.describe.serial('Plan External Sources', () => {
   });
 
   test('Zero-duration events are properly drawn in the timeline', async () => {
-    expect(await anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas')).toBeTruthy();
+    await expect
+      .poll(() => anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas'), { timeout: 10000 })
+      .toBe(true);
   });
 
   test('Linked derivation groups should be expandable in panel', async () => {
@@ -188,9 +190,9 @@ test.describe.serial('Plan External Sources', () => {
 
     await expect(setup.page.getByText('Key: ExampleExternalSource:')).toBeVisible();
     await expect(setup.page.getByText('Source Type: Example External')).toBeVisible();
-    await expect(setup.page.getByText('Start Time: 2022-01-01T00:00:00')).toBeVisible();
-    await expect(setup.page.getByText('End Time: 2022-01-02T00:00:00')).toBeVisible();
-    await expect(setup.page.getByText('Valid At: 2022-01-01T00:00:00')).toBeVisible();
+    await expect(setup.page.getByText('Start Time: 2022-001T00:00:00')).toBeVisible();
+    await expect(setup.page.getByText('End Time: 2022-002T00:00:00')).toBeVisible();
+    await expect(setup.page.getByText('Valid At: 2022-001T00:00:00')).toBeVisible();
     await expect(setup.page.getByText('Created At')).toBeVisible();
   });
 
