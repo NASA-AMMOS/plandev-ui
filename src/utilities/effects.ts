@@ -681,7 +681,7 @@ const effects = {
           window.open(response.url, '_blank');
         }
       } else {
-        throw new Error(response.message);
+        throw new Error(response.message, { cause: response.trace });
       }
     } catch (error: any) {
       const failureMessage = `Extension: ${extension.label} was not executed successfully`;
