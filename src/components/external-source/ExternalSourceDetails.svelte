@@ -59,6 +59,6 @@
 
   <div class="st-typography-body">
     <div class="st-typography-bold">Created At:</div>
-    {formatDate(new Date(source.created_at), $plugins.time.primary.format)}
+    {new Date(source.created_at).toISOString()}
   </div>
 </Collapse>
