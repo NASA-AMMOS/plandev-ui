@@ -40,6 +40,13 @@ export type ProfileSegment = {
  */
 export type Resource = {
   name: string;
+  /**
+   * Carried through from the profile this was sampled from, because sampling otherwise erases it and
+   * the value schema cannot stand in for it: a discrete profile of numbers and a real profile both
+   * report a `real` schema. Only this says whether the resource holds each value until the next one
+   * or ramps between them, which is what makes a Step interpolation setting meaningful or inert.
+   */
+  profileType: 'discrete' | 'real';
   schema: ValueSchema;
   values: ResourceValue[];
 };

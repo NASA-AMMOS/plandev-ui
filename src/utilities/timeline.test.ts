@@ -65,6 +65,7 @@ import {
   isExternalEventLayer,
   isNumericResourceSchema,
   isLineLayer,
+  isSupersededSameXPoint,
   isXRangeLayer,
   matchesDynamicFilter,
   paginateNodes,
@@ -536,6 +537,7 @@ test('getYAxisBounds', () => {
   const layers = timelines[0].rows[0].layers;
   const resourceWithValues: Resource = {
     name: 'resourceWithValues',
+    profileType: 'real',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
       type: 'struct',
@@ -551,6 +553,7 @@ test('getYAxisBounds', () => {
   };
   const resourceWithNoValues: Resource = {
     name: 'resourceWithNoValues',
+    profileType: 'real',
     schema: {
       items: { initial: { type: 'real' }, rate: { type: 'real' } },
       type: 'struct',
@@ -1878,6 +1881,26 @@ describe('stackLineLayerValues', () => {
     };
   }
 
+  /**
+   * A discrete profile shaped the way `sampleProfiles` emits one: each segment contributes its opening
+   * value plus a closing value at the next segment's start carrying the *same* y, tagged as a hold.
+   * Untagged values from `series` above are therefore the real-profile case, where the two values of a
+   * segment are genuinely different numbers.
+   */
+  function discreteSeries(
+    layerId: number,
+    segments: [number, number][],
+    end: number,
+    interpolation: 'step' | 'linear' = 'step',
+  ) {
+    const values: ResourceValue[] = [];
+    segments.forEach(([x, y], index) => {
+      values.push({ x, y });
+      values.push({ is_hold: true, x: index + 1 < segments.length ? segments[index + 1][0] : end, y });
+    });
+    return { interpolation, layerId, resourceName: `r${layerId}`, values };
+  }
+
   test('stacks in the order supplied, so the first series is the bottom', () => {
     const [bottom, top] = stackLineLayerValues([
       series(0, [
@@ -1948,23 +1971,50 @@ describe('stackLineLayerValues', () => {
     expect(top.values[1].y).toEqual(104);
   });
 
-  test('a step series holds its value across another series x values', () => {
+  // A discrete profile's staircase lives in its data, not in the interpolation flag: each segment
+  // closes with a second value carrying the same y. Stacking has to hold that across a grid x some
+  // other series contributed, or a step resource would be summed as a ramp it is never drawn as.
+  test('a discrete series holds its value across another series x values', () => {
     const [bottom] = stackLineLayerValues([
-      series(0, [
-        [0, 7],
-        [10, 7],
-      ]),
+      discreteSeries(
+        0,
+        [
+          [0, 7],
+          [10, 3],
+        ],
+        20,
+      ),
       series(1, [
         [0, 0],
         [5, 0],
-        [10, 0],
+        [20, 0],
       ]),
     ]);
     expect(bottom.values.map(v => [v.x, v.y])).toEqual([
       [0, 7],
       [5, 7],
-      [10, 7],
+      [10, 3],
+      [20, 3],
     ]);
+  });
+
+  // A real profile carries its own slope, so `step` has no held values to hold. Reading the mode here
+  // rather than the data would peg this flat at 0 through x=4 -- stairs the layer never draws
+  // unstacked, and a total that under-reads the ramp beneath it.
+  test('a real series in step mode still ramps through another series x values', () => {
+    const [bottom, top] = stackLineLayerValues([
+      series(0, [
+        [0, 0],
+        [10, 10],
+      ]),
+      series(1, [
+        [0, 100],
+        [4, 100],
+        [10, 100],
+      ]),
+    ]);
+    expect(bottom.values.find(v => v.x === 4)?.y).toEqual(4);
+    expect(top.values.find(v => v.x === 4)?.y).toEqual(104);
   });
 
   // A discrete segment boundary has two values at the same x. Taking the incoming segment's value is
@@ -2048,33 +2098,27 @@ describe('stackLineLayerValues', () => {
   });
 
   test('drops hold values for an interpolating series before summing', () => {
-    // Same data, read two ways: as a staircase it is 1 until x=5, as a ramp it is 3 at x=5
-    const stepped = stackLineLayerValues([
-      series(0, [
-        [0, 1],
-        [5, 1],
-        [5, 5],
-        [10, 5],
-      ]),
-    ]);
-    const ramped = stackLineLayerValues([
-      series(
-        0,
-        [
-          [0, 1],
-          [5, 1],
-          [5, 5],
-          [10, 5],
-        ],
-        'linear',
-      ),
-    ]);
-    expect(stepped[0].values.find(v => v.x === 0)?.y).toEqual(1);
-    expect(ramped[0].values.find(v => v.x === 0)?.y).toEqual(1);
-    // The staircase holds 1 right up to the boundary; the ramp is already climbing before it
-    const steppedMid = stepped[0].values.filter(v => v.x > 0 && v.x < 5).every(v => v.y === 1);
-    expect(steppedMid).toBe(true);
-    expect(ramped[0].values.find(v => v.x === 10)?.y).toEqual(5);
+    // One discrete profile read two ways, sampled at an x a second series contributes so there is
+    // something between the segment boundaries to disagree about. As a staircase it is still 1 at
+    // x=3; dropping the hold value turns the same segment into a ramp from 1 at x=0 to 5 at x=5.
+    const segments: [number, number][] = [
+      [0, 1],
+      [5, 5],
+    ];
+    const grid: [number, number | null][] = [
+      [0, 0],
+      [3, 0],
+      [10, 0],
+    ];
+    const [stepped] = stackLineLayerValues([discreteSeries(0, segments, 10), series(1, grid)]);
+    const [ramped] = stackLineLayerValues([discreteSeries(0, segments, 10, 'linear'), series(1, grid, 'linear')]);
+    expect(stepped.values.find(v => v.x === 3)?.y).toEqual(1);
+    expect(ramped.values.find(v => v.x === 3)?.y).toBeCloseTo(3.4);
+    // Both read the same at a segment boundary and at the profile's end
+    expect(stepped.values.find(v => v.x === 5)?.y).toEqual(5);
+    expect(ramped.values.find(v => v.x === 5)?.y).toEqual(5);
+    expect(stepped.values.find(v => v.x === 10)?.y).toEqual(5);
+    expect(ramped.values.find(v => v.x === 10)?.y).toEqual(5);
   });
 
   test('a single series stacks to itself, so enabling stacking on one layer changes nothing', () => {
@@ -2119,6 +2163,7 @@ describe('stackLineLayerValues', () => {
 describe('getYAxisBounds with a stacked axis', () => {
   const resource: Resource = {
     name: 'r',
+    profileType: 'real',
     schema: { type: 'real' },
     values: [
       { x: 0, y: 200 },
@@ -2369,6 +2414,47 @@ describe('isDroppableHoldPoint', () => {
   });
 });
 
+describe('isSupersededSameXPoint', () => {
+  // How a real profile arrives: each segment closes on the next segment's opening x. The two y values
+  // are the same number twice over in principle, but the closing one was derived as
+  // `initial + rate * duration` and reconstructs the stored `initial` only to the precision the model
+  // wrote them at -- so they are near, never equal, and matching on y would never fire.
+  const boundary: ResourceValue[] = [
+    { x: 0, y: 4.911995 },
+    { x: 3600, y: 4.9654622 },
+    { x: 3600, y: 4.965463 },
+    { x: 7200, y: 5.018725 },
+  ];
+
+  test('drops the closing value of a segment, which the next segment opens over', () => {
+    expect(isSupersededSameXPoint(boundary, 1)).toBe(true);
+  });
+
+  test('keeps the opening value, which is the one the next segment is defined by', () => {
+    expect(isSupersededSameXPoint(boundary, 2)).toBe(false);
+  });
+
+  // The whole point of keying on x: these differ in y by parts in ten million, so an equality test
+  // would leave both points in and the tangent damage with them.
+  test('drops it even though the two y values are not equal', () => {
+    expect(boundary[1].y).not.toEqual(boundary[2].y);
+    expect(isSupersededSameXPoint(boundary, 1)).toBe(true);
+  });
+
+  test('keeps values at distinct x, however close their y', () => {
+    expect(isSupersededSameXPoint(boundary, 0)).toBe(false);
+  });
+
+  test('keeps the last value, which has nothing after it', () => {
+    expect(isSupersededSameXPoint(boundary, 3)).toBe(false);
+  });
+
+  test('is false out of range rather than throwing', () => {
+    expect(isSupersededSameXPoint(boundary, 99)).toBe(false);
+    expect(isSupersededSameXPoint([], 0)).toBe(false);
+  });
+});
+
 describe('getPointSpriteSize', () => {
   test('leaves room around the point so taller shapes are not clipped', () => {
     expect(getPointSpriteSize(2)).toBeGreaterThan(4);
@@ -2585,6 +2671,7 @@ describe('getLineFillBaselineY on a log axis', () => {
 describe('getSmallestMagnitudeForAxis', () => {
   const resource: Resource = {
     name: 'signed',
+    profileType: 'real',
     schema: { type: 'real' },
     values: [
       { x: 1, y: 0 },
@@ -2604,7 +2691,12 @@ describe('getSmallestMagnitudeForAxis', () => {
     const layer = createTimelineLineLayer([], []);
     layer.filter.resource = 'allZero';
     const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
-    const allZero: Resource = { name: 'allZero', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    const allZero: Resource = {
+      name: 'allZero',
+      profileType: 'real',
+      schema: { type: 'real' },
+      values: [{ x: 1, y: 0 }],
+    };
     expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
   });
 });
@@ -2652,8 +2744,12 @@ describe('getLineLayerStacks', () => {
   function lineLayer(id: number, resourceName: string, yAxisId: number, interpolation?: InterpolationMode) {
     return { chartType: 'line', filter: { resource: resourceName }, id, interpolation, name: '', yAxisId } as any;
   }
-  function numericResource(name: string, values: { x: number; y: number }[]): Resource {
-    return { name, schema: { type: 'real' }, values };
+  function numericResource(
+    name: string,
+    values: { x: number; y: number }[],
+    profileType: Resource['profileType'] = 'real',
+  ): Resource {
+    return { name, profileType, schema: { type: 'real' }, values };
   }
 
   const axisStacked = createYAxis([], { domainFitMode: 'fitPlan', id: 1, stack: true });
@@ -2710,10 +2806,14 @@ describe('getLineLayerStacks', () => {
   // The stacking pass emits values already in the shape the layer draws, so tagging them would make
   // LayerLine drop points and pull the line out of alignment with its own baseline
   test('leaves the stacked values untagged so they are not thinned a second time', () => {
-    const held = numericResource('held', [
-      { x: 0, y: 5 },
-      { x: 10, y: 5 },
-    ]);
+    const held = numericResource(
+      'held',
+      [
+        { x: 0, y: 5 },
+        { x: 10, y: 5 },
+      ],
+      'discrete',
+    );
     (held.values[1] as ResourceValue).is_hold = true;
     const stacks = getLineLayerStacks([axisStacked], [lineLayer(1, 'held', 1), lineLayer(2, 'b', 1)], [held, b]);
     expect(stacks[1].resource.values.every(value => value.is_hold === undefined)).toBe(true);
@@ -2722,7 +2822,12 @@ describe('getLineLayerStacks', () => {
   // A layer whose resource cannot be summed is left out entirely rather than contributing a
   // meaningless number, which also means it keeps drawing normally
   test('skips a layer whose resource is not numeric, and gives up if that leaves one layer', () => {
-    const enumResource: Resource = { name: 'e', schema: { type: 'string' }, values: [{ x: 0, y: 'ON' }] };
+    const enumResource: Resource = {
+      name: 'e',
+      profileType: 'discrete',
+      schema: { type: 'string' },
+      values: [{ x: 0, y: 'ON' }],
+    };
     expect(getLineLayerStacks([axisStacked], [lineLayer(1, 'a', 1), lineLayer(2, 'e', 1)], [a, enumResource])).toEqual(
       {},
     );
@@ -2788,6 +2893,7 @@ describe('getLineLayerStacks', () => {
 describe('getYAxisBounds stats', () => {
   const signed: Resource = {
     name: 'signed',
+    profileType: 'real',
     schema: { type: 'real' },
     values: [
       { x: 1, y: 0 },
@@ -2806,7 +2912,12 @@ describe('getYAxisBounds stats', () => {
   });
 
   test('leaves the stat unset when there is no non-zero data to derive it from', () => {
-    const allZero: Resource = { name: 'signed', schema: { type: 'real' }, values: [{ x: 1, y: 0 }] };
+    const allZero: Resource = {
+      name: 'signed',
+      profileType: 'real',
+      schema: { type: 'real' },
+      values: [{ x: 1, y: 0 }],
+    };
     const stats: { smallestMagnitude?: number } = {};
     getYAxisBounds(axis, [layer], [allZero], undefined, {}, stats);
     expect(stats.smallestMagnitude).toBeUndefined();
@@ -2824,6 +2935,7 @@ describe('getYAxisBounds stats', () => {
         baseline: [0, 0],
         resource: {
           name: 'signed',
+          profileType: 'real' as const,
           schema: { type: 'real' as const },
           values: [
             { x: 1, y: 4 },

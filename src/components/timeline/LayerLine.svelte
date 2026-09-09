@@ -44,6 +44,7 @@
     getPointSymbolSize,
     getYScale,
     isDroppableHoldPoint,
+    isSupersededSameXPoint,
     minMaxDecimation,
   } from '../../utilities/timeline';
 
@@ -125,6 +126,11 @@
   $: effectiveInterpolation = ordinalScale ? 'step' : interpolation;
   $: dropHoldPoints = effectiveInterpolation !== 'step';
   /**
+   * Only the curved mode collapses values sharing an x. The straight modes draw them harmlessly, and
+   * keeping them is what lets a real profile's genuine discontinuity still render as a jump.
+   */
+  $: collapseSameXPoints = effectiveInterpolation === 'smooth';
+  /**
    * Every style input the canvas draw depends on, resolved and sanitized in one place. draw() reads
    * this rather than the raw props because Svelte does not track a function body's dependencies --
    * referencing this single object in the reactive guard below is what makes any style change trigger
@@ -174,7 +180,7 @@
   // dropHoldPoints is passed rather than read inside the call, since Svelte does not track what a
   // function body reads -- reading it in there would leave the point set stale until the resource
   // data next changed
-  $: processResourcesToLinePoints(resources, dropHoldPoints);
+  $: processResourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints);
   $: offscreenPoint =
     ctx && generateOffscreenPoint(lineDrawOptions.pointColor, lineDrawOptions.pointRadius, lineDrawOptions.pointShape);
 
@@ -645,7 +651,7 @@
   }
 
   /* TODO this is getting called too often */
-  function processResourcesToLinePoints(resources: Resource[], dropHoldPoints: boolean) {
+  function processResourcesToLinePoints(resources: Resource[], dropHoldPoints: boolean, collapseSameXPoints: boolean) {
     if (typeof window === 'undefined') {
       return;
     }
@@ -655,12 +661,15 @@
     points = [];
     tempPoints = [];
 
-    processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources, dropHoldPoints));
+    processingRequest = window.requestAnimationFrame(() =>
+      resourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints),
+    );
   }
 
   function resourcesToLinePoints(
     resources: Resource[],
     dropHoldPoints: boolean,
+    collapseSameXPoints: boolean,
     resourceStartIndex = 0,
     valueStartIndex = 0,
     startId = 0,
@@ -692,7 +701,7 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }
@@ -710,6 +719,9 @@
           if (dropHoldPoints && isDroppableHoldPoint(values, valueIndex)) {
             continue;
           }
+          if (collapseSameXPoints && isSupersededSameXPoint(values, valueIndex)) {
+            continue;
+          }
           const { x } = value;
           const y = value.y as number;
           tempPoints.push({
@@ -725,7 +737,7 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }
@@ -749,7 +761,7 @@
 
           if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
             processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, dropHoldPoints, resourceIndex, valueIndex + 1, id),
+              resourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints, resourceIndex, valueIndex + 1, id),
             );
             return;
           }

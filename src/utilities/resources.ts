@@ -65,7 +65,7 @@ export function sampleProfiles(
         }
       }
 
-      resources.push({ name, schema, values });
+      resources.push({ name, profileType: type, schema, values });
     }
   }
 

@@ -113,6 +113,7 @@ describe('sampleProfiles', () => {
     const expectedResources: Resource[] = [
       {
         name: '/simple_data/b/volume',
+        profileType: 'real',
         schema: {
           items: { initial: { type: 'real' }, rate: { type: 'real' } },
           type: 'struct',
@@ -128,6 +129,7 @@ describe('sampleProfiles', () => {
       },
       {
         name: '/simple_data/activities_executed',
+        profileType: 'discrete',
         schema: { type: 'int' },
         values: [
           { is_gap: false, x: 1661990400000, y: 0 },

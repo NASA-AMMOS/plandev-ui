@@ -522,8 +522,15 @@ function getStackXGrid(series: StackInputSeries[]): number[] {
  * Null rather than zero on purpose. Zero would read as "this contributed nothing", which for a power
  * or data-volume budget is a claim the data does not make -- the honest reading of a gap is that the
  * total is unknown there.
+ *
+ * Interpolates unconditionally, without consulting the layer's interpolation mode. The staircase of a
+ * discrete profile lives in its data -- `sampleProfiles` closes each discrete segment with a second
+ * value carrying the *same* y -- so interpolating across a hold segment returns exactly the held
+ * value, and a segment boundary is caught by the `left.x === x` case below. Reading the mode here
+ * instead would hold a *real* profile's value flat across grid points contributed by other series,
+ * turning a ramp into stairs it is never drawn with unstacked, and under-reading the stack total.
  */
-function resampleOntoStackGrid(values: ResourceValue[], grid: number[], stepwise: boolean): (number | null)[] {
+function resampleOntoStackGrid(values: ResourceValue[], grid: number[]): (number | null)[] {
   const out: (number | null)[] = new Array(grid.length).fill(null);
   if (values.length === 0) {
     return out;
@@ -543,7 +550,7 @@ function resampleOntoStackGrid(values: ResourceValue[], grid: number[], stepwise
     }
     const left = values[i];
     const leftY = typeof left.y === 'number' ? left.y : null;
-    if (stepwise || left.x === x) {
+    if (left.x === x) {
       out[g] = leftY;
       continue;
     }
@@ -568,8 +575,9 @@ export type StackInputSeries = {
  * Stacks the given series in the order supplied, resampled onto their shared x grid.
  *
  * Order is the layer order on the axis, so the first series is the bottom of the stack. Each series
- * is resampled with *its own* interpolation mode, so a step resource and a linear one stack correctly
- * together rather than one being forced into the other's shape.
+ * is prepared under *its own* interpolation mode, so a step resource and a linear one stack correctly
+ * together rather than one being forced into the other's shape. The mode reaches the resampling only
+ * through the data it prepares -- see `resampleOntoStackGrid`.
  *
  * Once any series is undefined at an x, every series above it is undefined there too: a total is only
  * as knowable as its least known term. That is why a gap low in the stack punches through the layers
@@ -595,7 +603,7 @@ export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[
     // Hold values are dropped for an interpolating layer before resampling, exactly as LayerLine drops
     // them before drawing -- otherwise the stack would sum a shape the layer does not draw
     const prepared = stepwise ? values : values.filter((_value, index) => !isDroppableHoldPoint(values, index));
-    const resampled = resampleOntoStackGrid(prepared, grid, stepwise);
+    const resampled = resampleOntoStackGrid(prepared, grid);
     return {
       layerId,
       resourceName,
@@ -722,6 +730,21 @@ export function getHorizontalGuideBand(
 }
 
 /**
+ * Whether a value schema is the one Merlin gives a *real* -- piecewise-linear -- profile: a struct of
+ * `initial` and `rate`, which is how `Registrar.real` registers every such resource. A discrete profile
+ * of numbers reports a plain `real` or `int` schema instead, so this is the one place the two are
+ * distinguishable without a simulation.
+ *
+ * Inferred from the schema rather than read off the profile's own type on purpose: the schema comes
+ * from the mission model and is known before a plan has ever been simulated, while a profile type only
+ * exists once a dataset does. A resource registered with metadata keeps its `type` and `items` beside
+ * the added `metadata` key, so it still matches.
+ */
+export function isRealProfileSchema(schema: ValueSchema): boolean {
+  return schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real';
+}
+
+/**
  * Whether a resource schema describes a numeric magnitude, and therefore plots against a numeric y
  * scale rather than an ordinal one.
  *
@@ -732,12 +755,7 @@ export function getHorizontalGuideBand(
  */
 export function isNumericResourceSchema(schema: ValueSchema): boolean {
   const { type } = schema;
-  return (
-    type === 'int' ||
-    type === 'real' ||
-    type === 'duration' ||
-    (type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
-  );
+  return type === 'int' || type === 'real' || type === 'duration' || isRealProfileSchema(schema);
 }
 
 /** What a stacked layer needs in order to draw: its cumulative series, and the total beneath it. */
@@ -789,6 +807,9 @@ export function getLineLayerStacks(
         baseline: series.values.map(value => value.y0),
         resource: {
           name: series.resourceName,
+          // Still the source profile's type, which is what this field describes everywhere else, even
+          // though the values below no longer carry its holds
+          profileType: resourcesByLayerId[series.layerId].profileType,
           schema: resourcesByLayerId[series.layerId].schema,
           // Untagged on purpose: these values are already resampled to the shape the layer draws, so a
           // second round of hold dropping downstream would thin the stack out of alignment with its
@@ -811,6 +832,33 @@ export function getLineLayerStacks(
  */
 export function isDroppableHoldPoint(values: ResourceValue[], valueIndex: number): boolean {
   return values[valueIndex]?.is_hold === true && valueIndex < values.length - 1;
+}
+
+/**
+ * Whether the value at `valueIndex` is superseded by the value after it, which sits at the same x.
+ *
+ * A real profile emits two values per segment, and a segment's closing value lands exactly on the next
+ * segment's opening x -- so every internal boundary carries two values at one instant. A straight line
+ * does not notice. `curveMonotoneX` does: its tangents divide by the gap between consecutive x values,
+ * and a gap of zero drives that sample's tangent either to zero or to twice the true slope. The
+ * smoothed line then flattens at some samples and doubles its slope at others, which reads as a ripple
+ * running along what is actually a straight ramp.
+ *
+ * Deliberately keyed on x alone. The two values almost never agree exactly on y: the one being dropped
+ * was derived as `initial + rate * duration`, and it reconstructs the next segment's stored `initial`
+ * only to the precision the model wrote those numbers at -- parts in ten million, far too close to see
+ * and far too far apart to compare with `===`.
+ *
+ * The later value wins, matching how a shared x is resolved elsewhere here (see
+ * `resampleOntoStackGrid`): it is the incoming segment's own opening value rather than a derived one.
+ *
+ * Only consulted for a curved line. Step and Linear keep both values, so a real profile that genuinely
+ * jumps still draws its discontinuity -- and a curve through a vertical jump is not something a
+ * single-valued spline can express anyway.
+ */
+export function isSupersededSameXPoint(values: ResourceValue[], valueIndex: number): boolean {
+  const next = values[valueIndex + 1];
+  return next !== undefined && next.x === values[valueIndex]?.x;
 }
 
 /**

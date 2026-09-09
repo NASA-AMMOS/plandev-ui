@@ -4,6 +4,9 @@
   import SettingsIcon from '@nasa-jpl/stellar/icons/settings.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { ViewLineLayerColorPresets } from '../../../constants/view';
+  import { resourceTypes } from '../../../stores/simulation';
+  import { timelineResourcesByName } from '../../../stores/timelineResourceStatus';
+  import type { Resource, ResourceType } from '../../../types/simulation';
   import type { Axis, ExternalEventLayer, Layer, LineLayer, XRangeLayer } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
   import {
@@ -18,6 +21,7 @@
     clampOpacity,
     isExternalEventLayer,
     isLineLayer,
+    isRealProfileSchema,
     isXRangeLayer,
   } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
@@ -46,6 +50,35 @@
       layerAsExternalEvent = layer;
     }
   }
+
+  /**
+   * A real profile carries its own slope between samples, so it has no held values for Step to hold:
+   * Step and Linear draw the same line, and only Smooth changes anything. Step is dropped from the
+   * choices rather than left in to do nothing.
+   *
+   * Answered from the loaded resource when a row has one, and from the mission model's schema
+   * otherwise -- so the control reads the same before a plan has ever been simulated as after, which
+   * is what makes hiding an option safe rather than a control that appears and disappears with
+   * simulation state. False when neither source knows the resource, which leaves every option shown.
+   */
+  $: isRealProfile = getIsRealProfile(layer.filter.resource, $timelineResourcesByName, $resourceTypes);
+  $: storedInterpolation = isLineLayer(layer) ? (layer.interpolation ?? DEFAULT_INTERPOLATION) : DEFAULT_INTERPOLATION;
+  /**
+   * A view saved before the resource was known to be real can still hold `step`. Shown as Linear,
+   * which is what it draws, rather than written back -- rewriting a stored value on open would edit
+   * the user's view behind their back to no visible effect.
+   */
+  $: selectedInterpolation = isRealProfile && storedInterpolation === 'step' ? 'linear' : storedInterpolation;
+  $: interpolationOptions = isRealProfile
+    ? [
+        { id: 'linear', label: 'Linear' },
+        { id: 'smooth', label: 'Smooth' },
+      ]
+    : [
+        { id: 'step', label: 'Step' },
+        { id: 'linear', label: 'Linear' },
+        { id: 'smooth', label: 'Smooth' },
+      ];
 
   const dispatch = createEventDispatcher<{
     delete: void;
@@ -77,6 +110,27 @@
       return;
     }
     dispatch('input', { name, value });
+  }
+
+  /**
+   * The loaded resource wins over the schema because it is the profile's own type rather than an
+   * inference from it -- and it is the only source for an external resource, which never appears in
+   * the mission model's resource types.
+   */
+  function getIsRealProfile(
+    resourceName: string | undefined,
+    loadedResources: Map<string, Resource>,
+    types: ResourceType[],
+  ): boolean {
+    if (!resourceName) {
+      return false;
+    }
+    const loaded = loadedResources.get(resourceName);
+    if (loaded) {
+      return loaded.profileType === 'real';
+    }
+    const schema = types.find(type => type.name === resourceName)?.schema;
+    return schema ? isRealProfileSchema(schema) : false;
   }
 
   function onValueAppearanceInput(event: CustomEvent<{ name: string; value: object }>) {
@@ -187,18 +241,16 @@
           <div class="flex min-w-0 items-center gap-1">
             <label for="interpolation">Interpolation</label>
             <InfoTip
-              content="How the line gets from one sample to the next. Step holds each value until the next one changes it, which is how a discrete resource actually behaves. Linear and Smooth draw between the samples instead, for a resource that really does change continuously."
+              content={isRealProfile
+                ? 'How the line gets from one sample to the next. Linear draws straight between them, Smooth along a curve that will not overshoot a value the model never produced.'
+                : 'How the line gets from one sample to the next. Step holds each value until the next one changes it, which is how a discrete resource actually behaves. Linear and Smooth draw between the samples instead, for a resource that really does change continuously.'}
             />
           </div>
           <TimelineEditorOptionButtons
             ariaLabel="Interpolation"
             id="interpolation"
-            options={[
-              { id: 'step', label: 'Step' },
-              { id: 'linear', label: 'Linear' },
-              { id: 'smooth', label: 'Smooth' },
-            ]}
-            selectedId={layerAsLine.interpolation ?? DEFAULT_INTERPOLATION}
+            options={interpolationOptions}
+            selectedId={selectedInterpolation}
             on:change={({ detail }) => dispatch('input', { name: 'interpolation', value: detail.id })}
           />
         </Input>
