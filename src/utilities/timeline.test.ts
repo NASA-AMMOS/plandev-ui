@@ -2067,6 +2067,24 @@ describe('stackLineLayerValues', () => {
     expect(top.values.find(v => v.x === 5)?.y).toBeNull();
   });
 
+  // The break is per x, not a latch: `broken` is indexed by grid position, so a series that comes back
+  // has to carry the totals above it again rather than staying dark for the rest of the row.
+  test('a gap that recovers leaves the totals above it whole again', () => {
+    const [, top] = stackLineLayerValues([
+      series(0, [
+        [0, 1],
+        [5, null],
+        [10, 1],
+      ]),
+      series(1, [
+        [0, 4],
+        [5, 4],
+        [10, 4],
+      ]),
+    ]);
+    expect(top.values.map(v => v.y)).toEqual([5, null, 5]);
+  });
+
   test('is undefined outside a series own time range rather than extrapolating', () => {
     const [, top] = stackLineLayerValues([
       series(0, [

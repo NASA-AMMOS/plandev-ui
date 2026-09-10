@@ -153,7 +153,7 @@
         <div class="flex min-w-0 items-center gap-1">
           <label for="stack">Stack Layers</label>
           <InfoTip
-            content="Sums this axis's line layers bottom-up in layer order, so each line sits on the total of the ones beneath it and the top line is the total. Area fills follow, stopping at the layer below rather than at zero."
+            content="Sums this axis's line layers bottom-up in layer order, so each line sits on the total of the ones beneath it and the top line is the total. Area fills follow, stopping at the layer below rather than at zero. Where any layer has a gap, every layer above it breaks too -- a total is only as known as its least known term. Stacked lines are drawn straight between samples whatever their interpolation is set to, since the sum is only exact at the samples."
           />
         </div>
         <input
@@ -179,7 +179,7 @@
           on:change={event => updateYAxisScaleType(event)}
         >
           <option value="linear">Linear</option>
-          <option value="log">Logarithmic</option>
+          <option value="log">Logarithmic (symlog)</option>
         </select>
       </Input>
       {#if (yAxis.scaleType ?? DEFAULT_AXIS_SCALE_TYPE) === 'log'}

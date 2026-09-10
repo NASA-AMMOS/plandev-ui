@@ -122,8 +122,20 @@
    * states. Only reachable through the curve today, since x-range-as-line-plot is the only ordinal
    * caller and that layer type does not expose interpolation; the categorical branches of
    * resourcesToLinePoints keep their hold values regardless.
+   *
+   * Pinned to 'linear' on a stacked layer, because a stack's bands have to share their edges. A band
+   * is bounded above by its own line and below by `stackBaseline`, which is the *previous* layer's
+   * cumulative y at the same x -- so the two layers draw one shared boundary twice, each under its own
+   * interpolation. Let them disagree and a smooth layer under a linear one leaves a sliver of gap or
+   * overlap between the bands everywhere the spline departs from the chord.
+   *
+   * Linear is the mode that is also *true* here. `stackLineLayerValues` sums onto the union of every
+   * series' breakpoints, where summing piecewise-linear functions is exact, so the polyline through
+   * those points is the stack -- whereas curveMonotoneX would round off a total that was already
+   * correct. Honoring 'smooth' properly would mean summing the splines rather than smoothing the sum,
+   * which no single curve can represent: the sum of two monotone cubics is not a monotone cubic.
    */
-  $: effectiveInterpolation = ordinalScale ? 'step' : interpolation;
+  $: effectiveInterpolation = ordinalScale ? 'step' : stackBaseline ? 'linear' : interpolation;
   $: dropHoldPoints = effectiveInterpolation !== 'step';
   /**
    * Only the curved mode collapses values sharing an x. The straight modes draw them harmlessly, and
