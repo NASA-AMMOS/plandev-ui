@@ -161,6 +161,9 @@ import type {
   PlanMetadata,
   PlanSchema,
   PlanSlim,
+  RunFileDescription,
+  RunImportResult,
+  RunTransferNotice,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type {
@@ -517,6 +520,30 @@ async function bulkMoveWorkspaceItems(
   }
 
   return { renamedFiles, skippedFiles };
+}
+
+/**
+ * A run-transfer refusal, rendered for a human, or null when `error` is not one.
+ *
+ * The gateway refuses a run file with a 422 carrying the LAYER that refused it and one notice per
+ * problem, which together are the whole message: "the schema refused this" and "the ingest gate
+ * refused this" send a producer to different places. `reqGateway` flattens every failure to
+ * `statusText + '\n' + body`, which is right for an error a user can only report and wrong for this
+ * one, so the structure is recovered here rather than by giving this one call its own transport.
+ */
+function runTransferRefusal(error: unknown): string | null {
+  const text = error instanceof Error ? error.message : '';
+  const body = text.slice(text.indexOf('\n') + 1);
+  try {
+    const parsed = JSON.parse(body);
+    if (!parsed || parsed.success !== false || !Array.isArray(parsed.notices)) {
+      return null;
+    }
+    const messages = parsed.notices.map((notice: RunTransferNotice) => notice.message).join('\n');
+    return parsed.layer ? `${messages}\n(refused by the ${parsed.layer})` : messages;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -3269,7 +3296,11 @@ const effects = {
 
       if (confirm) {
         const { id, jar_id } = model;
-        await effects.deleteFile(jar_id, user);
+        // A model PlanDev did not compile has no jar to delete. Deleting file `null` unconditionally
+        // threw, which left the model itself in place because the delete below never ran.
+        if (jar_id !== null) {
+          await effects.deleteFile(jar_id, user);
+        }
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
@@ -4005,6 +4036,32 @@ const effects = {
     }
 
     return false;
+  },
+
+  /**
+   * Ask the gateway what a chosen .json file is, before anything is created.
+   *
+   * A run file and a plan export are both .json and the UI cannot tell them apart by name. It could
+   * read the envelope itself, but the gateway already compiles the schema and owns the answer -- so
+   * asking it means the file that is DESCRIBED and the file that is IMPORTED are judged by the same
+   * code, and an invalid one is refused at the file picker rather than after the planner has filled
+   * in a form.
+   *
+   * Returns null on a refusal so the caller can fall back to reading it as a plan: a file that is
+   * not a run transfer is not an error here, it is the other case.
+   */
+  async describeRunFile(file: File, user: User | null): Promise<RunFileDescription | null> {
+    try {
+      const body = new FormData();
+      body.append('run_file', file, file.name);
+      return await reqGateway<RunFileDescription>('/describeRunFile', 'POST', body, user, true);
+    } catch (e) {
+      const refusal = runTransferRefusal(e);
+      if (refusal !== null) {
+        throw new Error(refusal);
+      }
+      return null;
+    }
   },
 
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
@@ -5651,6 +5708,68 @@ const effects = {
       catchError('log', 'Unable to import plan', e as Error);
       creatingPlanStore.set(false);
       return { error: e as Error };
+    }
+  },
+
+  /**
+   * Create a plan from a recorded run: a simulation PlanDev did not perform.
+   *
+   * Unlike `importPlan`, the file may declare its own mission model, so `modelId` is optional -- and
+   * when the file declares one there is nothing for the planner to pick, because attaching a
+   * recorded run to some other model would check its spans against types it was not produced from.
+   */
+  async importRun(
+    name: string,
+    modelId: number | null,
+    startTime: string,
+    endTime: string,
+    simulationTemplateId: number | null,
+    tagIds: number[],
+    files: FileList,
+    user: User | null,
+  ): Promise<{ error?: Error; plan?: PlanSlim }> {
+    try {
+      if (!gatewayPermissions.IMPORT_PLAN(user)) {
+        throwPermissionError('import a plan');
+      }
+
+      const requestStartTime = performance.now();
+
+      creatingPlanStore.set(true);
+
+      const file: File = files[0];
+
+      const duration = getIntervalFromDoyRange(startTime, endTime);
+
+      const body = new FormData();
+      body.append('name', `${name}`);
+      if (modelId !== null) {
+        body.append('model_id', `${modelId}`);
+      }
+      body.append('start_time', `${startTime}`);
+      body.append('duration', `${duration}`);
+      if (simulationTemplateId !== null) {
+        body.append('simulation_template_id', `${simulationTemplateId}`);
+      }
+      body.append('tags', JSON.stringify(tagIds));
+      body.append('run_file', file, file.name);
+
+      const result = await reqGateway<RunImportResult | null>('/importRun', 'POST', body, user, true);
+
+      creatingPlanStore.set(false);
+      if (result?.plan != null) {
+        logMessage('log', `Imported recorded run "${name}".`, { duration: performance.now() - requestStartTime });
+        return { plan: result.plan };
+      } else {
+        throw new Error('Run import failed');
+      }
+    } catch (e) {
+      // The refusal messages are the product here: they name the layer and the problem, and a
+      // planner handing the file back to whoever produced it needs both.
+      const error = new Error(runTransferRefusal(e) ?? (e as Error).message);
+      catchError('log', 'Unable to import recorded run', error);
+      creatingPlanStore.set(false);
+      return { error };
     }
   },
 

@@ -150,6 +150,45 @@ export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation
   sim_id: number;
 };
 
+/**
+ * A run transfer: one recorded simulation, as a file. The model's declared types, the directives the
+ * run was performed against, and the profiles and spans it produced.
+ *
+ * Only the envelope is typed here. Everything inside is the gateway's to validate -- it compiles the
+ * format's JSON Schema and refuses the file long before this type would have helped -- and a second
+ * description of the format in the UI is a second thing to keep in step with it.
+ */
+export type RunTransfer = {
+  kind: 'plandev-run';
+  plan: PlanTransfer;
+  version: string;
+};
+
+/** One thing the gateway has to say about a file, addressed to whoever chose it. */
+export type RunTransferNotice = {
+  message: string;
+  severity: 'error' | 'info' | 'warning';
+  /** What the notice is about. The UI drops a notice that names nothing. */
+  subjects: string[];
+};
+
+export type RunFileDescription = {
+  isRunTransfer: boolean;
+  notices: RunTransferNotice[];
+  success: boolean;
+};
+
+export type RunImportResult = {
+  /** The file's own directive keyspace, mapped to the ids Postgres assigned. */
+  localIds: Record<string, number>;
+  modelId: number;
+  notices: RunTransferNotice[];
+  plan: PlanSlim;
+  /** True when the file's declaration matched a model PlanDev already had, so no second one was made. */
+  reusedExistingModel: boolean;
+  simulationDatasetId: number | null;
+};
+
 export type PlanMetadata = Pick<
   PlanSchema,
   | 'id'

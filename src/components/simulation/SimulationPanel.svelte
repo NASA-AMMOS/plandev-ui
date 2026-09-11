@@ -18,6 +18,7 @@
     simulationDatasetsAll,
     simulationDatasetsPlan,
     simulationStatus,
+    simulationUnavailableReason,
   } from '../../stores/simulation';
   import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
@@ -147,7 +148,10 @@
       }
     });
   }
-  $: if ($startTimeField.invalid || $endTimeField.invalid) {
+  $: if ($simulationUnavailableReason) {
+    simulateButtonTooltip = $simulationUnavailableReason;
+    reSimulateButtonTooltip = $simulationUnavailableReason;
+  } else if ($startTimeField.invalid || $endTimeField.invalid) {
     simulateButtonTooltip = 'Simulation start and end times are not valid';
     reSimulateButtonTooltip = 'Simulation start and end times are not valid';
   } else if (enableReSimulation) {
@@ -168,7 +172,12 @@
     filteredSimulationDatasets = $simulationDatasetsPlan;
   }
 
+  // The model check comes FIRST and is not folded into `enableSimulation`. A model PlanDev cannot
+  // simulate makes `enableSimulation` false, which is exactly the condition that would otherwise
+  // offer Re-Run -- so the results of an imported run would grow a button to re-run a simulation
+  // that never happened here.
   $: enableReSimulation =
+    $simulationUnavailableReason === null &&
     !$enableSimulation &&
     ($simulationStatus === Status.Complete ||
       $simulationStatus === Status.Canceled ||
@@ -378,10 +387,10 @@
           [
             permissionHandler,
             {
-              hasPermission: hasRunPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to run a simulation',
+              hasPermission: $simulationUnavailableReason === null && hasRunPermission,
+              permissionError:
+                $simulationUnavailableReason ??
+                ($planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to run a simulation'),
             },
           ],
         ]}
@@ -391,6 +400,12 @@
   </svelte:fragment>
 
   <svelte:fragment slot="body">
+    {#if $simulationUnavailableReason}
+      <div class="simulation-unavailable st-typography-body">
+        <strong>This model cannot be simulated by PlanDev.</strong>
+        {$simulationUnavailableReason}
+      </div>
+    {/if}
     <fieldset>
       <Collapse title="General">
         <DatePickerField
@@ -527,6 +542,14 @@
 </Panel>
 
 <style>
+  .simulation-unavailable {
+    background: var(--st-gray-10);
+    border-left: 2px solid var(--st-gray-40);
+    color: var(--st-gray-70);
+    margin: 8px;
+    padding: 8px 12px;
+  }
+
   .simulation-history {
     display: flex;
     flex-direction: column;

@@ -108,6 +108,7 @@
     satisfiedSchedulingGoalCount,
     schedulingAnalysisStatus,
     schedulingGoalCount,
+    schedulingUnavailableReason,
   } from '../../../stores/scheduling';
   import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
   import {
@@ -124,6 +125,7 @@
     simulationEvents,
     simulationProgress,
     simulationStatus,
+    simulationUnavailableReason,
     spans,
   } from '../../../stores/simulation';
   import { getUserStore } from '../../../stores/user';
@@ -834,14 +836,14 @@
               title={!compactNavMode ? 'Simulation' : ''}
               menuTitle="Simulation Status"
               buttonText="Simulate"
-              buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-                ? 'Simulation up-to-date'
-                : ''}
-              hasPermission={hasSimulatePermission}
+              buttonTooltipContent={$simulationUnavailableReason ??
+                ($simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+                  ? 'Simulation up-to-date'
+                  : '')}
+              hasPermission={$simulationUnavailableReason === null && hasSimulatePermission}
               indeterminate={$simulationProgress === 0}
-              permissionError={$planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to run a simulation'}
+              permissionError={$simulationUnavailableReason ??
+                ($planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to run a simulation')}
               status={$simulationStatus}
               progress={$simulationProgress}
               disabled={!$enableSimulation}
@@ -964,11 +966,13 @@
               title={!compactNavMode ? 'Scheduling' : ''}
               menuTitle="Scheduling Analysis Status"
               buttonText="Analyze Goal Satisfaction"
+              buttonTooltipContent={$schedulingUnavailableReason ?? ''}
               disabled={!$enableScheduling}
-              hasPermission={hasScheduleAnalysisPermission}
-              permissionError={$planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to run a scheduling analysis'}
+              hasPermission={$schedulingUnavailableReason === null && hasScheduleAnalysisPermission}
+              permissionError={$schedulingUnavailableReason ??
+                ($planReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to run a scheduling analysis')}
               status={$schedulingAnalysisStatus}
               statusText={schedulingStatusText}
               on:click={() => effects.schedule(true, $plan, $user)}

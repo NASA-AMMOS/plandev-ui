@@ -17,6 +17,7 @@ import type {
   SchedulingRequest,
 } from '../types/scheduling';
 import gql from '../utilities/gql';
+import { PLANDEV_SCHEDULING, capabilityUnavailableReason } from '../utilities/modelCapabilities';
 import { convertResponseToMetadata } from '../utilities/scheduling';
 import { derivedDeeply } from './derivedDeeply';
 import { simulationDatasetsPlan } from './simulation';
@@ -277,9 +278,30 @@ export const schedulingAnalysisStatus = derived(
   },
 );
 
+/**
+ * Why PlanDev's scheduler cannot run against this plan's model, or null when it can.
+ *
+ * The scheduler evaluates goals by simulating, so a model PlanDev cannot simulate is a model it
+ * cannot schedule for -- and merlin's scheduler already refuses one. Only the model's declaration
+ * knows, so it says so and merlin stores it.
+ *
+ * The store holds the declaration's own SENTENCE rather than a boolean, so the UI can say why
+ * without containing a branch that names a kind of model -- which is the whole reason capabilities
+ * are a document and not a column per feature.
+ */
+export const schedulingUnavailableReason: Readable<string | null> = derived([plan], ([$plan]) =>
+  capabilityUnavailableReason(PLANDEV_SCHEDULING, $plan?.model),
+);
+
 export const enableScheduling: Readable<boolean> = derived(
-  [schedulingGoalSpecifications],
-  ([$schedulingGoalSpecifications]) => {
+  [schedulingGoalSpecifications, schedulingUnavailableReason],
+  ([$schedulingGoalSpecifications, $schedulingUnavailableReason]) => {
+    // Two independent reasons to be disabled, kept separate on purpose: having no enabled goals is
+    // a state the planner can fix from this panel, while the model not supporting scheduling at all
+    // is not. The tooltip distinguishes them; this only has to be the conjunction.
+    if ($schedulingUnavailableReason !== null) {
+      return false;
+    }
     return (
       $schedulingGoalSpecifications.filter(
         (schedulingSpecGoal: SchedulingGoalPlanSpecification) => schedulingSpecGoal.enabled,

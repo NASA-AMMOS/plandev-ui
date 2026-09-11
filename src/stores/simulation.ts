@@ -16,8 +16,9 @@ import type {
 import type { Axis } from '../types/timeline';
 import { createSpanUtilityMaps } from '../utilities/activities';
 import gql from '../utilities/gql';
+import { SIMULATION, capabilityUnavailableReason } from '../utilities/modelCapabilities';
 import { getSimulationProgress } from '../utilities/simulation';
-import { planDatasets, planId, planModelId, planModelRevision, planRevision } from './plan';
+import { plan, planDatasets, planId, planModelId, planModelRevision, planRevision } from './plan';
 import { gqlSubscribable } from './subscribable';
 
 /* Writeable. */
@@ -166,9 +167,27 @@ export const simulationProgress: Readable<number> = derived(
   0,
 );
 
-export const enableSimulation: Readable<boolean> = derived(simulationStatus, $simulationStatus => {
-  return $simulationStatus === Status.Modified || $simulationStatus === null;
-});
+/**
+ * Why PlanDev cannot simulate this plan's model, or null when it can.
+ *
+ * A model declared by an imported run has no simulator behind it: its results were recorded
+ * elsewhere and handed to PlanDev as a file. That is not a transient state to retry, so the control
+ * says so rather than producing a failure -- and it says it in the declaration's own words, so the
+ * UI never has to know what produced the run.
+ */
+export const simulationUnavailableReason: Readable<string | null> = derived([plan], ([$plan]) =>
+  capabilityUnavailableReason(SIMULATION, $plan?.model),
+);
+
+export const enableSimulation: Readable<boolean> = derived(
+  [simulationStatus, simulationUnavailableReason],
+  ([$simulationStatus, $simulationUnavailableReason]) => {
+    if ($simulationUnavailableReason !== null) {
+      return false;
+    }
+    return $simulationStatus === Status.Modified || $simulationStatus === null;
+  },
+);
 
 export const selectedSpan = derived([spansMap, selectedSpanId], ([$spansMap, $selectedSpanId]) => {
   if ($selectedSpanId !== null && $spansMap !== null) {

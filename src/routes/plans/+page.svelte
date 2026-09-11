@@ -38,14 +38,21 @@
   import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
-  import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
+  import type {
+    DeprecatedPlanTransfer,
+    Plan,
+    PlanSlim,
+    PlanTransfer,
+    RunFileDescription,
+    RunTransfer,
+  } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
   import { parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
+  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer, isRunTransfer } from '../../utilities/plan';
   import {
     convertDoyToYmd,
     formatDate,
@@ -214,6 +221,8 @@
   ]);
   let planUploadFiles: FileList | undefined;
   let planUploadFilesError: string | null = null;
+  /** Non-null once the chosen file turns out to be a recorded run. See `parsePlanFile`. */
+  let runFileDescription: RunFileDescription | null = null;
   let planUploadFileInput: HTMLInputElement;
   let simTemplateField = field<number | null>(null);
 
@@ -327,18 +336,29 @@
       },
     ];
   }
+  // A recorded run declares its own model, so there is nothing to pick and nothing to require. The
+  // rest of the form still applies: the plan's name and window are the planner's to choose, and the
+  // file's own values are only a prefill.
   $: createButtonEnabled =
     !$plansLoading &&
     $endTimeField.dirtyAndValid &&
-    $modelIdField.dirtyAndValid &&
+    (runFileDescription !== null || $modelIdField.dirtyAndValid) &&
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid &&
     !planUploadFilesError &&
     !$creatingPlan;
   $: if ($creatingPlan) {
-    createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
+    createPlanButtonText = runFileDescription
+      ? 'Importing recorded run...'
+      : planUploadFiles
+        ? 'Creating from .json...'
+        : 'Creating...';
   } else {
-    createPlanButtonText = planUploadFiles ? 'Create from .json' : 'Create';
+    createPlanButtonText = runFileDescription
+      ? 'Import recorded run'
+      : planUploadFiles
+        ? 'Create from .json'
+        : 'Create';
   }
   $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
@@ -386,21 +406,35 @@
     let startTime = getDoyTime(startTimeDate);
     let endTime = getDoyTime(endTimeDate);
     if (planUploadFiles && planUploadFiles.length) {
-      const { error } = await effects.importPlan(
-        $nameField.value,
-        $modelIdField.value,
-        startTime,
-        endTime,
-        $simTemplateField.value,
-        planTags.map(({ id }) => id),
-        planUploadFiles,
-        $user,
-      );
+      // A recorded run goes to a different endpoint because it creates more than a plan: a mission
+      // model declared by the file, the directives, and the results already attached to them.
+      const { error } = runFileDescription
+        ? await effects.importRun(
+            $nameField.value,
+            null,
+            startTime,
+            endTime,
+            $simTemplateField.value,
+            planTags.map(({ id }) => id),
+            planUploadFiles,
+            $user,
+          )
+        : await effects.importPlan(
+            $nameField.value,
+            $modelIdField.value,
+            startTime,
+            endTime,
+            $simTemplateField.value,
+            planTags.map(({ id }) => id),
+            planUploadFiles,
+            $user,
+          );
       if (error) {
         planUploadFilesError = error.message;
       } else {
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
+        runFileDescription = null;
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
@@ -500,6 +534,7 @@
     planUploadFileInput.value = '';
     planUploadFiles = undefined;
     planUploadFilesError = null;
+    runFileDescription = null;
   }
 
   function showImportPlan() {
@@ -530,14 +565,35 @@
     durationString = computeDurationString(startTimeMs, endTimeMs, $startTimeField.valid && $endTimeField.valid);
   }
 
-  async function parsePlanFileStream(stream: ReadableStream) {
+  /**
+   * Read a chosen .json and prefill the form from it.
+   *
+   * Two kinds of file arrive through one picker. A plan export is what this has always read; a
+   * recorded run is a whole simulation, and the plan it was performed against is one member of it.
+   * The envelope's `kind` is what tells them apart -- see `isRunTransfer` -- and once past that the
+   * prefill is the same code on the same shape, because a run file embeds a PlanTransfer verbatim.
+   *
+   * A run file is then DESCRIBED by the gateway before anything is created. It compiles the format's
+   * schema, so a file it refuses is refused here, at the picker, rather than after the planner has
+   * filled in a name and a window.
+   */
+  async function parsePlanFile(file: File) {
     planUploadFilesError = null;
+    runFileDescription = null;
     try {
       let planJSON: PlanTransfer | DeprecatedPlanTransfer;
+      let document: PlanTransfer | DeprecatedPlanTransfer | RunTransfer;
       try {
-        planJSON = await parseJSONStream<PlanTransfer | DeprecatedPlanTransfer>(stream);
+        document = await parseJSONStream<PlanTransfer | DeprecatedPlanTransfer | RunTransfer>(file.stream());
       } catch (e) {
         throw new Error('Plan file is not valid JSON');
+      }
+
+      if (isRunTransfer(document)) {
+        runFileDescription = await effects.describeRunFile(file, $user);
+        planJSON = document.plan;
+      } else {
+        planJSON = document;
       }
 
       nameField.validateAndSet(planJSON.name);
@@ -610,7 +666,7 @@
     if (files !== null && files.length) {
       const file = files[0];
       if (/\.json$/.test(file.name)) {
-        parsePlanFileStream(file.stream());
+        parsePlanFile(file);
       } else {
         planUploadFilesError = 'Plan file is not a .json file';
       }
@@ -790,19 +846,29 @@
                   {planUploadFilesError}
                 </Collapse>
               {/if}
+              {#if runFileDescription}
+                <div class="mt-1 border-l-2 border-muted-foreground/30 px-2 py-1 text-xs text-muted-foreground">
+                  {#each runFileDescription.notices as notice}
+                    <div>{notice.message}</div>
+                  {/each}
+                </div>
+              {/if}
             </fieldset>
 
             <Field field={modelIdField}>
               <Label size="sm" for="model" class="pb-0.5">Model</Label>
               <div
                 use:permissionHandler={{
-                  hasPermission: canCreate,
-                  permissionError,
+                  hasPermission: canCreate && runFileDescription === null,
+                  permissionError:
+                    runFileDescription !== null
+                      ? 'A recorded run declares its own mission model, so there is nothing to choose.'
+                      : permissionError,
                 }}
               >
                 <Select.Root
                   selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
-                  disabled={!canCreate}
+                  disabled={!canCreate || runFileDescription !== null}
                 >
                   <Select.Trigger
                     value={selectedModel?.id}

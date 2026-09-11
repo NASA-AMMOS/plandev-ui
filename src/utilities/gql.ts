@@ -1363,6 +1363,8 @@ const gql = {
         model: mission_model {
           id
           jar_id
+          model_type
+          external_capabilities
           name
           owner
           parameters {
@@ -2934,6 +2936,8 @@ const gql = {
         model: mission_model {
           id
           jar_id
+          model_type
+          external_capabilities
           name
           owner
           parameters {

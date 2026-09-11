@@ -41,9 +41,17 @@ export type ModelSchema = {
   default_view_id: number | null;
   derivation_group_specification: ModelDerivationGroup[];
   description?: string;
+  /** What this model's declaration says PlanDev may DO with it. See utilities/modelCapabilities. */
+  external_capabilities?: Record<string, unknown> | null;
   id: number;
-  jar_id: number;
+  /**
+   * Null for a model PlanDev did not compile. A model declared by an imported run has no jar behind
+   * it, so anything that reaches for the file has to ask first -- see effects.deleteModel.
+   */
+  jar_id: number | null;
   mission: string;
+  /** How PlanDev came to know this model's types: `jar` (compiled) or `declared` (from a file). */
+  model_type?: string | null;
   name: string;
   owner: UserId;
   parameters: { parameters: ParametersMap };
@@ -63,8 +71,10 @@ export type ModelSlim = Pick<
   | 'activity_types'
   | 'created_at'
   | 'description'
+  | 'external_capabilities'
   | 'id'
   | 'jar_id'
+  | 'model_type'
   | 'name'
   | 'owner'
   | 'plans'

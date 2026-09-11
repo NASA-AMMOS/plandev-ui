@@ -8,6 +8,7 @@ import type {
   PlanMergeRequestStatus,
   PlanSlim,
   PlanTransfer,
+  RunTransfer,
 } from '../types/plan';
 import type { Simulation } from '../types/simulation';
 import effects from './effects';
@@ -143,6 +144,21 @@ export async function exportPlan(
 ): Promise<void> {
   const planTransfer = await getPlanForTransfer(plan, user, activities);
   downloadJSON(planTransfer, plan.name);
+}
+
+/**
+ * Whether an uploaded .json is a recorded run rather than a plan export.
+ *
+ * `kind` is the only safe discriminator, and it is why the format has one. A run file embeds a whole
+ * PlanTransfer, which itself carries `version: "2"`, so every other field a plan export has is also
+ * present here -- while a plan export has no `kind` at all and can never be mistaken for a truncated
+ * run file.
+ *
+ * This is a routing decision, not validation: it picks which endpoint the file goes to. The gateway
+ * compiles the format's schema and is the authority on whether the file is any good.
+ */
+export function isRunTransfer(document: unknown): document is RunTransfer {
+  return (document as RunTransfer | null)?.kind === 'plandev-run';
 }
 
 export function isDeprecatedPlanTransfer(
