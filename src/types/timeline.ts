@@ -76,9 +76,9 @@ export type ExternalEventLayerFilterSubfieldSchema = ExternalEventLayerFilterSub
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 
 /**
- * How an axis maps values to pixels. 'log' is backed by d3's symlog, which is logarithmic away from
- * zero and linear through it, so samples at zero and below still get a position -- a true log scale
- * would drop them, and mission resources routinely sit at zero.
+ * How an axis maps values to pixels. 'log' is backed by d3's symlog -- logarithmic away from zero,
+ * linear through it -- so samples at zero and below still get a position. Mission resources routinely
+ * sit at zero, which a true log scale would drop.
  */
 export type AxisScaleType = 'linear' | 'log';
 
@@ -104,8 +104,8 @@ export type Axis = {
 };
 
 /**
- * An Axis plus the fields derived at render time. Kept separate from Axis because these must never be
- * written back into a view definition -- the schema sets additionalProperties: false and rejects them.
+ * An Axis plus fields derived at render time. Separate from Axis because these must never reach a view
+ * definition -- the schema sets additionalProperties: false and rejects them.
  */
 export type ComputedAxis = Axis & {
   /** Width of symlog's linear region, derived from the data. See getLogConstant. */
@@ -170,13 +170,10 @@ export interface Layer {
 }
 
 /**
- * How the line between two sampled values is drawn. Only affects discretely-sampled data; a real
- * profile carries its own slope, so every mode draws it identically.
- *
- * - `step` holds each value until the next segment starts, and is the default.
- * - `linear` ramps straight from each value to the next.
- * - `smooth` ramps along a monotone curve -- monotone so it cannot overshoot a value the model never
- *   produced, which a cardinal or basis spline would.
+ * How the line between two sampled values is drawn: `step` holds each value to the next segment
+ * (default), `linear` ramps straight, `smooth` ramps along a monotone curve -- monotone so it cannot
+ * overshoot a value the model never produced. Only affects discretely-sampled data; a real profile
+ * carries its own slope.
  */
 export type InterpolationMode = 'step' | 'linear' | 'smooth';
 
@@ -211,9 +208,8 @@ export interface LinePoint extends Point {
     | string
     | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
   /**
-   * Lower edge of this point's area fill when the layer is stacked: the total of the layers beneath it
-   * at this x. Carried per point rather than as a parallel array because decimation reorders and thins
-   * points. Undefined for an unstacked layer, which fills to one baseline for the whole series.
+   * Lower edge of this point's area fill when the layer is stacked: the total beneath it at this x.
+   * Per point rather than a parallel array, because decimation reorders and thins points.
    */
   y0?: number | null;
 }
@@ -295,12 +291,9 @@ export type ExternalEventOptions = {
 };
 
 /**
- * Shape used to mark a discrete item that occupies a single moment: a 2px full-height tick (`line`,
- * the default), a `dot`, or a `diamond` for the Gantt milestone convention.
- *
- * Every style is centered on the moment it marks, so switching between them never moves the mark --
- * `getMarkerGlyphExtents` owns that geometry. A marker therefore anchors its center to the start time,
- * where a bar anchors its left edge, since a bar represents an interval rather than a moment.
+ * Shape marking a discrete item that occupies a single moment: a 2px full-height tick (`line`, the
+ * default), a `dot`, or a `diamond` for the Gantt milestone convention. `getMarkerGlyphExtents` owns
+ * the geometry, including why a marker centers on the start time where a bar puts its left edge.
  */
 export type MarkerStyle = 'line' | 'dot' | 'diamond';
 
@@ -315,9 +308,9 @@ export type DiscreteOptions = {
   activityOptions?: ActivityOptions;
 
   /**
-   * Shape every activity directive is drawn with. Applied unconditionally -- a directive marks a start
-   * time and has no duration to detect. Kept separate from `zeroDurationMarker` so that making
-   * zero-duration spans into milestones does not also put a diamond on every directive in the plan.
+   * Shape every activity directive is drawn with, unconditionally -- a directive marks a start time and
+   * has no duration to detect. Separate from `zeroDurationMarker` so turning zero-duration spans into
+   * milestones does not also put a diamond on every directive in the plan.
    */
   directiveMarker?: MarkerStyle;
 
@@ -335,8 +328,7 @@ export type DiscreteOptions = {
 
   /**
    * Shape for a span or external event whose duration is zero; anything with a duration keeps its bar.
-   * Keyed off the data rather than rendered width, so an item does not change shape as the operator
-   * zooms -- a one second span at a two week zoom is a small interval, not a moment.
+   * Keyed off the data rather than rendered width, so an item does not change shape as you zoom.
    */
   zeroDurationMarker?: MarkerStyle;
 };
@@ -421,23 +413,21 @@ export type XRangeValueAppearance = {
   /** Replaces the scheme color for this value. */
   color?: string;
   /**
-   * Draw nothing for this value -- no box, no label, no hover target. Not the same as a gap, which
-   * means the profile had no value and is hatched by `LayerGaps`. Hiding every value but one turns the
-   * layer into background shading for that state, since x-range layers paint behind the rest of a row.
+   * Draw nothing for this value -- no box, no label, no hover target. Not a gap, which means the
+   * profile had no value at all and is hatched by `LayerGaps`.
    */
   hidden?: boolean;
   /**
-   * Replaces the text drawn in this value's boxes. The value still decides the color and the box
-   * boundaries, so shortening `SUBSYSTEM_STATE_NOMINAL` to `NOM` neither recolors it nor merges it
-   * with a neighbor that shortens the same way.
+   * Replaces the text drawn in this value's boxes. The value still decides color and box boundaries,
+   * so shortening `SUBSYSTEM_STATE_NOMINAL` to `NOM` neither recolors it nor merges it with a
+   * neighbor that shortens the same way.
    */
   label?: string;
 };
 
 /**
- * Whether an x-range box is labelled with its value. `auto` fits the text and truncates when it has
- * to; `off` is for a layer read as shape rather than text. There is no `on`: unlike a discrete row, an
- * x-range box cannot grow to fit its label.
+ * Whether an x-range box is labelled with its value. `auto` fits and truncates; `off` is for a layer
+ * read as shape. No `on`: an x-range box cannot grow to fit its label.
  */
 export type XRangeLabelVisibility = 'auto' | 'off';
 
@@ -456,8 +446,8 @@ export interface XRangePoint extends Point {
   label: Label;
   /**
    * The resource value behind this point, which colors and per-value overrides key off. Separate from
-   * `label.text`, the text drawn in the box, even where the two hold the same string: conflating them
-   * would color two values alike and merge them into one box. Absent on gap points.
+   * `label.text` even where the two match: conflating them would color two values alike and merge
+   * them into one box. Absent on gap points.
    */
   value?: string;
 }

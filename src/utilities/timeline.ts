@@ -223,12 +223,8 @@ const POINT_SPRITE_PADDING = 1.6;
 const MARKER_LINE_WIDTH = 2;
 
 /**
- * Size of a point-like marker as a fraction of the subrow height, clamped so it neither becomes a
- * speck on a tall row nor collides with the neighbouring subrow.
- *
- * Per shape, because equal bounding boxes do not read as equal weight: a diamond fills half its box
- * where a circle fills about 0.785 of it, so the diamond's fraction is the circle's scaled by
- * sqrt(0.785 / 0.5). Same equal-area reasoning as getPointSymbolSize.
+ * Size of a point-like marker as a fraction of the subrow height. Per shape, since equal bounding
+ * boxes do not read as equal weight -- same equal-area reasoning as `getPointSymbolSize`.
  */
 const MARKER_GLYPH_HEIGHT_RATIOS: Record<'diamond' | 'dot', number> = {
   diamond: 0.69,
@@ -267,10 +263,8 @@ export const MIN_Y_TICK_SPACING = 14;
 
 /**
  * Drops tick values whose rendered positions would overlap, keeping the first of each cluster. d3 only
- * loosely honors a requested tick count, and a log scale largely ignores it, so a short row can
- * otherwise end up with a dozen labels crushed into a few pixels.
- *
- * Ticks are assumed to be in scale order. Both extremes are always kept.
+ * loosely honors a tick count and a log scale largely ignores it, so a short row can otherwise end up
+ * with a dozen labels crushed into a few pixels. Ticks must be in scale order; both extremes are kept.
  */
 export function thinTicksByPixelSpacing(
   tickValues: number[],
@@ -378,8 +372,8 @@ export function getLogTickValues(domain: number[], base: number = DEFAULT_LOG_BA
 
 /**
  * Clamps an opacity into the 0-1 range the view schema allows, falling back for non-finite input such
- * as the NaN a cleared number input yields. Canvas silently ignores a bad globalAlpha and keeps
- * whatever was set previously, so a raw view value must never reach it.
+ * as the NaN a cleared number input yields. Canvas silently ignores a bad globalAlpha and keeps the
+ * previous value, so a raw view value must never reach it.
  */
 export function clampOpacity(opacity: number | undefined, fallback: number = DEFAULT_LINE_OPACITY): number {
   if (opacity === undefined || !Number.isFinite(opacity)) {
@@ -389,10 +383,9 @@ export function clampOpacity(opacity: number | undefined, fallback: number = DEF
 }
 
 /**
- * Y pixel position of the baseline for a line layer's area fill, or null when the scale has no usable
- * baseline. The baseline is zero clamped to the canvas, so a signal crossing zero fills from the axis
- * and one that never crosses it fills to the nearest edge. Falls back to the bottom of the range where
- * the scale cannot place zero, rather than letting the fill disappear.
+ * Y pixel position of a line layer's area-fill baseline, or null when the scale has none usable. Zero
+ * clamped to the canvas, so a signal crossing zero fills from the axis and one that never crosses it
+ * fills to the nearest edge.
  */
 export function getLineFillBaselineY(yScale: YScale, height: number): number | null {
   const [domainMin] = yScale.domain();
@@ -436,12 +429,11 @@ export function getLineCurve(interpolation: InterpolationMode | undefined): Curv
 
 /**
  * Horizontal extent of a single-moment marker, in CSS pixels either side of the item's start x, plus
- * its drawn size. The single source of truth for instant geometry: the draw call, the quadtree hit
- * box, the compact-mode bin packer and the label offset all read it from here.
+ * its drawn size. The single source of truth for instant geometry -- draw call, quadtree hit box,
+ * compact-mode bin packer and label offset all read it from here.
  *
- * Every style straddles the moment it marks, so switching between them never moves the mark. That is
- * why a marker centers on the start time where a bar puts its left edge there -- a bar represents an
- * interval, a marker a moment.
+ * Every style straddles the moment it marks, so switching styles never moves the mark. That is why a
+ * marker centers on the start time where a bar puts its left edge there.
  */
 export function getMarkerGlyphExtents(markerStyle: MarkerStyle | undefined, rowHeight: number): MarkerGlyph {
   if (markerStyle !== 'dot' && markerStyle !== 'diamond') {
@@ -473,14 +465,13 @@ function getStackXGrid(series: StackInputSeries[]): number[] {
 }
 
 /**
- * Resamples one series onto `grid`, returning null wherever the series has no defined value: outside
- * its own time range, or at a gap. Null rather than zero, because zero would claim the series
- * contributed nothing where the data only says the total is unknown.
+ * Resamples one series onto `grid`, null wherever it has no defined value -- outside its time range,
+ * or at a gap. Null rather than zero: zero would claim the series contributed nothing where the data
+ * only says the total is unknown.
  *
- * Interpolates unconditionally, without consulting the layer's interpolation mode. A discrete
- * profile's staircase lives in its data -- `sampleProfiles` closes each segment with a second value
- * carrying the same y -- so interpolating across a hold segment returns the held value. Reading the
- * mode here would instead hold a real profile flat across grid points other series contributed.
+ * Interpolates unconditionally. A discrete profile's staircase lives in its data, so interpolating
+ * across a hold segment returns the held value; consulting the mode here would instead hold a real
+ * profile flat across grid points other series contributed.
  */
 function resampleOntoStackGrid(values: ResourceValue[], grid: number[]): (number | null)[] {
   const out: (number | null)[] = new Array(grid.length).fill(null);
@@ -524,18 +515,14 @@ export type StackInputSeries = {
 };
 
 /**
- * Stacks the given series in the order supplied, resampled onto their shared x grid. Order is the
- * layer order on the axis, so the first series is the bottom of the stack. Each series is prepared
- * under its own interpolation mode, so a step resource and a linear one stack together correctly.
+ * Stacks the given series onto their shared x grid, in the order supplied -- layer order on the axis,
+ * so the first series is the bottom of the stack.
  *
- * Once any series is undefined at an x, every series above it is undefined there too -- a total is
- * only as knowable as its least known term -- so a gap low in the stack punches through the layers
- * above rather than closing up. Negative values reduce the running total, so the top of the stack
- * always reads as the net sum.
+ * A gap anywhere punches through every layer above it: a total is only as knowable as its least known
+ * term.
  *
- * Runs synchronously and unchunked, at roughly (total samples x series) points, because the result
- * feeds `getYAxesWithScaleDomains` in the same tick. A row stacking several very long resources will
- * block a frame. Tracked in NASA-AMMOS/plandev-ui#1996.
+ * Synchronous and unchunked, since the result feeds `getYAxesWithScaleDomains` in the same tick. A row
+ * stacking several very long resources will block a frame; chunk it if that shows up.
  */
 export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[] {
   const grid = getStackXGrid(series);
@@ -568,17 +555,13 @@ export function stackLineLayerValues(series: StackInputSeries[]): StackedSeries[
 export const GUIDE_BAND_OPACITY = 0.12;
 
 /**
- * Clamps a guide band's two edges, in pixels, to the drawable extent `size`, reporting which survived.
- * Null when the band lies entirely outside it. Shared by horizontal and vertical bands, along with two
- * rules that are easy to get wrong:
+ * Clamps a guide band's two edges, in pixels, to the drawable extent `size`. Null when the band lies
+ * entirely outside it. Shared by horizontal and vertical bands, with two rules that are easy to miss:
+ * order is normalized, so a range typed backwards is still the region meant; and a clamped edge is
+ * reported as not-shown, since drawing it at the clamp would assert a boundary nobody put there.
  *
- * - Order is normalized, so a range typed or dragged backwards is the region the operator meant rather
- *   than an empty one.
- * - A clamped edge is reported as not-shown, since drawing its line at the clamp would assert a
- *   boundary the operator did not put there.
- *
- * Normalizing the order loses which edge came from `a`, so that is reported as `anchorAtStart`. `a` is
- * the guide's own value, the one its editor row shows, and is drawn solid against a dashed far edge.
+ * `anchorAtStart` survives that normalization to say which edge came from `a` -- the guide's own
+ * value, drawn solid against a dashed far edge.
  */
 export function clampGuideBand(
   a: number,
@@ -603,10 +586,9 @@ export function clampGuideBand(
 }
 
 /**
- * A band's extent as a duration, in at most two units, for the readout beside a guide's name in the
- * timeline editor. Not `convertUsToDurationString`, which spells out every non-zero unit down to
- * milliseconds and is far too long for a one-line row. The smaller unit is zero-padded so a column of
- * rows stays one width.
+ * A band's extent as a duration, in at most two units, for the readout beside a guide's name. Not
+ * `convertUsToDurationString`, which spells out every unit down to milliseconds and is far too long
+ * for a one-line row. The smaller unit is zero-padded so a column of rows stays one width.
  */
 export function formatBandDuration(durationMs: number): string {
   const ms = Math.abs(Math.round(durationMs));
@@ -757,15 +739,12 @@ export function isDroppableHoldPoint(values: ResourceValue[], valueIndex: number
 }
 
 /**
- * Whether the value at `valueIndex` is superseded by the value after it, which sits at the same x.
- * A real profile closes each segment on the next segment's opening x, so every internal boundary
- * carries two values at one instant. `curveMonotoneX` divides its tangents by the gap between
- * consecutive x values, so a gap of zero makes the smoothed line ripple along a straight ramp.
+ * Whether the value at `valueIndex` is superseded by the one after it at the same x. A real profile
+ * closes each segment on the next segment's opening x, and `curveMonotoneX` divides its tangents by
+ * the x gap, so a gap of zero makes the smoothed line ripple along a straight ramp.
  *
- * Keyed on x alone: the two values differ in y by parts in ten million, since the one being dropped
- * was derived as `initial + rate * duration`, so comparing y would never fire. The later value wins,
- * as in `resampleOntoStackGrid` -- it is the incoming segment's opening value rather than a derived
- * one. Only consulted for a curved line, so Step and Linear still draw a genuine discontinuity.
+ * Keyed on x alone -- the two y values differ by parts in ten million, so comparing them would never
+ * fire. Only consulted for a curved line, so Step and Linear keep a genuine discontinuity.
  */
 export function isSupersededSameXPoint(values: ResourceValue[], valueIndex: number): boolean {
   const next = values[valueIndex + 1];
@@ -1053,6 +1032,22 @@ export function getXRangeValueDomain(schema: ValueSchema | undefined): string[] 
 }
 
 /**
+ * Values a `string` x-range resource actually holds, in first-appearance order -- the domain the color
+ * scale is built from when the schema declares no value set. Shared with the layer settings form so the
+ * swatch beside a value is the color the canvas paints.
+ */
+export function getXRangeObservedDomain(values: ResourceValue[]): string[] {
+  const domainMap: Record<string, string> = {};
+  for (const { y } of values) {
+    if (y !== null) {
+      const text = y as string;
+      domainMap[text] = text;
+    }
+  }
+  return Object.values(domainMap);
+}
+
+/**
  * Returns the next unused line color within the given row
  */
 export function getUniqueColorForLineLayer(row?: Row): string {
@@ -1325,11 +1320,7 @@ export function createTimelineXRangeLayer(
   };
 }
 
-/**
- * Extra facts `getYAxisBounds` can collect while it is already walking an axis's values. An out-param
- * rather than a second function because the walk is the expensive part, and a log axis would otherwise
- * scan every value twice per pan. Absent fields mean the values held nothing to derive them from.
- */
+/** Collected during `getYAxisBounds`'s walk so a log axis does not need a second pass. */
 export type AxisValueStats = { smallestMagnitude?: number };
 
 /**
@@ -1452,48 +1443,6 @@ export function getYAxisBounds(
 }
 
 /**
- * Smallest non-zero absolute value across the resources feeding an axis, or undefined when it has no
- * non-zero data. Only used to derive a log axis's symlog constant. An axis whose domain is being
- * fitted should take this from `getYAxisBounds`'s `stats` out-param instead; this exists for a
- * `manual` axis, which skips that walk entirely.
- */
-export function getSmallestMagnitudeForAxis(
-  yAxis: Axis,
-  layers: Layer[],
-  resources: Resource[],
-  viewTimeRange?: TimeRange,
-  stacks: Record<number, StackedLayerRender> = {},
-): number | undefined {
-  let smallest: number | undefined = undefined;
-  for (const layer of layers.filter(layer => layer.yAxisId === yAxis.id)) {
-    // Stacked series, as getYAxisBounds uses: the constant sizes the linear region of the scale the
-    // domain is on, so both have to come off the same values
-    const layerResource = (stacks[layer.id]?.resource ?? getResourceForLayer(layer, resources)) as Resource;
-    if (!layerResource) {
-      continue;
-    }
-    for (const value of layerResource.values) {
-      if (typeof value.y !== 'number') {
-        continue;
-      }
-      // Mirrors the window getYAxisBounds considers, so the constant matches the domain on screen
-      if (
-        viewTimeRange &&
-        yAxis.domainFitMode === 'fitTimeWindow' &&
-        (value.x < viewTimeRange.start || value.x > viewTimeRange.end)
-      ) {
-        continue;
-      }
-      const magnitude = Math.abs(value.y);
-      if (magnitude > 0 && (smallest === undefined || magnitude < smallest)) {
-        smallest = magnitude;
-      }
-    }
-  }
-  return smallest;
-}
-
-/**
  * Populates y-axes with scaleDomain, plus the render-time logConstant a log axis needs. Derived here
  * rather than stored in the view so neither can go stale as data changes.
  */
@@ -1506,19 +1455,17 @@ export function getYAxesWithScaleDomains(
 ): ComputedAxis[] {
   return yAxes.map(yAxis => {
     const isLog = yAxis.scaleType === 'log';
-    // Collected by the domain walk rather than a walk of its own, so a log axis costs one pass
-    const stats: AxisValueStats | undefined = isLog ? {} : undefined;
-    const computed: ComputedAxis =
-      yAxis.domainFitMode !== 'manual'
-        ? { ...yAxis, scaleDomain: getYAxisBounds(yAxis, layers, resources, viewTimeRange, stacks, stats) }
-        : { ...yAxis };
+    const isFitted = yAxis.domainFitMode !== 'manual';
+    if (!isLog && !isFitted) {
+      return { ...yAxis };
+    }
+    // One walk serves both. A manual log axis keeps its own domain but still has to be measured, since
+    // the symlog constant comes from the data rather than from the bounds.
+    const stats: AxisValueStats = {};
+    const scaleDomain = getYAxisBounds(yAxis, layers, resources, viewTimeRange, stacks, isLog ? stats : undefined);
+    const computed: ComputedAxis = isFitted ? { ...yAxis, scaleDomain } : { ...yAxis };
     if (isLog) {
-      // A manual axis skipped the walk above, so it has to be asked for separately
-      const smallestMagnitude =
-        yAxis.domainFitMode !== 'manual'
-          ? stats?.smallestMagnitude
-          : getSmallestMagnitudeForAxis(yAxis, layers, resources, viewTimeRange, stacks);
-      computed.logConstant = getLogConstant(smallestMagnitude);
+      computed.logConstant = getLogConstant(stats.smallestMagnitude);
     }
     return computed;
   });

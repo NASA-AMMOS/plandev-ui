@@ -53,9 +53,8 @@
   let cursorTimeLabel: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
   /**
-   * Kept separate from ComputedVerticalGuide because the two have different visibility rules: a marker
-   * is dropped once its own x leaves the view, while a band whose start is off-screen must still shade
-   * the part of the region that is not.
+   * Separate from ComputedVerticalGuide: a marker is dropped once its x leaves the view, while a band
+   * whose start is off-screen must still shade the part of the region that is not.
    */
   let computedVerticalBands: ComputedVerticalBand[] = [];
   let cursorWithinView = true;
@@ -136,10 +135,7 @@
     computedVerticalBands = tempComputedVerticalBands;
   }
 
-  /**
-   * Translucent fill for a band, applied to background-color rather than element opacity so the dashed
-   * edges stay at full strength -- as a horizontal band keeps its opacity on the rect's fill alone.
-   */
+  /** Translucent fill on background-color rather than element opacity, so the edges stay full strength. */
   function getBandFill(color: string | undefined): string {
     return hexToRgba(color || DEFAULT_BAND_COLOR, GUIDE_BAND_OPACITY);
   }
@@ -284,11 +280,9 @@
     position: relative;
   }
 
-  /* Spans every row, since the region it marks belongs to the timeline rather than to one row.
-     pointer-events stay off (inherited from the container) so shading never costs a click-through.
-
-     Solid on the edge the guide's own timestamp sits at, dashed on the edge `timestamp2` extends to --
-     the only thing in the render that says which way the region runs. */
+  /* Spans every row, since the region belongs to the timeline rather than to one row. pointer-events
+     stay off (inherited) so shading never costs a click-through. Solid on the guide's own timestamp,
+     dashed on the edge `timestamp2` extends to -- the only cue to which way the region runs. */
   .timeline-cursor-band {
     border-left: 1px solid;
     border-right: 1px dashed;

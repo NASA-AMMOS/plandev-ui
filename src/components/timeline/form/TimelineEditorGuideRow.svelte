@@ -30,8 +30,7 @@
   $: verticalGuide = guide as VerticalGuide;
   $: isHorizontal = 'y' in guide;
   $: isRange = isHorizontal ? horizontalGuide.y2 !== undefined : verticalGuide.timestamp2 !== undefined;
-  // Passed in rather than read inside getSummary, so switching the plugin's primary time format
-  // re-renders the rows -- Svelte does not track what a function body reads
+  // Passed in rather than read inside getSummary, so a time-format switch re-renders the rows
   $: summary = getSummary(guide, isHorizontal, isRange, $plugins.time.primary.format);
 
   const dispatch = createEventDispatcher<{
@@ -40,10 +39,9 @@
   }>();
 
   /**
-   * What the collapsed row shows in place of the guide's fields: the anchor value, and for a band the
-   * same reading its canvas cap carries -- a duration for a time region, a low-to-high extent for a
-   * value band. A time goes through the plugin's primary format, as the guide's canvas label does, so
-   * a mission not configured for DOY does not see one instant written two ways.
+   * What the collapsed row shows in place of the guide's fields: the anchor value, plus for a band the
+   * reading its canvas cap carries -- a duration for a time region, a low-to-high extent for a value
+   * band. Times go through the plugin's primary format, as the canvas label does.
    */
   function getSummary(
     guide: HorizontalGuide | VerticalGuide,
@@ -82,9 +80,8 @@
   }
 
   /**
-   * Line to band and back. A band is not a separate kind of guide, only one carrying a second bound, so
-   * the switch is that field arriving or being removed. Re-picking the mode already set is a no-op, so
-   * clicking Band twice does not throw away an edited bound.
+   * Line to band and back. A band is just a guide carrying a second bound, so the switch is that field
+   * arriving or leaving. Re-picking the current mode is a no-op, so clicking Band twice keeps the bound.
    */
   function onSetMode(mode: string) {
     const wantRange = mode === 'range';
@@ -220,7 +217,6 @@
           />
         {/if}
         {#if yAxes.length > 1}
-          <!-- Only worth the width when there is a choice to make -->
           <select
             aria-label="Y Axis"
             class="st-select guide-editor-axis"
@@ -304,8 +300,7 @@
     transform: rotate(0deg);
   }
 
-  /* Layout only -- st-input carries the appearance, so a guide's name field is the same control as
-     every other text field in the panel. */
+  /* Layout only; st-input carries the appearance, so this matches every other text field in the panel. */
   .guide-label-input {
     flex: 1;
     min-width: 0;

@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import type { Placement } from 'tippy.js';
   import { getTarget } from '../../utilities/generic';
   import { tooltip } from '../../utilities/tooltip';
@@ -32,19 +32,16 @@
     input: { value: string };
   }>();
 
-  onMount(() => {
-    // Menu dismisses itself from a body click listener, but a Menu this picker is nested inside stops
-    // click propagation on its own content, leaving the picker stuck open. Capture phase runs before
-    // any ancestor can stop the event.
-    document.addEventListener('click', onDocumentClickCapture, true);
-    return () => document.removeEventListener('click', onDocumentClickCapture, true);
-  });
+  // Menu dismisses itself from a body click listener, but a Menu this picker is nested inside stops
+  // click propagation on its own content, leaving the picker stuck open. Capture phase runs before any
+  // ancestor can stop the event. Bound only while open, since a value list renders one picker per row.
+  onDestroy(() => document.removeEventListener('click', onDocumentClickCapture, true));
 
   // The Menu renders inside the trigger button, so any click in that subtree is a click on the picker
   // itself -- the toggle, a preset, or the custom color input
   function onDocumentClickCapture(event: MouseEvent) {
-    if (pickerMenu?.isShown() && !triggerElement?.contains(event.target as Node)) {
-      pickerMenu.hide();
+    if (!triggerElement?.contains(event.target as Node)) {
+      pickerMenu?.hide();
     }
   }
 
@@ -67,7 +64,15 @@
   style={`background: ${value}; height: ${size}px; width: ${size}px`}
   on:click|stopPropagation={() => pickerMenu.toggle()}
 >
-  <Menu escapeScrollBoundary bind:this={pickerMenu} hideAfterClick={false} {placement} {type}>
+  <Menu
+    escapeScrollBoundary
+    bind:this={pickerMenu}
+    hideAfterClick={false}
+    {placement}
+    {type}
+    on:show={() => document.addEventListener('click', onDocumentClickCapture, true)}
+    on:hide={() => document.removeEventListener('click', onDocumentClickCapture, true)}
+  >
     <div class="colors bg-popover">
       {#each presetColors as color}
         <button

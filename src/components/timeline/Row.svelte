@@ -146,7 +146,6 @@
       rowId: number;
       wasAutoAdjusted?: boolean;
     };
-    updateValueDomain: { domain: string[]; resourceName: string };
     updateYAxes: {
       axes: Axis[];
       id: number;
@@ -489,8 +488,7 @@
 
     if (hasExternalEventsLayer) {
       filteredExternalEvents = [];
-      // Cleared with the list it is keyed against, so it holds an entry only for an event still being
-      // rendered. Stale keys would not misdraw anything, but would grow without bound.
+      // Cleared with the list it is keyed against; stale keys would not misdraw, but would grow unbounded
       externalEventOpacities = {};
 
       // Filter what LINKED Derivation Groups are to be shown
@@ -528,8 +526,7 @@
           timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
         }
       });
-      // Filled by mutation, which Svelte cannot see. Reassigning marks it changed so an opacity edit
-      // reaches LayerDiscrete, which is immutable and only re-renders on a new reference.
+      // Filled by mutation; reassign so immutable LayerDiscrete sees the new reference
       externalEventOpacities = externalEventOpacities;
     }
   }
@@ -1004,7 +1001,6 @@
             {xScaleView}
             on:mouseOver={onMouseOver}
             on:contextMenu
-            on:updateValueDomain
           />
         {/each}
         {#if hasActivityLayer || hasExternalEventsLayer}

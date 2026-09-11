@@ -11,7 +11,14 @@ import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { ValueSchema } from '../types/schema';
-import type { DiscreteTreeNode, InterpolationMode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type {
+  AxisDomainFitMode,
+  DiscreteTreeNode,
+  InterpolationMode,
+  TimeRange,
+  Timeline,
+  XRangeLayer,
+} from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
@@ -51,7 +58,7 @@ import {
   getPointSpriteSize,
   getPointSymbolSize,
   getResourceForLayer,
-  getSmallestMagnitudeForAxis,
+  getYAxesWithScaleDomains,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
   getUniqueColorForLineLayer,
@@ -2686,8 +2693,17 @@ describe('getLineFillBaselineY on a log axis', () => {
   });
 });
 
-describe('getSmallestMagnitudeForAxis', () => {
-  const resource: Resource = {
+describe('log axis symlog constant', () => {
+  const viewTimeRange = { end: 10, start: 0 };
+
+  function logConstantFor(domainFitMode: AxisDomainFitMode, resource: Resource): number | undefined {
+    const layer = createTimelineLineLayer([], []);
+    layer.filter.resource = resource.name;
+    const axis = createYAxis([], { domainFitMode, id: layer.yAxisId as number, scaleType: 'log' });
+    return getYAxesWithScaleDomains([axis], [layer], [resource], viewTimeRange)[0].logConstant;
+  }
+
+  const signed: Resource = {
     name: 'signed',
     profileType: 'real',
     schema: { type: 'real' },
@@ -2699,23 +2715,22 @@ describe('getSmallestMagnitudeForAxis', () => {
   };
 
   test('ignores zero and uses absolute value, so a negative sample can set the floor', () => {
-    const layer = createTimelineLineLayer([], []);
-    layer.filter.resource = 'signed';
-    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
-    expect(getSmallestMagnitudeForAxis(axis, [layer], [resource])).toEqual(0.25);
+    expect(logConstantFor('fitPlan', signed)).toEqual(0.25);
   });
 
-  test('returns undefined when an axis has no non-zero data to derive from', () => {
-    const layer = createTimelineLineLayer([], []);
-    layer.filter.resource = 'allZero';
-    const axis = createYAxis([], { domainFitMode: 'fitPlan', id: layer.yAxisId as number });
+  // The walk that measures this is the one that fits the domain, which a manual axis skips
+  test('is still measured on a manual axis, which keeps its own domain', () => {
+    expect(logConstantFor('manual', signed)).toEqual(0.25);
+  });
+
+  test('falls back to 1 when an axis has no non-zero data to derive from', () => {
     const allZero: Resource = {
       name: 'allZero',
       profileType: 'real',
       schema: { type: 'real' },
       values: [{ x: 1, y: 0 }],
     };
-    expect(getSmallestMagnitudeForAxis(axis, [layer], [allZero])).toBeUndefined();
+    expect(logConstantFor('fitPlan', allZero)).toEqual(1);
   });
 });
 

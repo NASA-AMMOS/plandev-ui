@@ -22,9 +22,9 @@
   };
 
   /**
-   * Where a menu falls back to when it will not fit as placed: the opposite side, alignment untouched.
-   * Keeping the alignment matters -- flipping 'bottom-end' to a hardcoded 'top-start' also swaps
-   * right-alignment for left, sending a menu anchored near the right edge of the window off screen.
+   * Fallback placement when a menu will not fit: the opposite side, alignment untouched. Flipping
+   * 'bottom-end' to a hardcoded 'top-start' would also swap right-alignment for left, sending a menu
+   * anchored near the window's right edge off screen.
    */
   function getOppositeSidePlacement(placement: string): string {
     const [side, alignment] = placement.split('-');
@@ -55,15 +55,13 @@
 
   /**
    * Lets content escape this menu's box, for a menu hosting another menu such as a color picker. Popper
-   * positions this element with a transform, making it the containing block for fixed-position
-   * descendants, so the global `.st-menu { overflow: hidden }` clips any nested popup too. Off by
-   * default, so ordinary menus keep that clipping.
+   * positions this element with a transform, so it is the containing block for fixed descendants and
+   * the global `.st-menu { overflow: hidden }` clips any nested popup too.
    */
   export let allowOverflow: boolean = false;
   /**
-   * Positions against the viewport instead of the nearest scrolling ancestor, for a menu nested inside
-   * a scrollable one -- Popper's default boundary would squeeze it to fit the scroll box. Distinct from
-   * allowOverflow, which governs CSS clipping rather than the position math.
+   * Positions against the viewport rather than the nearest scrolling ancestor, for a menu nested in a
+   * scrollable one. Distinct from allowOverflow, which governs CSS clipping rather than position math.
    */
   export let escapeScrollBoundary: boolean = false;
   export let hideAfterClick: boolean = true;
@@ -161,8 +159,7 @@
 
   /**
    * Repositions the menu when its own content changes size. Popper only recomputes on scroll and window
-   * resize, so a menu that reveals or hides rows would otherwise keep the position it was given at its
-   * old height and drift out of alignment with the button that opened it.
+   * resize, so a menu that reveals or hides rows would drift out of alignment with its trigger.
    */
   function repositionOnResize(node: HTMLElement) {
     if (typeof ResizeObserver === 'undefined') {

@@ -4,11 +4,12 @@
   import { Eye, EyeOff, RotateCcw } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { ViewLineLayerColorPresets } from '../../../constants/view';
-  import { allResourceTypes, xRangeValueDomains } from '../../../stores/simulation';
+  import { allResourceTypes } from '../../../stores/simulation';
+  import { timelineResourcesByName } from '../../../stores/timelineResourceStatus';
   import type { ResourceType } from '../../../types/simulation';
   import type { XRangeLayer, XRangeLayerColorScheme, XRangeValueAppearance } from '../../../types/timeline';
   import { getTarget } from '../../../utilities/generic';
-  import { getXRangeColorScale, getXRangeValueDomain } from '../../../utilities/timeline';
+  import { getXRangeColorScale, getXRangeObservedDomain, getXRangeValueDomain } from '../../../utilities/timeline';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
   import InfoTip from '../../ui/InfoTip.svelte';
@@ -26,10 +27,12 @@
   // Null for a resource whose schema does not enumerate its values, which splits this form in two:
   // a listed set to edit in place, or an unknown set to name by hand
   $: schemaValues = getXRangeValueDomain(schema);
-  // What the layer has actually seen, for a resource whose schema declares nothing. Only a
-  // suggestion: it covers the loaded simulation, so a value that has not occurred yet is still
-  // worth being able to add by hand.
-  $: observedValues = layer.filter.resource ? ($xRangeValueDomains[layer.filter.resource] ?? []) : [];
+  // Derived from the same loaded resource the layer draws from, and by the same helper, so the
+  // swatches here cannot disagree with the canvas. Only covers the loaded simulation, so a value that
+  // has not occurred yet is still worth being able to add by hand.
+  $: observedValues = getXRangeObservedDomain(
+    (layer.filter.resource ? $timelineResourcesByName.get(layer.filter.resource)?.values : undefined) ?? [],
+  );
   $: values = getEditableValues(schemaValues, observedValues, appearance);
   $: schemeColors = getSchemeColors(layer.colorScheme, schemaValues ?? observedValues);
 
@@ -38,10 +41,9 @@
   }
 
   /**
-   * Every value worth a row: the declared set where the schema has one, otherwise the values the data
-   * turned out to hold, plus anything already configured either way. That last part keeps a stale
-   * entry reachable -- a model revision or a resimulation can stop producing a value an operator had
-   * pinned, and the entry goes on coloring or hiding it with nothing in the form to undo it.
+   * Every value worth a row: the declared set where the schema has one, otherwise what the data holds,
+   * plus anything already configured either way. That last part keeps a stale entry reachable -- a
+   * model revision can stop producing a pinned value, leaving nothing in the form to undo it.
    */
   function getEditableValues(
     schemaValues: string[] | null,
@@ -54,9 +56,8 @@
   }
 
   /**
-   * The color each value would take with no override, for the values whose color is knowable. Accurate
-   * only for the exact domain the renderer builds its scale from, which is why that order is reported
-   * up rather than reconstructed here. Anything outside it gets no swatch rather than a wrong one.
+   * The color each value would take with no override. Accurate only for the exact domain the renderer
+   * builds its scale from, so anything outside it gets no swatch rather than a wrong one.
    */
   function getSchemeColors(colorScheme: XRangeLayerColorScheme, domain: string[]): Record<string, string> {
     if (!domain.length) {
@@ -68,8 +69,7 @@
 
   function update(value: string, entry: XRangeValueAppearance | null) {
     const next = { ...appearance };
-    // An empty entry is indistinguishable from no entry, and leaving it would grow the saved view
-    // with every value an operator toggled and untoggled
+    // An empty entry is indistinguishable from no entry, and would grow the saved view on every toggle
     if (entry === null || (entry.color === undefined && entry.label === undefined && !entry.hidden)) {
       delete next[value];
     } else {
@@ -138,8 +138,7 @@
             value={entry?.color || schemeColors[value] || 'transparent'}
             on:input={({ detail }) => onColorChange(value, detail.value)}
           />
-          <!-- The name column doubles as the label field, so the list does not need a second row per
-               value. The raw value shows through as the placeholder when no override is set. -->
+          <!-- The name column doubles as the label field; the raw value shows through as placeholder. -->
           <input
             autocomplete="off"
             class="value-name"
@@ -176,8 +175,8 @@
   {/if}
 
   {#if !schemaValues}
-    <!-- The observed list only covers the loaded simulation, so a free-form resource keeps a way to
-         name a value that has not occurred yet, or to configure one before any simulation has run. -->
+    <!-- The observed list only covers the loaded simulation, so keep a way to name a value that has
+         not occurred yet, or to configure one before any simulation has run. -->
     <div class="add-value">
       <input
         autocomplete="off"

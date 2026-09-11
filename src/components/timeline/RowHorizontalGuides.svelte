@@ -53,13 +53,10 @@
               .attr('fill-opacity', GUIDE_BAND_OPACITY);
           }
 
-          // Solid on the edge the guide's own y sits at, dashed on the edge y2 extends to, matching
-          // the vertical bands and the editor row, which shows y and nothing else. A single-value guide
-          // stays dashed. clampGuideBand reports which edges are on scale; a clamped one is skipped
-          // rather than drawn at the clamp.
-          //
-          // Each edge carries whether it is the anchor rather than being matched back by position:
-          // for a zero-height band both edges land on the same y and would come out solid.
+          // Solid on the edge the guide's own y sits at, dashed on the edge y2 extends to; a
+          // single-value guide stays dashed. A clamped edge is skipped rather than drawn at the clamp.
+          // Each edge carries its own anchor flag rather than being matched by position, since a
+          // zero-height band puts both edges on the same y.
           const edges: { isAnchor: boolean; y: number }[] = band
             ? [
                 ...(band.showStartEdge ? [{ isAnchor: band.anchorAtStart, y: band.y }] : []),
@@ -102,9 +99,8 @@
             .attr('font-size', `${labelFontSize}px`)
             .text(labelText);
 
-          // The extent trailing the name saves reading two edges off the axis, as a vertical band's
-          // duration does. Written low-to-high whichever order the operator typed, since a value
-          // interval has no direction of its own -- the solid edge is what marks the anchor.
+          // Extent trailing the name, as a vertical band's duration does. Written low-to-high whichever
+          // order was typed -- a value interval has no direction; the solid edge marks the anchor.
           if (band) {
             const [low, high] = [guide.y, guide.y2 as number].sort((a, b) => a - b);
             lineGroup

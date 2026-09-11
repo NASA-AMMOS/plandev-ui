@@ -113,18 +113,12 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   /**
-   * Pinned to 'step' on an ordinal scale, whose y positions are rungs on a scalePoint with nothing
-   * between them -- a spline through them would bow the line into pixel rows that read as other states.
+   * Pinned to 'step' on an ordinal scale, whose y positions are rungs with nothing between them -- a
+   * spline would bow the line through pixel rows that read as other states.
    *
-   * Pinned to 'linear' on a stacked layer, because a stack's bands have to share their edges. A band is
-   * bounded above by its own line and below by `stackBaseline`, the previous layer's cumulative y at
-   * the same x, so the two layers draw one shared boundary twice. Let their interpolation disagree and
-   * a sliver of gap or overlap opens wherever the spline departs from the chord.
-   *
-   * Linear is also the true answer: `stackLineLayerValues` sums onto the union of every series'
-   * breakpoints, where summing piecewise-linear functions is exact, so the polyline through those
-   * points is the stack. Honoring 'smooth' would mean summing the splines rather than smoothing the
-   * sum, which no single curve can represent -- the sum of two monotone cubics is not one.
+   * Pinned to 'linear' on a stacked layer: adjacent bands share an edge, drawn twice (once as a line,
+   * once as the next layer's `stackBaseline`), so any disagreement opens a sliver of gap or overlap.
+   * Linear is also correct, since the stack is only exact at the breakpoints it was summed on.
    */
   $: effectiveInterpolation = ordinalScale ? 'step' : stackBaseline ? 'linear' : interpolation;
   $: dropHoldPoints = effectiveInterpolation !== 'step';
@@ -134,10 +128,9 @@
    */
   $: collapseSameXPoints = effectiveInterpolation === 'smooth';
   /**
-   * Every style input the canvas draw depends on, resolved and sanitized in one place. Svelte does not
-   * track a function body's dependencies, so referencing this one object in the reactive guard below is
-   * what makes any style change trigger a redraw. It also resolves fillColor and pointColor, which are
-   * undefined unless the layer overrides lineColor and so cannot be depended on in the guard directly.
+   * Every style input the canvas draw depends on, resolved and sanitized in one place. Referencing this
+   * one object in the reactive guard below is what makes any style change trigger a redraw, and it
+   * resolves fillColor/pointColor, which are undefined unless the layer overrides lineColor.
    */
   $: lineDrawOptions = {
     curve: getLineCurve(effectiveInterpolation),
@@ -178,8 +171,7 @@
   $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
-  // Passed rather than read inside the call: Svelte does not track what a function body reads, so
-  // reading these in there would leave the point set stale until the resource data next changed
+  // Passed rather than read inside the call, or the point set stays stale until resource data changes
   $: processResourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints);
   $: offscreenPoint =
     ctx && generateOffscreenPoint(lineDrawOptions.pointColor, lineDrawOptions.pointRadius, lineDrawOptions.pointShape);
@@ -316,8 +308,7 @@
       // Account for up to 3 extra points added to finalPoints: left, right, and last point
       // Also account for gap points that have not been included in pointsInView
       // TODO could also just do this when finalPoints < drawWidth but might be less performant?
-      // 'auto' drops points once decimation has actually thinned the set, since one sprite per pixel
-      // column reads as noise rather than as data
+      // 'auto' drops points once decimation has thinned the set -- one sprite per pixel column is noise
       const decimationKeptEveryPoint =
         !decimate || Math.abs(finalPoints.length - gapPoints.length - pointsInView.length) < 4;
       const shouldDrawPoints =
@@ -385,8 +376,7 @@
       return;
     }
 
-    // The sprite is padded beyond the point radius so taller shapes are not clipped, so it is both
-    // positioned and sized by the sprite box rather than by the radius
+    // Positioned and sized by the sprite box, not the radius: the box is padded so taller shapes fit
     const spriteSize = getPointSpriteSize(lineDrawOptions.pointRadius);
     const spriteOffset = spriteSize / 2;
     ctx.save();
@@ -443,8 +433,7 @@
       scaledY = (yScale as ScalePoint<string>)(y as string);
     } else {
       scaledY = (yScale as YScale)(y as number);
-      // Defensive: symlog places every real value, but a malformed domain must never blit a point at
-      // a non-finite coordinate or stretch the line off-canvas
+      // Defensive: a malformed domain must never blit a point at a non-finite coordinate
       if (scaledY !== undefined && !Number.isFinite(scaledY)) {
         scaledY = undefined;
       }

@@ -19,6 +19,7 @@
   import {
     DEFAULT_XRANGE_LABEL_VISIBILITY,
     getXRangeColorScale,
+    getXRangeObservedDomain,
     getXRangeValueDomain,
     searchQuadtreeRect,
   } from '../../utilities/timeline';
@@ -41,7 +42,6 @@
   const dispatch = createEventDispatcher<{
     contextMenu: MouseOver;
     mouseOver: RowMouseOverEvent;
-    updateValueDomain: { domain: string[]; resourceName: string };
   }>();
   const textMeasurementCache: Record<string, { textHeight: number; textWidth: number }> = {};
   // TODO maybe dynamically compute this number by looking at how much work there is to do for
@@ -88,11 +88,6 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
-  // Reported up so the layer settings form can offer the values a free-form resource actually holds,
-  // which nothing but the data knows. Fires when the sampled resource changes, not per frame.
-  $: if (domain.length && resources.length) {
-    dispatch('updateValueDomain', { domain, resourceName: resources[0].name });
-  }
 
   onMount(() => {
     if (canvas) {
@@ -298,7 +293,7 @@
           });
         }
       } else if (schema.type === 'string') {
-        const domainMap: Record<string, string> = {};
+        domain = getXRangeObservedDomain(values);
         for (let i = 0; i < values.length; ++i) {
           const { x, y, is_gap } = values[i];
           const isNull = y === null;
@@ -313,11 +308,7 @@
             value: text,
             x,
           });
-          if (!isNull) {
-            domainMap[text] = text;
-          }
         }
-        domain = Object.values(domainMap);
       } else if (schema.type === 'variant') {
         domain = getXRangeValueDomain(schema) ?? [];
         for (let i = 0; i < values.length; ++i) {

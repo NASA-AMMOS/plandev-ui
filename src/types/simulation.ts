@@ -41,9 +41,8 @@ export type ProfileSegment = {
 export type Resource = {
   name: string;
   /**
-   * Carried through from the profile this was sampled from, since sampling erases it and the value
-   * schema cannot stand in -- a discrete profile of numbers and a real profile both report `real`.
-   * Only this says whether the resource holds each value or ramps between them.
+   * Carried through from the profile this was sampled from, since sampling erases it and the schema
+   * cannot stand in -- a discrete profile of numbers and a real profile both report `real`.
    */
   profileType: 'discrete' | 'real';
   schema: ValueSchema;
@@ -68,9 +67,8 @@ export type ResourceValue = {
   is_gap?: boolean;
   /**
    * Set on the second of the two values a discrete profile segment produces -- the one carrying the
-   * segment's value forward to the next segment's start, which is what makes the staircase. A layer
-   * interpolating between segments drops these. Absent on real-profile values, whose second value is
-   * a genuinely different number derived from the segment's rate.
+   * value forward to the next segment's start, which is what makes the staircase. An interpolating
+   * layer drops these. Absent on real-profile values, whose second value is derived from the rate.
    */
   is_hold?: boolean;
   x: number;

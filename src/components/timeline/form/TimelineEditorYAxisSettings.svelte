@@ -23,8 +23,7 @@
     delete: void;
   }>();
 
-  // Passed in rather than read inside the function: Svelte does not track store reads in a function
-  // body, so this would evaluate once against an empty cache and never re-run
+  // Passed in rather than read inside the function, or it evaluates once against an empty cache
   $: computedAxis = getComputedAxis($yAxesWithScaleDomainsCache, $selectedRow?.id, yAxis.id);
   $: effectiveScaleDomain = (computedAxis?.scaleDomain ?? []) as number[];
 
