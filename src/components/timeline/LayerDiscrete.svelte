@@ -153,10 +153,8 @@
   $: directiveGlyph = getMarkerGlyphExtents(directiveMarker, rowHeight);
   $: zeroDurationGlyph = getMarkerGlyphExtents(zeroDurationMarker, rowHeight);
   /**
-   * How far right of a marker its label starts. Zero for 'line', which is narrow enough that
-   * labelPaddingLeft already clears it -- keeping this at zero is what makes the default style draw
-   * labels in exactly the position they have always been drawn in. The point styles are wide enough
-   * to sit under the text, so the label has to clear the marker's right edge.
+   * How far right of a marker its label starts. Zero for 'line', which labelPaddingLeft already
+   * clears; the point styles are wide enough to sit under the text, so the label has to clear them.
    */
   $: directiveLabelOffset = directiveMarker === 'line' ? 0 : directiveGlyph.right;
   $: zeroDurationLabelOffset = zeroDurationMarker === 'line' ? 0 : zeroDurationGlyph.right;
@@ -593,12 +591,11 @@
       });
 
       // Subrows are spread across whatever height the row has rather than stacked at a fixed pitch, so
-      // that a manually enlarged row uses the space it was given. Only the *first* subrow's height is
+      // a manually enlarged row uses the space it was given. Only the first subrow's height is
       // reserved here; the rest is divided between the gaps.
       const extraSpace = Math.max(0, drawHeight - discreteOptions.height - discreteRowPadding * 2);
       const rowCount = Object.keys(rows).length;
-      // Guarding rowCount of 1 rather than relying on `|| 0` to swallow the resulting NaN, which also
-      // swallowed the padding and drew a lone subrow flush against the top of the row
+      // Guarded rather than letting a rowCount of 1 divide by zero
       const rowSpacing = rowCount > 1 ? extraSpace / (rowCount - 1) : 0;
       Object.entries(rows).forEach(([_, entry], i) => {
         const { items } = entry;
@@ -611,15 +608,10 @@
         }
       });
 
-      // Height this row wants when it is set to auto-adjust: every subrow, a 3px gap between them, and
-      // the padding above and below.
-      //
-      // The padding was missing, and because the spacing above *divides* the leftover height rather
-      // than stacking at a fixed pitch, leaving it out did not merely crop the bottom -- it pulled
-      // every gap closed. At three 16px subrows the old formula asked for 54px, which left 30px to
-      // divide into two gaps of 15px for rows 16px tall, so consecutive subrows overlapped by a pixel
-      // and the labels ran together. Including the padding makes the division land at exactly
-      // height + 3.
+      // Height this row wants when set to auto-adjust: every subrow, a 3px gap between them, and the
+      // padding above and below. The padding has to be included -- the spacing above divides the
+      // leftover height rather than stacking at a fixed pitch, so leaving it out pulls every gap
+      // closed instead of merely cropping the bottom.
       if (expanded && discreteOptions.height) {
         const optimalRowHeight = Math.min(
           maxCanvasHeight,
@@ -638,11 +630,10 @@
     const itemsToDraw: DiscreteTreeNodeDrawItem[] = [];
     const seenSpans: Record<number, boolean> = {};
 
-    // Gated on hasActivityLayer / hasExternalEventsLayer exactly as compact mode is. Without the gate
-    // this path drew whatever was last in activityDirectives, so removing a row's only activity layer
-    // left it visible while the row was collapsed and made it reappear on every re-collapse.
-    // showDirectives and showSpans are not a substitute: they come from activityOptions.composition,
-    // which says which kinds to draw, not whether a layer exists to draw them from.
+    // Gated on hasActivityLayer / hasExternalEventsLayer as compact mode is, so a removed layer does
+    // not keep drawing while the row is collapsed. showDirectives and showSpans are not a substitute:
+    // they come from activityOptions.composition, which says which kinds to draw, not whether a layer
+    // exists to draw them from.
     if (hasActivityLayer && showDirectives) {
       activityDirectives.forEach(directive => {
         if (!xScaleView) {
@@ -710,11 +701,6 @@
     let labelEndX = 0;
     let boxEndX = 0;
     if (directive && showDirectives) {
-      // Was `boxEndX = 2` -- an *absolute* x of 2 rather than a width added to startX, so every
-      // directive reported an end left of its own start. With labelVisibility 'off' nothing else
-      // raised it, so the packer saw every directive ending at x=2 and stacked none of them. Harmless
-      // while a directive was a 2px tick and everything overlapped invisibly; not harmless once the
-      // marker can be 14px wide.
       // The packer gives a directive and its span one shared startX, so a zero-duration span always
       // marks the same moment here and the directive always yields the glyph to it
       const { glyph, labelOffset } = getDirectiveMarkerGeometry(spanOwnsTheMarker(span));
@@ -763,14 +749,9 @@
 
   /**
    * Geometry of the marker actually drawn at a directive's x: the glyph, and how far right of it a
-   * label has to start.
-   *
-   * A directive and a zero-duration span mark the same moment, and only one glyph is drawn there --
-   * the span's, see the suppression in drawRow. Everything that positions against that mark has to
-   * follow the glyph that survives rather than the setting that named it, or the two disagree in both
-   * directions: Directive 'line' with Instant 'diamond' leaves the label offset at zero while a 14px
-   * diamond sits under the text, and swapping the two pushes the label clear of a diamond that was
-   * never drawn.
+   * label has to start. A directive and a zero-duration span mark the same moment and only the span's
+   * glyph is drawn there (see drawRow), so everything positioning against that mark has to follow the
+   * glyph that survives rather than the setting that named it.
    */
   function getDirectiveMarkerGeometry(yieldsToSpanMarker: boolean): { glyph: MarkerGlyph; labelOffset: number } {
     return yieldsToSpanMarker
@@ -784,12 +765,10 @@
   }
 
   /**
-   * Left edge an item occupies, which is its start x unless a centered marker overhangs it. The packer
-   * compares this against the previous item's end, so without it two markers a pixel apart would be
-   * packed into the same subrow and overlap.
-   *
-   * Only the glyph actually drawn counts. A directive whose zero-duration span is marking the same
-   * moment draws nothing, so reserving its overhang too would hold space for a mark that is not there.
+   * Left edge an item occupies: its start x, unless a centered marker overhangs it. The packer compares
+   * this against the previous item's end, so without it two markers a pixel apart pack into the same
+   * subrow and overlap. Only the glyph actually drawn counts -- a directive yielding to its span's
+   * marker draws nothing, so reserving its overhang would hold space for a mark that is not there.
    */
   function getItemStartX(item: {
     directive?: ActivityDirective;
@@ -864,9 +843,8 @@
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
-          // A marker draws at full strength whatever the layer's opacity, for the same reason a span's
-          // does: the translucency is there to keep overlapping *bars* readable, and a marker has no
-          // area to overlap. The layer opacity still governs every event that has a duration.
+          // A marker draws at full strength whatever the layer's opacity: translucency is there to
+          // keep overlapping bars readable, and a marker has no area to overlap
           const opacity = isZeroDuration
             ? 1
             : (externalEventOpacities[getExternalEventRowId(externalEvent.pkey)] ?? DEFAULT_EXTERNAL_EVENT_OPACITY);
@@ -894,9 +872,7 @@
             }
           }
           if (shouldDrawLabel) {
-            // The event's own color, as span and directive labels use theirs. This read
-            // discreteDefaultColor, so an external event label ignored its layer color entirely and
-            // every row's labels came out the same gray.
+            // The event's own color, as span and directive labels use theirs
             drawLabel(
               label,
               externalEventStartX + labelOffset,
@@ -940,10 +916,8 @@
         } else if (unfinished) {
           ctx.fillStyle = shadeColor(activityUnfinishedColor, 1.2);
         } else {
-          // A bar is drawn translucent so a row of overlapping spans stays readable. A marker has no
-          // area to overlap, and at a dot's size that same translucency washes it out to nothing --
-          // which is why a marker was only ever legible with a directive tick drawn on top of it.
-          // Full strength here, so an instant carries itself.
+          // A bar is translucent so a row of overlapping spans stays readable. A marker has no area to
+          // overlap, and at a dot's size that translucency washes it out, so it draws full strength.
           ctx.fillStyle = isZeroDuration ? spanColor : getRGBAFromHex(spanColor, 0.5);
         }
         const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
@@ -999,24 +973,18 @@
         } else {
           ctx.fillStyle = color;
         }
-        // Under composition 'both' a directive and its span are two marks for one activity, and when
-        // the span occupies a single moment they mark the same one. While both were 2px ticks they
-        // landed exactly on top of each other and the duplication was invisible; now that the two
-        // styles are set separately it shows as a diamond with a tick through it.
+        // Under composition 'both' a directive and a zero-duration span mark the same moment, which
+        // would draw as a diamond with a tick through it. The span's marker wins -- it is the one an
+        // operator picked to make instants legible -- and the directive still draws its label, anchor
+        // and hit box.
         //
-        // The span's marker wins. It is the one an operator picked to make instants legible, and the
-        // directive loses no representation by yielding it -- its label and anchor still draw, and its
-        // own hit box is unchanged.
-        //
-        // Compared in pixels rather than in time, deliberately. A directive moved since simulation is
-        // exactly what this annotation exists to report, so the tick comes back as soon as the move is
-        // wide enough to see; at a zoom where the two land on the same pixel, drawing both is only ink.
+        // Compared in pixels rather than in time: a directive moved since simulation is what this
+        // annotation exists to report, so the tick returns as soon as the move is wide enough to see.
         const spanAlreadyMarksThisMoment =
           spanOwnsTheMarker(span) &&
           typeof spanStartX === 'number' &&
           Math.round(spanStartX) === Math.round(directiveStartX);
-        // Everything below positions against the glyph that is actually drawn here, which is the span's
-        // whenever the directive has yielded to it
+        // Positioned against the glyph actually drawn here, which is the span's wherever it won
         const { glyph: markerGlyph, labelOffset: markerLabelOffset } =
           getDirectiveMarkerGeometry(spanAlreadyMarksThisMoment);
         if (!spanAlreadyMarksThisMoment) {
@@ -1079,15 +1047,10 @@
   }
 
   /**
-   * Whether a span occupies a single moment rather than an interval.
-   *
-   * Deliberately keyed off the *data*, not off how few pixels the span currently occupies. A one
-   * second span at a two week zoom is a small interval, and deriving the marker from its rendered
-   * width would make it flip shape as the operator zooms.
-   *
-   * `duration === null` means still simulating, which is an unknown duration rather than a zero one --
-   * and getIntervalInMs(null) returns 0, so durationMs alone cannot tell the two apart. Unfinished
-   * spans already have their own colour treatment and keep their bar.
+   * Whether a span occupies a single moment rather than an interval. Keyed off the data, not rendered
+   * width, so a one second span at a two week zoom stays an interval instead of flipping shape as the
+   * operator zooms. `duration === null` means still simulating -- an unknown duration rather than a
+   * zero one -- and getIntervalInMs(null) returns 0, so durationMs alone cannot tell the two apart.
    */
   function isZeroDurationSpan(span: Span): boolean {
     return span.duration !== null && span.durationMs === 0;
@@ -1098,10 +1061,9 @@
   }
 
   /**
-   * Hit box for a drawn item. A centered marker has to start left of the item's start x, or its left
-   * half is drawn but not clickable. `contentWidth` is the widest of the item's bar and its label,
-   * measured rightward from startX. Pass the glyph the item is actually drawn with, or null for an item
-   * drawn as a bar.
+   * Hit box for a drawn item. A centered marker starts left of the item's start x, or its left half is
+   * drawn but not clickable. `contentWidth` is the wider of the item's bar and its label, measured
+   * rightward from startX. Pass the glyph the item is drawn with, or null for an item drawn as a bar.
    */
   function getItemHitBox(
     id: Id,
@@ -1115,10 +1077,7 @@
     return { height: rowHeight, id, width: left + right, x: startX - left, y };
   }
 
-  /**
-   * Draws a single-moment marker in the given style. Assumes ctx.fillStyle is already set by the
-   * caller, matching the fillRect calls this replaces.
-   */
+  /** Draws a single-moment marker in the given style. ctx.fillStyle is set by the caller. */
   function drawMarker(x: number, y: number, style: MarkerStyle, glyph: MarkerGlyph) {
     if (style === 'line') {
       // Centered on x like the point styles, so switching style never moves the mark

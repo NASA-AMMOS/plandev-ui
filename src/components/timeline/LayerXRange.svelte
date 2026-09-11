@@ -64,7 +64,7 @@
   $: canvasWidthDpr = drawWidth * dpr;
   // Normalized here rather than defaulted on the prop: Row spreads a whole layer in, so a layer saved
   // before this option existed arrives with the key explicitly undefined, which a prop default does
-  // not cover -- and an undefined value would fail the draw guard below and leave the layer blank.
+  // not cover -- and undefined fails the draw guard below, leaving the layer blank.
   $: appearances = valueAppearance ?? {};
   $: showLabels = (labelVisibility ?? DEFAULT_XRANGE_LABEL_VISIBILITY) !== 'off';
   $: if (
@@ -148,9 +148,9 @@
 
       const { value = '' } = point;
 
-      // Scan to the next point holding a different value than the current point, so a run of
-      // consecutive samples at the same value becomes one box. Keyed on the value rather than the
-      // drawn text: two distinct values must stay two boxes even where they display identically.
+      // Scan to the next point holding a different value, so a run of consecutive samples at the same
+      // value becomes one box. Keyed on the value rather than the drawn text, so two distinct values
+      // stay two boxes even where they display identically.
       let j = i + 1;
       let nextPoint = points[j];
       while (nextPoint && nextPoint.value === value && nextPoint.is_gap === point.is_gap) {
@@ -160,8 +160,7 @@
       i = j - 1; // Minus since the loop auto increments i at the end of the block.
 
       // After the scan, so a hidden value costs one iteration per run rather than one per sample. No
-      // box, no label, and no quadtree entry: hidden means the operator gets the row's space back,
-      // and a hover target over blank canvas would take that back.
+      // quadtree entry either -- a hover target over blank canvas would undo the point of hiding.
       const appearance = appearances[value];
       if (appearance?.hidden) {
         continue;
@@ -185,9 +184,8 @@
         const { id } = point;
         visiblePointsById[id] = point;
 
-        // Both fall back on an empty string as well as on no entry, so clearing either field in the
-        // form returns the value to its default rather than painting an invalid fillStyle or blanking
-        // the box's text.
+        // Both fall back on an empty string as well as on no entry, so clearing either field returns
+        // the value to its default rather than painting an invalid fillStyle or blanking the text
         const labelText = appearance?.label || point.label.text;
         ctx.fillStyle = appearance?.color || colorScale(value);
         const rect = new Path2D();
@@ -344,11 +342,8 @@
   }
 
   /**
-   * Sets the canvas text style for a point's label and measures the text about to be drawn.
-   *
-   * Takes the text rather than reading `point.label.text`, because a value can be relabelled and it is
-   * the drawn string that has to be measured -- measuring the original would truncate an override to
-   * the wrong width, or refuse to draw a short one inside a box it fits perfectly well.
+   * Sets the canvas text style for a point's label and measures the text about to be drawn. Takes the
+   * text rather than reading `point.label.text`, since a relabelled value has to be measured as drawn.
    */
   function setLabelContext(
     point: XRangePoint,

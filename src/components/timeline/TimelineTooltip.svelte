@@ -11,7 +11,7 @@
   import type { ConstraintResultWithName } from '../../types/constraint';
   import type { ExternalEvent } from '../../types/external-event';
   import type { ResourceType, Span } from '../../types/simulation';
-  import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangePoint } from '../../types/timeline';
+  import type { LineLayer, LinePoint, MouseOver, Point, Row, XRangeLayer, XRangePoint } from '../../types/timeline';
   import { addPageFocusListener } from '../../utilities/browser';
   import { convertUsToDurationString, formatDate, getDoyTime } from '../../utilities/time';
   import { getResourceForLayer } from '../../utilities/timeline';
@@ -581,11 +581,17 @@
     const layer = row ? row.layers.find(l => l.id === layerId) : null;
     let color = '#FFFFFF';
     let name = '';
+    let valueAppearance: XRangeLayer['valueAppearance'];
     if (layer && layer.chartType === 'x-range') {
       name = layer.name ? layer.name : point.name;
       color = (layer as LineLayer).lineColor;
+      valueAppearance = (layer as XRangeLayer).valueAppearance;
     }
     const pointTime = formatDate(new Date(x), $plugins.time.primary.format);
+    // The tooltip leads with the label the box is drawn with, so what it says matches what was
+    // pointed at, and keeps the raw value beside it since that is what the model and any filter use.
+    const value = point.value ?? point.label.text;
+    const label = valueAppearance?.[value]?.label || value;
 
     return `
       <div class='tooltip-row-container'>
@@ -619,8 +625,9 @@
         }
         <div class='tooltip-row'>
           <span>Value:</span>
-          <span class='tooltip-value-highlight st-typography-medium'>
-            ${point.value ?? point.label.text}
+          <span class='tooltip-value-row'>
+            <span class='tooltip-value-highlight st-typography-medium'>${escapeHtml(label)}</span>
+            ${label !== value ? `<span class='tooltip-value-secondary'>${escapeHtml(value)}</span>` : ''}
           </span>
         </div>
       </div>

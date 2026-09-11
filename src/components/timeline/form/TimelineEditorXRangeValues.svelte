@@ -23,12 +23,12 @@
 
   $: appearance = layer.valueAppearance ?? {};
   $: schema = getResourceSchema($allResourceTypes, layer.filter.resource);
-  // Null for a resource whose schema does not enumerate its values, which is what splits this form in
-  // two: a listed set to edit in place, or an unknown set to name by hand.
+  // Null for a resource whose schema does not enumerate its values, which splits this form in two:
+  // a listed set to edit in place, or an unknown set to name by hand
   $: schemaValues = getXRangeValueDomain(schema);
-  // What the layer has actually seen, for the resources whose schema declares nothing. Only ever a
-  // suggestion: it covers the simulation currently loaded, so a value that has not occurred yet is
-  // still worth being able to add by hand.
+  // What the layer has actually seen, for a resource whose schema declares nothing. Only a
+  // suggestion: it covers the loaded simulation, so a value that has not occurred yet is still
+  // worth being able to add by hand.
   $: observedValues = layer.filter.resource ? ($xRangeValueDomains[layer.filter.resource] ?? []) : [];
   $: values = getEditableValues(schemaValues, observedValues, appearance);
   $: schemeColors = getSchemeColors(layer.colorScheme, schemaValues ?? observedValues);
@@ -39,12 +39,9 @@
 
   /**
    * Every value worth a row: the declared set where the schema has one, otherwise the values the data
-   * turned out to hold, plus anything already configured either way.
-   *
-   * That last part is what keeps a stale entry reachable, and it matters in both directions. A model
-   * revision can stop declaring a value an operator had already pinned; a resimulation can stop
-   * producing one. The entry goes on affecting the render regardless, so listing only the current set
-   * would leave it coloring or hiding a value with nothing in the form to undo it.
+   * turned out to hold, plus anything already configured either way. That last part keeps a stale
+   * entry reachable -- a model revision or a resimulation can stop producing a value an operator had
+   * pinned, and the entry goes on coloring or hiding it with nothing in the form to undo it.
    */
   function getEditableValues(
     schemaValues: string[] | null,
@@ -57,12 +54,9 @@
   }
 
   /**
-   * The color each value would take with no override, for the values whose color is knowable.
-   *
-   * Accurate only for the exact domain the renderer builds its scale from -- the schema's declared set,
-   * or for a free-form resource the order its values first appear in the profile, which is why that
-   * order is reported up rather than reconstructed here. Anything outside that domain, such as a value
-   * the schema or a resimulation has since dropped, gets no swatch rather than a confidently wrong one.
+   * The color each value would take with no override, for the values whose color is knowable. Accurate
+   * only for the exact domain the renderer builds its scale from, which is why that order is reported
+   * up rather than reconstructed here. Anything outside it gets no swatch rather than a wrong one.
    */
   function getSchemeColors(colorScheme: XRangeLayerColorScheme, domain: string[]): Record<string, string> {
     if (!domain.length) {
@@ -74,8 +68,8 @@
 
   function update(value: string, entry: XRangeValueAppearance | null) {
     const next = { ...appearance };
-    // An entry with nothing left in it is indistinguishable from no entry, and leaving it behind would
-    // grow the saved view with every value an operator toggled and untoggled.
+    // An empty entry is indistinguishable from no entry, and leaving it would grow the saved view
+    // with every value an operator toggled and untoggled
     if (entry === null || (entry.color === undefined && entry.label === undefined && !entry.hidden)) {
       delete next[value];
     } else {
@@ -91,8 +85,7 @@
   function onLabelChange(value: string, event: Event) {
     const { value: label } = getTarget(event);
     const text = label?.toString() ?? '';
-    // Emptying the field drops the override rather than storing '', which would draw a box with no text
-    // and no way to tell that from a value whose label really is blank.
+    // Emptying the field drops the override rather than storing '', which would draw an empty box
     const { label: _cleared, ...rest } = appearance[value] ?? {};
     update(value, text ? { ...rest, label: text } : rest);
   }
@@ -108,8 +101,7 @@
       addedValue = '';
       return;
     }
-    // Given a color up front: an added value has no inherited color to fall back to, so an entry
-    // without one would render a row with a blank swatch.
+    // Given a color up front, since an added value has no inherited color to fall back to
     const nextPreset = ViewLineLayerColorPresets[Object.keys(appearance).length % ViewLineLayerColorPresets.length];
     update(value, { color: nextPreset });
     addedValue = '';
@@ -137,8 +129,8 @@
         {@const entry = appearance[value]}
         {@const hidden = entry?.hidden === true}
         <div class="value-row" class:hidden>
-          <!-- An outlined empty swatch rather than a color when there is nothing to inherit: accurate,
-               and the picker's own border keeps it visible -->
+          <!-- An outlined empty swatch when there is nothing to inherit: accurate, and the picker's
+               own border keeps it visible -->
           <ColorPresetsPicker
             presetColors={ViewLineLayerColorPresets}
             tooltipText="Color for {value}"
@@ -146,10 +138,8 @@
             value={entry?.color || schemeColors[value] || 'transparent'}
             on:input={({ detail }) => onColorChange(value, detail.value)}
           />
-          <!-- The name column is the label field. A value's drawn text is the one thing about it an
-               operator might want to change, and giving it a row of its own would have doubled the
-               height of every list; as a placeholder the raw value still shows through whenever no
-               override is set, and the tooltip has it either way. -->
+          <!-- The name column doubles as the label field, so the list does not need a second row per
+               value. The raw value shows through as the placeholder when no override is set. -->
           <input
             autocomplete="off"
             class="value-name"
@@ -186,9 +176,8 @@
   {/if}
 
   {#if !schemaValues}
-    <!-- The observed list only covers what the loaded simulation produced, so a free-form resource keeps
-         a way to name a value that has not occurred yet -- and to configure one before any simulation
-         has run at all. -->
+    <!-- The observed list only covers the loaded simulation, so a free-form resource keeps a way to
+         name a value that has not occurred yet, or to configure one before any simulation has run. -->
     <div class="add-value">
       <input
         autocomplete="off"

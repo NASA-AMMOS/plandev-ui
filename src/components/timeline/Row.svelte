@@ -200,8 +200,7 @@
     external_events: {},
     spans: {},
   };
-  // Kept beside idToColorMaps rather than folded into it: opacity is only configurable on external
-  // event layers, and a map whose other two branches were always empty would read as an oversight
+  // Beside idToColorMaps rather than in it: opacity is only configurable on external event layers
   let externalEventOpacities: Record<ExternalEventId, number> = {};
   let timeFilteredActivityDirectives: ActivityDirective[] = [];
   let timeFilteredSpans: Span[] = [];
@@ -363,8 +362,8 @@
     anyResourcesLoading = anyLoading;
   }
 
-  // Stacking is the one thing a layer cannot compute for itself, since it depends on every other layer
-  // on the same axis. Empty unless an axis opts in.
+  // Stacking depends on every other layer on the same axis, so a layer cannot compute it for itself.
+  // Empty unless an axis opts in.
   $: lineLayerStacks = loadedResources && yAxes ? getLineLayerStacks(yAxes, layers, loadedResources) : {};
 
   // Compute scale domains for axes since it is optionally defined in the view
@@ -476,8 +475,6 @@
           timeFilteredSpans = [];
         }
 
-        // Second term was a copy of the first, so a layer matching only orphan spans and no directives
-        // reported as having no activity content and was allocated no space
         hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredSpans.length > 0;
       } else {
         // Cleared, not just flagged: the collapsed draw path reads these lists, so leaving the last
@@ -493,8 +490,7 @@
     if (hasExternalEventsLayer) {
       filteredExternalEvents = [];
       // Cleared with the list it is keyed against, so it holds an entry only for an event still being
-      // rendered. Every rendered event is rewritten below before it is read, so keeping the stale keys
-      // would not misdraw anything -- it would just grow without bound across recomputes.
+      // rendered. Stale keys would not misdraw anything, but would grow without bound.
       externalEventOpacities = {};
 
       // Filter what LINKED Derivation Groups are to be shown
@@ -532,8 +528,8 @@
           timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
         }
       });
-      // The map above is filled by mutation, which Svelte cannot see. Reassigning marks it changed so
-      // an opacity edit reaches LayerDiscrete, which is immutable and only re-renders on new references
+      // Filled by mutation, which Svelte cannot see. Reassigning marks it changed so an opacity edit
+      // reaches LayerDiscrete, which is immutable and only re-renders on a new reference.
       externalEventOpacities = externalEventOpacities;
     }
   }

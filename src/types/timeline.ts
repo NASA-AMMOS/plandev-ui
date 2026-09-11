@@ -32,12 +32,9 @@ export interface ActivityLayer extends Layer {
 export interface ExternalEventLayer extends Layer {
   externalEventColor: string;
   /**
-   * Opacity of the drawn event, for events that have a duration. External events can carry one, so
-   * they are drawn as translucent bars by default to keep a busy row of overlapping events readable.
-   * Exposed so a row whose events do not overlap can have them read at full strength.
-   *
-   * Does not apply to a zero-duration event, whose marker always draws opaque: translucency is there
-   * to let overlapping bars be seen through, and a marker has no area to overlap.
+   * Opacity of events that have a duration, which are drawn translucent by default so a busy row of
+   * overlapping bars stays readable. Does not apply to a zero-duration event: its marker has no area
+   * to overlap, so it always draws opaque.
    */
   opacity?: number;
 }
@@ -79,21 +76,13 @@ export type ExternalEventLayerFilterSubfieldSchema = ExternalEventLayerFilterSub
 export type AxisDomainFitMode = 'fitPlan' | 'fitTimeWindow' | 'manual';
 
 /**
- * How an axis maps values to pixels.
- *
- * 'log' is backed by d3's symlog rather than its log scale. A true log scale has no position for zero
- * or for negative values, and mission resources routinely sit at zero (power off, buffer empty), so a
- * true log axis silently drops those samples. Symlog is logarithmic away from zero and linear through
- * it, so every sample gets a position. With the constant derived from the data (see getLogConstant)
- * its decade spacing matches a true log scale to within a pixel except in the lowest decade.
+ * How an axis maps values to pixels. 'log' is backed by d3's symlog, which is logarithmic away from
+ * zero and linear through it, so samples at zero and below still get a position -- a true log scale
+ * would drop them, and mission resources routinely sit at zero.
  */
 export type AxisScaleType = 'linear' | 'log';
 
-/**
- * Any numeric y scale an axis can produce. Both are d3 continuous scales, so they are callable and
- * share domain/range/ticks/invert -- callers that only map values to pixels need not branch on which
- * one they were handed.
- */
+/** Any numeric y scale an axis can produce. Both are callable d3 continuous scales. */
 export type YScale = ScaleLinear<number, number> | ScaleSymLog<number, number>;
 
 export type Axis = {
@@ -106,20 +95,17 @@ export type Axis = {
   scaleDomain?: (number | null)[];
   scaleType?: AxisScaleType;
   /**
-   * Stacks this axis's line layers on each other instead of overlaying them, bottom-up in layer
-   * order, so the topmost layer's line is the total. On the axis rather than on the layer because
-   * only series sharing a scale can meaningfully be summed, and because the axis domain has to become
-   * the stack total rather than the largest single series.
+   * Stacks this axis's line layers bottom-up in layer order, so the topmost layer's line is the
+   * total. On the axis rather than the layer: only series sharing a scale can be summed, and the
+   * axis domain has to become the stack total.
    */
   stack?: boolean;
   tickCount: number | null;
 };
 
 /**
- * An Axis with the fields derived at render time rather than stored in the view. Kept as a separate
- * type, and deliberately not folded into Axis, so it is obvious these must never be written back into
- * a view definition -- the schema sets additionalProperties: false and would reject them. Deriving
- * rather than persisting also means the value cannot go stale when the underlying data changes.
+ * An Axis plus the fields derived at render time. Kept separate from Axis because these must never be
+ * written back into a view definition -- the schema sets additionalProperties: false and rejects them.
  */
 export type ComputedAxis = Axis & {
   /** Width of symlog's linear region, derived from the data. See getLogConstant. */
@@ -152,9 +138,8 @@ export type HorizontalGuide = {
   label: Label;
   y: number;
   /**
-   * Turns the guide into a shaded band between `y` and `y2` -- a nominal range, a limit envelope, a
-   * threshold region. Order does not matter; the band spans whichever of the two is lower to whichever
-   * is higher. Absent for an ordinary single-value guide, which stays a line.
+   * Turns the guide into a shaded band between `y` and `y2`. Order does not matter. Absent for an
+   * ordinary single-value guide, which stays a line.
    */
   y2?: number;
   yAxisId: number;
@@ -185,17 +170,13 @@ export interface Layer {
 }
 
 /**
- * How the line between two sampled values is drawn.
+ * How the line between two sampled values is drawn. Only affects discretely-sampled data; a real
+ * profile carries its own slope, so every mode draws it identically.
  *
- * Only affects discretely-sampled data, which is piecewise constant and therefore arrives as a pair
- * of values per segment. Real-valued profiles already carry their own slope, so every mode draws
- * them identically.
- *
- * - `step` holds each value until the next segment starts (a staircase). The default, and how every
- *   resource was drawn before this option existed.
+ * - `step` holds each value until the next segment starts, and is the default.
  * - `linear` ramps straight from each value to the next.
- * - `smooth` ramps along a monotone curve. Monotone specifically: it cannot overshoot a value the
- *   model never produced, which a cardinal or basis spline would.
+ * - `smooth` ramps along a monotone curve -- monotone so it cannot overshoot a value the model never
+ *   produced, which a cardinal or basis spline would.
  */
 export type InterpolationMode = 'step' | 'linear' | 'smooth';
 
@@ -206,10 +187,8 @@ export type PointShape = 'circle' | 'square' | 'diamond' | 'triangle' | 'cross';
 export type ShowPointsMode = 'auto' | 'always' | 'never';
 
 /**
- * `lineColor`, `lineWidth` and `pointRadius` are required because the view schema requires them; every
- * other field here is optional because the schema does not, and a view saved before that field existed
- * is still valid. New layers get all of them from `createLineLayer`, and each reader supplies the same
- * default the schema would have, so an older view renders the way it always did.
+ * Every field beyond the three the view schema requires is optional, so a view saved before that field
+ * existed stays valid. Readers supply the defaults in `utilities/timeline.ts`.
  */
 export interface LineLayer extends Layer {
   fillColor?: string; // When undefined the area fill uses lineColor
@@ -232,26 +211,12 @@ export interface LinePoint extends Point {
     | string
     | null /* TODO this type leaves much to be desired – could make an OrdinalLinePoint and a NumericLinePoint? */;
   /**
-   * Lower edge of this point's area fill, when the layer is part of a stack: the cumulative total of
-   * the layers beneath it at this x. Undefined for an unstacked layer, which fills to a single
-   * baseline for the whole series instead. Carried per point rather than as a parallel array because
-   * decimation reorders and thins points, which breaks index correspondence.
+   * Lower edge of this point's area fill when the layer is stacked: the total of the layers beneath it
+   * at this x. Carried per point rather than as a parallel array because decimation reorders and thins
+   * points. Undefined for an unstacked layer, which fills to one baseline for the whole series.
    */
   y0?: number | null;
 }
-
-/**
- * One layer's contribution to a stack, resampled onto the stack's shared x grid.
- *
- * `y` is the running total through this layer and `y0` the running total beneath it, so a layer fills
- * between them and the topmost layer's `y` is the stack total. Both are null where the total is
- * unknown -- see `stackLineLayerValues`.
- */
-export type StackedSeries = {
-  layerId: number;
-  resourceName: string;
-  values: { x: number; y: number | null; y0: number | null }[];
-};
 
 export type MouseDown = {
   activityDirectives?: ActivityDirective[];
@@ -330,20 +295,12 @@ export type ExternalEventOptions = {
 };
 
 /**
- * Shape used to mark a discrete item that occupies a single moment.
- *
- * - `line` is the 2px full-height tick such items have always been drawn with, and the default. It
- *   reads as a boundary marker rather than as an event.
- * - `dot` reads as an event rather than a boundary.
- * - `diamond` is the Gantt milestone convention.
+ * Shape used to mark a discrete item that occupies a single moment: a 2px full-height tick (`line`,
+ * the default), a `dot`, or a `diamond` for the Gantt milestone convention.
  *
  * Every style is centered on the moment it marks, so switching between them never moves the mark --
- * see `getMarkerGlyphExtents`, which owns that geometry. `line` therefore sits a pixel left of where a
- * bar of the same width would start, because a bar represents an interval and anchors its *left edge*
- * to the start time, while a marker represents a moment and anchors its center.
- *
- * One vocabulary for both marker settings below, because the two defaults render identically: a
- * directive tick and a zero-duration span's `Math.max(2, …)` bar are both a 2px full-height rect.
+ * `getMarkerGlyphExtents` owns that geometry. A marker therefore anchors its center to the start time,
+ * where a bar anchors its left edge, since a bar represents an interval rather than a moment.
  */
 export type MarkerStyle = 'line' | 'dot' | 'diamond';
 
@@ -358,15 +315,9 @@ export type DiscreteOptions = {
   activityOptions?: ActivityOptions;
 
   /**
-   * Shape every activity directive is drawn with.
-   *
-   * Unconditional, not derived: a directive marks a start time and has no duration of its own, so
-   * there is nothing to detect. It matters most under `activityOptions.composition: 'directives'`,
-   * where the marker is the item's entire representation; under `'both'` it is an annotation sitting on
-   * its span's left edge, informative mainly when the directive has been moved since simulation.
-   *
-   * Kept separate from zeroDurationMarker because the two answer different questions. Turning
-   * zero-duration spans into milestones should not also put a diamond on every directive in the plan.
+   * Shape every activity directive is drawn with. Applied unconditionally -- a directive marks a start
+   * time and has no duration to detect. Kept separate from `zeroDurationMarker` so that making
+   * zero-duration spans into milestones does not also put a diamond on every directive in the plan.
    */
   directiveMarker?: MarkerStyle;
 
@@ -383,11 +334,9 @@ export type DiscreteOptions = {
   labelVisibility: 'on' | 'off' | 'auto';
 
   /**
-   * Shape for a span or external event whose duration is zero. Anything with a duration keeps its bar.
-   *
-   * Genuinely derived, from the data rather than from rendered width -- a one second span at a two week
-   * zoom is a small interval, not a moment, and keying off pixels would make it change shape as the
-   * operator zooms.
+   * Shape for a span or external event whose duration is zero; anything with a duration keeps its bar.
+   * Keyed off the data rather than rendered width, so an item does not change shape as the operator
+   * zooms -- a one second span at a two week zoom is a small interval, not a moment.
    */
   zeroDurationMarker?: MarkerStyle;
 };
@@ -402,6 +351,16 @@ export type Row = {
   layers: Layer[];
   name: string;
   yAxes: Axis[];
+};
+
+/**
+ * One layer's contribution to a stack, resampled onto the stack's shared x grid. `y` is the running
+ * total through this layer, `y0` the total beneath it; both are null where the total is unknown.
+ */
+export type StackedSeries = {
+  layerId: number;
+  resourceName: string;
+  values: { x: number; y: number | null; y0: number | null }[];
 };
 
 export type TimeRange = {
@@ -423,8 +382,7 @@ export type VerticalGuide = {
   timestamp: string;
   /**
    * Turns the guide into a shaded time region between `timestamp` and `timestamp2`, spanning every row
-   * -- an eclipse, a solar conjunction, a keep-out window, a period with a subsystem powered down.
-   * Order does not matter. Absent for an ordinary single-time guide, which stays a line.
+   * -- an eclipse, a keep-out window. Order does not matter. Absent for an ordinary single-time guide.
    */
   timestamp2?: string;
 };
@@ -456,41 +414,30 @@ export type XRangeLayerColorScheme =
   | 'schemeTableau10';
 
 /**
- * Per-value overrides for one x-range layer, keyed by the resource value itself.
- *
- * A value with no entry keeps the color its layer's `colorScheme` assigns it, so a partly configured
- * map is the normal case: an operator marks the two or three states they care about and leaves the
- * rest alone.
+ * Per-value overrides for one x-range layer, keyed by the resource value. A value with no entry keeps
+ * the color its layer's `colorScheme` assigns it, so a partly configured map is the normal case.
  */
 export type XRangeValueAppearance = {
   /** Replaces the scheme color for this value. */
   color?: string;
   /**
-   * Draw nothing at all for this value -- no box, no label, and no hover target.
-   *
-   * Not the same as a gap. A gap means the profile had no value, and `LayerGaps` hatches it. This
-   * value exists and was measured; the operator has decided it is not worth ink. Hiding every value
-   * but one turns an x-range layer into background shading for that one state, since x-range layers
-   * paint behind every other layer in the row.
+   * Draw nothing for this value -- no box, no label, no hover target. Not the same as a gap, which
+   * means the profile had no value and is hatched by `LayerGaps`. Hiding every value but one turns the
+   * layer into background shading for that state, since x-range layers paint behind the rest of a row.
    */
   hidden?: boolean;
   /**
-   * Replaces the text drawn in this value's boxes. The value itself still decides the color and still
-   * decides where one box ends and the next begins, so shortening `SUBSYSTEM_STATE_NOMINAL` to `NOM`
-   * to fit a narrow box neither recolors it nor merges it with a neighbor that shortens the same way.
+   * Replaces the text drawn in this value's boxes. The value still decides the color and the box
+   * boundaries, so shortening `SUBSYSTEM_STATE_NOMINAL` to `NOM` neither recolors it nor merges it
+   * with a neighbor that shortens the same way.
    */
   label?: string;
 };
 
 /**
- * Whether an x-range box is labelled with its value.
- *
- * `auto` fits the text and truncates it when it has to, which is the only behavior there was. `off` is
- * for a layer being read as a shape rather than as text -- most of all one reduced to shading a single
- * state, where repeating that state's name across the row says nothing its color does not.
- *
- * No `on`: unlike a discrete row, an x-range box cannot grow to fit its label, so forcing text into a
- * box narrower than one character has nothing to draw.
+ * Whether an x-range box is labelled with its value. `auto` fits the text and truncates when it has
+ * to; `off` is for a layer read as shape rather than text. There is no `on`: unlike a discrete row, an
+ * x-range box cannot grow to fit its label.
  */
 export type XRangeLabelVisibility = 'auto' | 'off';
 
@@ -508,12 +455,9 @@ export interface XRangePoint extends Point {
   is_null?: boolean;
   label: Label;
   /**
-   * The resource value behind this point, which is what colors and per-value overrides key off.
-   *
-   * Deliberately separate from `label.text`, the text drawn inside the box, even where the two
-   * currently hold the same string: they answer different questions, and conflating them means two
-   * values that happen to display alike are colored alike and merge into one box. Absent on gap
-   * points, which have no value.
+   * The resource value behind this point, which colors and per-value overrides key off. Separate from
+   * `label.text`, the text drawn in the box, even where the two hold the same string: conflating them
+   * would color two values alike and merge them into one box. Absent on gap points.
    */
   value?: string;
 }

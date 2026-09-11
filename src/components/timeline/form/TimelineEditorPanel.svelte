@@ -227,10 +227,7 @@
     viewUpdateRow('layers', [...layers, duplicatedLayer]);
   }
 
-  /**
-   * Discrete option writers, split from their event adapters so the segmented controls and the
-   * remaining dropdowns share one path to the view rather than each reimplementing the merge.
-   */
+  /** Split from their event adapters so the segmented controls and the dropdowns share one path. */
   function applyDiscreteOption(name: keyof DiscreteOptions, value: unknown) {
     viewUpdateRow('discreteOptions', { ...discreteOptions, [name]: value });
   }
@@ -298,31 +295,31 @@
     viewUpdateRow('horizontalGuides', filteredHorizontalGuides);
   }
 
-  /**
-   * Guide row fields that live inside the guide's nested `label` rather than on the guide itself, keyed
-   * by the name the row emits. Flattened at the row so it emits one shape of event for every field it
-   * owns, instead of the caller having to know which fields are nested.
-   */
+  /** Guide row fields that live inside the guide's nested `label` rather than on the guide itself. */
   const LABEL_FIELDS: Record<string, string> = {
     labelColor: 'color',
     labelText: 'text',
   };
 
-  /**
-   * One field change from a guide row. `null` is only ever the band's second bound being cleared, which
-   * is how a band is turned back into a line -- the writers below remove the field rather than store it.
-   */
   type GuideRowChange = { name: string; value: string | number | null };
 
   /**
-   * Applies one field change from a guide row. A null for the band's second bound removes the field
-   * rather than storing it, which is the only way to turn a band back into a line.
+   * A cleared band bound removes the field, which is how a band turns back into a line. A cleared
+   * anything else is dropped: `y` and `timestamp` are required by the view schema, so writing a null
+   * there leaves a view that no longer validates.
    */
+  function isRemovableGuideField(name: string): boolean {
+    return name === 'y2' || name === 'timestamp2';
+  }
+
   function onHorizontalGuideInput(event: CustomEvent<GuideRowChange>, horizontalGuide: HorizontalGuide) {
     applyHorizontalGuideChange(event.detail.name, event.detail.value, horizontalGuide);
   }
 
   function applyHorizontalGuideChange(name: string, value: GuideRowChange['value'], horizontalGuide: HorizontalGuide) {
+    if (value === null && !isRemovableGuideField(name)) {
+      return;
+    }
     const newHorizontalGuides = horizontalGuides.map(guide => {
       if (guide.id !== horizontalGuide.id) {
         return guide;
@@ -345,6 +342,9 @@
   }
 
   function applyVerticalGuideChange(name: string, value: GuideRowChange['value'], verticalGuide: VerticalGuide) {
+    if (value === null && !isRemovableGuideField(name)) {
+      return;
+    }
     const newVerticalGuides = verticalGuides.map(guide => {
       if (guide.id !== verticalGuide.id) {
         return guide;
@@ -1145,10 +1145,8 @@
     padding: 4px 16px;
   }
 
-  /* No gap: each guide row draws its own separator, so spacing between them would break the list into
-     floating cards rather than reading as one list. Negative margins escape EditorSection's 16px so a
-     row spans the panel edge to edge -- 32px that the date fields inside it need far more than the
-     margin does. */
+  /* No gap: each guide row draws its own separator, so spacing would break the list into floating
+     cards. Negative margins escape EditorSection's 16px so a row spans the panel edge to edge. */
   .guides {
     display: flex;
     flex-direction: column;
@@ -1170,9 +1168,7 @@
     display: none;
   }
 
-  /* Wide enough for the longest label in this panel ("Margin Right"). At the previous 60px, five
-     existing labels were already ellipsized -- Margin Right, Margin Left, Resize Mode, Row Height and
-     Hierarchy -- so this is the column being too narrow rather than any one label being too long. */
+  /* Wide enough for the longest label in this panel ("Margin Right"). */
   :global(.input.input-inline.editor-input) {
     grid-template-columns: 84px auto;
     padding: 0;

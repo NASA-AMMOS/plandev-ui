@@ -52,21 +52,17 @@
   }
 
   /**
-   * A real profile carries its own slope between samples, so it has no held values for Step to hold:
-   * Step and Linear draw the same line, and only Smooth changes anything. Step is dropped from the
-   * choices rather than left in to do nothing.
-   *
-   * Answered from the loaded resource when a row has one, and from the mission model's schema
-   * otherwise -- so the control reads the same before a plan has ever been simulated as after, which
-   * is what makes hiding an option safe rather than a control that appears and disappears with
-   * simulation state. False when neither source knows the resource, which leaves every option shown.
+   * A real profile carries its own slope, so it has no held values for Step to hold and Step is
+   * dropped from the choices rather than left in to do nothing. Answered from the loaded resource
+   * where there is one and from the mission model's schema otherwise, so the control reads the same
+   * before a plan has been simulated as after. False when neither source knows the resource.
    */
   $: isRealProfile = getIsRealProfile(layer.filter.resource, $timelineResourcesByName, $resourceTypes);
   $: storedInterpolation = isLineLayer(layer) ? (layer.interpolation ?? DEFAULT_INTERPOLATION) : DEFAULT_INTERPOLATION;
   /**
    * A view saved before the resource was known to be real can still hold `step`. Shown as Linear,
    * which is what it draws, rather than written back -- rewriting a stored value on open would edit
-   * the user's view behind their back to no visible effect.
+   * the user's view to no visible effect.
    */
   $: selectedInterpolation = isRealProfile && storedInterpolation === 'step' ? 'linear' : storedInterpolation;
   $: interpolationOptions = isRealProfile
@@ -88,9 +84,9 @@
     };
   }>();
   /**
-   * Fields that must be clamped into 0-1 before being persisted, with the value to fall back to.
-   * Canvas silently ignores an out-of-range globalAlpha, so an unclamped value renders as fully
-   * opaque instead of visibly wrong, and the view schema rejects it on export.
+   * Fields clamped into 0-1 before being persisted, with the value to fall back to. Canvas ignores an
+   * out-of-range globalAlpha, so an unclamped value renders fully opaque instead of visibly wrong,
+   * and the view schema rejects it on export.
    */
   const OPACITY_FIELD_DEFAULTS: Record<string, number> = {
     fillOpacity: DEFAULT_LINE_FILL_OPACITY,
@@ -98,10 +94,8 @@
   };
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
-    // An empty or partially typed number input yields NaN. Persisting that would write a value the
-    // view schema rejects, so the view could no longer be exported, and for opacities it silently
-    // renders fully opaque since canvas ignores a non-finite globalAlpha. Drop the event instead
-    // and let the field settle on the next keystroke.
+    // An empty or partially typed number reads as NaN, which the view schema rejects and canvas
+    // silently ignores. Drop the event and let the field settle on the next keystroke.
     if (typeof value === 'number' && !Number.isFinite(value)) {
       return;
     }
@@ -113,9 +107,8 @@
   }
 
   /**
-   * The loaded resource wins over the schema because it is the profile's own type rather than an
-   * inference from it -- and it is the only source for an external resource, which never appears in
-   * the mission model's resource types.
+   * The loaded resource wins over the schema, being the profile's own type rather than an inference
+   * from it, and the only source for an external resource.
    */
   function getIsRealProfile(
     resourceName: string | undefined,
@@ -191,10 +184,9 @@
         </Input>
         <div class="group-header">Line</div>
         <Input layout="inline">
-          <!-- Duplicated from the layer row's swatch on purpose. Point Color and Fill Color both fall
-               back to this value, so leaving it out of the menu meant the two derived colors showed an
-               inherited color with no way to see or change what they inherited from. Both controls
-               write the same lineColor field, so they cannot disagree. -->
+          <!-- Duplicated from the layer row's swatch: Point Color and Fill Color both fall back to
+               this value, so without it the two derived colors have no visible source. Both controls
+               write the same lineColor field. -->
           <label for="lineColor">Color</label>
           <ColorPresetsPicker
             id="lineColor"
@@ -255,8 +247,8 @@
           />
         </Input>
         <Input layout="inline">
-          <!-- Labelled plainly rather than "Line Opacity" now that a section header says which part of
-               the layer this belongs to. The field name stays `opacity`, which is what the view stores. -->
+          <!-- The section header says which part of the layer this belongs to. The field name stays
+               `opacity`, which is what the view stores. -->
           <div class="flex min-w-0 items-center gap-1">
             <label for="opacity">Opacity</label>
             <InfoTip content="0 to 1, covering the line and its points. The area fill carries its own opacity." />
@@ -426,8 +418,7 @@
           />
         </Input>
         <Input layout="inline">
-          <!-- Auto and Off, with no "On": a value's box is as wide as the time the value holds for, and
-               a label that does not fit cannot be made to by drawing it anyway. -->
+          <!-- No "On": a value's box is only as wide as the time the value holds for. -->
           <div class="flex min-w-0 items-center gap-1">
             <label for="labelVisibility">Value Labels</label>
             <InfoTip
@@ -462,8 +453,8 @@
           />
         </Input>
         {#if !layerAsXRange.showAsLinePlot}
-          <!-- Left out while the layer draws as a line plot, where the whole resource is one line in
-               one color and there is nothing per-value to configure. -->
+          <!-- A line plot draws the whole resource as one line in one color, so there is nothing
+               per-value to configure. -->
           <TimelineEditorXRangeValues layer={layerAsXRange} on:input={onValueAppearanceInput} />
         {/if}
       {:else if isExternalEventLayer(layer)}
@@ -479,9 +470,8 @@
           />
         </Input>
         <Input layout="inline">
-          <!-- External events are drawn translucent so a busy row of overlapping bars stays readable,
-               which is worth being able to turn off for a row whose events do not overlap. Zero-duration
-               markers are exempt and always draw opaque, so this is not the way to make those legible. -->
+          <!-- Zero-duration markers are exempt and always draw opaque, so this is not the way to make
+               those legible. -->
           <div class="flex min-w-0 items-center gap-1">
             <label for="opacity">Opacity</label>
             <InfoTip
@@ -524,9 +514,8 @@
     cursor: auto;
     display: grid;
     gap: 8px;
-    /* Scrolls internally rather than growing past the window, following the same pattern as
-       PlanNavButton's .menu-body. Viewport-relative rather than a fixed pixel cap so the menu still
-       fits on a short window, where a tall fixed cap would overflow whichever side it flipped to. */
+    /* Scrolls internally rather than growing past the window, as PlanNavButton's .menu-body does.
+       Viewport-relative so the menu still fits on a short window. */
     max-height: 60vh;
     overflow: auto;
     padding: 8px;
@@ -537,12 +526,9 @@
     padding: 0;
   }
 
-  /* Section labels over one flat list of a dozen controls. A line layer's settings fall into three
-     groups an operator already thinks in -- the line, its points, the area under it -- and naming them
-     is also what lets the labels shrink: "Color" under Points cannot be mistaken for the line's, so
-     none of them has to carry a prefix that was being ellipsized in a 300px menu. Deliberately less
-     dense than it could be. One control per row with its own full label, rather than folding width and
-     opacity in beside the color swatch as unlabelled boxes. */
+  /* Groups a line layer's settings into the line, its points, and the area under it. Naming the groups
+     is also what lets the labels shrink: "Color" under Points cannot be mistaken for the line's, so no
+     label has to carry a prefix that a 300px menu would ellipsize. */
   .group-header {
     align-items: center;
     border-top: 1px solid var(--st-gray-20);

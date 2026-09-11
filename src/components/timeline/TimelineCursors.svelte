@@ -20,7 +20,7 @@
   import { clampGuideBand, createVerticalGuide, GUIDE_BAND_OPACITY } from '../../utilities/timeline';
   import TimelineCursor from './TimelineCursor.svelte';
 
-  /** Fallback band color, for a guide saved with no color of its own. Matches the cursor line's gray. */
+  /** Fallback band color for a guide saved with no color of its own. Matches the cursor line's gray. */
   const DEFAULT_BAND_COLOR = '#a1a1a1';
 
   export let cursorEnabled: boolean = true;
@@ -53,10 +53,9 @@
   let cursorTimeLabel: string = '';
   let computedVerticalGuides: ComputedVerticalGuide[] = [];
   /**
-   * Bands are computed separately from the guide markers rather than folded into
-   * ComputedVerticalGuide, because the two have different visibility rules: a marker is dropped once
-   * its own x leaves the view, while a band whose start is off-screen must still shade the part of the
-   * region that is on-screen. Keeping them apart leaves the marker path byte-for-byte as it was.
+   * Kept separate from ComputedVerticalGuide because the two have different visibility rules: a marker
+   * is dropped once its own x leaves the view, while a band whose start is off-screen must still shade
+   * the part of the region that is not.
    */
   let computedVerticalBands: ComputedVerticalBand[] = [];
   let cursorWithinView = true;
@@ -138,10 +137,8 @@
   }
 
   /**
-   * Translucent fill for a band, applied to background-color rather than as an element opacity so that
-   * the band's dashed edges stay at full strength. Fading the whole element would fade the edges too,
-   * leaving a vertical band's boundaries far fainter than a horizontal one's, which keeps its opacity
-   * on the rect's fill and its stroke opaque.
+   * Translucent fill for a band, applied to background-color rather than element opacity so the dashed
+   * edges stay at full strength -- as a horizontal band keeps its opacity on the rect's fill alone.
    */
   function getBandFill(color: string | undefined): string {
     return hexToRgba(color || DEFAULT_BAND_COLOR, GUIDE_BAND_OPACITY);
@@ -287,13 +284,11 @@
     position: relative;
   }
 
-  /* Spans every row, since the region it marks is a property of the timeline rather than of one row.
-     pointer-events stay off (inherited from the container) so shading a region never costs the operator
-     the ability to click through it.
+  /* Spans every row, since the region it marks belongs to the timeline rather than to one row.
+     pointer-events stay off (inherited from the container) so shading never costs a click-through.
 
-     Solid on the edge the guide's own timestamp sits at, dashed on the edge its `timestamp2` extends
-     to. That asymmetry is the only thing in the render that says which way the region runs, and it
-     agrees with the editor row, which shows the anchor date and nothing else. */
+     Solid on the edge the guide's own timestamp sits at, dashed on the edge `timestamp2` extends to --
+     the only thing in the render that says which way the region runs. */
   .timeline-cursor-band {
     border-left: 1px solid;
     border-right: 1px dashed;
@@ -304,8 +299,7 @@
     transform: translateX(0);
   }
 
-  /* An operator can type the two dates in either order; the band still runs the way they meant it, so
-     the solid edge follows the anchor rather than staying on the left. */
+  /* The dates can be typed in either order, so the solid edge follows the anchor rather than the left. */
   .timeline-cursor-band.anchor-at-end {
     border-left-style: dashed;
     border-right-style: solid;

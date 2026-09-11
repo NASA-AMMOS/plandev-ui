@@ -177,16 +177,16 @@
     const {
       detail: { domain, resourceName },
     } = event;
-    // The layer reports its domain on every draw, which means on every pan and zoom, and the values a
-    // resource holds almost never change between them. Writing a new object each time would rerun every
+    // The layer re-reports its domain whenever it re-samples its resource, and the values a resource
+    // holds rarely change between samplings. Writing a new object each time would rerun every
     // subscriber for nothing, so only a domain that actually differs is stored. Order is part of the
-    // comparison because it is what assigns each value its color in the ordinal scale.
+    // comparison, since it is what assigns each value its color in the ordinal scale.
     const currentDomain = $xRangeValueDomains[resourceName];
     if (currentDomain?.length === domain.length && currentDomain.every((value, i) => value === domain[i])) {
       return;
     }
-    // Keyed by resource rather than by layer: two layers showing the same resource see the same values,
-    // and the form asks about the resource, not about which layer happens to be selected.
+    // Keyed by resource rather than layer: two layers on the same resource see the same values, and
+    // the form asks about the resource rather than about which layer is selected.
     $xRangeValueDomains = { ...$xRangeValueDomains, [resourceName]: domain };
   }
 

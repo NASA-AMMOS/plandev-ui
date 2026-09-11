@@ -23,9 +23,8 @@
     delete: void;
   }>();
 
-  // The cache and row are passed in rather than read inside the function, because Svelte does not
-  // track store reads that happen inside a function body -- reading them there would evaluate this
-  // once against an empty cache and then never re-run.
+  // Passed in rather than read inside the function: Svelte does not track store reads in a function
+  // body, so this would evaluate once against an empty cache and never re-run
   $: computedAxis = getComputedAxis($yAxesWithScaleDomainsCache, $selectedRow?.id, yAxis.id);
   $: effectiveScaleDomain = (computedAxis?.scaleDomain ?? []) as number[];
 
@@ -70,10 +69,9 @@
   function updateYAxisLogBase(event: Event) {
     const { value: v } = getTarget(event);
     const base = v as number;
-    // Integer bases from 2 up, matching the input's own min/step and the view schema. A base of 1 or
-    // less has no logarithm at all, and a fractional one labels values nobody reads a plot in. A
-    // cleared or partly typed field reports NaN, and typing 10 passes through 1 -- so a rejected value
-    // is dropped rather than persisted, and the field settles on the next keystroke.
+    // Integer bases from 2 up, matching the input's min/step and the view schema. A cleared or partly
+    // typed field reports NaN, and typing 10 passes through 1, so a rejected value is dropped rather
+    // than persisted and the field settles on the next keystroke.
     if (!Number.isInteger(base) || base < 2) {
       return;
     }
@@ -147,8 +145,8 @@
           type="checkbox"
         />
       </Input>
-      <!-- Every explanation in this menu is an InfoTip rather than a tooltip on the control itself: a
-           bare control gives no sign an explanation exists, so nobody went looking for one. -->
+      <!-- Explanations are InfoTips rather than tooltips on the controls: a bare control gives no
+           sign an explanation exists. -->
       <Input layout="inline">
         <div class="flex min-w-0 items-center gap-1">
           <label for="stack">Stack Layers</label>

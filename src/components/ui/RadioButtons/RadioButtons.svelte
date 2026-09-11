@@ -14,9 +14,8 @@
 
   export { className as class };
   /**
-   * Accessible name for the group. A `role="radiogroup"` takes no name from a sibling `<label for>` --
-   * only a labelable element does -- so without this a labelled group of radio buttons is announced,
-   * and matched by role-based tests, with no name at all.
+   * Accessible name for the group. A `role="radiogroup"` takes no name from a sibling `<label for>`,
+   * only a labelable element does, so without this the group is announced with no name at all.
    */
   export let ariaLabel: string | undefined = undefined;
   export let radioButtonContextKey: string = DefaultRadioButtonContextKey;
@@ -96,10 +95,8 @@
 </div>
 
 <style>
-  /* Equal columns where every option fits in its share, and only the columns that need more take it.
-     Plain 1fr forced the widest option into 1/n of the container, so one long label clipped every
-     option in the group -- which is what pushed narrow-panel controls to dropdowns in the first place.
-     Still fills the width, so a column of these keeps a straight right edge. */
+  /* Equal columns where every option fits in its share, with only the columns that need more taking
+     it -- plain 1fr clips a long label into 1/n of the container. Still fills the width. */
   .radio-buttons {
     align-items: center;
     background-color: var(--st-gray-10);

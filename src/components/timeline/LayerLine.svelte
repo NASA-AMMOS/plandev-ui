@@ -76,9 +76,8 @@
   export let showPoints: ShowPointsMode = DEFAULT_SHOW_POINTS_MODE;
   /**
    * Cumulative total of the layers beneath this one, one entry per resource value, when this layer is
-   * part of a stack. Index-aligned to the stacked resource's values by construction -- both come from
-   * the same shared x grid -- which is why it can be attached per point while that alignment still
-   * holds, before decimation reorders anything. Null when the layer is not stacked.
+   * stacked. Index-aligned to the stacked resource's values, since both come from the same shared x
+   * grid, so it can be attached per point before decimation reorders anything. Null when unstacked.
    */
   export let stackBaseline: (number | null)[] | null = null;
   export let viewTimeRange: TimeRange = { end: 0, start: 0 };
@@ -91,10 +90,7 @@
     mouseOver: RowMouseOverEvent;
   }>();
   const WORK_TIME_THRESHOLD = 32; // ms to allow for processing time, beyond which remaining work will be split to a new frame
-  /**
-   * d3 symbol for each point shape. 'circle' is absent on purpose -- it keeps its original
-   * Path2D.arc path so the default shape is unchanged by this map existing.
-   */
+  /** d3 symbol for each point shape. 'circle' is absent: it keeps its original Path2D.arc path. */
   const POINT_SYMBOLS: Record<Exclude<PointShape, 'circle'>, SymbolType> = {
     cross: symbolCross,
     diamond: symbolDiamond,
@@ -118,37 +114,30 @@
   $: canvasWidthDpr = drawWidth * dpr;
   /**
    * Pinned to 'step' on an ordinal scale, whose y positions are rungs on a scalePoint with nothing
-   * between them -- a spline through them would bow the line into pixel rows that read as *other*
-   * states. Only reachable through the curve today, since x-range-as-line-plot is the only ordinal
-   * caller and that layer type does not expose interpolation; the categorical branches of
-   * resourcesToLinePoints keep their hold values regardless.
+   * between them -- a spline through them would bow the line into pixel rows that read as other states.
    *
-   * Pinned to 'linear' on a stacked layer, because a stack's bands have to share their edges. A band
-   * is bounded above by its own line and below by `stackBaseline`, which is the *previous* layer's
-   * cumulative y at the same x -- so the two layers draw one shared boundary twice, each under its own
-   * interpolation. Let them disagree and a smooth layer under a linear one leaves a sliver of gap or
-   * overlap between the bands everywhere the spline departs from the chord.
+   * Pinned to 'linear' on a stacked layer, because a stack's bands have to share their edges. A band is
+   * bounded above by its own line and below by `stackBaseline`, the previous layer's cumulative y at
+   * the same x, so the two layers draw one shared boundary twice. Let their interpolation disagree and
+   * a sliver of gap or overlap opens wherever the spline departs from the chord.
    *
-   * Linear is the mode that is also *true* here. `stackLineLayerValues` sums onto the union of every
-   * series' breakpoints, where summing piecewise-linear functions is exact, so the polyline through
-   * those points is the stack -- whereas curveMonotoneX would round off a total that was already
-   * correct. Honoring 'smooth' properly would mean summing the splines rather than smoothing the sum,
-   * which no single curve can represent: the sum of two monotone cubics is not a monotone cubic.
+   * Linear is also the true answer: `stackLineLayerValues` sums onto the union of every series'
+   * breakpoints, where summing piecewise-linear functions is exact, so the polyline through those
+   * points is the stack. Honoring 'smooth' would mean summing the splines rather than smoothing the
+   * sum, which no single curve can represent -- the sum of two monotone cubics is not one.
    */
   $: effectiveInterpolation = ordinalScale ? 'step' : stackBaseline ? 'linear' : interpolation;
   $: dropHoldPoints = effectiveInterpolation !== 'step';
   /**
    * Only the curved mode collapses values sharing an x. The straight modes draw them harmlessly, and
-   * keeping them is what lets a real profile's genuine discontinuity still render as a jump.
+   * keeping them lets a real profile's genuine discontinuity still render as a jump.
    */
   $: collapseSameXPoints = effectiveInterpolation === 'smooth';
   /**
-   * Every style input the canvas draw depends on, resolved and sanitized in one place. draw() reads
-   * this rather than the raw props because Svelte does not track a function body's dependencies --
-   * referencing this single object in the reactive guard below is what makes any style change trigger
-   * a redraw, without listing each prop there individually. Note that fillColor and pointColor are
-   * undefined unless the layer overrides lineColor, so they could not be depended on directly in the
-   * guard without permanently blocking every draw; resolving them here sidesteps that.
+   * Every style input the canvas draw depends on, resolved and sanitized in one place. Svelte does not
+   * track a function body's dependencies, so referencing this one object in the reactive guard below is
+   * what makes any style change trigger a redraw. It also resolves fillColor and pointColor, which are
+   * undefined unless the layer overrides lineColor and so cannot be depended on in the guard directly.
    */
   $: lineDrawOptions = {
     curve: getLineCurve(effectiveInterpolation),
@@ -189,9 +178,8 @@
   $: onContextMenu(contextmenu);
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
-  // dropHoldPoints is passed rather than read inside the call, since Svelte does not track what a
-  // function body reads -- reading it in there would leave the point set stale until the resource
-  // data next changed
+  // Passed rather than read inside the call: Svelte does not track what a function body reads, so
+  // reading these in there would leave the point set stale until the resource data next changed
   $: processResourcesToLinePoints(resources, dropHoldPoints, collapseSameXPoints);
   $: offscreenPoint =
     ctx && generateOffscreenPoint(lineDrawOptions.pointColor, lineDrawOptions.pointRadius, lineDrawOptions.pointShape);
@@ -246,8 +234,8 @@
 
       const yScale = computeYScale(yAxes);
 
-      // Stroke state is set just before the stroke below rather than here, so that the sanitized
-      // width and the dash pattern are applied in one place
+      // Stroke state is set just before the stroke below, so the sanitized width and the dash pattern
+      // are applied in one place
       let line;
       let finalPoints: LinePoint[] = [];
       // Collect points and gaps within view
@@ -328,8 +316,8 @@
       // Account for up to 3 extra points added to finalPoints: left, right, and last point
       // Also account for gap points that have not been included in pointsInView
       // TODO could also just do this when finalPoints < drawWidth but might be less performant?
-      // 'auto' keeps the historical behavior of dropping points once decimation has actually thinned
-      // the set, since one sprite per pixel column reads as noise rather than as data.
+      // 'auto' drops points once decimation has actually thinned the set, since one sprite per pixel
+      // column reads as noise rather than as data
       const decimationKeptEveryPoint =
         !decimate || Math.abs(finalPoints.length - gapPoints.length - pointsInView.length) < 4;
       const shouldDrawPoints =
@@ -353,8 +341,8 @@
             // Same curve as the line so the fill's top edge cannot disagree with the line drawn on it
             .curve(lineDrawOptions.curve);
           ctx.save();
-          // Sanitized in lineDrawOptions, not just at the input, so a hand edited or imported view
-          // cannot produce an opaque fill that hides the layers underneath
+          // Sanitized in lineDrawOptions, not just at the input, so an imported view cannot produce an
+          // opaque fill that hides the layers underneath
           ctx.globalAlpha = lineDrawOptions.fillOpacity;
           ctx.fillStyle = lineDrawOptions.fillColor;
           ctx.beginPath();
@@ -365,9 +353,8 @@
         }
       }
 
-      // Draw the line. A width of zero means "hide the line" (points only) -- it has to short
-      // circuit here rather than rely on ctx.lineWidth = 0, which canvas ignores outright, leaving
-      // whatever width was set previously and making the line look like it has a minimum of 1.
+      // A width of zero means "points only". It short circuits here rather than relying on
+      // ctx.lineWidth = 0, which canvas ignores, leaving whatever width was set previously.
       if (lineDrawOptions.width > 0) {
         line = d3Line<LinePoint>()
           .defined(d => d.y !== null) // Skip any gaps in resource data instead of interpolating
@@ -377,19 +364,17 @@
         ctx.save();
         ctx.lineWidth = lineDrawOptions.width;
         ctx.strokeStyle = lineColor;
-        // Sanitized in lineDrawOptions rather than read raw, since canvas silently ignores a
-        // non-finite globalAlpha and would leave the previous value in place
+        // Sanitized, since canvas silently ignores a non-finite globalAlpha and keeps the old value
         ctx.globalAlpha = lineDrawOptions.opacity;
-        // Dotted uses zero-length dashes in some renderers, so a round cap is what makes them
-        // visible; it also keeps dashes from looking clipped at their ends
+        // Dotted uses zero-length dashes in some renderers, which only a round cap makes visible
         ctx.lineCap = lineDrawOptions.dashArray.length > 0 ? 'round' : 'butt';
         ctx.setLineDash(lineDrawOptions.dashArray);
         ctx.beginPath();
         line.context(ctx)(finalPoints);
         ctx.stroke();
         ctx.closePath();
-        // restore() resets lineDash/lineCap/globalAlpha together, so the next layer sharing this
-        // context cannot inherit this layer's stroke pattern
+        // Resets lineDash/lineCap/globalAlpha together, so the next layer sharing this context cannot
+        // inherit this layer's stroke pattern
         ctx.restore();
       }
     }
@@ -400,8 +385,8 @@
       return;
     }
 
-    // The sprite is padded beyond the point radius so taller shapes are not clipped, so it has to be
-    // both positioned and sized by the sprite box rather than by the radius
+    // The sprite is padded beyond the point radius so taller shapes are not clipped, so it is both
+    // positioned and sized by the sprite box rather than by the radius
     const spriteSize = getPointSpriteSize(lineDrawOptions.pointRadius);
     const spriteOffset = spriteSize / 2;
     ctx.save();
@@ -458,8 +443,8 @@
       scaledY = (yScale as ScalePoint<string>)(y as string);
     } else {
       scaledY = (yScale as YScale)(y as number);
-      // Defensive: symlog places every real value, so this should not trigger. Kept so a malformed
-      // domain can never blit a point at a non-finite coordinate or stretch the line off-canvas.
+      // Defensive: symlog places every real value, but a malformed domain must never blit a point at
+      // a non-finite coordinate or stretch the line off-canvas
       if (scaledY !== undefined && !Number.isFinite(scaledY)) {
         scaledY = undefined;
       }
@@ -695,9 +680,9 @@
       const resource = resources[resourceIndex];
       const { name, schema, values } = resource;
 
-      // Hold values are kept here whatever the layer asks for. A boolean's 0 and 1 encode false and
-      // true rather than measuring a magnitude, so a ramp between them would put the line at a y
-      // position that decodes to no value at all. Same reason the string branch below keeps them.
+      // Hold values are kept whatever the layer asks for: a boolean's 0 and 1 encode false and true
+      // rather than a magnitude, so a ramp between them sits at a y that decodes to no value at all.
+      // Same for the string branch below.
       if (schema.type === 'boolean') {
         for (valueIndex; valueIndex < values.length; ++valueIndex) {
           const value = values[valueIndex];
@@ -742,8 +727,8 @@
             type: 'line',
             x,
             y,
-            // Read by resource-value index, which is only valid here: this loop pushes one point per
-            // value for a stacked layer, since the stacking pass leaves its output untagged
+            // Indexed by resource value, valid because a stacked layer pushes one point per value --
+            // the stacking pass leaves its output untagged
             y0: stackBaseline ? stackBaseline[valueIndex] : undefined,
           });
 
@@ -756,7 +741,7 @@
         }
         valueIndex = 0;
         // Hold values are kept here too: there is nothing between two enum states to interpolate
-        // through, so a ramp would run the line through y positions that read as other states.
+        // through, so a ramp would run the line through y positions that read as other states
       } else if (schema.type === 'string' || schema.type === 'variant') {
         for (let i = 0; i < values.length; ++i) {
           const value = values[i];
@@ -794,8 +779,8 @@
       return null;
     }
 
-    // Padded past the radius so equal-area shapes taller than a circle (triangle, diamond, cross)
-    // are not clipped. drawPoints derives the same box from getPointSpriteSize.
+    // Padded past the radius so equal-area shapes taller than a circle are not clipped. drawPoints
+    // derives the same box from getPointSpriteSize.
     const size = getPointSpriteSize(radius);
 
     let tempCanvas: OffscreenCanvas | HTMLCanvasElement;
@@ -821,8 +806,7 @@
     tempCtx.scale(dpr, dpr);
     tempCtx.fillStyle = color;
 
-    // Circle keeps its original Path2D.arc rather than going through d3Symbol so that the default
-    // shape renders byte-identically to how it did before shapes were configurable
+    // Circle keeps its original Path2D.arc rather than going through d3Symbol
     if (shape === 'circle') {
       const circle = new Path2D();
       circle.arc(size / 2, size / 2, radius, 0, 2 * Math.PI);

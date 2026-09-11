@@ -65,14 +65,10 @@ export const timelineResourcesErroring: Readable<TimelineResourceError[]> = deri
 });
 
 /**
- * The loaded resources, keyed by name alone.
- *
- * Keyed by name rather than by the registry's (datasetId, name) because the consumers that need this
- * -- the layer settings form -- hold a layer's resource filter, which is a bare name, and have no
- * dataset in hand. A name showing up under two datasets at once would be the same resource sampled
- * from two runs, so which one wins does not change what a caller reads off it. Entries appear only
- * once a row has actually loaded the resource, so a lookup returning undefined means "not loaded
- * yet", never "no such resource".
+ * The loaded resources, keyed by name alone rather than by the registry's (datasetId, name), because
+ * the layer settings form holds a layer's resource filter -- a bare name -- and has no dataset in
+ * hand. A name under two datasets is the same resource sampled from two runs, so which wins does not
+ * change what a caller reads. Undefined means "not loaded yet", never "no such resource".
  */
 export const timelineResourcesByName: Readable<Map<string, Resource>> = derived(resourceStates, $resourceStates => {
   const byName = new Map<string, Resource>();

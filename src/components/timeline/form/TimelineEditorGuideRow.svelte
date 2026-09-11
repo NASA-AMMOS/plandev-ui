@@ -30,8 +30,8 @@
   $: verticalGuide = guide as VerticalGuide;
   $: isHorizontal = 'y' in guide;
   $: isRange = isHorizontal ? horizontalGuide.y2 !== undefined : verticalGuide.timestamp2 !== undefined;
-  // The formatter is passed in rather than read inside getSummary, so switching the plugin's primary
-  // time format re-renders the rows -- Svelte does not track what a function body reads
+  // Passed in rather than read inside getSummary, so switching the plugin's primary time format
+  // re-renders the rows -- Svelte does not track what a function body reads
   $: summary = getSummary(guide, isHorizontal, isRange, $plugins.time.primary.format);
 
   const dispatch = createEventDispatcher<{
@@ -41,13 +41,9 @@
 
   /**
    * What the collapsed row shows in place of the guide's fields: the anchor value, and for a band the
-   * same reading its own canvas cap carries -- a duration for a time region, a low-to-high extent for a
-   * value band. Deliberately the same phrasing as the render, so the row and the thing it describes are
-   * recognizably about each other.
-   *
-   * A time is rendered through the plugin's primary format, the same one the guide's own label on the
-   * canvas uses. Reading the stored DOY string directly was quietly assuming DOY is what the operator
-   * has configured, which would show one instant two different ways on a mission that has not.
+   * same reading its canvas cap carries -- a duration for a time region, a low-to-high extent for a
+   * value band. A time goes through the plugin's primary format, as the guide's canvas label does, so
+   * a mission not configured for DOY does not see one instant written two ways.
    */
   function getSummary(
     guide: HorizontalGuide | VerticalGuide,
@@ -65,11 +61,6 @@
     }
     const { timestamp, timestamp2 } = guide as VerticalGuide;
     const anchorMs = getUnixEpochTime(timestamp);
-    // Whatever the formatter returns, in full. An earlier version stripped a leading year to buy width,
-    // on the reasoning that every guide in a plan shares it. That reasoning was about telling rows
-    // apart, which is not the only thing this line does -- in DOY it left `215T14:30:00`, which does not
-    // read as a date. It was also a regex guess at a mission-supplied format, so what it removed varied
-    // by plugin. The width it saved is one row's label input giving up a few characters.
     const anchor = formatDate(new Date(anchorMs), format);
     if (!isRange) {
       return anchor;
@@ -92,8 +83,7 @@
 
   /**
    * Line to band and back. A band is not a separate kind of guide, only one carrying a second bound, so
-   * the switch is that field arriving or being removed -- and removing it is why the panel treats a
-   * null as "delete the field". Re-picking the mode already set is a no-op rather than a reseed, so
+   * the switch is that field arriving or being removed. Re-picking the mode already set is a no-op, so
    * clicking Band twice does not throw away an edited bound.
    */
   function onSetMode(mode: string) {
@@ -110,17 +100,40 @@
 
   function onInput(event: Event) {
     const { name, value } = getTarget(event);
-    // An empty or partially typed number reads as NaN. For a band's second bound that is how an
-    // operator clears it back to a line, so it is forwarded rather than dropped.
+    // An empty or partially typed number reads as NaN. Clearing the second bound is how an operator
+    // turns a band back into a line, so that one is forwarded as null; clearing any other field is a
+    // field mid-edit, and forwarding it would persist a null the view schema rejects.
     if (typeof value === 'number' && !Number.isFinite(value)) {
-      dispatch('input', { name, value: null });
+      if (isSecondBoundField(name)) {
+        dispatch('input', { name, value: null });
+      }
       return;
     }
     dispatch('input', { name, value: value as string | number | null });
   }
 
   function onDateInput(event: CustomEvent, name: string) {
-    dispatch('input', { name, value: event.detail.value ?? null });
+    const value = event.detail.value ?? null;
+    if (value === null && !isSecondBoundField(name)) {
+      return;
+    }
+    dispatch('input', { name, value });
+  }
+
+  /** The band's second bound, the only field whose absence is meaningful rather than mid-edit. */
+  function isSecondBoundField(name: string): boolean {
+    return name === 'y2' || name === 'timestamp2';
+  }
+
+  /**
+   * A field left empty is put back to the value still stored for it, so the operator is not left
+   * looking at a blank box holding a guide whose value did not actually change.
+   */
+  function onBlur(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.value === '') {
+      input.value = `${horizontalGuide.y}`;
+    }
   }
 
   function onLabelInput(event: Event) {
@@ -131,13 +144,9 @@
 
 <div class="guide-row" class:open>
   <div class="guide-summary">
-    <!--
-      The caret is the toggle, rather than the whole row being one. The row is not an empty header: it
-      holds a text input and a delete button, so a click-anywhere row leaves only a thin strip that
-      actually toggles, and its hover highlight fought with the label input's own. It was also a
-      role="button" wrapping a textbox and two buttons, which is not a thing a screen reader can make
-      sense of.
-    -->
+    <!-- The caret is the toggle rather than the whole row: the row holds a text input and a delete
+         button, so a click-anywhere row leaves only a thin strip that toggles, and a role="button"
+         wrapping a textbox and two buttons is not something a screen reader can make sense of. -->
     <button
       class="guide-caret"
       class:open
@@ -197,6 +206,7 @@
           name="y"
           type="number"
           value={horizontalGuide.y}
+          on:blur={onBlur}
           on:input={onInput}
         />
         {#if isRange}
@@ -210,8 +220,7 @@
           />
         {/if}
         {#if yAxes.length > 1}
-          <!-- Only worth the width when there is a choice to make; with one axis the guide is already
-               on it. -->
+          <!-- Only worth the width when there is a choice to make -->
           <select
             aria-label="Y Axis"
             class="st-select guide-editor-axis"
@@ -296,19 +305,14 @@
   }
 
   /* Layout only -- st-input carries the appearance, so a guide's name field is the same control as
-     every other text field in the panel. It was chromeless until hovered, which read as quieter but
-     made it the one input here that did not look like one. */
+     every other text field in the panel. */
   .guide-label-input {
     flex: 1;
     min-width: 0;
   }
 
-  /* Inter at 11px, not the 10px monospace this started as. Measured against the same summary the two
-     come out the same width -- 157px to 156px -- so the monospace was costing a point of size for
-     nothing. It was not buying alignment either: the summaries do not form a column, since each one
-     starts wherever its row's label input happens to end. It was also the only monospace in the app.
-     `tabular-nums` keeps the one thing it did give, digits of even width, so a duration ticking over
-     while a guide is dragged does not resize the row under the pointer. */
+  /* tabular-nums so a duration ticking over while a guide is dragged does not resize the row under
+     the pointer. */
   .guide-summary-value {
     color: var(--st-gray-60);
     font-size: 11px;
@@ -342,9 +346,7 @@
     min-width: 0;
   }
 
-  /* Basis chosen so a range's two dates share one line: at the row's full width they land at 140px
-     each, and a DOY timestamp needs 131px of that. The UTC hint that used to sit on this line was what
-     made them wrap -- the fields themselves were never the problem. */
+  /* Basis sized so a range's two dates share one line: a DOY timestamp needs 131px. */
   .guide-editor-date {
     flex: 1 1 128px;
     min-width: 0;

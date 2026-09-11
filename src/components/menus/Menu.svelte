@@ -22,13 +22,9 @@
   };
 
   /**
-   * The placement to fall back to when a menu will not fit where it was asked to go: the opposite side,
-   * with the alignment left alone.
-   *
-   * Keeping the alignment is the point. Flipping 'bottom-end' to a hardcoded 'top-start' also swaps
-   * right-alignment for left-alignment, which sends a menu anchored near the right edge of the window
-   * off the screen -- visible on the layer settings menu whenever the timeline editor sits in the
-   * right-hand panel.
+   * Where a menu falls back to when it will not fit as placed: the opposite side, alignment untouched.
+   * Keeping the alignment matters -- flipping 'bottom-end' to a hardcoded 'top-start' also swaps
+   * right-alignment for left, sending a menu anchored near the right edge of the window off screen.
    */
   function getOppositeSidePlacement(placement: string): string {
     const [side, alignment] = placement.split('-');
@@ -58,17 +54,16 @@
   import type { Placement } from 'tippy.js';
 
   /**
-   * Lets content escape this menu's box, for a menu that hosts another menu such as a color picker.
-   * Popper positions this element with a transform, making it the containing block for its
-   * fixed-position descendants, so the global `.st-menu { overflow: hidden }` that clips content to the
-   * border radius clips any nested popup too. Off by default so ordinary menus keep that clipping.
+   * Lets content escape this menu's box, for a menu hosting another menu such as a color picker. Popper
+   * positions this element with a transform, making it the containing block for fixed-position
+   * descendants, so the global `.st-menu { overflow: hidden }` clips any nested popup too. Off by
+   * default, so ordinary menus keep that clipping.
    */
   export let allowOverflow: boolean = false;
   /**
-   * Positions against the viewport instead of the nearest scrolling ancestor. Set on a menu nested
-   * inside a scrollable menu: Popper's default boundary is the clipping parents, so a nested popup gets
-   * squeezed to fit inside the scroll box rather than opening where it belongs. Distinct from
-   * allowOverflow -- that governs CSS clipping, this governs the position math.
+   * Positions against the viewport instead of the nearest scrolling ancestor, for a menu nested inside
+   * a scrollable one -- Popper's default boundary would squeeze it to fit the scroll box. Distinct from
+   * allowOverflow, which governs CSS clipping rather than the position math.
    */
   export let escapeScrollBoundary: boolean = false;
   export let hideAfterClick: boolean = true;
@@ -137,7 +132,7 @@
           fallbackPlacements: [getOppositeSidePlacement(placement)],
         },
       },
-      // Keeps a menu off the viewport edge when it flips or shifts, rather than sitting flush against it
+      // Keeps a flipped or shifted menu off the viewport edge rather than flush against it
       { name: 'preventOverflow', options: { boundary, padding: MENU_VIEWPORT_PADDING } },
       { name: 'offset', options: { offset } },
     ],
@@ -166,9 +161,8 @@
 
   /**
    * Repositions the menu when its own content changes size. Popper only recomputes on scroll and window
-   * resize, so a menu that reveals or hides rows -- the layer settings menu does, behind its fill
-   * toggle -- keeps the position it was given at its old height and drifts out of alignment with the
-   * button that opened it.
+   * resize, so a menu that reveals or hides rows would otherwise keep the position it was given at its
+   * old height and drift out of alignment with the button that opened it.
    */
   function repositionOnResize(node: HTMLElement) {
     if (typeof ResizeObserver === 'undefined') {

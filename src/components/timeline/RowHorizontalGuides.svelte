@@ -53,15 +53,13 @@
               .attr('fill-opacity', GUIDE_BAND_OPACITY);
           }
 
-          // A band's two edges are told apart rather than drawn alike: solid on the edge the guide's
-          // own y sits at, dashed on the edge y2 extends to, matching the vertical bands and agreeing
-          // with the editor row, which shows y and nothing else. A single-value guide stays dashed, as
-          // it always was. clampGuideBand reports which edges are on scale; a clamped one is skipped
+          // Solid on the edge the guide's own y sits at, dashed on the edge y2 extends to, matching
+          // the vertical bands and the editor row, which shows y and nothing else. A single-value guide
+          // stays dashed. clampGuideBand reports which edges are on scale; a clamped one is skipped
           // rather than drawn at the clamp.
-          // Each edge carries whether it is the anchor, rather than being matched back to one by its
-          // position: comparing floats works only while both sides are computed by the identical
-          // expression, and for a zero-height band the two edges land on the same y and would both come
-          // out solid.
+          //
+          // Each edge carries whether it is the anchor rather than being matched back by position:
+          // for a zero-height band both edges land on the same y and would come out solid.
           const edges: { isAnchor: boolean; y: number }[] = band
             ? [
                 ...(band.showStartEdge ? [{ isAnchor: band.anchorAtStart, y: band.y }] : []),
@@ -90,8 +88,8 @@
           const labelFontFace = guide?.label?.fontFace || 'sans-serif';
           const labelFontSize = guide?.label?.fontSize || 12;
           const labelText = guide?.label?.text || '';
-          // Just inside a band's upper edge rather than below one of them, which would read as
-          // belonging to whichever edge it happened to land under
+          // Just inside a band's upper edge, rather than below one of them where it would read as
+          // belonging to whichever edge it landed under
           const labelY = band ? band.y + labelYOffset : y + labelYOffset;
           const label = lineGroup
             .append('text')
@@ -104,10 +102,9 @@
             .attr('font-size', `${labelFontSize}px`)
             .text(labelText);
 
-          // The extent, trailing the name, is the horizontal counterpart of a vertical band's duration
-          // cap: it saves reading two edges off the axis. Written low-to-high regardless of which value
-          // the operator typed first, since a value interval has no direction of its own -- the solid
-          // edge above is what says which end is the guide's anchor.
+          // The extent trailing the name saves reading two edges off the axis, as a vertical band's
+          // duration does. Written low-to-high whichever order the operator typed, since a value
+          // interval has no direction of its own -- the solid edge is what marks the anchor.
           if (band) {
             const [low, high] = [guide.y, guide.y2 as number].sort((a, b) => a - b);
             lineGroup

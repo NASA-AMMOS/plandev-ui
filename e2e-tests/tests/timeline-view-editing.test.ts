@@ -60,8 +60,6 @@ test.describe.serial('Timeline View Editing', () => {
     await setup.page.locator('input[name="start-time"]').first().press('Enter');
   });
 
-  // Counted by each row's own delete button rather than by a container class: the button is the thing
-  // these two tests act on, so counting it is what proves a guide is really there to be acted on.
   const guideRows = () => setup.page.getByRole('button', { name: 'Delete Guide' });
 
   test('Add a vertical guide', async () => {
@@ -306,17 +304,15 @@ test.describe.serial('Timeline View Editing', () => {
     const resourceLayerEditor = setup.page.getByLabel('Resource Layer-editor');
     const layer = resourceLayerEditor.locator('.timeline-layer-editor').first();
 
-    // Open the layer settings menu
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
 
-    // Line Style and Show Points are segmented controls, so they are radiogroups rather than selects.
-    // Their accessible names come from ariaLabel, since a `<label for>` cannot name a radiogroup.
+    // Line Style and Show Points are segmented controls, so they are radiogroups rather than selects
     const lineStyle = layer.getByRole('radiogroup', { name: 'Line Style' });
     const showPoints = layer.getByRole('radiogroup', { name: 'Show Points' });
     const lineOpacity = layer.getByRole('spinbutton', { name: 'Line Opacity' });
     const pointShape = layer.getByRole('combobox', { name: 'Point Shape' });
 
-    // Expect the defaults to match how the layer rendered before these options existed
+    // Defaults match how the layer rendered before these options existed
     await expect(lineStyle.getByRole('radio', { checked: true, name: 'Solid' })).toBeVisible();
     await expect(showPoints.getByRole('radio', { checked: true, name: 'Auto' })).toBeVisible();
     await expect(lineOpacity).toHaveValue('1');
@@ -324,7 +320,6 @@ test.describe.serial('Timeline View Editing', () => {
     await expect(layer.getByRole('button', { name: 'Line Color' })).toBeVisible();
     await expect(layer.getByRole('button', { name: 'Point Color' })).toBeVisible();
 
-    // Change every style option and expect each to stick
     await lineStyle.getByRole('radio', { name: 'Dashed' }).click();
     await showPoints.getByRole('radio', { name: 'Never' }).click();
     await pointShape.selectOption('diamond');
@@ -335,8 +330,7 @@ test.describe.serial('Timeline View Editing', () => {
     await expect(pointShape).toHaveValue('diamond');
     await expect(lineOpacity).toHaveValue('0.5');
 
-    // The row still renders after restyling -- a bad globalAlpha or dash pattern would throw during
-    // the canvas draw and leave the row blank. Clamping and NaN handling are unit tested.
+    // A bad globalAlpha or dash pattern would throw during the canvas draw and leave the row blank
     await expect(setup.page.locator('.timeline-row-wrapper', { hasText: rowName })).toBeVisible();
 
     await lineStyle.getByRole('radio', { name: 'Solid' }).click();
@@ -353,17 +347,18 @@ test.describe.serial('Timeline View Editing', () => {
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
 
     // Area fill is off by default, so its dependent controls should not be rendered yet
-    const fillAreaCheckbox = setup.page.getByRole('checkbox', { name: 'Show Fill Area' });
+    const fillAreaCheckbox = layer.getByRole('checkbox', { name: 'Show Fill Area' });
+    const fillOpacity = layer.getByRole('spinbutton', { name: 'Fill Opacity' });
+    const fillColor = layer.getByRole('button', { name: 'Fill Color' });
     await expect(fillAreaCheckbox).not.toBeChecked();
-    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
-    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
+    await expect(fillOpacity).toBeHidden();
+    await expect(fillColor).toBeHidden();
 
     // Enabling the fill reveals the color and opacity controls
     await fillAreaCheckbox.check();
     await expect(fillAreaCheckbox).toBeChecked();
-    const fillOpacity = setup.page.getByRole('spinbutton', { name: 'Fill Opacity' });
     await expect(fillOpacity).toHaveValue('0.25');
-    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeVisible();
+    await expect(fillColor).toBeVisible();
 
     await fillOpacity.fill('0.5');
     await expect(fillOpacity).toHaveValue('0.5');
@@ -373,14 +368,41 @@ test.describe.serial('Timeline View Editing', () => {
     await fillOpacity.fill('');
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
-    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toHaveValue('0.5');
+    await expect(fillOpacity).toHaveValue('0.5');
 
     // Disabling the fill hides its dependent controls again
-    await setup.page.getByRole('checkbox', { name: 'Show Fill Area' }).uncheck();
-    await expect(setup.page.getByRole('spinbutton', { name: 'Fill Opacity' })).toBeHidden();
-    await expect(setup.page.getByRole('button', { name: 'Fill Color' })).toBeHidden();
+    await fillAreaCheckbox.uncheck();
+    await expect(fillOpacity).toBeHidden();
+    await expect(fillColor).toBeHidden();
 
     await layer.getByRole('button', { name: 'Layer Settings' }).click();
+  });
+
+  test('Clearing a horizontal guide value leaves the guide intact', async () => {
+    const guideEditor = setup.page.getByLabel('Horizontal Guide-editor');
+    await guideEditor.getByRole('button', { name: 'New Horizontal Guide' }).click();
+
+    const guideRow = guideEditor.locator('.guide-row').last();
+    await guideRow.getByRole('button', { name: 'Expand guide' }).click();
+
+    const yValue = guideRow.getByRole('spinbutton', { name: 'Y Value' });
+    const originalY = await yValue.inputValue();
+    expect(originalY).not.toEqual('');
+
+    // Clearing the field is a value mid-edit, not a request to unset it. Writing the resulting NaN
+    // through as null would drop the guide off the canvas and leave a view the schema rejects, so it
+    // could no longer be saved. See the matching schema assertion in utilities/view.test.ts.
+    await yValue.fill('');
+
+    await guideRow.getByRole('button', { name: 'Collapse guide' }).click();
+    await guideRow.getByRole('button', { name: 'Expand guide' }).click();
+    await expect(guideRow.getByRole('spinbutton', { name: 'Y Value' })).toHaveValue(originalY);
+
+    await expect(
+      setup.page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.horizontal-guide').first(),
+    ).toBeAttached();
+
+    await guideEditor.getByRole('button', { name: 'Delete Guide' }).last().click();
   });
 
   test('Add an external event layer', async () => {

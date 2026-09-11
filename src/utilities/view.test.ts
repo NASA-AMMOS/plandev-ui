@@ -286,6 +286,29 @@ describe('line layer style validation', () => {
     expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
   });
 
+  // A cleared number input reads as NaN, which serializes to null. The guide editor must drop that
+  // rather than write it through, or clearing a Y Value leaves a view that can no longer be saved.
+  test('Should reject a horizontal guide whose anchor value has been cleared', () => {
+    const view = structuredClone(viewV3) as any;
+    const row = view.plan.timelines[0].rows[1];
+    row.horizontalGuides = [{ id: 0, label: { text: 'nominal' }, y: null, yAxisId: row.yAxes[0].id }];
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+
+    delete row.horizontalGuides[0].y;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
+  // Same for a vertical guide's anchor timestamp, which a cleared DatePicker reports as null
+  test('Should reject a vertical guide whose anchor timestamp has been cleared', () => {
+    const view = structuredClone(viewV3) as any;
+    const timeline = view.plan.timelines[0];
+    timeline.verticalGuides = [{ id: 0, label: { text: 'eclipse' }, timestamp: null }];
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+
+    delete timeline.verticalGuides[0].timestamp;
+    expect(validateViewJSONAgainstSchema(view).valid).toBe(false);
+  });
+
   test('Should accept a banded vertical guide and reject a non-string timestamp2', () => {
     const view = structuredClone(viewV3) as any;
     const timeline = view.plan.timelines[0];
