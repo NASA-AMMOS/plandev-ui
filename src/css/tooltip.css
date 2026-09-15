@@ -69,6 +69,11 @@
   width: auto;
 }
 
+.tooltip-row .tooltip-value-secondary {
+  color: var(--st-gray-30);
+  white-space: nowrap;
+}
+
 .tooltip,
 .tippy-content {
   color: var(--st-white);

@@ -1,7 +1,7 @@
 <svelte:options accessors={true} immutable={true} />
 
 <script lang="ts" context="module">
-  type MenuType = 'dropdown' | 'input';
+  export type MenuType = 'dropdown' | 'input';
   type HideFns = {
     dropdown: Set<() => void>;
     input: Set<() => void>;
@@ -10,6 +10,27 @@
     dropdown: new Set<() => void>(),
     input: new Set<() => void>(),
   };
+
+  /** Gap left between a menu and the viewport edge when it has to flip or shift to stay on screen. */
+  const MENU_VIEWPORT_PADDING = 8;
+
+  const OPPOSITE_SIDES: Record<string, string> = {
+    bottom: 'top',
+    left: 'right',
+    right: 'left',
+    top: 'bottom',
+  };
+
+  /**
+   * Fallback placement when a menu will not fit: the opposite side, alignment untouched. Flipping
+   * 'bottom-end' to a hardcoded 'top-start' would also swap right-alignment for left, sending a menu
+   * anchored near the window's right edge off screen.
+   */
+  function getOppositeSidePlacement(placement: string): string {
+    const [side, alignment] = placement.split('-');
+    const oppositeSide = OPPOSITE_SIDES[side] ?? side;
+    return alignment ? `${oppositeSide}-${alignment}` : oppositeSide;
+  }
 
   export function hideAllMenus(type?: MenuType) {
     if (type) {
@@ -32,6 +53,17 @@
   import { createPopperActions } from 'svelte-popperjs';
   import type { Placement } from 'tippy.js';
 
+  /**
+   * Lets content escape this menu's box, for a menu hosting another menu such as a color picker. Popper
+   * positions this element with a transform, so it is the containing block for fixed descendants and
+   * the global `.st-menu { overflow: hidden }` clips any nested popup too.
+   */
+  export let allowOverflow: boolean = false;
+  /**
+   * Positions against the viewport rather than the nearest scrolling ancestor, for a menu nested in a
+   * scrollable one. Distinct from allowOverflow, which governs CSS clipping rather than position math.
+   */
+  export let escapeScrollBoundary: boolean = false;
   export let hideAfterClick: boolean = true;
   export let offset: number[] = [0, 1];
   export let isMounted: boolean = false;
@@ -83,19 +115,23 @@
     show: void;
   }>();
 
-  const [popperRef, popperContent] = createPopperActions({
+  const [popperRef, popperContent, getPopperInstance] = createPopperActions({
     placement,
     strategy: 'fixed',
   });
+  const boundary = escapeScrollBoundary ? 'viewport' : 'clippingParents';
   const extraOpts = {
     modifiers: [
       {
         enabled: true,
         name: 'flip',
         options: {
-          fallbackPlacements: ['top-start'],
+          boundary,
+          fallbackPlacements: [getOppositeSidePlacement(placement)],
         },
       },
+      // Keeps a flipped or shifted menu off the viewport edge rather than flush against it
+      { name: 'preventOverflow', options: { boundary, padding: MENU_VIEWPORT_PADDING } },
       { name: 'offset', options: { offset } },
     ],
   };
@@ -120,6 +156,25 @@
       hide();
     }
   }
+
+  /**
+   * Repositions the menu when its own content changes size. Popper only recomputes on scroll and window
+   * resize, so a menu that reveals or hides rows would drift out of alignment with its trigger.
+   */
+  function repositionOnResize(node: HTMLElement) {
+    if (typeof ResizeObserver === 'undefined') {
+      return {};
+    }
+    const observer = new ResizeObserver(() => {
+      getPopperInstance()?.update();
+    });
+    observer.observe(node);
+    return {
+      destroy() {
+        observer.disconnect();
+      },
+    };
+  }
 </script>
 
 <svelte:body on:click={hide} />
@@ -129,8 +184,10 @@
   <div class="menu pointer-events-none" role="menu" use:popperRef on:click|stopPropagation={onClick}>
     <div
       class="st-menu st-typography-medium pointer-events-auto"
+      style:overflow={allowOverflow ? 'visible' : null}
       style:width={typeof width === 'number' ? `${width}px` : null}
       use:popperContent={extraOpts}
+      use:repositionOnResize
     >
       <slot />
     </div>

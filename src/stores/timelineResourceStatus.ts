@@ -64,6 +64,21 @@ export const timelineResourcesErroring: Readable<TimelineResourceError[]> = deri
   return errors;
 });
 
+/**
+ * The loaded resources keyed by name alone: the timeline editor forms hold a layer's resource filter,
+ * a bare name, with no dataset in hand. A name under two datasets is the same resource sampled from
+ * two runs, so which wins does not change what a caller reads. Undefined means "not loaded yet".
+ */
+export const timelineResourcesByName: Readable<Map<string, Resource>> = derived(resourceStates, $resourceStates => {
+  const byName = new Map<string, Resource>();
+  for (const s of $resourceStates.values()) {
+    if (s.resource) {
+      byName.set(s.name, s.resource);
+    }
+  }
+  return byName;
+});
+
 function registryKey(datasetId: number, name: string): string {
   return `${datasetId}:${name}`;
 }

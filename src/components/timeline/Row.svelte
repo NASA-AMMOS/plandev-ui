@@ -65,12 +65,14 @@
   import { pluralize } from '../../utilities/text';
   import { getDoyTime } from '../../utilities/time';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
     TimelineInteractionMode,
     applyActivityLayerFilter,
     applyExternalEventLayerFilter,
     directiveInView,
     externalEventInView,
     generateDiscreteTreeUtil,
+    getLineLayerStacks,
     getMatchingTypesForActivityLayerFilter,
     getYAxesWithScaleDomains,
     isActivityLayer,
@@ -197,6 +199,8 @@
     external_events: {},
     spans: {},
   };
+  // Beside idToColorMaps rather than in it: opacity is only configurable on external event layers
+  let externalEventOpacities: Record<ExternalEventId, number> = {};
   let timeFilteredActivityDirectives: ActivityDirective[] = [];
   let timeFilteredSpans: Span[] = [];
   let timeFilteredExternalEvents: ExternalEvent[] = [];
@@ -357,9 +361,14 @@
     anyResourcesLoading = anyLoading;
   }
 
+  // Stacking depends on every other layer on the same axis, so a layer cannot compute it for itself.
+  // Empty unless an axis opts in.
+  $: lineLayerStacks = loadedResources && yAxes ? getLineLayerStacks(yAxes, layers, loadedResources) : {};
+
   // Compute scale domains for axes since it is optionally defined in the view
   $: if (loadedResources && yAxes) {
-    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange);
+    // Stacks are passed in so a stacked axis is sized to the stack total rather than its largest series
+    yAxesWithScaleDomains = getYAxesWithScaleDomains(yAxes, layers, loadedResources, viewTimeRange, lineLayerStacks);
     dispatch('updateYAxes', { axes: yAxesWithScaleDomains, id });
   }
 
@@ -465,14 +474,22 @@
           timeFilteredSpans = [];
         }
 
-        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredSpans.length > 0;
       } else {
+        // Cleared, not just flagged: the collapsed draw path reads these lists, so leaving the last
+        // layer's items in them keeps a removed layer on screen
+        filteredActivityDirectives = [];
+        filteredSpans = [];
+        timeFilteredActivityDirectives = [];
+        timeFilteredSpans = [];
         hasActivityLayer = false;
       }
     }
 
     if (hasExternalEventsLayer) {
       filteredExternalEvents = [];
+      // Cleared with the list it is keyed against; stale keys would not misdraw, but would grow unbounded
+      externalEventOpacities = {};
 
       // Filter what LINKED Derivation Groups are to be shown
       let filteredDerivationGroups = $planDerivationGroupLinks
@@ -500,13 +517,17 @@
             externalEventsFilteredByDG,
           );
           matchingExternalEvents.forEach(externalEvent => {
-            idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] = layer.externalEventColor;
+            const externalEventRowId = getExternalEventRowId(externalEvent.pkey);
+            idToColorMaps.external_events[externalEventRowId] = layer.externalEventColor;
+            externalEventOpacities[externalEventRowId] = layer.opacity ?? DEFAULT_EXTERNAL_EVENT_OPACITY;
           });
           filteredExternalEvents = [...filteredExternalEvents, ...matchingExternalEvents];
           filteredExternalEvents.sort((a, b) => (a.start_ms < b.start_ms ? -1 : 1));
           timeFilteredExternalEvents = filteredExternalEvents; // if not actively filtering by time
         }
       });
+      // Filled by mutation; reassign so immutable LayerDiscrete sees the new reference
+      externalEventOpacities = externalEventOpacities;
     }
   }
 
@@ -986,6 +1007,7 @@
           <LayerDiscrete
             {discreteOptions}
             {idToColorMaps}
+            {externalEventOpacities}
             {discreteTree}
             activityDirectives={filteredActivityDirectives}
             externalEvents={filteredExternalEvents}
@@ -1055,7 +1077,10 @@
             filter={layer.filter.resource}
             {mousemove}
             {mouseout}
-            resources={getResourcesForLayer(layer, resourceRequestMap)}
+            resources={lineLayerStacks[layer.id]
+              ? [lineLayerStacks[layer.id].resource]
+              : getResourcesForLayer(layer, resourceRequestMap)}
+            stackBaseline={lineLayerStacks[layer.id]?.baseline ?? null}
             {viewTimeRange}
             {xScaleView}
             yAxes={yAxesWithScaleDomains}
