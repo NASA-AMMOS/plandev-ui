@@ -44,10 +44,12 @@
   import {
     activityArgumentDefaults,
     activityArgumentDefaultsModelId,
+    activityDirectivesMap,
     activityDirectiveValidationStatuses,
     resetActivityStores,
     selectActivity,
-    selectedActivityDirectiveId,
+    selectedActivityDirective,
+    selectedActivitySpan,
   } from '../../../stores/activities';
   import {
     activityErrorRollups,
@@ -72,8 +74,7 @@
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
-  import { resetExpansionStores, expansionSequences } from '../../../stores/expansion';
-  import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
+  import { expansionSequences, resetExpansionStores } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -109,7 +110,11 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
-  import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
+  import {
+    lastTemplatedSimulationDatasetId,
+    resetSequenceTemplateStores,
+    sequenceTemplateExpansionStatus,
+  } from '../../../stores/sequence-template';
   import {
     enableSimulation,
     externalResourceNames,
@@ -117,6 +122,8 @@
     resetSimulationStores,
     resourceTypes,
     resourceTypesLoading,
+    selectedSpan,
+    selectedSpanId,
     simulationDataset,
     simulationDatasetId,
     simulationDatasetLatest,
@@ -125,6 +132,7 @@
     simulationProgress,
     simulationStatus,
     spans,
+    spanUtilityMaps,
   } from '../../../stores/simulation';
   import { getUserStore } from '../../../stores/user';
   import {
@@ -135,10 +143,11 @@
     viewTogglePanel,
     viewUpdateGrid,
   } from '../../../stores/views';
-  import type { ActivityDirectiveInsertInput } from '../../../types/activity';
+  import type { ActivityDirective, ActivityDirectiveInsertInput } from '../../../types/activity';
   import type { ActivityErrorCounts, LogLevel } from '../../../types/console';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
+  import type { Span } from '../../../types/simulation';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
   import { getConstraintStatus } from '../../../utilities/constraint';
   import effects from '../../../utilities/effects';
@@ -625,9 +634,19 @@
   }
 
   async function onCallExtension(event: CustomEvent<Extension>) {
+    // Gather directive if either directive is directly selected or span is selected
+    const directive: ActivityDirective | null = $selectedActivityDirective
+      ? $selectedActivityDirective
+      : $selectedSpanId && $spanUtilityMaps && $activityDirectivesMap
+        ? $activityDirectivesMap[$spanUtilityMaps.spanIdToDirectiveIdMap[$selectedSpanId]]
+        : null;
+    // Gather span if either span is directly selected or directive is selected
+    const span: Span | null = $selectedActivitySpan ? $selectedActivitySpan : $selectedSpan ? $selectedSpan : null;
+
     const payload = {
       planId: $planId,
-      selectedActivityDirectiveId: $selectedActivityDirectiveId,
+      selectedActivityDirective: directive,
+      selectedSimulatedActivity: span,
       simulationDatasetId: $simulationDatasetId,
       url: event.detail.url,
     };

@@ -7,7 +7,7 @@ import type {
 } from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
 import type { DefaultEffectiveArguments, DefaultEffectiveArgumentsMap } from '../types/parameter';
-import type { SpanId } from '../types/simulation';
+import type { Span, SpanId } from '../types/simulation';
 import { computeActivityDirectivesMap } from '../utilities/activities';
 import gql from '../utilities/gql';
 import { planEndTimeDoy, planId, planStartTimeYmd } from './plan';
@@ -105,6 +105,20 @@ export const selectedActivityDirective = derived(
       return $activityDirectivesMap[$selectedActivityDirectiveId] || null;
     }
     return null;
+  },
+);
+
+export const selectedActivitySpan: Readable<Span | null> = derived(
+  [spanUtilityMaps, spansMap, selectedActivityDirectiveId],
+  ([$spanUtilityMaps, $spansMap, $selectedActivityDirectiveId]) => {
+    if (!$selectedActivityDirectiveId || !$spansMap || !$spanUtilityMaps) {
+      return null;
+    }
+    const spanId = $spanUtilityMaps.directiveIdToSpanIdMap[$selectedActivityDirectiveId];
+    if (!spanId) {
+      return null;
+    }
+    return $spansMap[spanId];
   },
 );
 
