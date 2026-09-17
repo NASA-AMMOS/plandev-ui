@@ -1,3 +1,6 @@
+import type { ActivityDirective } from './activity';
+import type { Span } from './simulation';
+
 export type Extension = {
   description: string;
   extension_roles: ExtensionRole[];
@@ -11,7 +14,8 @@ export type ExtensionPayload = {
   gateway?: string;
   hasura?: string;
   planId: number;
-  selectedActivityDirectiveId: number | null;
+  selectedActivityDirective: ActivityDirective | null;
+  selectedSimulatedActivity?: Span | null;
   simulationDatasetId: number | null;
 };
 
