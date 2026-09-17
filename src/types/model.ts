@@ -7,7 +7,7 @@ import type { View, ViewSlim } from './view';
 
 export type Model = ModelSchema;
 
-export type ModelInsertInput = Pick<Model, 'description' | 'jar_id' | 'mission' | 'name' | 'version'>;
+export type ModelInsertInput = Pick<Model, 'description' | 'definition_file_id' | 'mission' | 'name' | 'version'>;
 export type ModelSetInput = Pick<Model, 'default_view_id' | 'description' | 'mission' | 'name' | 'owner' | 'version'>;
 
 export type ModelStatus = 'extracting' | 'complete' | 'error' | 'none';
@@ -39,10 +39,11 @@ export type ModelSchema = {
   constraint_specification: ConstraintModelSpecification[];
   created_at: string;
   default_view_id: number | null;
+  definition_file_id: number;
   derivation_group_specification: ModelDerivationGroup[];
   description?: string;
   id: number;
-  jar_id: number;
+  is_executable: boolean;
   mission: string;
   name: string;
   owner: UserId;
@@ -63,8 +64,9 @@ export type ModelSlim = Pick<
   | 'activity_types'
   | 'created_at'
   | 'description'
+  | 'definition_file_id'
   | 'id'
-  | 'jar_id'
+  | 'is_executable'
   | 'name'
   | 'owner'
   | 'plans'

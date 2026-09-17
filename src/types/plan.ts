@@ -107,6 +107,7 @@ export type PlanSchema = {
   duration: string;
   id: number;
   is_locked: boolean;
+  is_read_only: boolean;
   model: Model | null;
   model_id: number | null;
   name: string;

@@ -1518,14 +1518,14 @@ const effects = {
       creatingModelStore.set(true);
 
       const file: File = files[0];
-      const jarId = await effects.uploadFile(file, user);
+      const definitionFileId = await effects.uploadFile(file, user);
       showSuccessToast('Model Uploaded Successfully. Processing model...');
       logMessage('log', `Uploaded model file "${name}" (v${version}).`);
 
-      if (jarId !== null) {
+      if (definitionFileId !== null) {
         const modelInsertInput: ModelInsertInput = {
+          definition_file_id: definitionFileId,
           description,
-          jar_id: jarId,
           mission: '',
           name,
           version,
@@ -3268,8 +3268,8 @@ const effects = {
       );
 
       if (confirm) {
-        const { id, jar_id } = model;
-        await effects.deleteFile(jar_id, user);
+        const { id, definition_file_id } = model;
+        await effects.deleteFile(definition_file_id, user);
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');

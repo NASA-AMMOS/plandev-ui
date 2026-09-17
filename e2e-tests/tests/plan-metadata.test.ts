@@ -45,12 +45,12 @@ test.beforeAll(async ({ browser }) => {
   await apiA.login('userA', 'test');
 
   // Use pre-uploaded JAR from global setup
-  const { jarId } = getSharedTestData();
+  const { definitionFileId } = getSharedTestData();
 
   // Create model via API (much faster and more reliable than UI)
   const modelName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   const model = await apiA.createModel({
-    jar_id: jarId,
+    definition_file_id: definitionFileId,
     mission: 'test',
     name: modelName,
     version: '1.0.0',
