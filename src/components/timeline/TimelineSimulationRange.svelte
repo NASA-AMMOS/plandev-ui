@@ -82,7 +82,9 @@
     pointer-events: none;
     position: absolute;
     width: 100%;
-    z-index: 4;
+    /* Above the section header band (z-index 5), like vertical guides: simulation start and end
+       have to read continuously down the timeline. */
+    z-index: 6;
   }
 
   .timeline-simulation-range-header {

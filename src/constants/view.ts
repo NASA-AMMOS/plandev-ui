@@ -70,8 +70,17 @@ export const ViewXRangeLayerSchemePresets: Record<XRangeLayerColorScheme, readon
   schemeTableau10,
 };
 
+/** Sections are created with a real color rather than null, so the color picker shows what is
+ * actually rendered and every section gets the same band and rail treatment. */
+export const ViewDefaultSectionColor = '#D6D9DD';
+
+/** The default leads the palette so a colored section can be put back to neutral by picking a
+ * swatch. Without it, the only way back was a "remove color" button setting null - a state that
+ * renders identically to the default, giving one grey band two different sets of controls. */
+export const ViewSectionColorPresets: string[] = [ViewDefaultSectionColor, ...ViewDiscreteLayerColorPresets];
+
 export const ViewTimelineResourceRowsLimit = 20;
 
-export const viewSchemaVersion = 3;
+export const viewSchemaVersion = 4;
 
 export const viewSchemaVersionName = `v${viewSchemaVersion}`;
