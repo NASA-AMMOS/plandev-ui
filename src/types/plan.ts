@@ -129,22 +129,28 @@ export type PlanSchema = {
   updated_by: UserId;
 };
 
-export type PlanTransfer = Pick<PlanSchema, 'id' | 'duration' | 'model_id' | 'name' | 'start_time'> & {
+type ModelDeclaration = Model;
+type RunResults = [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];
+type PlanTransferBase = Pick<PlanSchema, 'id' | 'duration' | 'name' | 'start_time'> & {
   activities: Pick<
     ActivityDirective,
-    | 'anchor_id'
-    | 'anchored_to_start'
-    | 'arguments'
-    | 'id'
-    | 'metadata'
-    | 'name'
-    | 'start_offset'
-    | ('type' & { tags: { tag: Pick<Tag, 'color' | 'name'> }[] })
+    'anchor_id' | 'anchored_to_start' | 'arguments' | 'id' | 'metadata' | 'name' | 'start_offset' | 'type'
   >[];
   simulation_arguments: ArgumentsMap;
   tags?: { tag: Pick<Tag, 'color' | 'name'> }[];
   version?: string;
 };
+
+export type PlanTransfer =
+  | (PlanTransferBase & {
+      model?: never;
+      model_id: number | null;
+    })
+  | (PlanTransferBase & {
+      model: ModelDeclaration;
+      model_id?: never;
+      results?: RunResults;
+    });
 
 export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments'> & {
   end_time: string;
@@ -163,6 +169,7 @@ export type PlanMetadata = Pick<
   | 'model'
   | 'start_time'
   | 'duration'
+  | 'is_read_only'
 >;
 
 export type PlanSlim = Pick<
@@ -172,6 +179,7 @@ export type PlanSlim = Pick<
   | 'duration'
   | 'end_time_doy'
   | 'id'
+  | 'is_read_only'
   | 'model_id'
   | 'name'
   | 'owner'

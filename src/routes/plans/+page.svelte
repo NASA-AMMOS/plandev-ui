@@ -25,6 +25,7 @@
   import IconCellRenderer from '../../components/ui/IconCellRenderer.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
+  import TagChip from '../../components/ui/Tags/Tag.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -37,12 +38,13 @@
   import { tags } from '../../stores/tags';
   import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
+  import type { FieldStore } from '../../types/form';
   import type { ModelSlim } from '../../types/model';
   import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
-  import { parseJSONStream } from '../../utilities/generic';
+  import { compareWithRankings, parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
@@ -83,15 +85,6 @@
       width: 75,
     },
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
-    {
-      field: 'model_id',
-      filter: 'number',
-      headerName: 'Model ID',
-      resizable: true,
-      sortable: true,
-      suppressAutoSize: true,
-      width: 130,
-    },
     {
       field: 'start_time',
       filter: 'text',
@@ -196,6 +189,7 @@
   let durationString: string = 'None';
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
+  let isPlanUploadReadOnly: boolean = false;
   let orderedModels: ModelSlim[] = [];
   let nameInputField: InputStellar;
   let planExporting: boolean = false;
@@ -204,6 +198,8 @@
   let selectedPlan: PlanSlim | undefined;
   let selectedPlanId: number | null = null;
   let selectedPlanModelName: string | null = null;
+  let startTimeField: FieldStore<string>;
+  let endTimeField: FieldStore<string>;
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -249,11 +245,134 @@
     }
     return 0;
   });
+
   $: {
     canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
     columnDefs = [
-      ...baseColumnDefs.slice(0, 3),
+      ...baseColumnDefs.slice(0, 2),
       {
+        autoHeight: true,
+        cellRenderer: (params: ICellRendererParams<Plan>): HTMLDivElement | void => {
+          if (params.value) {
+            const executableDiv = document.createElement('div');
+            executableDiv.className = 'tags-cell';
+            new TagChip({
+              props: {
+                removable: false,
+                tag: {
+                  color: params.value === 'Executable' ? '#d9fffa' : '#eef2f8',
+                  name: params.value,
+                },
+              },
+              target: executableDiv,
+            });
+            return executableDiv;
+          }
+        },
+        comparator: (
+          valueA: number | string | null | undefined,
+          valueB: number | string | null | undefined,
+          _nodeA,
+          _nodeB,
+          isDescending: boolean,
+        ) => {
+          return compareWithRankings(
+            valueA,
+            valueB,
+            isDescending
+              ? {
+                  '': 0,
+                  string: 1,
+                }
+              : {
+                  '': 1,
+                  string: 0,
+                },
+          );
+        },
+        field: 'is_executable',
+        filter: 'text',
+        headerName: 'Executable',
+        resizable: true,
+        sortable: true,
+        valueGetter: (params: ValueGetterParams<Plan>) => {
+          if (params.data?.model_id !== undefined) {
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              return associatedModel.is_executable ? 'Executable' : 'Non Executable';
+            }
+          }
+          return '';
+        },
+        width: 160,
+      },
+      {
+        comparator: (
+          valueA: number | string | null | undefined,
+          valueB: number | string | null | undefined,
+          _nodeA,
+          _nodeB,
+          isDescending: boolean,
+        ) => {
+          return compareWithRankings(
+            valueA,
+            valueB,
+            isDescending
+              ? {
+                  '': 0,
+                  '-': 1,
+                  number: 2,
+                }
+              : {
+                  '': 2,
+                  '-': 1,
+                  number: 0,
+                },
+          );
+        },
+        field: 'model_id',
+        filter: 'number',
+        headerName: 'Model ID',
+        resizable: true,
+        sortable: true,
+        suppressAutoSize: true,
+        valueGetter: (params: ValueGetterParams<Plan>) => {
+          let value: string | number = '';
+          if (params.data?.model_id !== undefined) {
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              value = associatedModel.is_executable ? associatedModel.id : '-';
+            }
+          }
+
+          return value;
+        },
+        width: 130,
+      },
+      {
+        comparator: (
+          valueA: number | string | null | undefined,
+          valueB: number | string | null | undefined,
+          _nodeA,
+          _nodeB,
+          isDescending: boolean,
+        ) => {
+          return compareWithRankings(
+            valueA,
+            valueB,
+            isDescending
+              ? {
+                  '': 0,
+                  'N/A': 1,
+                  string: 2,
+                }
+              : {
+                  '': 2,
+                  'N/A': 1,
+                  string: 0,
+                },
+          );
+        },
         field: 'model_name',
         filter: 'text',
         headerName: 'Model Name',
@@ -261,12 +380,39 @@
         sortable: true,
         valueGetter: (params: ValueGetterParams<Plan>) => {
           if (params.data?.model_id !== undefined) {
-            return $models.find(model => model.id === params.data?.model_id)?.name;
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              return associatedModel.is_executable ? associatedModel.name : 'N/A';
+            }
           }
+          return '';
         },
         width: 150,
       },
       {
+        comparator: (
+          valueA: number | string | null | undefined,
+          valueB: number | string | null | undefined,
+          _nodeA,
+          _nodeB,
+          isDescending: boolean,
+        ) => {
+          return compareWithRankings(
+            valueA,
+            valueB,
+            isDescending
+              ? {
+                  '': 0,
+                  '-': 1,
+                  string: 2,
+                }
+              : {
+                  '': 2,
+                  '-': 1,
+                  string: 0,
+                },
+          );
+        },
         field: 'model_version',
         filter: 'text',
         headerName: 'Model Version',
@@ -274,12 +420,20 @@
         sortable: true,
         valueGetter: (params: ValueGetterParams<Plan>) => {
           if (params.data?.model_id !== undefined) {
-            return $models.find(model => model.id === params.data?.model_id)?.version;
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              if (associatedModel.is_executable) {
+                return associatedModel.version;
+              } else {
+                return '-';
+              }
+            }
           }
+          return '';
         },
         width: 150,
       },
-      ...baseColumnDefs.slice(3),
+      ...baseColumnDefs.slice(2),
       {
         cellClass: 'action-cell-container',
         cellRenderer: (params: PlanCellRendererParams) => {
@@ -497,6 +651,7 @@
 
   function hideImportPlan() {
     isPlanImportMode = false;
+    isPlanUploadReadOnly = false;
     planUploadFileInput.value = '';
     planUploadFiles = undefined;
     planUploadFilesError = null;
@@ -597,6 +752,13 @@
         const { duration } = planJSON;
 
         await endTimeField.validateAndSet(getDoyTimeFromInterval(startTime, duration));
+
+        // if the plan has a model, it means it's a read only plan
+        if (planJSON.model) {
+          isPlanUploadReadOnly = true;
+        } else {
+          isPlanUploadReadOnly = false;
+        }
       }
 
       updateDurationString();
@@ -693,34 +855,38 @@
               <div>
                 <Input layout="inline">
                   <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
-                  <div class="flex gap-1">
-                    <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
-                      <InputStellar
-                        sizeVariant="xs"
-                        readonly
-                        class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
-                        name="name"
-                        value={selectedPlanModelName ?? 'Model not found'}
-                      />
-                    </div>
-                    <div
-                      use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
-                      use:permissionHandler={{
-                        hasPermission: canChangePlanModel,
-                        permissionError: 'You do not have permission to change mission model',
-                      }}
-                    >
-                      <Button
-                        class="shrink-0"
-                        variant="outline"
-                        size="icon"
-                        on:click={openChangePlanMissionModelModal}
-                        aria-label="Change mission model"
+                  {#if selectedPlan.is_read_only}
+                    <span>Model provided by plan</span>
+                  {:else}
+                    <div class="flex gap-1">
+                      <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
+                        <InputStellar
+                          sizeVariant="xs"
+                          readonly
+                          class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
+                          name="name"
+                          value={selectedPlanModelName ?? 'Model not found'}
+                        />
+                      </div>
+                      <div
+                        use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
+                        use:permissionHandler={{
+                          hasPermission: canChangePlanModel,
+                          permissionError: 'You do not have permission to change mission model',
+                        }}
                       >
-                        <Pencil size={16} />
-                      </Button>
+                        <Button
+                          class="shrink-0"
+                          variant="outline"
+                          size="icon"
+                          on:click={openChangePlanMissionModelModal}
+                          aria-label="Change mission model"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  {/if}
                 </Input>
               </div>
               <Input layout="inline">
@@ -732,6 +898,7 @@
                 user={$user}
                 hasUpdatePermission={canUpdatePlan}
                 permissionError="You do not have permission to edit this plan."
+                isReadOnly={selectedPlan.is_read_only}
               />
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
@@ -748,6 +915,10 @@
             <Button on:click={showSelectedPlan}>Open plan</Button>
           </fieldset>
         {:else}
+          {@const canModify = canCreate && !isPlanUploadReadOnly}
+          {@const canModifyTooltip = isPlanUploadReadOnly
+            ? 'You cannot change time bounds for a plan that is read only.'
+            : permissionError}
           <form on:submit|preventDefault={createPlan}>
             <AlertError class="m-2" error={$createPlanError} />
 
@@ -794,51 +965,55 @@
 
             <Field field={modelIdField}>
               <Label size="sm" for="model" class="pb-0.5">Model</Label>
-              <div
-                use:permissionHandler={{
-                  hasPermission: canCreate,
-                  permissionError,
-                }}
-              >
-                <Select.Root
-                  selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
-                  disabled={!canCreate}
+              {#if isPlanUploadReadOnly}
+                <div class="text-xs text-muted-foreground">Model provided by read-only plan</div>
+              {:else}
+                <div
+                  use:permissionHandler={{
+                    hasPermission: canCreate,
+                    permissionError,
+                  }}
                 >
-                  <Select.Trigger
-                    value={selectedModel?.id}
-                    size="xs"
-                    aria-label="Select Model"
-                    aria-labelledby={null}
-                    id="model"
+                  <Select.Root
+                    selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+                    disabled={!canCreate}
                   >
-                    <Select.Value placeholder="Select a model" />
-                  </Select.Trigger>
-                  <Select.Content
-                    class="min-w-[240px] overflow-auto p-0"
-                    sameWidth={false}
-                    align="start"
-                    datatype="number"
-                    fitViewport
-                  >
-                    {#if orderedModels.length === 0}
-                      <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
-                    {:else}
-                      {#each orderedModels as model (model.id)}
-                        <Select.Item
-                          size="xs"
-                          value={model.id}
-                          label={getDisplayNameForModel(model)}
-                          class="flex gap-1"
-                        >
-                          {model.name}
-                          <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-                        </Select.Item>
-                      {/each}
-                    {/if}
-                  </Select.Content>
-                  <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
-                </Select.Root>
-              </div>
+                    <Select.Trigger
+                      value={selectedModel?.id}
+                      size="xs"
+                      aria-label="Select Model"
+                      aria-labelledby={null}
+                      id="model"
+                    >
+                      <Select.Value placeholder="Select a model" />
+                    </Select.Trigger>
+                    <Select.Content
+                      class="min-w-[240px] overflow-auto p-0"
+                      sameWidth={false}
+                      align="start"
+                      datatype="number"
+                      fitViewport
+                    >
+                      {#if orderedModels.length === 0}
+                        <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
+                      {:else}
+                        {#each orderedModels as model (model.id)}
+                          <Select.Item
+                            size="xs"
+                            value={model.id}
+                            label={getDisplayNameForModel(model)}
+                            class="flex gap-1"
+                          >
+                            {model.name}
+                            <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
+                          </Select.Item>
+                        {/each}
+                      {/if}
+                    </Select.Content>
+                    <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
+                  </Select.Root>
+                </div>
+              {/if}
             </Field>
 
             {#if selectedModel}
@@ -869,7 +1044,7 @@
 
             <fieldset>
               <DatePickerField
-                disabled={!canCreate}
+                disabled={!canModify}
                 layout="stacked"
                 useFallback={!$plugins.time.enableDatePicker}
                 field={startTimeField}
@@ -880,8 +1055,8 @@
                   [
                     permissionHandler,
                     {
-                      hasPermission: canCreate,
-                      permissionError,
+                      hasPermission: canModify,
+                      permissionError: canModifyTooltip,
                     },
                   ],
                 ]}
@@ -889,7 +1064,7 @@
             </fieldset>
             <fieldset>
               <DatePickerField
-                disabled={!canCreate}
+                disabled={!canModify}
                 useFallback={!$plugins.time.enableDatePicker}
                 field={endTimeField}
                 label={`End Time - ${$plugins.time.primary.formatString}`}
@@ -899,8 +1074,8 @@
                   [
                     permissionHandler,
                     {
-                      hasPermission: canCreate,
-                      permissionError,
+                      hasPermission: canModify,
+                      permissionError: canModifyTooltip,
                     },
                   ],
                 ]}

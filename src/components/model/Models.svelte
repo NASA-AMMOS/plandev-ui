@@ -44,6 +44,8 @@
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
   const extractionPermissionError: string = 'You do not have permission to re-trigger a model extraction';
 
+  const showNonExecutableModels: boolean = false;
+
   const modelsLoading = models.loading;
 
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -495,6 +497,8 @@
         hasDeletePermission={hasDeleteModelPermission}
         itemDisplayText="Model"
         items={$models}
+        isExternalFilterPresent={() => !showNonExecutableModels}
+        doesExternalFilterPass={node => !!node.data?.is_executable}
         showLoadingSkeleton
         loading={$modelsLoading}
         {user}

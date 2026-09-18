@@ -16,11 +16,13 @@
   export let user: User | null = null;
   export let hasUpdatePermission: boolean = false;
   export let permissionError: string = '';
+  export let isReadOnly: boolean = false;
 
   let startTimeString: string = '';
   let endTimeYmd: string | null = null;
   let endTimeString: string = '';
   let durationString: string = 'None';
+  let changeButtonTooltip: string = 'Change plan time range';
 
   // Display values are read-only but selectable (the inputs are `readonly`, not `disabled`) so the
   // text remains copyable. Editing goes through ChangePlanBoundsModal, which edits both at once.
@@ -28,6 +30,7 @@
   $: endTimeYmd = convertDoyToYmd(plan.end_time_doy);
   $: endTimeString = endTimeYmd ? formatDate(new Date(endTimeYmd), $plugins.time.primary.format) : plan.end_time_doy;
   $: durationString = convertUsToDurationString(getIntervalInMs(plan.duration) * 1000) || 'None';
+  $: changeButtonTooltip = isReadOnly ? 'Plan is read-only' : 'Change plan time range';
 
   function openChangePlanBoundsModal() {
     showChangePlanBoundsModal(plan, user);
@@ -42,14 +45,16 @@
     <input class="st-input w-full" id="planStartTime" name="planStartTime" readonly value={startTimeString} />
     <div
       use:permissionHandler={{ hasPermission: hasUpdatePermission, permissionError }}
-      use:tooltip={{ content: 'Change Plan Time Range', placement: 'top' }}
+      use:tooltip={{ content: changeButtonTooltip, placement: 'top' }}
     >
       <Button
-        aria-label="Change plan time range"
+        aria-label={changeButtonTooltip}
         class="shrink-0"
         on:click={openChangePlanBoundsModal}
         size="icon"
         variant="outline"
+        disabled={isReadOnly}
+        title={changeButtonTooltip}
       >
         <Pencil size={16} />
       </Button>

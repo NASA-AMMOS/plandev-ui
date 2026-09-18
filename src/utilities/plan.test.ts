@@ -232,6 +232,7 @@ describe('Plan utility', () => {
             end_time_doy: '2025-001T00:00:00',
             id: 1,
             is_locked: false,
+            is_read_only: false,
             model: {
               activity_types: [],
               constraint_specification: [],

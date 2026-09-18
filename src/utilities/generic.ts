@@ -64,6 +64,35 @@ export function stringCompare(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+function getSortRank(value: number | string | null | undefined, rankMappings: Record<string, number>): number {
+  let rank = rankMappings[String(value)];
+
+  if (rank === undefined) {
+    rank = rankMappings[typeof value];
+  }
+
+  return rank !== undefined ? rank : 0;
+}
+
+export function compareWithRankings(
+  valueA: number | string | null | undefined,
+  valueB: number | string | null | undefined,
+  rankMappings: Record<string, number>,
+): number {
+  const priorityA = getSortRank(valueA, rankMappings);
+  const priorityB = getSortRank(valueB, rankMappings);
+
+  // Keep empty and placeholder values at the bottom in either direction.
+  if (priorityA !== priorityB) {
+    return priorityA - priorityB;
+  }
+
+  if (typeof valueA === 'number' && typeof valueB === 'number') {
+    return valueA - valueB;
+  }
+  return String(valueA).localeCompare(String(valueB), undefined, { numeric: true });
+}
+
 /**
  * Clamp a number between min and max.
  */
