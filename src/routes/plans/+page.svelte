@@ -24,8 +24,8 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import IconCellRenderer from '../../components/ui/IconCellRenderer.svelte';
   import Panel from '../../components/ui/Panel.svelte';
+  import PlanName from '../../components/ui/PlanName.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import TagChip from '../../components/ui/Tags/Tag.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
   import { SearchParameters } from '../../enums/searchParameters';
@@ -84,7 +84,22 @@
       suppressSizeToFit: true,
       width: 75,
     },
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
+    {
+      cellRenderer: (params: ICellRendererParams<Plan>) => {
+        const div = document.createElement('div');
+        new PlanName({
+          props: { name: params.data?.name || '', isReadOnly: params.data?.is_read_only || false },
+          target: div,
+        });
+        return div;
+      },
+      field: 'name',
+      filter: 'text',
+      headerName: 'Name',
+      resizable: true,
+      sortable: true,
+      width: 150,
+    },
     {
       field: 'start_time',
       filter: 'text',
@@ -251,24 +266,6 @@
     columnDefs = [
       ...baseColumnDefs.slice(0, 2),
       {
-        autoHeight: true,
-        cellRenderer: (params: ICellRendererParams<Plan>): HTMLDivElement | void => {
-          if (params.value) {
-            const executableDiv = document.createElement('div');
-            executableDiv.className = 'tags-cell';
-            new TagChip({
-              props: {
-                removable: false,
-                tag: {
-                  color: params.value === 'Executable' ? '#d9fffa' : '#eef2f8',
-                  name: params.value,
-                },
-              },
-              target: executableDiv,
-            });
-            return executableDiv;
-          }
-        },
         comparator: (
           valueA: number | string | null | undefined,
           valueB: number | string | null | undefined,
@@ -276,59 +273,7 @@
           _nodeB,
           isDescending: boolean,
         ) => {
-          return compareWithRankings(
-            valueA,
-            valueB,
-            isDescending
-              ? {
-                  '': 0,
-                  string: 1,
-                }
-              : {
-                  '': 1,
-                  string: 0,
-                },
-          );
-        },
-        field: 'is_executable',
-        filter: 'text',
-        headerName: 'Executable',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              return associatedModel.is_executable ? 'Executable' : 'Non Executable';
-            }
-          }
-          return '';
-        },
-        width: 160,
-      },
-      {
-        comparator: (
-          valueA: number | string | null | undefined,
-          valueB: number | string | null | undefined,
-          _nodeA,
-          _nodeB,
-          isDescending: boolean,
-        ) => {
-          return compareWithRankings(
-            valueA,
-            valueB,
-            isDescending
-              ? {
-                  '': 0,
-                  '-': 1,
-                  number: 2,
-                }
-              : {
-                  '': 2,
-                  '-': 1,
-                  number: 0,
-                },
-          );
+          return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
         },
         field: 'model_id',
         filter: 'number',
@@ -357,21 +302,33 @@
           _nodeB,
           isDescending: boolean,
         ) => {
-          return compareWithRankings(
-            valueA,
-            valueB,
-            isDescending
-              ? {
-                  '': 0,
-                  'N/A': 1,
-                  string: 2,
-                }
-              : {
-                  '': 2,
-                  'N/A': 1,
-                  string: 0,
-                },
-          );
+          return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
+        },
+        field: 'model_name',
+        filter: 'text',
+        headerName: 'Model Name',
+        resizable: true,
+        sortable: true,
+        valueGetter: (params: ValueGetterParams<Plan>) => {
+          if (params.data?.model_id !== undefined) {
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              return associatedModel.is_executable ? associatedModel.name : 'N/A';
+            }
+          }
+          return '';
+        },
+        width: 200,
+      },
+      {
+        comparator: (
+          valueA: number | string | null | undefined,
+          valueB: number | string | null | undefined,
+          _nodeA,
+          _nodeB,
+          isDescending: boolean,
+        ) => {
+          return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
         },
         field: 'model_name',
         filter: 'text',
@@ -397,21 +354,7 @@
           _nodeB,
           isDescending: boolean,
         ) => {
-          return compareWithRankings(
-            valueA,
-            valueB,
-            isDescending
-              ? {
-                  '': 0,
-                  '-': 1,
-                  string: 2,
-                }
-              : {
-                  '': 2,
-                  '-': 1,
-                  string: 0,
-                },
-          );
+          return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
         },
         field: 'model_version',
         filter: 'text',
@@ -434,6 +377,16 @@
         width: 150,
       },
       ...baseColumnDefs.slice(2),
+      {
+        autoHeight: true,
+        field: 'is_read_only',
+        filter: 'agTextColumnFilter',
+        cellDataType: 'boolean',
+        headerName: 'Read Only',
+        resizable: true,
+        sortable: true,
+        width: 260,
+      },
       {
         cellClass: 'action-cell-container',
         cellRenderer: (params: PlanCellRendererParams) => {

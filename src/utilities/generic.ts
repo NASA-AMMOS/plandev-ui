@@ -77,8 +77,12 @@ function getSortRank(value: number | string | null | undefined, rankMappings: Re
 export function compareWithRankings(
   valueA: number | string | null | undefined,
   valueB: number | string | null | undefined,
-  rankMappings: Record<string, number>,
+  valueRankings: string[],
 ): number {
+  const rankMappings: Record<string, number> = {};
+  valueRankings.forEach((value, index) => {
+    rankMappings[value] = index;
+  });
   const priorityA = getSortRank(valueA, rankMappings);
   const priorityB = getSortRank(valueB, rankMappings);
 

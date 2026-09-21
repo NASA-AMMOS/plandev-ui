@@ -183,34 +183,34 @@ describe('Generic utility function tests', () => {
 
   describe('compareWithRankings', () => {
     test('sorts an array according to explicit rankings', () => {
-      const rankings = { completed: 3, draft: 1, 'in progress': 2 };
-      const values = ['completed', 'draft', 'in progress'];
+      const rankings = ['draft', 'in progress', 'completed', '-', ''];
+      const values = ['completed', '', '-', 'draft', 'in progress'];
 
       values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
 
-      expect(values).toEqual(['draft', 'in progress', 'completed']);
+      expect(values).toEqual(['draft', 'in progress', 'completed', '-', '']);
     });
 
-    test('uses a value ranking before a type ranking', () => {
-      const rankings = { '42': 3, number: 1 };
-      const values = [42, 7];
+    test('uses the ranking for a value when one exists', () => {
+      const rankings = ['42', '7'];
+      const values = [7, 42];
 
       values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
 
-      expect(values).toEqual([7, 42]);
+      expect(values).toEqual([42, 7]);
     });
 
-    test('uses type rankings when no value-specific ranking exists', () => {
-      const rankings = { number: 1, string: 2 };
-      const values = ['10', 10];
+    test('uses the default rank for values that are not explicitly ranked', () => {
+      const rankings = ['unknown', 'ready'];
+      const values = ['ready', null, 'unknown'];
 
       values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
 
-      expect(values).toEqual([10, '10']);
+      expect(values).toEqual([null, 'unknown', 'ready']);
     });
 
     test('compares numbers numerically when they have the same rank', () => {
-      const rankings = { number: 1 };
+      const rankings: string[] = [];
       const values = [10, 2, 100];
 
       values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
@@ -219,21 +219,12 @@ describe('Generic utility function tests', () => {
     });
 
     test('compares non-numbers using numeric-aware locale ordering when they have the same rank', () => {
-      const rankings = { string: 1 };
+      const rankings: string[] = [];
       const values = ['item10', 'item2', 'item1'];
 
       values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
 
       expect(values).toEqual(['item1', 'item2', 'item10']);
-    });
-
-    test('uses the default rank for null and unranked values', () => {
-      const rankings = { ready: 1 };
-      const values = ['ready', null, 'unknown'];
-
-      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
-
-      expect(values).toEqual([null, 'unknown', 'ready']);
     });
   });
 });

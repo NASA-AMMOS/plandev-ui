@@ -7,7 +7,7 @@
   import { ChevronDown } from 'lucide-svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityDirectivesMap } from '../../stores/activities';
-  import { planReadOnly } from '../../stores/plan';
+  import { planIsLocked } from '../../stores/plan';
   import { initialPlanSnapshotsLoading } from '../../stores/planSnapshots';
   import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
@@ -19,6 +19,7 @@
   import { exportPlan } from '../../utilities/plan';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import PlanName from '../ui/PlanName.svelte';
   import MenuDivider from './MenuDivider.svelte';
 
   export let plan: Plan;
@@ -39,11 +40,11 @@
           model_id: plan.model_id,
         },
         plan.model,
-      ) && !$planReadOnly
+      ) && !$planIsLocked
     : false;
   $: hasCreatePlanBranchPermission =
-    featurePermissions.planBranch.canCreateBranch(user, plan, plan.model) && !$planReadOnly;
-  $: hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
+    featurePermissions.planBranch.canCreateBranch(user, plan, plan.model) && !$planIsLocked;
+  $: hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planIsLocked;
 
   function createMergePlanBranchRequest() {
     effects.createPlanBranchRequest(plan, 'merge', user);
@@ -91,86 +92,103 @@
     <BranchIcon />
   {/if}
 
-  <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
-    <div class="plan-title">{plan.name}<ChevronDown size={16} /></div>
-    <Menu hideAfterClick={false} bind:this={planMenu}>
-      <MenuItem
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasCreatePlanBranchPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to create a plan branch',
-            },
-          ],
-        ]}
-        on:click={createPlanBranch}
-      >
-        <div class="column-name">Create branch</div>
-      </MenuItem>
-      <MenuItem on:click={showPlanMergeRequests}>
-        <div class="column-name">View merge requests</div>
-      </MenuItem>
-      {#if plan.parent_plan !== null}
-        <MenuDivider />
+  {#if plan.is_read_only}
+    <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
+      <div class="plan-title">
+        <PlanName name={plan.name} isReadOnly={plan.is_read_only} size={18} /><ChevronDown size={16} />
+      </div>
+      <Menu hideAfterClick={false} bind:this={planMenu}>
+        <MenuItem on:click={onExportPlan} disabled={planExporting}>
+          {#if !planExporting}
+            Export plan as .json
+          {:else}
+            Exporting...
+          {/if}
+        </MenuItem>
+      </Menu>
+    </div>
+  {:else}
+    <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
+      <div class="plan-title">{plan.name}<ChevronDown size={16} /></div>
+      <Menu hideAfterClick={false} bind:this={planMenu}>
         <MenuItem
-          disabled={!plan.model}
-          on:click={createMergePlanBranchRequest}
           use={[
             [
               permissionHandler,
               {
-                hasPermission: hasCreateMergeRequestPermission,
-                permissionError: $planReadOnly
+                hasPermission: hasCreatePlanBranchPermission,
+                permissionError: $planIsLocked
                   ? PlanStatusMessages.READ_ONLY
-                  : 'You do not have permission to create a merge request',
+                  : 'You do not have permission to create a plan branch',
+              },
+            ],
+          ]}
+          on:click={createPlanBranch}
+        >
+          <div class="column-name">Create branch</div>
+        </MenuItem>
+        <MenuItem on:click={showPlanMergeRequests}>
+          <div class="column-name">View merge requests</div>
+        </MenuItem>
+        {#if plan.parent_plan !== null}
+          <MenuDivider />
+          <MenuItem
+            disabled={!plan.model}
+            on:click={createMergePlanBranchRequest}
+            use={[
+              [
+                permissionHandler,
+                {
+                  hasPermission: hasCreateMergeRequestPermission,
+                  permissionError: $planIsLocked
+                    ? PlanStatusMessages.READ_ONLY
+                    : 'You do not have permission to create a merge request',
+                },
+              ],
+            ]}
+          >
+            <div class="column-name">Create merge request</div>
+          </MenuItem>
+          <MenuItem on:click={() => goto(`${base}/plans/${plan?.parent_plan?.id}`)}>
+            <div class="column-name">Open parent plan</div>
+          </MenuItem>
+        {/if}
+        <MenuDivider />
+        <MenuItem
+          disabled={$initialPlanSnapshotsLoading}
+          on:click={createPlanSnapshot}
+          use={[
+            [
+              permissionHandler,
+              {
+                hasPermission: hasCreateSnapshotPermission,
+                permissionError: $planIsLocked
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to create a plan snapshot',
               },
             ],
           ]}
         >
-          <div class="column-name">Create merge request</div>
+          <div class="column-name">Take Snapshot</div>
         </MenuItem>
-        <MenuItem on:click={() => goto(`${base}/plans/${plan?.parent_plan?.id}`)}>
-          <div class="column-name">Open parent plan</div>
+        <MenuItem on:click={viewSnapshotHistory}>
+          <div class="column-name">View Snapshot History</div>
         </MenuItem>
-      {/if}
-      <MenuDivider />
-      <MenuItem
-        disabled={$initialPlanSnapshotsLoading}
-        on:click={createPlanSnapshot}
-        use={[
-          [
-            permissionHandler,
-            {
-              hasPermission: hasCreateSnapshotPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to create a plan snapshot',
-            },
-          ],
-        ]}
-      >
-        <div class="column-name">Take Snapshot</div>
-      </MenuItem>
-      <MenuItem on:click={viewSnapshotHistory}>
-        <div class="column-name">View Snapshot History</div>
-      </MenuItem>
-      <MenuDivider />
-      <MenuItem on:click={onExportPlan} disabled={planExporting}>
-        {#if !planExporting}
-          Export plan as .json
-        {:else}
-          Exporting...
-        {/if}
-      </MenuItem>
-    </Menu>
-  </div>
-  {#if plan.child_plans.length > 0}
-    <div class="plan-branches st-typography-medium" on:click|stopPropagation={showPlanBranches} role="none">
-      {plan.child_plans.length} branch{plan.child_plans.length > 1 ? 'es' : ''}
+        <MenuDivider />
+        <MenuItem on:click={onExportPlan} disabled={planExporting}>
+          {#if !planExporting}
+            Export plan as .json
+          {:else}
+            Exporting...
+          {/if}
+        </MenuItem>
+      </Menu>
     </div>
+    {#if plan.child_plans.length > 0}
+      <div class="plan-branches st-typography-medium" on:click|stopPropagation={showPlanBranches} role="none">
+        {plan.child_plans.length} branch{plan.child_plans.length > 1 ? 'es' : ''}
+      </div>
+    {/if}
   {/if}
 </div>
 
