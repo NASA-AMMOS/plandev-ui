@@ -218,7 +218,7 @@
         {#if plan.is_read_only}
           <Input layout="inline">
             <span>Model</span>
-            <span class="text-muted-foreground">Model provided by plan</span>
+            <span class="text-muted-foreground">Model provided by read-only plan</span>
           </Input>
         {:else}
           <Input layout="inline">
