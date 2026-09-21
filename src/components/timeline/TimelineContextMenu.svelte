@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { TIME_MS } from '../../enums/time';
-  import { planReadOnly } from '../../stores/plan';
+  import { planIsLocked } from '../../stores/plan';
   import { view, viewUpdateGrid } from '../../stores/views';
   import type { ActivityDirective, ActivityDirectivesMap } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -125,7 +125,7 @@
   $: hasCreatePermission = plan !== null && featurePermissions.activityDirective.canCreate(user, plan);
 
   $: {
-    if ($planReadOnly) {
+    if ($planIsLocked) {
       permissionErrorText = PlanStatusMessages.READ_ONLY;
     } else if (!hasCreatePermission) {
       permissionErrorText = 'You do not have permission create activity directives';
@@ -318,15 +318,15 @@
       <ContextMenu.Separator />
       <div
         use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
+          hasPermission: hasUpdateSimulationPermission && !$planIsLocked,
+          permissionError: $planIsLocked
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to update this simulation',
         }}
       >
         <ContextMenu.Item
           size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+          disabled={!(hasUpdateSimulationPermission && !$planIsLocked)}
           on:click={() => updateSimulationStartTime(activityDirectiveStartDate)}
         >
           Set Simulation Start at Directive Start
@@ -334,15 +334,15 @@
       </div>
       <div
         use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
+          hasPermission: hasUpdateSimulationPermission && !$planIsLocked,
+          permissionError: $planIsLocked
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to update this simulation',
         }}
       >
         <ContextMenu.Item
           size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+          disabled={!(hasUpdateSimulationPermission && !$planIsLocked)}
           on:click={() => updateSimulationEndTime(activityDirectiveStartDate)}
         >
           Set Simulation End at Directive Start
@@ -357,15 +357,15 @@
       </ContextMenu.Item>
       <div
         use:permissionHandler={{
-          hasPermission: hasUpdateDirectivePermission && !$planReadOnly,
-          permissionError: $planReadOnly
+          hasPermission: hasUpdateDirectivePermission && !$planIsLocked,
+          permissionError: $planIsLocked
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to delete this activity',
         }}
       >
         <ContextMenu.Item
           size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+          disabled={!(hasUpdateSimulationPermission && !$planIsLocked)}
           on:click={() => {
             if (activityDirective !== null) {
               dispatch('deleteActivityDirective', activityDirective.id);
@@ -425,15 +425,15 @@
       <ContextMenu.Separator />
       <div
         use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
+          hasPermission: hasUpdateSimulationPermission && !$planIsLocked,
+          permissionError: $planIsLocked
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to update the simulation',
         }}
       >
         <ContextMenu.Item
           size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+          disabled={!(hasUpdateSimulationPermission && !$planIsLocked)}
           on:click={() => xScaleView && offsetX !== undefined && updateSimulationStartTime(xScaleView.invert(offsetX))}
         >
           Set Simulation Start
@@ -441,15 +441,15 @@
       </div>
       <div
         use:permissionHandler={{
-          hasPermission: hasUpdateSimulationPermission && !$planReadOnly,
-          permissionError: $planReadOnly
+          hasPermission: hasUpdateSimulationPermission && !$planIsLocked,
+          permissionError: $planIsLocked
             ? PlanStatusMessages.READ_ONLY
             : 'You do not have permission to update the simulation',
         }}
       >
         <ContextMenu.Item
           size="sm"
-          disabled={!(hasUpdateSimulationPermission && !$planReadOnly)}
+          disabled={!(hasUpdateSimulationPermission && !$planIsLocked)}
           on:click={() => xScaleView && offsetX !== undefined && updateSimulationEndTime(xScaleView.invert(offsetX))}
         >
           Set Simulation End

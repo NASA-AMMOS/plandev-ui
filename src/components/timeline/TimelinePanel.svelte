@@ -13,7 +13,7 @@
     visibleConstraintResults,
   } from '../../stores/constraints';
   import { selectExternalEvent, selectedExternalEventId, selectedExternalEvents } from '../../stores/external-event';
-  import { maxTimeRange, plan, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planIsLocked, viewTimeRange } from '../../stores/plan';
   import {
     initialSpansLoading,
     resourceTypes,
@@ -67,8 +67,8 @@
   let showTimelineTooltip = true;
 
   $: if (user !== null && $plan !== null) {
-    hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan) && !$planReadOnly;
-    hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
+    hasUpdateDirectivePermission = featurePermissions.activityDirective.canUpdate(user, $plan) && !$planIsLocked;
+    hasUpdateSimulationPermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planIsLocked;
   }
 
   $: timelines = $view?.definition.plan.timelines || [];

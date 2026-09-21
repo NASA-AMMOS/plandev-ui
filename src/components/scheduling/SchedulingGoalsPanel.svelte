@@ -6,7 +6,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SchedulingDefinitionType } from '../../enums/scheduling';
   import { Status } from '../../enums/status';
-  import { plan, planReadOnly } from '../../stores/plan';
+  import { plan, planIsLocked } from '../../stores/plan';
   import {
     allowedSchedulingGoalSpecs,
     enableScheduling,
@@ -85,9 +85,9 @@
   $: numOfPrivateGoals = $schedulingGoalSpecifications.length - visibleSchedulingGoalSpecs.length;
   $: if ($plan) {
     hasAnalyzePermission =
-      featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planReadOnly;
-    hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
-    hasRunPermission = featurePermissions.schedulingGoalsPlanSpec.canRun(user, $plan, $plan.model) && !$planReadOnly;
+      featurePermissions.schedulingGoalsPlanSpec.canAnalyze(user, $plan, $plan.model) && !$planIsLocked;
+    hasSpecEditPermission = featurePermissions.schedulingGoalsPlanSpec.canUpdate(user, $plan) && !$planIsLocked;
+    hasRunPermission = featurePermissions.schedulingGoalsPlanSpec.canRun(user, $plan, $plan.model) && !$planIsLocked;
   }
   $: status = $schedulingAnalysisStatus;
 
@@ -278,7 +278,7 @@
             permissionHandler,
             {
               hasPermission: hasAnalyzePermission,
-              permissionError: $planReadOnly
+              permissionError: $planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a scheduling analysis',
             },
@@ -296,7 +296,7 @@
             permissionHandler,
             {
               hasPermission: hasRunPermission,
-              permissionError: $planReadOnly
+              permissionError: $planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run scheduling',
             },
@@ -316,8 +316,8 @@
           name="manage-goals"
           class="st-button secondary"
           use:permissionHandler={{
-            hasPermission: $plan ? featurePermissions.schedulingGoals.canCreate(user) && !$planReadOnly : false,
-            permissionError: $planReadOnly
+            hasPermission: $plan ? featurePermissions.schedulingGoals.canCreate(user) && !$planIsLocked : false,
+            permissionError: $planIsLocked
               ? PlanStatusMessages.READ_ONLY
               : 'You do not have permission to update scheduling goals',
           }}
@@ -359,7 +359,7 @@
           {#if $schedulingGoalsMap[specGoal.goal_id]}
             <SchedulingGoal
               defaultArguments={goalDefaultArgumentsLookup[specGoal.goal_invocation_id] ?? {}}
-              editPermissionError={$planReadOnly
+              editPermissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling goals for this plan.'}
               hasEditPermission={hasSpecEditPermission}

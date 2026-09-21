@@ -6,7 +6,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
+  import { planIsLocked, planMetadata, planReadOnlySnapshot } from '../../stores/plan';
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
@@ -67,15 +67,15 @@
   ]);
   let planExporting: boolean = false;
 
-  $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
+  $: permissionError = $planIsLocked ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan && plan.model) {
-    hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
+    hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planIsLocked;
   }
   $: {
     if (plan && user) {
-      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
+      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planIsLocked;
       hasPlanCollaboratorsUpdatePermission =
-        featurePermissions.planCollaborators.canCreate(user, plan) && !$planReadOnly;
+        featurePermissions.planCollaborators.canCreate(user, plan) && !$planIsLocked;
       hasChangePlanModelPermission = featurePermissions.plan.canUpdateModel(user, plan);
     } else {
       hasPlanUpdatePermission = false;
@@ -227,12 +227,12 @@
             />
             <div
               use:permissionHandler={{
-                hasPermission: hasChangePlanModelPermission && !$planReadOnly,
-                permissionError: $planReadOnly
+                hasPermission: hasChangePlanModelPermission && !$planIsLocked,
+                permissionError: $planIsLocked
                   ? PlanStatusMessages.READ_ONLY
                   : "You don't have permission to change mission model",
               }}
-              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
+              use:tooltip={{ content: !$planIsLocked ? 'Change Mission Model' : '', placement: 'top' }}
             >
               <Button
                 class="shrink-0"
@@ -357,7 +357,7 @@
             disabled={$initialPlanSnapshotsLoading}
             use:permissionHandler={{
               hasPermission: hasCreateSnapshotPermission,
-              permissionError: $planReadOnly
+              permissionError: $planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to create a plan snapshot',
             }}

@@ -17,9 +17,20 @@ export const planReadOnlySnapshot: Writable<boolean> = writable(false);
 // Used to lock the plan if there's an active merge request.
 export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
 
-export const planReadOnly: Readable<boolean> = derived(
+// Used to indicate that the plan has a model that is not executable (i.e. it was imported with a defined model present in the JSON file)
+// The plan itself is not considered non-executable necessarily, but it is considered "readonly".
+// This store variable is to help disambiguate between the "readonly" state from a merge request and a plan with a non-executable model.
+export const planIsNonExecutable: Writable<boolean> = writable(false);
+
+export const planIsLocked: Readable<boolean> = derived(
   [planReadOnlySnapshot, planReadOnlyMergeRequest],
   ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
+);
+
+export const planReadOnly: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest, planIsNonExecutable],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planIsNonExecutable]) =>
+    $planReadOnlyMergeRequest || $planReadOnlySnapshot || $planIsNonExecutable,
 );
 
 export const createPlanError: Writable<string | null> = writable(null);

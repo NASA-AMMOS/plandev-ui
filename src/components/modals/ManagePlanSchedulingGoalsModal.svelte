@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
-  import { plan, planReadOnly } from '../../stores/plan';
+  import { plan, planIsLocked } from '../../stores/plan';
   import {
     allowedSchedulingGoalSpecs,
     schedulingGoals,
@@ -310,8 +310,8 @@
       class="st-button"
       on:click={() => onUpdateGoals(selectedGoals)}
       use:permissionHandler={{
-        hasPermission: hasEditSpecPermission && !$planReadOnly,
-        permissionError: $planReadOnly
+        hasPermission: hasEditSpecPermission && !$planIsLocked,
+        permissionError: $planIsLocked
           ? PlanStatusMessages.READ_ONLY
           : 'You do not have permission to update the scheduling goals on this plan.',
       }}

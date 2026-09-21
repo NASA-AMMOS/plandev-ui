@@ -11,7 +11,7 @@
   import { activityArgumentDefaultsMap } from '../../stores/activities';
   import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/console';
   import { field } from '../../stores/form';
-  import { plan, planReadOnly } from '../../stores/plan';
+  import { plan, planIsLocked } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import type {
     ActivityDirective,
@@ -92,9 +92,9 @@
 
   $: if (user !== null && $plan !== null) {
     hasUpdatePermission =
-      featurePermissions.activityDirective.canUpdate(user, $plan, activityDirective) && !$planReadOnly;
+      featurePermissions.activityDirective.canUpdate(user, $plan, activityDirective) && !$planIsLocked;
   }
-  $: updatePermissionError = $planReadOnly
+  $: updatePermissionError = $planIsLocked
     ? PlanStatusMessages.READ_ONLY
     : 'You do not have permission to update this activity';
   $: highlightKeysMap = keyByBoolean(highlightKeys);
@@ -597,7 +597,7 @@
           anchorId={revision ? revision.anchor_id : activityDirective.anchor_id}
           disabled={!editable}
           {highlightKeysMap}
-          planReadOnly={$planReadOnly}
+          planReadOnly={$planIsLocked}
           isAnchoredToStart={revision ? revision.anchored_to_start : activityDirective.anchored_to_start}
           startOffset={revision ? revision.start_offset : activityDirective.start_offset}
           on:updateAnchor={updateAnchor}

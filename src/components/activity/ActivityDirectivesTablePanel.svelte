@@ -15,7 +15,7 @@
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
   import { activityErrorRollupsMap } from '../../stores/console';
-  import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { maxTimeRange, plan, planIsLocked, planModelActivityTypes, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { spansMap, spanUtilityMaps } from '../../stores/simulation';
   import { view, viewTogglePanel, viewUpdateActivityDirectivesTable } from '../../stores/views';
@@ -468,7 +468,7 @@
       plan={$plan}
       spansMap={$spansMap}
       spanUtilityMaps={$spanUtilityMaps}
-      planReadOnly={$planReadOnly}
+      planReadOnly={$planIsLocked}
       {user}
       on:columnMoved={onColumnMoved}
       on:columnPinned={onColumnPinned}

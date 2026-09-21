@@ -18,9 +18,9 @@
   import {
     activityEditingLocked,
     plan,
+    planIsLocked,
     planModelActivityTypes,
     planModelId,
-    planReadOnly,
     setActivityEditingLocked,
   } from '../../stores/plan';
   import { selectedSpan, simulationDatasetId, spanUtilityMaps, spansMap } from '../../stores/simulation';
@@ -52,12 +52,12 @@
   let previewRevision: ActivityDirectiveRevision | undefined;
   let selectedParameterName: string | null = null;
 
-  $: deletePermissionError = $planReadOnly
+  $: deletePermissionError = $planIsLocked
     ? PlanStatusMessages.READ_ONLY
     : 'You do not have permission to delete this activity';
   $: if (user !== null && $plan !== null && $selectedActivityDirective !== null) {
     hasDeletePermission =
-      featurePermissions.activityDirective.canDelete(user, $plan, $selectedActivityDirective) && !$planReadOnly;
+      featurePermissions.activityDirective.canDelete(user, $plan, $selectedActivityDirective) && !$planIsLocked;
   }
 
   // Auto close the changelog and clear revision preview state whenever the selected activity changes
