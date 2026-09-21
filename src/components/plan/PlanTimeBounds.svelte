@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { Pencil } from 'lucide-svelte';
+  import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { plugins } from '../../stores/plugins';
   import type { User } from '../../types/app';
   import type { Plan, PlanSlim } from '../../types/plan';
@@ -30,7 +31,7 @@
   $: endTimeYmd = convertDoyToYmd(plan.end_time_doy);
   $: endTimeString = endTimeYmd ? formatDate(new Date(endTimeYmd), $plugins.time.primary.format) : plan.end_time_doy;
   $: durationString = convertUsToDurationString(getIntervalInMs(plan.duration) * 1000) || 'None';
-  $: changeButtonTooltip = isReadOnly ? 'Plan is read-only' : 'Change plan time range';
+  $: changeButtonTooltip = isReadOnly ? PlanStatusMessages.READ_ONLY : 'Change plan time range';
 
   function openChangePlanBoundsModal() {
     showChangePlanBoundsModal(plan, user);

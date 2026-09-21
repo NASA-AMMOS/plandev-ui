@@ -5,6 +5,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
   import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
+  import { PlanStatusMessages } from '../enums/planStatusMessages';
   import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
@@ -323,7 +324,7 @@
                 use:permissionHandler={{
                   hasPermission: hasCreatePermission && !planReadOnly,
                   permissionError: planReadOnly
-                    ? 'Plan is read-only'
+                    ? PlanStatusMessages.READ_ONLY
                     : 'You do not have permission to create activities.',
                 }}
                 use:tooltip={{

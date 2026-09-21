@@ -8,14 +8,7 @@
   import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { capitalize } from 'lodash-es';
-  import {
-    AlertTriangle,
-    CalendarRange,
-    ChevronsLeftRight,
-    FlipHorizontal2,
-    ListX,
-    PlaySquareIcon,
-  } from 'lucide-svelte';
+  import { AlertTriangle, CalendarRange, ChevronsLeftRight, FlipHorizontal2, ListX, SquarePlay } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
@@ -84,8 +77,10 @@
     planDatasets,
     planId,
     planIsLocked,
+    planIsNonExecutable,
     planModelActivityTypes,
     planModelId,
+    planReadOnly,
     planReadOnlyMergeRequest,
     planReadOnlySnapshot,
     planStartTimeYmd,
@@ -291,6 +286,9 @@
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
     $simulationDatasetId = -1;
+
+    $planReadOnlyMergeRequest = data.initialPlan.is_locked;
+    $planIsNonExecutable = data.initialPlan.is_read_only;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
@@ -847,11 +845,11 @@
                 : 'You do not have permission to run a simulation'}
               status={$simulationStatus}
               progress={$simulationProgress}
-              disabled={!$enableSimulation}
+              disabled={!$enableSimulation || $planReadOnly}
               showStatusInMenu={false}
               on:click={() => effects.simulate($plan, false, $user)}
             >
-              <PlaySquareIcon size={20} />
+              <SquarePlay size={20} />
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body">
                   <div class="simulation-header">
@@ -969,7 +967,7 @@
               buttonText="Analyze Goal Satisfaction"
               disabled={!$enableScheduling}
               hasPermission={hasScheduleAnalysisPermission}
-              permissionError={$planIsLocked
+              permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a scheduling analysis'}
               status={$schedulingAnalysisStatus}

@@ -5,6 +5,7 @@
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { CirclePlus } from 'lucide-svelte';
+  import { PlanStatusMessages } from '../enums/planStatusMessages';
   import { directiveBuilderIsVisible } from '../stores/directiveBuilder';
   import { plan, planModelActivityTypes, planReadOnly, subsystemTags } from '../stores/plan';
   import type { ActivityType } from '../types/activity';
@@ -21,7 +22,6 @@
 
   const uploadPermissionError: string = 'You do not have permission to upload activities.';
   const createPermissionError: string = 'You do not have permission to create activities.';
-  const planReadOnlyError: string = 'Plan is read-only';
 
   let hasCreatePermission: boolean = false;
   let isUploadVisible: boolean = false;
@@ -106,7 +106,7 @@
       on:click={onShowUpload}
       use:permissionHandler={{
         hasPermission: hasCreatePermission && !$planReadOnly,
-        permissionError: $planReadOnly ? planReadOnlyError : uploadPermissionError,
+        permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : uploadPermissionError,
       }}
       use:tooltip={{ content: 'Upload Activities', disabled: !hasCreatePermission || $planReadOnly }}
     >
@@ -115,7 +115,7 @@
     <div
       use:permissionHandler={{
         hasPermission: hasCreatePermission && !$planReadOnly,
-        permissionError: $planReadOnly ? planReadOnlyError : createPermissionError,
+        permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : createPermissionError,
       }}
     >
       <Button

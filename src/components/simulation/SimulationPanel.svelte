@@ -8,7 +8,7 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { Status } from '../../enums/status';
   import { field } from '../../stores/form';
-  import { plan, planEndTimeMs, planIsLocked, planStartTimeMs } from '../../stores/plan';
+  import { plan, planEndTimeMs, planReadOnly, planStartTimeMs } from '../../stores/plan';
   import { planSnapshot } from '../../stores/planSnapshots';
   import { plugins } from '../../stores/plugins';
   import {
@@ -97,8 +97,8 @@
   }
 
   $: if (user !== null && $plan !== null && $plan.model) {
-    hasRunPermission = featurePermissions.simulation.canRun(user, $plan, $plan.model) && !$planIsLocked;
-    hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planIsLocked;
+    hasRunPermission = featurePermissions.simulation.canRun(user, $plan, $plan.model) && !$planReadOnly;
+    hasUpdatePermission = featurePermissions.simulation.canUpdate(user, $plan) && !$planReadOnly;
   }
   $: if ($plan) {
     let startTimeDate = new Date($planStartTimeMs);
@@ -360,7 +360,7 @@
               permissionHandler,
               {
                 hasPermission: hasRunPermission,
-                permissionError: $planIsLocked
+                permissionError: $planReadOnly
                   ? PlanStatusMessages.READ_ONLY
                   : 'You do not have permission to run a simulation',
               },
@@ -379,7 +379,7 @@
             permissionHandler,
             {
               hasPermission: hasRunPermission,
-              permissionError: $planIsLocked
+              permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a simulation',
             },
@@ -404,7 +404,7 @@
               permissionHandler,
               {
                 hasPermission: hasUpdatePermission,
-                permissionError: $planIsLocked ? PlanStatusMessages.READ_ONLY : updatePermissionError,
+                permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
               },
             ],
           ]}
@@ -426,7 +426,7 @@
               permissionHandler,
               {
                 hasPermission: hasUpdatePermission,
-                permissionError: $planIsLocked ? PlanStatusMessages.READ_ONLY : updatePermissionError,
+                permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
               },
             ],
           ]}
@@ -466,7 +466,7 @@
                   permissionHandler,
                   {
                     hasPermission: hasUpdatePermission,
-                    permissionError: $planIsLocked ? PlanStatusMessages.READ_ONLY : updatePermissionError,
+                    permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : updatePermissionError,
                   },
                 ],
               ]}
