@@ -40,6 +40,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let planReadOnly: boolean = false;
   export let hasCreatePermission: boolean = true;
 
   let activeItemIndex: number = -1;
@@ -319,10 +320,16 @@
             </div>
             {#if typeName === 'activity'}
               <div
-                use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
                 use:permissionHandler={{
-                  hasPermission: hasCreatePermission,
-                  permissionError: 'You do not have permission to create activities.',
+                  hasPermission: hasCreatePermission && !planReadOnly,
+                  permissionError: planReadOnly
+                    ? 'Plan is read-only'
+                    : 'You do not have permission to create activities.',
+                }}
+                use:tooltip={{
+                  content: 'Add New Directive',
+                  disabled: !hasCreatePermission || planReadOnly,
+                  placement: 'top',
                 }}
                 class="flex items-center"
               >

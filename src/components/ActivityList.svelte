@@ -6,7 +6,7 @@
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { CirclePlus } from 'lucide-svelte';
   import { directiveBuilderIsVisible } from '../stores/directiveBuilder';
-  import { plan, planModelActivityTypes, subsystemTags } from '../stores/plan';
+  import { plan, planModelActivityTypes, planReadOnly, subsystemTags } from '../stores/plan';
   import type { ActivityType } from '../types/activity';
   import type { User } from '../types/app';
   import type { TimelineItemType } from '../types/timeline';
@@ -21,6 +21,7 @@
 
   const uploadPermissionError: string = 'You do not have permission to upload activities.';
   const createPermissionError: string = 'You do not have permission to create activities.';
+  const planReadOnlyError: string = 'Plan is read-only';
 
   let hasCreatePermission: boolean = false;
   let isUploadVisible: boolean = false;
@@ -63,6 +64,7 @@
   {getFilterValueFromItem}
   filterOptions={$subsystemTags.map(s => ({ color: s.color || '', label: s.name, value: s.id }))}
   filterName="Subsystem"
+  planReadOnly={$planReadOnly}
   {hasCreatePermission}
 >
   <div slot="header" class="upload-container" hidden={!isUploadVisible}>
@@ -103,17 +105,17 @@
       class="st-button secondary"
       on:click={onShowUpload}
       use:permissionHandler={{
-        hasPermission: hasCreatePermission,
-        permissionError: uploadPermissionError,
+        hasPermission: hasCreatePermission && !$planReadOnly,
+        permissionError: $planReadOnly ? planReadOnlyError : uploadPermissionError,
       }}
-      use:tooltip={{ content: 'Upload Activities' }}
+      use:tooltip={{ content: 'Upload Activities', disabled: !hasCreatePermission || $planReadOnly }}
     >
       <UploadIcon />
     </button>
     <div
       use:permissionHandler={{
-        hasPermission: hasCreatePermission,
-        permissionError: createPermissionError,
+        hasPermission: hasCreatePermission && !$planReadOnly,
+        permissionError: $planReadOnly ? planReadOnlyError : createPermissionError,
       }}
     >
       <Button
