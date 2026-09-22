@@ -200,6 +200,7 @@
   let canChangePlanModel: boolean = false;
   let canUpdatePlan: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
+  let createButtonEnabled: boolean = false;
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
   let filterText: string = '';
@@ -434,14 +435,17 @@
       },
     ];
   }
-  $: createButtonEnabled =
-    !$plansLoading &&
-    $endTimeField.dirtyAndValid &&
-    (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
-    $nameField.dirtyAndValid &&
-    $startTimeField.dirtyAndValid &&
-    !planUploadFilesError &&
-    !$creatingPlan;
+  $: {
+    console.log('isPlanUploadReadOnly :>> ', isPlanUploadReadOnly, $modelIdField.dirtyAndValid);
+    createButtonEnabled =
+      !$plansLoading &&
+      $endTimeField.dirtyAndValid &&
+      (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
+      $nameField.dirtyAndValid &&
+      $startTimeField.dirtyAndValid &&
+      !planUploadFilesError &&
+      !$creatingPlan;
+  }
   $: if ($creatingPlan) {
     createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
   } else {
@@ -918,55 +922,55 @@
 
             <Field field={modelIdField}>
               <Label size="sm" for="model" class="pb-0.5">Model</Label>
-              {#if isPlanUploadReadOnly}
-                <div class="text-xs text-muted-foreground">Model provided by read-only plan</div>
-              {:else}
-                <div
-                  use:permissionHandler={{
-                    hasPermission: canCreate,
-                    permissionError,
-                  }}
+              <div class="text-xs text-muted-foreground" class:hidden={!isPlanUploadReadOnly}>
+                Model provided by read-only plan
+              </div>
+              <div
+                class:hidden={isPlanUploadReadOnly}
+                use:permissionHandler={{
+                  hasPermission: canCreate,
+                  permissionError,
+                }}
+              >
+                <Select.Root
+                  selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+                  disabled={!canCreate}
                 >
-                  <Select.Root
-                    selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
-                    disabled={!canCreate}
+                  <Select.Trigger
+                    value={selectedModel?.id}
+                    size="xs"
+                    aria-label="Select Model"
+                    aria-labelledby={null}
+                    id="model"
                   >
-                    <Select.Trigger
-                      value={selectedModel?.id}
-                      size="xs"
-                      aria-label="Select Model"
-                      aria-labelledby={null}
-                      id="model"
-                    >
-                      <Select.Value placeholder="Select a model" />
-                    </Select.Trigger>
-                    <Select.Content
-                      class="min-w-[240px] overflow-auto p-0"
-                      sameWidth={false}
-                      align="start"
-                      datatype="number"
-                      fitViewport
-                    >
-                      {#if orderedModels.length === 0}
-                        <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
-                      {:else}
-                        {#each orderedModels as model (model.id)}
-                          <Select.Item
-                            size="xs"
-                            value={model.id}
-                            label={getDisplayNameForModel(model)}
-                            class="flex gap-1"
-                          >
-                            {model.name}
-                            <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-                          </Select.Item>
-                        {/each}
-                      {/if}
-                    </Select.Content>
-                    <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
-                  </Select.Root>
-                </div>
-              {/if}
+                    <Select.Value placeholder="Select a model" />
+                  </Select.Trigger>
+                  <Select.Content
+                    class="min-w-[240px] overflow-auto p-0"
+                    sameWidth={false}
+                    align="start"
+                    datatype="number"
+                    fitViewport
+                  >
+                    {#if orderedModels.length === 0}
+                      <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
+                    {:else}
+                      {#each orderedModels as model (model.id)}
+                        <Select.Item
+                          size="xs"
+                          value={model.id}
+                          label={getDisplayNameForModel(model)}
+                          class="flex gap-1"
+                        >
+                          {model.name}
+                          <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
+                        </Select.Item>
+                      {/each}
+                    {/if}
+                  </Select.Content>
+                  <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
+                </Select.Root>
+              </div>
             </Field>
 
             {#if selectedModel}
