@@ -71,14 +71,7 @@ type SortableValue = number | string | null | undefined;
  * Values without a matching rank default to rank zero.
  */
 function getSortRank(value: SortableValue, rankMappings: Record<string, number>): number {
-  let rank = rankMappings[`${value}`];
-
-  // If the value is not found in the mappings, try to use its type as the key
-  if (rank === undefined) {
-    rank = rankMappings[typeof value];
-  }
-
-  return rank ?? 0;
+  return rankMappings[`${value}`] ?? rankMappings[typeof value] ?? 0;
 }
 
 /**
