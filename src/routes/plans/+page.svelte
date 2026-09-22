@@ -319,32 +319,6 @@
           }
           return '';
         },
-        width: 200,
-      },
-      {
-        comparator: (
-          valueA: number | string | null | undefined,
-          valueB: number | string | null | undefined,
-          _nodeA,
-          _nodeB,
-          isDescending: boolean,
-        ) => {
-          return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
-        },
-        field: 'model_name',
-        filter: 'text',
-        headerName: 'Model Name',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              return associatedModel.is_executable ? associatedModel.name : 'N/A';
-            }
-          }
-          return '';
-        },
         width: 150,
       },
       {
