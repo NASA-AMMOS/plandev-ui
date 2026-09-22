@@ -8,8 +8,8 @@
   export let size: number = 18;
 </script>
 
-<div class="grid grid-cols-[max-content_min-content] items-center gap-2">
-  <span>{name}</span>
+<div class="grid w-full grid-cols-[auto_1fr] items-center gap-2">
+  <span class="overflow-hidden text-ellipsis">{name}</span>
   {#if isReadOnly}
     <PlayOffIcon {size} />
   {/if}
