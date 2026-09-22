@@ -5,7 +5,7 @@
   import { base } from '$app/paths';
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { planIsLocked, planMergeRequestsIncoming, planMergeRequestsOutgoing } from '../../stores/plan';
+  import { planMergeRequestsIncoming, planMergeRequestsOutgoing, planReadOnly } from '../../stores/plan';
   import type { User } from '../../types/app';
   import type { PlanMergeRequest, PlanMergeRequestTypeFilter } from '../../types/plan';
   import effects from '../../utilities/effects';
@@ -205,8 +205,8 @@
                     on:click={() => onReviewOrWithdraw(planMergeRequest)}
                     class="st-button secondary"
                     use:permissionHandler={{
-                      hasPermission: hasPermission(planMergeRequest) && !$planIsLocked,
-                      permissionError: $planIsLocked
+                      hasPermission: hasPermission(planMergeRequest) && !$planReadOnly,
+                      permissionError: $planReadOnly
                         ? PlanStatusMessages.READ_ONLY
                         : `You do not have permission to ${
                             planMergeRequest.type === 'outgoing' ? 'withdraw' : 'review'
