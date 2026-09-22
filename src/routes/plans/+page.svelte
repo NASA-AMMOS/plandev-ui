@@ -386,7 +386,6 @@
         headerName: 'Read Only',
         resizable: true,
         sortable: true,
-        width: 260,
       },
       {
         cellClass: 'action-cell-container',
