@@ -435,17 +435,14 @@
       },
     ];
   }
-  $: {
-    console.log('isPlanUploadReadOnly :>> ', isPlanUploadReadOnly, $modelIdField.dirtyAndValid);
-    createButtonEnabled =
-      !$plansLoading &&
-      $endTimeField.dirtyAndValid &&
-      (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
-      $nameField.dirtyAndValid &&
-      $startTimeField.dirtyAndValid &&
-      !planUploadFilesError &&
-      !$creatingPlan;
-  }
+  $: createButtonEnabled =
+    !$plansLoading &&
+    $endTimeField.dirtyAndValid &&
+    (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
+    $nameField.dirtyAndValid &&
+    $startTimeField.dirtyAndValid &&
+    !planUploadFilesError &&
+    !$creatingPlan;
   $: if ($creatingPlan) {
     createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
   } else {
