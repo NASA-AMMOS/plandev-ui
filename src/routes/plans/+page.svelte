@@ -437,7 +437,7 @@
   $: createButtonEnabled =
     !$plansLoading &&
     $endTimeField.dirtyAndValid &&
-    $modelIdField.dirtyAndValid &&
+    (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid &&
     !planUploadFilesError &&
