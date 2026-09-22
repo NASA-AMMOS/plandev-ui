@@ -6,7 +6,7 @@
   import { createEventDispatcher } from 'svelte';
   import { InvalidDate } from '../../constants/time';
   import { Status } from '../../enums/status';
-  import { planIsLocked } from '../../stores/plan';
+  import { planReadOnly } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import type { ArgumentsMap, FormParameter, ParametersMap } from '../../types/parameter';
   import type { SimulationDataset } from '../../types/simulation';
@@ -169,7 +169,7 @@
             use:tooltip={{ content: 'Cancel Simulation', placement: 'top' }}
             class="st-button icon simulation-dataset-status-cancel"
             type="button"
-            disabled={$planIsLocked}
+            disabled={$planReadOnly}
             on:click={onCancelSimulation}
           >
             <CancelIcon />

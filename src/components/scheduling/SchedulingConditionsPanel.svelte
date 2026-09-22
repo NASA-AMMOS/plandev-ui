@@ -3,7 +3,7 @@
 <script lang="ts">
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
-  import { plan, planIsLocked } from '../../stores/plan';
+  import { plan, planReadOnly } from '../../stores/plan';
   import {
     allowedSchedulingConditionSpecs,
     schedulingConditionResponses,
@@ -38,7 +38,7 @@
   let visibleSchedulingConditionSpecs: SchedulingConditionPlanSpecification[] = [];
 
   $: if ($plan) {
-    hasSpecEditPermission = featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) && !$planIsLocked;
+    hasSpecEditPermission = featurePermissions.schedulingConditionsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
   }
   // TODO: remove this after db merge as it becomes redundant
   $: visibleSchedulingConditionSpecs = $allowedSchedulingConditionSpecs.filter(
@@ -111,8 +111,8 @@
           name="manage-conditions"
           class="st-button secondary"
           use:permissionHandler={{
-            hasPermission: $plan ? featurePermissions.schedulingConditions.canCreate(user) && !$planIsLocked : false,
-            permissionError: $planIsLocked
+            hasPermission: $plan ? featurePermissions.schedulingConditions.canCreate(user) && !$planReadOnly : false,
+            permissionError: $planReadOnly
               ? PlanStatusMessages.READ_ONLY
               : 'You do not have permission to update scheduling conditions',
           }}
@@ -158,7 +158,7 @@
               hasEditPermission={hasSpecEditPermission}
               hasReadPermission={featurePermissions.schedulingConditions.canRead(user)}
               modelId={$plan?.model?.id}
-              editPermissionError={$planIsLocked
+              editPermissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to edit scheduling conditions for this plan.'}
               on:updateConditionPlanSpec={onUpdateCondition}

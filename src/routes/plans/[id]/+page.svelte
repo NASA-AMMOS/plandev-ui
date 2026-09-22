@@ -279,9 +279,9 @@
     hasExpandPermission =
       featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
     hasScheduleAnalysisPermission =
-      featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
+      featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
-      featurePermissions.simulation.canRun($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
+      featurePermissions.simulation.canRun($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
   }
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;

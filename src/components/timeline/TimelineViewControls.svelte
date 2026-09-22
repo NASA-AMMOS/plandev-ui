@@ -18,7 +18,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { activityDirectivesMap, selectedActivityDirective } from '../../stores/activities';
-  import { plan, planIsLocked } from '../../stores/plan';
+  import { plan, planReadOnly } from '../../stores/plan';
   import {
     selectedSpan,
     simulationDataset,
@@ -354,7 +354,7 @@
 </button>
 <TimelineLockControl
   hasUpdatePermission={hasUpdateDirectivePermission}
-  planReadOnly={$planIsLocked}
+  planReadOnly={$planReadOnly}
   timelineLockStatus={$timelineLockStatus}
   on:lock={({ detail: lock }) => {
     $timelineLockStatus = lock;
@@ -436,7 +436,7 @@
           <input
             use:permissionHandler={{
               hasPermission: hasUpdateDirectivePermission,
-              permissionError: $planIsLocked
+              permissionError: $planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to update this timeline',
             }}

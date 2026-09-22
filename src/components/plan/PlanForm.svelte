@@ -215,7 +215,7 @@
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />
         </Input>
-        {#if plan.is_read_only}
+        {#if $planReadOnly}
           <Input layout="inline">
             <span>Model</span>
             <span class="text-muted-foreground">Model provided by read-only plan</span>

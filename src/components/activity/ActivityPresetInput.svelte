@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { planIsLocked } from '../../stores/plan';
+  import { planReadOnly } from '../../stores/plan';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirective, ActivityPreset } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -62,15 +62,15 @@
       value: activityPreset.id,
     }));
 
-    hasAssignPermission = featurePermissions.activityPresets.canUnassign(user, plan) && !$planIsLocked;
-    hasCreatePermission = featurePermissions.activityPresets.canCreate(user, plan) && !$planIsLocked;
+    hasAssignPermission = featurePermissions.activityPresets.canUnassign(user, plan) && !$planReadOnly;
+    hasCreatePermission = featurePermissions.activityPresets.canCreate(user, plan) && !$planReadOnly;
 
     const selectedPreset = $activityPresets.find(
       activityPreset => activityPreset.id === activityDirective?.applied_preset?.preset_id,
     );
     if (selectedPreset !== undefined) {
-      hasDeletePermission = featurePermissions.activityPresets.canDelete(user, plan, selectedPreset) && !$planIsLocked;
-      hasUpdatePermission = featurePermissions.activityPresets.canUpdate(user, plan, selectedPreset) && !$planIsLocked;
+      hasDeletePermission = featurePermissions.activityPresets.canDelete(user, plan, selectedPreset) && !$planReadOnly;
+      hasUpdatePermission = featurePermissions.activityPresets.canUpdate(user, plan, selectedPreset) && !$planReadOnly;
     }
   }
 
@@ -115,7 +115,7 @@
         {options}
         optionLabel="preset"
         placeholder="None"
-        planReadOnly={$planIsLocked}
+        planReadOnly={$planReadOnly}
         selectedOptionValue={activityDirective?.applied_preset?.preset_id}
         showPlaceholderOption={hasAssignPermission}
         on:deleteOption={onDeletePreset}
