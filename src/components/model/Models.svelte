@@ -44,7 +44,7 @@
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
   const extractionPermissionError: string = 'You do not have permission to re-trigger a model extraction';
 
-  const modelsLoading = models.loading;
+  const modelsLoading = executableModels.loading;
 
   const baseColumnDefs: DataGridColumnDef[] = [
     { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
