@@ -2585,8 +2585,8 @@ const gql = {
   `,
 
   SUB_MODELS: `#graphql
-    subscription SubModels {
-      models: ${Queries.MISSION_MODELS}(order_by: { name: asc }) {
+    subscription SubModels($is_executable: [Boolean!] = [true, false]) {
+      models: ${Queries.MISSION_MODELS}(where: { is_executable: { _in: $is_executable } }, order_by: { name: asc }) {
         activity_types {
           name
           parameters

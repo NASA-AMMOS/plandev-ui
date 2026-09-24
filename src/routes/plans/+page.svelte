@@ -30,7 +30,7 @@
   import { InvalidDate } from '../../constants/time';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { models } from '../../stores/model';
+  import { executableModels, models } from '../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
   import { plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
@@ -251,8 +251,9 @@
   }
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
+  $: executableModels.updateValue(() => data.models);
   // sort in descending ID order
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => {
+  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
     if (idA < idB) {
       return 1;
     }

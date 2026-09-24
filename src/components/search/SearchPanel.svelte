@@ -6,7 +6,7 @@
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, CircleQuestionMark } from 'lucide-svelte';
-  import { models } from '../../stores/model';
+  import { executableModels, models } from '../../stores/model';
   import { schedulingGoalResponses } from '../../stores/scheduling';
   import {
     hasSearched,
@@ -96,9 +96,9 @@
   let presetOptions: DropdownOptions = [];
   let userOptions: DropdownOptions = [];
 
-  $: selectedModel = selectedModelId !== undefined ? $models.find(m => m.id === selectedModelId) : undefined;
+  $: selectedModel = selectedModelId !== undefined ? $executableModels.find(m => m.id === selectedModelId) : undefined;
 
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
+  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => idB - idA);
 
   $: {
     modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
@@ -153,7 +153,7 @@
       activityTypeNames.push(...selectedModel.activity_types.map(type => type.name));
     } else {
       activityTypeNames.push(
-        ...new Set(($models ?? []).flatMap(model => model?.activity_types?.map(type => type.name) ?? [])),
+        ...new Set(($executableModels ?? []).flatMap(model => model?.activity_types?.map(type => type.name) ?? [])),
       );
     }
     typeOptions = activityTypeNames
@@ -190,7 +190,7 @@
   }
 
   $: {
-    const sourceModels = selectedModel ? [selectedModel] : ($models ?? []);
+    const sourceModels = selectedModel ? [selectedModel] : ($executableModels ?? []);
     const paramNames = new Set<string>();
     for (const model of sourceModels) {
       for (const type of model?.activity_types ?? []) {

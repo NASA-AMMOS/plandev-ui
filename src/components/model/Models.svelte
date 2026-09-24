@@ -14,7 +14,7 @@
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import Panel from '../../components/ui/Panel.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
-  import { createModelError, creatingModel, models, resetModelStores } from '../../stores/model';
+  import { createModelError, creatingModel, executableModels, models, resetModelStores } from '../../stores/model';
   import type { User } from '../../types/app';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { ModelSlim } from '../../types/model';
@@ -43,8 +43,6 @@
   const updateModelPermissionError: string = 'You do not have permission to update this model';
   const createPlanPermissionError: string = 'You do not have permission to create a plan';
   const extractionPermissionError: string = 'You do not have permission to re-trigger a model extraction';
-
-  const showNonExecutableModels: boolean = false;
 
   const modelsLoading = models.loading;
 
@@ -157,7 +155,7 @@
       },
     ];
   }
-  $: selectedModel = $models.find(({ id }) => id === selectedModelId) ?? null;
+  $: selectedModel = $executableModels.find(({ id }) => id === selectedModelId) ?? null;
   $: selectedModelDefaultViewName = selectedModel?.view
     ? `${selectedModel.view.name} (ID: ${selectedModel.view.id})`
     : 'None';
@@ -193,7 +191,7 @@
 
   function deleteModelContext(event: CustomEvent<RowId[]>) {
     const selectedModelId = event.detail[0] as number;
-    const modelToDelete = $models.find((model: ModelSlim) => model.id === selectedModelId);
+    const modelToDelete = $executableModels.find((model: ModelSlim) => model.id === selectedModelId);
     if (modelToDelete) {
       deleteModel(modelToDelete);
     }
@@ -201,7 +199,7 @@
 
   function editModelContext(event: CustomEvent<RowId[]>) {
     const selectedModelId = event.detail[0] as number;
-    const modelToDelete = $models.find((model: ModelSlim) => model.id === selectedModelId);
+    const modelToDelete = $executableModels.find((model: ModelSlim) => model.id === selectedModelId);
     if (modelToDelete) {
       editModel(modelToDelete);
     }
@@ -496,9 +494,7 @@
         hasEditPermission={hasUpdateModelPermission}
         hasDeletePermission={hasDeleteModelPermission}
         itemDisplayText="Model"
-        items={$models}
-        isExternalFilterPresent={() => !showNonExecutableModels}
-        doesExternalFilterPass={node => !!node.data?.is_executable}
+        items={$executableModels}
         showLoadingSkeleton
         loading={$modelsLoading}
         {user}
