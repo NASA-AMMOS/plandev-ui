@@ -12,6 +12,7 @@
   export let activityErrorCounts: ActivityErrorCounts;
   export let activityDirectiveValidationStatuses: ActivityDirectiveValidationStatus[] = [];
   export let invalidActivityCount: number = 0;
+  export let isModelExecutable: boolean = true;
   export let compactNavMode: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -19,10 +20,13 @@
   }>();
 
   let totalActivitiesCheckedCount: number = 0;
+  let activityStatus: Status | null = null;
 
   $: totalActivitiesCheckedCount = activityDirectiveValidationStatuses.reduce((prevCount, validationStatus) => {
     return prevCount + (validationStatus.status === 'complete' ? 1 : 0);
   }, 0);
+
+  $: activityStatus = invalidActivityCount > 0 ? Status.Failed : Status.Complete;
 
   function onClickViewConsole() {
     dispatch('viewActivityValidations');
@@ -33,30 +37,34 @@
   title={!compactNavMode ? 'Activities' : ''}
   menuTitle="Activity Status"
   showStatusInMenu={false}
-  statusBadgeText={`${invalidActivityCount}`}
-  status={invalidActivityCount > 0 ? Status.Failed : Status.Complete}
+  statusBadgeText={isModelExecutable ? `${invalidActivityCount}` : ''}
+  status={isModelExecutable ? activityStatus : null}
 >
   <ChartGantt size={20} />
   <svelte:fragment slot="metadata">
     <div class="activity-status-nav-container">
-      <div class="total-count">
-        {totalActivitiesCheckedCount}/{activityDirectiveValidationStatuses.length} activit{activityDirectiveValidationStatuses.length !==
-        1
-          ? 'ies'
-          : 'y'} checked
-      </div>
-      {#if invalidActivityCount === 0}
-        <div class="no-errors">No problems detected</div>
+      {#if !isModelExecutable}
+        <div class="total-count">Activity Validation Unavailable</div>
       {:else}
-        <div class="invalid-count">
-          {invalidActivityCount} activit{invalidActivityCount !== 1 ? 'ies' : 'y'}
-          {invalidActivityCount !== 1 ? 'have' : 'has'} problems
+        <div class="total-count">
+          {totalActivitiesCheckedCount}/{activityDirectiveValidationStatuses.length} activit{activityDirectiveValidationStatuses.length !==
+          1
+            ? 'ies'
+            : 'y'} checked
         </div>
+        {#if invalidActivityCount === 0}
+          <div class="no-errors">No problems detected</div>
+        {:else}
+          <div class="invalid-count">
+            {invalidActivityCount} activit{invalidActivityCount !== 1 ? 'ies' : 'y'}
+            {invalidActivityCount !== 1 ? 'have' : 'has'} problems
+          </div>
+        {/if}
+        <div class="activity-status-nav">
+          <ActivityErrorsRollup counts={activityErrorCounts} selectable={false} showTotalCount={false} />
+        </div>
+        <button on:click={onClickViewConsole} class="st-button secondary view-button">View in console</button>
       {/if}
-      <div class="activity-status-nav">
-        <ActivityErrorsRollup counts={activityErrorCounts} selectable={false} showTotalCount={false} />
-      </div>
-      <button on:click={onClickViewConsole} class="st-button secondary view-button">View in console</button>
     </div>
   </svelte:fragment>
 </PlanNavButton>

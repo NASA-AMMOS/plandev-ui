@@ -4,7 +4,7 @@
   import type { editor as Editor, languages } from 'monaco-editor/esm/vs/editor/editor.api';
   import { createEventDispatcher } from 'svelte';
   import { DefinitionType } from '../../../enums/association';
-  import { executableModels } from '../../../stores/model';
+  import { models } from '../../../stores/model';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../../types/dropdown';
   import type { Monaco, TypeScriptFile } from '../../../types/monaco';
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
@@ -27,7 +27,7 @@
   let monaco: Monaco;
   let worker: languages.typescript.TypeScriptWorker | null = null;
 
-  $: modelOptions = $executableModels.map(({ id, name, version }) => ({
+  $: modelOptions = $models.map(({ id, name, version }) => ({
     display: `${name} (Version: ${version})`,
     hasSelectPermission: true,
     value: id,

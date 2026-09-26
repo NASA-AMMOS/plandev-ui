@@ -113,7 +113,11 @@
     "resource_types": [
       {
         "name": "/battery/state_of_charge",
-        "schema": { "type": "real", "metadata": { "unit": "fraction" } }
+        "schema": {
+          "type": "struct",
+          "items": { "initial": { "type": "real" }, "rate": { "type": "real" } },
+          "metadata": { "unit": "fraction" }
+        }
       },
       {
         "name": "/camera/mode",
@@ -179,6 +183,11 @@
     "profiles": {
       "/battery/state_of_charge": {
         "type": "real",
+        "schema": {
+          "type": "struct",
+          "items": { "initial": { "type": "real" }, "rate": { "type": "real" } },
+          "metadata": { "unit": "fraction" }
+        },
         "segments": [
           { "duration": 3600000000, "dynamics": { "initial": 0.92, "rate": 0.0 } },
           { "duration": 600000000, "dynamics": { "initial": 0.92, "rate": -0.00002 } },
@@ -188,6 +197,13 @@
       },
       "/camera/mode": {
         "type": "discrete",
+        "schema": {
+          "type": "variant",
+          "variants": [
+            { "key": "IDLE", "label": "Idle" },
+            { "key": "IMAGING", "label": "Imaging" }
+          ]
+        },
         "segments": [
           { "duration": 7200000000, "dynamics": "IDLE" },
           { "duration": 120000000, "dynamics": "IMAGING" },

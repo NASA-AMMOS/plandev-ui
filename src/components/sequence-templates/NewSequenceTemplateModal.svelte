@@ -6,7 +6,7 @@
   import Field from '../../components/form/Field.svelte';
   import { SequencingLanguages } from '../../enums/sequencing';
   import { field } from '../../stores/form';
-  import { executableModels } from '../../stores/model';
+  import { models } from '../../stores/model';
   import { parcels } from '../../stores/sequencing';
   import type { ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -68,11 +68,11 @@
   let sequenceTemplateUploadFileInput: HTMLInputElement;
 
   $: selectedParcel = $parcels.find(({ id }) => $parcelIdField.value === id);
-  $: selectedModel = $executableModels.find(({ id }) => $modelIdField.value === id);
+  $: selectedModel = $models.find(({ id }) => $modelIdField.value === id);
   $: selectedActivityType = modelActivityTypes.find(activityType => $activityTypeField.value === activityType.name);
 
   // sort in descending ID order
-  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => compare(idA, idB, false));
+  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => compare(idA, idB, false));
 
   $: saveButtonDisabled =
     $templateNameField.value === '' ||

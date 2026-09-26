@@ -1,7 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import PlayOffIcon from './PlayOffIcon.svelte';
+  import { LockKeyhole } from 'lucide-svelte';
 
   export let isReadOnly: boolean = false;
   export let name: string;
@@ -9,9 +9,9 @@
 </script>
 
 {#if isReadOnly}
-  <div class="grid w-full grid-cols-[auto_1fr] items-center gap-2">
+  <div class="grid w-full grid-cols-[min-content_auto] items-center gap-2">
+    <LockKeyhole class="opacity-75" {size} />
     <span class="overflow-hidden text-ellipsis">{name}</span>
-    <PlayOffIcon {size} />
   </div>
 {:else}
   <div class="grid w-full grid-cols-1 items-center gap-2">

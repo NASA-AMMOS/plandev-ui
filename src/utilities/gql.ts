@@ -1922,6 +1922,7 @@ const gql = {
         plan {
           model: mission_model {
             id
+            is_executable
             name
           }
           model_id

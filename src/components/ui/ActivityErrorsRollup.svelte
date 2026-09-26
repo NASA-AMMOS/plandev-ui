@@ -11,6 +11,7 @@
   import WarningExtraIcon from '@nasa-jpl/stellar/icons/warning_extra.svg?component';
   import WarningMissingIcon from '@nasa-jpl/stellar/icons/warning_missing.svg?component';
   import WarningUnknownIcon from '@nasa-jpl/stellar/icons/warning_unknown.svg?component';
+  import { CircleDashed } from 'lucide-svelte';
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
   import OutsideBoundsIcon from '../../assets/out-of-bounds.svg?component';
   import type { Dispatcher } from '../../types/component';
@@ -108,6 +109,7 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
+    unavailable: 0,
     wrongType: 0,
   };
   let selectedCategory: ActivityErrorCategories | null = null;
@@ -120,6 +122,7 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
+    unavailable: 0,
     wrongType: 0,
   };
   $: selectedCategory = selectable ? 'all' : null;
@@ -248,6 +251,20 @@
       }}
     >
       <OutsideBoundsIcon />{generateCountText(mode, errorCounts.outOfBounds, 'outside plan bounds')}
+    </button>
+  {/if}
+  {#if errorCounts.unavailable}
+    <button
+      class="count"
+      class:selected={selectedCategory === 'unavailable'}
+      value="unavailable"
+      on:click={onSelectCategory}
+      use:tooltip={{
+        allowHTML: true,
+        ...generateTooltip(mode, errorCounts.unavailable, 'unavailable', ''),
+      }}
+    >
+      <CircleDashed />{generateCountText(mode, errorCounts.unavailable, 'unavailable')}
     </button>
   {/if}
 </div>

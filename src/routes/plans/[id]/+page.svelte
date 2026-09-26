@@ -189,6 +189,7 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
+  let isModelExecutable: boolean = false;
   let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
@@ -486,6 +487,7 @@
   }
 
   $: if ($plan && $plan.model) {
+    isModelExecutable = $plan.model.is_executable;
     const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup($plan.model);
     modelErrorCount = 0;
     if (activityLogStatus === 'error') {
@@ -806,6 +808,7 @@
               {activityErrorCounts}
               {compactNavMode}
               {invalidActivityCount}
+              {isModelExecutable}
               on:viewActivityValidations={() => {
                 openConsoleTab('activity');
               }}

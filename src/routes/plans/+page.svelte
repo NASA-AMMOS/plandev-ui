@@ -85,22 +85,6 @@
       width: 75,
     },
     {
-      cellRenderer: (params: ICellRendererParams<Plan>) => {
-        const div = document.createElement('div');
-        new PlanName({
-          props: { name: params.data?.name || '', isReadOnly: params.data?.is_read_only || false },
-          target: div,
-        });
-        return div;
-      },
-      field: 'name',
-      filter: 'text',
-      headerName: 'Name',
-      resizable: true,
-      sortable: true,
-      width: 150,
-    },
-    {
       field: 'start_time',
       filter: 'text',
       headerName: 'Start Time',
@@ -251,7 +235,8 @@
   }
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
-  $: executableModels.updateValue(() => data.models);
+  $: executableModels.updateValue(() => data.models.filter(model => model.is_executable));
+
   // sort in descending ID order
   $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
     if (idA < idB) {
@@ -266,7 +251,31 @@
   $: {
     canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
     columnDefs = [
-      ...baseColumnDefs.slice(0, 2),
+      ...baseColumnDefs.slice(0, 1),
+      {
+        cellRenderer: (params: ICellRendererParams<Plan>) => {
+          const div = document.createElement('div');
+          let isExecutable = false;
+          if (params.data?.model_id !== undefined) {
+            const associatedModel = $models.find(model => model.id === params.data?.model_id);
+            if (associatedModel) {
+              isExecutable = associatedModel.is_executable;
+            }
+          }
+          new PlanName({
+            props: { name: params.data?.name || '', isReadOnly: !isExecutable },
+            target: div,
+          });
+          return div;
+        },
+        field: 'name',
+        filter: 'text',
+        headerName: 'Name',
+        resizable: true,
+        sortable: true,
+        width: 150,
+      },
+      ...baseColumnDefs.slice(1, 2),
       {
         comparator: (
           valueA: number | string | null | undefined,
@@ -315,7 +324,7 @@
           if (params.data?.model_id !== undefined) {
             const associatedModel = $models.find(model => model.id === params.data?.model_id);
             if (associatedModel) {
-              return associatedModel.is_executable ? associatedModel.name : 'N/A';
+              return associatedModel.is_executable ? associatedModel.name : '-';
             }
           }
           return '';
@@ -353,15 +362,6 @@
         width: 150,
       },
       ...baseColumnDefs.slice(2),
-      {
-        autoHeight: true,
-        field: 'is_read_only',
-        filter: 'agTextColumnFilter',
-        cellDataType: 'boolean',
-        headerName: 'Read Only',
-        resizable: true,
-        sortable: true,
-      },
       {
         cellClass: 'action-cell-container',
         cellRenderer: (params: PlanCellRendererParams) => {
@@ -891,58 +891,61 @@
               {/if}
             </fieldset>
 
-            <Field field={modelIdField}>
-              <Label size="sm" for="model" class="pb-0.5">Model</Label>
-              <div class="text-xs text-muted-foreground" class:hidden={!isPlanUploadReadOnly}>
-                Model provided by read-only plan
+            {#if isPlanUploadReadOnly}
+              <div class="px-[16px] pt-[8px]">
+                <Label size="sm" class="pb-0.5">Model</Label>
+                <div class="text-xs text-muted-foreground">Model provided by read-only plan</div>
               </div>
-              <div
-                class:hidden={isPlanUploadReadOnly}
-                use:permissionHandler={{
-                  hasPermission: canCreate,
-                  permissionError,
-                }}
-              >
-                <Select.Root
-                  selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
-                  disabled={!canCreate}
+            {:else}
+              <Field field={modelIdField}>
+                <Label size="sm" for="model" class="pb-0.5">Model</Label>
+                <div
+                  use:permissionHandler={{
+                    hasPermission: canCreate,
+                    permissionError,
+                  }}
                 >
-                  <Select.Trigger
-                    value={selectedModel?.id}
-                    size="xs"
-                    aria-label="Select Model"
-                    aria-labelledby={null}
-                    id="model"
+                  <Select.Root
+                    selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+                    disabled={!canCreate}
                   >
-                    <Select.Value placeholder="Select a model" />
-                  </Select.Trigger>
-                  <Select.Content
-                    class="min-w-[240px] overflow-auto p-0"
-                    sameWidth={false}
-                    align="start"
-                    datatype="number"
-                    fitViewport
-                  >
-                    {#if orderedModels.length === 0}
-                      <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
-                    {:else}
-                      {#each orderedModels as model (model.id)}
-                        <Select.Item
-                          size="xs"
-                          value={model.id}
-                          label={getDisplayNameForModel(model)}
-                          class="flex gap-1"
-                        >
-                          {model.name}
-                          <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-                        </Select.Item>
-                      {/each}
-                    {/if}
-                  </Select.Content>
-                  <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
-                </Select.Root>
-              </div>
-            </Field>
+                    <Select.Trigger
+                      value={selectedModel?.id}
+                      size="xs"
+                      aria-label="Select Model"
+                      aria-labelledby={null}
+                      id="model"
+                    >
+                      <Select.Value placeholder="Select a model" />
+                    </Select.Trigger>
+                    <Select.Content
+                      class="min-w-[240px] overflow-auto p-0"
+                      sameWidth={false}
+                      align="start"
+                      datatype="number"
+                      fitViewport
+                    >
+                      {#if orderedModels.length === 0}
+                        <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
+                      {:else}
+                        {#each orderedModels as model (model.id)}
+                          <Select.Item
+                            size="xs"
+                            value={model.id}
+                            label={getDisplayNameForModel(model)}
+                            class="flex gap-1"
+                          >
+                            {model.name}
+                            <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
+                          </Select.Item>
+                        {/each}
+                      {/if}
+                    </Select.Content>
+                    <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
+                  </Select.Root>
+                </div>
+              </Field>
+            {/if}
 
             {#if selectedModel}
               <div class="px-4 pt-1">

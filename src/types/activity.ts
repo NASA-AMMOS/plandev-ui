@@ -136,8 +136,8 @@ export type ActivityDirectiveSearchResult = Omit<
   'applied_preset' | 'last_modified_arguments_at' | 'source_scheduling_goal_invocation_id' | 'tags'
 > & {
   applied_preset: { preset_applied: Pick<ActivityPreset, 'name'> } | null;
-  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
-    model: { id: number; name: string } | null;
+  plan: Pick<PlanSchema, 'model' | 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
+    model: { id: number; is_executable: boolean; name: string } | null;
   };
   source_scheduling_goal: { id: number; name: string } | null;
   tags: { tag: TagsInsertInput }[];
