@@ -30,7 +30,7 @@ export interface AnchorValidationError extends ConsoleEntry {
   type: ErrorTypes.ANCHOR_VALIDATION_ERROR;
 }
 
-export type ActivityValidationStatus = 'complete' | 'pending';
+export type ActivityValidationStatus = 'complete' | 'pending' | 'unavailable';
 
 export interface ActivityValidationErrors {
   activityId: number;
@@ -106,6 +106,7 @@ export interface ActivityErrorCounts {
   missing: number;
   outOfBounds: number;
   pending: number;
+  unavailable: number;
   wrongType: number;
 }
 

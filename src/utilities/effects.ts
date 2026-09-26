@@ -1518,14 +1518,14 @@ const effects = {
       creatingModelStore.set(true);
 
       const file: File = files[0];
-      const jarId = await effects.uploadFile(file, user);
+      const definitionFileId = await effects.uploadFile(file, user);
       showSuccessToast('Model Uploaded Successfully. Processing model...');
       logMessage('log', `Uploaded model file "${name}" (v${version}).`);
 
-      if (jarId !== null) {
+      if (definitionFileId !== null) {
         const modelInsertInput: ModelInsertInput = {
+          definition_file_id: definitionFileId,
           description,
-          jar_id: jarId,
           mission: '',
           name,
           version,
@@ -1647,8 +1647,18 @@ const effects = {
       );
       const { createPlan } = data;
       if (createPlan != null) {
-        const { collaborators, created_at, duration, id, owner, revision, start_time, updated_at, updated_by } =
-          createPlan;
+        const {
+          collaborators,
+          created_at,
+          duration,
+          id,
+          is_read_only,
+          owner,
+          revision,
+          start_time,
+          updated_at,
+          updated_by,
+        } = createPlan;
 
         if (!(await effects.initialSimulationUpdate(id, simulationTemplateId, startTimeDoy, endTimeDoy, user))) {
           throw Error('Failed to update simulation.');
@@ -1660,6 +1670,7 @@ const effects = {
           duration,
           end_time_doy: endTimeDoy,
           id,
+          is_read_only,
           model_id: modelId,
           name,
           owner,
@@ -3268,8 +3279,8 @@ const effects = {
       );
 
       if (confirm) {
-        const { id, jar_id } = model;
-        await effects.deleteFile(jar_id, user);
+        const { id, definition_file_id } = model;
+        await effects.deleteFile(definition_file_id, user);
         const data = await reqHasura<{ id: number }>(gql.DELETE_MODEL, { id }, user);
         if (data.deleteModel != null) {
           showSuccessToast('Model Deleted Successfully');
@@ -5606,7 +5617,7 @@ const effects = {
 
   async importPlan(
     name: string,
-    modelId: number,
+    modelId: number | null,
     startTime: string,
     endTime: string,
     simulationTemplateId: number | null,
@@ -5629,11 +5640,13 @@ const effects = {
 
       const body = new FormData();
       body.append('name', `${name}`);
-      body.append('model_id', `${modelId}`);
-      body.append('start_time', `${startTime}`);
-      body.append('duration', `${duration}`);
-      if (simulationTemplateId !== null) {
-        body.append('simulation_template_id', `${simulationTemplateId}`);
+      if (modelId !== null) {
+        body.append('model_id', `${modelId}`);
+        body.append('start_time', `${startTime}`);
+        body.append('duration', `${duration}`);
+        if (simulationTemplateId !== null) {
+          body.append('simulation_template_id', `${simulationTemplateId}`);
+        }
       }
       body.append('tags', JSON.stringify(tagIds));
       body.append('plan_file', file, file.name);

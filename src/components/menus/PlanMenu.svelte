@@ -19,6 +19,7 @@
   import { exportPlan } from '../../utilities/plan';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
+  import PlanName from '../ui/PlanName.svelte';
   import MenuDivider from './MenuDivider.svelte';
 
   export let plan: Plan;
@@ -92,7 +93,13 @@
   {/if}
 
   <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
-    <div class="plan-title">{plan.name}<ChevronDown size={16} /></div>
+    <div class="plan-title">
+      {#if plan.is_read_only}
+        <PlanName name={plan.name} isReadOnly={plan.is_read_only} size={18} /><ChevronDown size={16} />
+      {:else}
+        {plan.name}<ChevronDown size={16} />
+      {/if}
+    </div>
     <Menu hideAfterClick={false} bind:this={planMenu}>
       <MenuItem
         use={[

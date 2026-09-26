@@ -8,14 +8,7 @@
   import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { capitalize } from 'lodash-es';
-  import {
-    AlertTriangle,
-    CalendarRange,
-    ChevronsLeftRight,
-    FlipHorizontal2,
-    ListX,
-    PlaySquareIcon,
-  } from 'lucide-svelte';
+  import { AlertTriangle, CalendarRange, ChevronsLeftRight, FlipHorizontal2, ListX, SquarePlay } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
@@ -72,8 +65,7 @@
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
-  import { resetExpansionStores, expansionSequences } from '../../../stores/expansion';
-  import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
+  import { expansionSequences, resetExpansionStores } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -84,6 +76,8 @@
     planBoundsPreviewOverride,
     planDatasets,
     planId,
+    planIsLocked,
+    planIsNonExecutable,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
@@ -109,7 +103,11 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
-  import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
+  import {
+    lastTemplatedSimulationDatasetId,
+    resetSequenceTemplateStores,
+    sequenceTemplateExpansionStatus,
+  } from '../../../stores/sequence-template';
   import {
     enableSimulation,
     externalResourceNames,
@@ -191,6 +189,7 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
+  let isModelExecutable: boolean = false;
   let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
@@ -277,9 +276,9 @@
   $: hasCreateViewPermission = featurePermissions.view.canCreate($user);
   $: if ($initialPlan && $initialPlan.model) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
     hasExpandPermission =
-      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
     hasScheduleAnalysisPermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
@@ -288,6 +287,9 @@
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
     $simulationDatasetId = -1;
+
+    $planReadOnlyMergeRequest = data.initialPlan.is_locked;
+    $planIsNonExecutable = data.initialPlan.is_read_only;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
@@ -485,6 +487,7 @@
   }
 
   $: if ($plan && $plan.model) {
+    isModelExecutable = $plan.model.is_executable;
     const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup($plan.model);
     modelErrorCount = 0;
     if (activityLogStatus === 'error') {
@@ -805,6 +808,7 @@
               {activityErrorCounts}
               {compactNavMode}
               {invalidActivityCount}
+              {isModelExecutable}
               on:viewActivityValidations={() => {
                 openConsoleTab('activity');
               }}
@@ -813,7 +817,7 @@
               title={!compactNavMode ? 'Expansion' : ''}
               buttonText="Expand All Sequences"
               hasPermission={hasExpandPermission}
-              permissionError={$planReadOnly
+              permissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to expand sequences'}
               menuTitle="Template Expansion Status"
@@ -839,16 +843,16 @@
                 : ''}
               hasPermission={hasSimulatePermission}
               indeterminate={$simulationProgress === 0}
-              permissionError={$planReadOnly
+              permissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a simulation'}
               status={$simulationStatus}
               progress={$simulationProgress}
-              disabled={!$enableSimulation}
+              disabled={!$enableSimulation || $planReadOnly}
               showStatusInMenu={false}
               on:click={() => effects.simulate($plan, false, $user)}
             >
-              <PlaySquareIcon size={20} />
+              <SquarePlay size={20} />
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body">
                   <div class="simulation-header">
@@ -891,7 +895,7 @@
                   <button
                     on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
                     class="st-button danger"
-                    disabled={$planReadOnly}>Cancel</button
+                    disabled={$planIsLocked}>Cancel</button
                   >
                 {/if}
               </svelte:fragment>
@@ -904,7 +908,7 @@
               disabled={$simulationStatus !== Status.Complete}
               statusBadgeText={constraintsStatusText}
               buttonTooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
-              permissionError={$planReadOnly
+              permissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a constraint check'}
               status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
@@ -985,7 +989,7 @@
                   <button
                     on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $user)}
                     class="st-button cancel-button"
-                    disabled={$planReadOnly}>Cancel</button
+                    disabled={$planIsLocked}>Cancel</button
                   >
                 {/if}
               </svelte:fragment>

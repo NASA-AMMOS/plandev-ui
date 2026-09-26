@@ -6,7 +6,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
+  import { planIsLocked, planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
@@ -73,9 +73,9 @@
   }
   $: {
     if (plan && user) {
-      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planReadOnly;
+      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planIsLocked;
       hasPlanCollaboratorsUpdatePermission =
-        featurePermissions.planCollaborators.canCreate(user, plan) && !$planReadOnly;
+        featurePermissions.planCollaborators.canCreate(user, plan) && !$planIsLocked;
       hasChangePlanModelPermission = featurePermissions.plan.canUpdateModel(user, plan);
     } else {
       hasPlanUpdatePermission = false;
@@ -215,52 +215,65 @@
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />
         </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
-          <div class="flex gap-1">
-            <input
-              class={cn('st-input w-full', !plan.model?.name ? 'border-destructive' : '')}
-              readonly
-              name="modelName"
-              value={plan.model?.name ?? 'Model not found'}
-              id="modelName"
-            />
-            <div
-              use:permissionHandler={{
-                hasPermission: hasChangePlanModelPermission && !$planReadOnly,
-                permissionError: $planReadOnly
-                  ? PlanStatusMessages.READ_ONLY
-                  : "You don't have permission to change mission model",
-              }}
-              use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
-            >
-              <Button
-                class="shrink-0"
-                variant="outline"
-                size="icon"
-                on:click={openChangePlanMissionModelModal}
-                aria-label="Change mission model"
+        {#if $planReadOnly}
+          <Input layout="inline">
+            <span>Model</span>
+            <span class="text-muted-foreground">Model provided by read-only plan</span>
+          </Input>
+        {:else}
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Model Name', placement: 'top' }} for="modelName">Model Name</label>
+            <div class="flex gap-1">
+              <input
+                class={cn('st-input w-full', !plan.model?.name ? 'border-destructive' : '')}
+                readonly
+                name="modelName"
+                value={plan.model?.name ?? 'Model not found'}
+                id="modelName"
+              />
+              <div
+                use:permissionHandler={{
+                  hasPermission: hasChangePlanModelPermission && !$planIsLocked,
+                  permissionError: $planIsLocked
+                    ? PlanStatusMessages.READ_ONLY
+                    : "You don't have permission to change mission model",
+                }}
+                use:tooltip={{ content: !$planIsLocked ? 'Change Mission Model' : '', placement: 'top' }}
               >
-                <Pencil size={16} />
-              </Button>
+                <Button
+                  class="shrink-0"
+                  variant="outline"
+                  size="icon"
+                  on:click={openChangePlanMissionModelModal}
+                  aria-label="Change mission model"
+                >
+                  <Pencil size={16} />
+                </Button>
+              </div>
             </div>
-          </div>
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
-          <input class="st-input w-full" disabled name="modelId" value={plan.model_id} id="modelId" />
-        </Input>
-        <Input layout="inline">
-          <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
-          <input
-            class="st-input w-full"
-            disabled
-            name="modelVersion"
-            value={plan.model?.version ?? 'Model not found'}
-            id="modelVersion"
-          />
-        </Input>
-        <PlanTimeBounds {plan} {user} hasUpdatePermission={hasPlanUpdatePermission} {permissionError} />
+          </Input>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Model ID', placement: 'top' }} for="modelId">Model ID</label>
+            <input class="st-input w-full" disabled name="modelId" value={plan.model_id} id="modelId" />
+          </Input>
+          <Input layout="inline">
+            <label use:tooltip={{ content: 'Model Version', placement: 'top' }} for="modelVersion">Model Version</label>
+            <input
+              class="st-input w-full"
+              disabled
+              name="modelVersion"
+              value={plan.model?.version ?? 'Model not found'}
+              id="modelVersion"
+            />
+          </Input>
+        {/if}
+        <PlanTimeBounds
+          {plan}
+          {user}
+          isReadOnly={$planReadOnly}
+          hasUpdatePermission={hasPlanUpdatePermission}
+          {permissionError}
+        />
         <Input layout="inline">
           <label use:tooltip={{ content: 'Owner', placement: 'top' }} for="owner">Owner</label>
           <input class="st-input w-full" disabled name="owner" value={plan.owner} id="owner" />

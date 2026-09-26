@@ -45,7 +45,7 @@ export interface ApiUser {
  * Shared test data written during global setup and read by tests.
  */
 export interface SharedTestData {
-  jarId: number;
+  definitionFileId: number;
 }
 
 /**
@@ -616,12 +616,12 @@ export async function setupTest(browser: Browser, options: SetupOptions = {}): P
   await api.login(user, 'test');
 
   // Use pre-uploaded JAR from global setup
-  const { jarId } = getSharedTestData();
+  const { definitionFileId } = getSharedTestData();
 
   // Create model via API
   const modelName = options.modelName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   const model = await api.createModel({
-    jar_id: jarId,
+    definition_file_id: definitionFileId,
     mission: 'test',
     name: modelName,
     version: '1.0.0',

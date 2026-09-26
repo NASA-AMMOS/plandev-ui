@@ -143,6 +143,7 @@ export function isValidationNoticesError(
 export function generateActivityValidationErrorRollups(
   activityValidationErrors: ActivityValidationErrors[],
 ): ActivityErrorRollup[] {
+  console.log('activityValidationErrors :>> ', activityValidationErrors);
   return activityValidationErrors.map(({ activityId, errors, status, type }) => {
     let extraLocations: string[] = [];
     let invalidAnchorLocations: string[] = [];
@@ -192,6 +193,7 @@ export function generateActivityValidationErrorRollups(
         missing: missingLocations.length,
         outOfBounds: outOfBoundsLocations.length,
         pending: status === 'pending' ? 1 : 0,
+        unavailable: status === 'unavailable' ? 1 : 0,
         wrongType: wrongTypeLocations.length,
       },
       id: activityId,

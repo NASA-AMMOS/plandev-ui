@@ -359,6 +359,7 @@ const gql = {
         }
         duration
         id
+        is_read_only
         owner
         revision
         start_time
@@ -1279,7 +1280,8 @@ const gql = {
         created_at
         description
         id
-        jar_id
+        is_executable
+        definition_file_id
         name
         plans {
           id
@@ -1360,9 +1362,11 @@ const gql = {
         duration
         id
         is_locked
+        is_read_only
         model: mission_model {
+          definition_file_id
           id
-          jar_id
+          is_executable
           name
           owner
           parameters {
@@ -1446,9 +1450,10 @@ const gql = {
     query GetPlansAndModels {
       models: ${Queries.MISSION_MODELS}(order_by: { id: desc }) {
         created_at
+        definition_file_id
         description
         id
-        jar_id
+        is_executable
         name
         owner
         plans {
@@ -1491,6 +1496,7 @@ const gql = {
         created_at
         duration
         id
+        is_read_only
         model_id
         name
         owner
@@ -1916,6 +1922,7 @@ const gql = {
         plan {
           model: mission_model {
             id
+            is_executable
             name
           }
           model_id
@@ -2510,8 +2517,9 @@ const gql = {
         }
         created_at
         default_view_id
+        definition_file_id
         description
-        jar_id
+        is_executable
         id
         mission
         name
@@ -2578,16 +2586,17 @@ const gql = {
   `,
 
   SUB_MODELS: `#graphql
-    subscription SubModels {
-      models: ${Queries.MISSION_MODELS}(order_by: { name: asc }) {
+    subscription SubModels($is_executable: [Boolean!] = [true, false]) {
+      models: ${Queries.MISSION_MODELS}(where: { is_executable: { _in: $is_executable } }, order_by: { name: asc }) {
         activity_types {
           name
           parameters
         }
         created_at
+        definition_file_id
         description
         id
-        jar_id
+        is_executable
         name
         plans {
           id
@@ -2684,6 +2693,7 @@ const gql = {
         created_at
         duration
         id
+        is_read_only
         model_id
         name
         owner
@@ -2929,11 +2939,13 @@ const gql = {
     subscription SubPlanMetadata($planId: Int!) {
       plan_metadata: ${Queries.PLAN}(id: $planId) {
         id
+        is_read_only
         start_time
         duration
         model: mission_model {
+          definition_file_id
           id
-          jar_id
+          is_executable
           name
           owner
           parameters {

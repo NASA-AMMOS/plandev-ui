@@ -458,9 +458,9 @@
       <ContextMenu.Separator />
       <PasteActivitiesContextMenu
         atTime={getDateUnderMouse()}
-        {hasCreatePermission}
+        hasCreatePermission={hasCreatePermission && !$planReadOnly}
         {plan}
-        planPermissionErrorText={permissionErrorText}
+        planPermissionErrorText={$planReadOnly ? PlanStatusMessages.READ_ONLY : permissionErrorText}
         on:createActivityDirectives={createActivityDirectives}
       />
     {/if}

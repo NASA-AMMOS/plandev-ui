@@ -2,7 +2,7 @@ import { base } from '$app/paths';
 import { redirect } from '@sveltejs/kit';
 import { ViewTimelineResourceRowsLimit } from '../../../constants/view';
 import { SearchParameters } from '../../../enums/searchParameters';
-import { planReadOnlyMergeRequest } from '../../../stores/plan';
+import { planIsNonExecutable, planReadOnlyMergeRequest } from '../../../stores/plan';
 import effects from '../../../utilities/effects';
 import { getSearchParameterNumber } from '../../../utilities/url';
 import type { PageLoad } from './$types';
@@ -19,6 +19,10 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     if (initialPlan) {
       if (initialPlan.is_locked) {
         planReadOnlyMergeRequest.set(true);
+      }
+
+      if (initialPlan.is_read_only) {
+        planIsNonExecutable.set(true);
       }
 
       // if plan doesn't have a scheduling spec, create one at this point

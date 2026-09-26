@@ -7,12 +7,13 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { DataGridColumnDef } from '../../types/data-grid';
   import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/console';
+  import type { DataGridColumnDef } from '../../types/data-grid';
   import type { Plan } from '../../types/plan';
   import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
@@ -297,31 +298,59 @@
 
   <svelte:fragment slot="context-menu-bottom">
     {#if showBulkShiftMenu}
-      <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
-        Shift {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div
+        use:permissionHandler={{
+          hasPermission: !planReadOnly,
+          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+        }}
+      >
+        <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
+          Shift {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackLeftMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
-        Pack Left {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div
+        use:permissionHandler={{
+          hasPermission: !planReadOnly,
+          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+        }}
+      >
+        <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
+          Pack Left {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackRightMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
-        Pack Right {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div
+        use:permissionHandler={{
+          hasPermission: !planReadOnly,
+          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+        }}
+      >
+        <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
+          Pack Right {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackOffsetMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
-        Pack {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
-      </ContextMenu.Item>
+      <div
+        use:permissionHandler={{
+          hasPermission: !planReadOnly,
+          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+        }}
+      >
+        <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
+          Pack {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
+        </ContextMenu.Item>
+      </div>
     {/if}
   </svelte:fragment>
 </BulkActionDataGrid>
