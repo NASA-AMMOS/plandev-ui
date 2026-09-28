@@ -55,10 +55,10 @@ export interface ActivityDirectiveValidationUnavailableStatus extends ActivityDi
   validations: ActivityDirectiveValidationUnavailable;
 }
 
-export interface ActivityValidationErrors {
+export interface ActivityValidationStatuses {
   activityId: number;
-  errors: (ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError)[];
   status: ActivityValidationStatus;
+  statuses: (ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError)[];
   type: string;
 }
 
@@ -118,7 +118,7 @@ export interface ActivityDirectiveValidationNoticesFailure extends ActivityDirec
   type: ErrorTypes.VALIDATION_NOTICES;
 }
 
-export interface ActivityErrorCounts {
+export interface ActivityStatusCounts {
   all?: number;
   extra: number;
   invalidAnchor: number;
@@ -130,12 +130,12 @@ export interface ActivityErrorCounts {
   wrongType: number;
 }
 
-export type ActivityErrorCategories = keyof ActivityErrorCounts;
+export type ActivityStatusCategories = keyof ActivityStatusCounts;
 
-export interface ActivityErrorRollup {
-  errorCounts: ActivityErrorCounts;
+export interface ActivityStatusRollup {
   id: number;
   location: string[];
+  statusCounts: ActivityStatusCounts;
   type: string;
 }
 

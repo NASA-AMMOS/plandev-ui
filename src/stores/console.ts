@@ -5,8 +5,8 @@ import type {
   ActivityDirectiveValidationFailureStatus,
   ActivityDirectiveValidationStatus,
   ActivityDirectiveValidationUnavailableStatus,
-  ActivityErrorRollup,
-  ActivityValidationErrors,
+  ActivityStatusRollup,
+  ActivityValidationStatuses,
   AnchorValidationError,
   ConsoleEntry,
   ErrorCategory,
@@ -14,7 +14,7 @@ import type {
   LogMessage,
 } from '../types/console';
 import type { ModelLog, ModelStatus } from '../types/model';
-import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
+import { ErrorTypes, generateActivityValidationStatusRollups } from '../utilities/errors';
 import { compare, filterEmpty } from '../utilities/generic';
 import { getModelStatusRollup } from '../utilities/model';
 import { CompoundError } from '../utilities/requests';
@@ -70,20 +70,20 @@ export const anchorValidationErrors: Readable<AnchorValidationError[]> = derived
   [],
 );
 
-export const activityValidationErrors: Readable<ActivityValidationErrors[]> = derived(
+export const activityValidationErrors: Readable<ActivityValidationStatuses[]> = derived(
   [activityDirectiveValidationFailures, anchorValidationErrors, activityDirectivesMap],
   ([$activityDirectiveValidationFailures, $anchorValidationErrors, $activityDirectivesMap]) => {
-    const activityValidationsErrorMap: Record<string, ActivityValidationErrors> = {};
+    const activityValidationsErrorMap: Record<string, ActivityValidationStatuses> = {};
     $activityDirectiveValidationFailures.forEach(({ validations, directive_id: directiveId, status }) => {
       if (activityValidationsErrorMap[directiveId] === undefined) {
         activityValidationsErrorMap[directiveId] = {
           activityId: directiveId,
-          errors: [validations],
           status,
+          statuses: [validations],
           type: ($activityDirectivesMap || {})[directiveId]?.type, // TODO maybe this whole thing should also be a nullable list?
         };
       } else {
-        activityValidationsErrorMap[directiveId].errors.push(validations);
+        activityValidationsErrorMap[directiveId].statuses.push(validations);
       }
     });
 
@@ -92,12 +92,12 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
       if (activityValidationsErrorMap[activityId] === undefined) {
         activityValidationsErrorMap[activityId] = {
           activityId,
-          errors: [anchorValidationError],
           status: 'complete',
+          statuses: [anchorValidationError],
           type: ($activityDirectivesMap || {})[activityId]?.type,
         };
       } else {
-        activityValidationsErrorMap[activityId].errors.push(anchorValidationError);
+        activityValidationsErrorMap[activityId].statuses.push(anchorValidationError);
       }
     });
 
@@ -105,13 +105,13 @@ export const activityValidationErrors: Readable<ActivityValidationErrors[]> = de
   },
 );
 
-export const activityErrorRollups: Readable<ActivityErrorRollup[]> = derived(
+export const activityStatusRollups: Readable<ActivityStatusRollup[]> = derived(
   [activityValidationErrors],
-  ([$activityValidationErrors]) => generateActivityValidationErrorRollups($activityValidationErrors),
+  ([$activityValidationErrors]) => generateActivityValidationStatusRollups($activityValidationErrors),
 );
 
-export const activityErrorRollupsMap: Readable<Record<ActivityDirectiveId, ActivityErrorRollup>> = derived(
-  [activityErrorRollups],
+export const activityStatusRollupsMap: Readable<Record<ActivityDirectiveId, ActivityStatusRollup>> = derived(
+  [activityStatusRollups],
   ([$activityErrorRollups]) => keyBy($activityErrorRollups, 'id'),
 );
 
@@ -204,7 +204,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     constraintErrors,
     modelErrors,
     activityValidationErrors,
-    activityErrorRollupsMap,
+    activityStatusRollupsMap,
   ],
   ([
     $simulationErrors,
@@ -225,7 +225,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
         ? $activityValidationErrors
             .filter(error => error.status === 'complete')
             .map(error => {
-              const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.errorCounts || {}).reduce(
+              const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.statusCounts || {}).reduce(
                 (count, [key, value]) => {
                   // Only count errors that are not pending or unavailable
                   if (key !== 'pending' && key !== 'unavailable') {

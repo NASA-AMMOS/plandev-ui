@@ -43,7 +43,7 @@
     selectedActivityDirectiveId,
   } from '../../../stores/activities';
   import {
-    activityErrorRollups,
+    activityStatusRollups,
     allLogs,
     allProblems,
     clearLogs,
@@ -134,7 +134,7 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirectiveInsertInput } from '../../../types/activity';
-  import type { ActivityErrorCounts, LogLevel } from '../../../types/console';
+  import type { ActivityStatusCounts, LogLevel } from '../../../types/console';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -170,7 +170,7 @@
 
   const user = getUserStore();
 
-  let activityErrorCounts: ActivityErrorCounts = {
+  let activityStatusCounts: ActivityStatusCounts = {
     all: 0,
     extra: 0,
     invalidAnchor: 0,
@@ -229,30 +229,30 @@
       { error: 0, info: 0, warn: 0 },
     );
   }
-
-  $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
+  activityStatusRollups;
+  $: ({ invalidActivityCount, ...activityStatusCounts } = $activityStatusRollups.reduce(
     (prevCounts, activityErrorRollup) => {
-      const extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
-      const invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
-      const invalidParameter = prevCounts.invalidParameter + activityErrorRollup.errorCounts.invalidParameter;
-      const missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
-      const outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
-      const pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
-      const unavailable = prevCounts.unavailable + activityErrorRollup.errorCounts.unavailable;
-      const wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
+      const extra = prevCounts.extra + (activityErrorRollup.statusCounts?.extra || 0);
+      const invalidAnchor = prevCounts.invalidAnchor + (activityErrorRollup.statusCounts?.invalidAnchor || 0);
+      const invalidParameter = prevCounts.invalidParameter + (activityErrorRollup.statusCounts?.invalidParameter || 0);
+      const missing = prevCounts.missing + (activityErrorRollup.statusCounts?.missing || 0);
+      const outOfBounds = prevCounts.outOfBounds + (activityErrorRollup.statusCounts?.outOfBounds || 0);
+      const pending = prevCounts.pending + (activityErrorRollup.statusCounts?.pending || 0);
+      const unavailable = prevCounts.unavailable + (activityErrorRollup.statusCounts?.unavailable || 0);
+      const wrongType = prevCounts.wrongType + (activityErrorRollup.statusCounts?.wrongType || 0);
 
       const all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
       return {
         all,
         extra,
         invalidActivityCount:
-          activityErrorRollup.errorCounts.extra ||
-          activityErrorRollup.errorCounts.invalidAnchor ||
-          activityErrorRollup.errorCounts.invalidParameter ||
-          activityErrorRollup.errorCounts.missing ||
-          activityErrorRollup.errorCounts.outOfBounds ||
-          activityErrorRollup.errorCounts.pending ||
-          activityErrorRollup.errorCounts.wrongType
+          activityErrorRollup.statusCounts?.extra ||
+          activityErrorRollup.statusCounts?.invalidAnchor ||
+          activityErrorRollup.statusCounts?.invalidParameter ||
+          activityErrorRollup.statusCounts?.missing ||
+          activityErrorRollup.statusCounts?.outOfBounds ||
+          activityErrorRollup.statusCounts?.pending ||
+          activityErrorRollup.statusCounts?.wrongType
             ? prevCounts.invalidActivityCount + 1
             : prevCounts.invalidActivityCount,
         invalidAnchor,
@@ -809,7 +809,7 @@
           <svelte:fragment slot="right">
             <ActivityStatusMenu
               activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
-              {activityErrorCounts}
+              activityErrorCounts={activityStatusCounts}
               {compactNavMode}
               {invalidActivityCount}
               {isModelExecutable}
@@ -1118,7 +1118,7 @@
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
                 <ConsoleTab value="simulation" numberOfErrors={$simulationErrors?.length}>Simulation</ConsoleTab>
                 <ConsoleTab value="constraints" numberOfErrors={$constraintErrors?.length}>Constraints</ConsoleTab>
-                <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
+                <ConsoleTab value="activity" numberOfErrors={activityStatusCounts.all}>Activity Validation</ConsoleTab>
                 <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
                 <div
                   class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
@@ -1151,8 +1151,8 @@
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
           <ConsoleActivityErrors
-            activityValidationErrorTotalRollup={activityErrorCounts}
-            activityValidationErrorRollups={$activityErrorRollups}
+            activityValidationStatusTotalRollup={activityStatusCounts}
+            activityValidationStatusRollups={$activityStatusRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
           <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors}>

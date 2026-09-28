@@ -7,7 +7,7 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
-  import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/console';
+  import type { ActivityStatusCounts, ActivityStatusRollup } from '../../types/console';
   import type { DataGridColumnDef } from '../../types/data-grid';
   import type { Plan } from '../../types/plan';
   import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
@@ -23,7 +23,8 @@
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityTypes: ActivityType[] | null = null;
-  export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
+  export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityStatusRollup> | undefined =
+    undefined;
   export let showBulkShiftMenu: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
@@ -52,7 +53,7 @@
     scrollTimelineToTime: number;
   }>();
 
-  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityErrorCounts };
+  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityStatusCounts };
   type CellRendererParams = {
     deleteActivityDirective: (activity: ActivityDirective) => void;
   };
@@ -75,7 +76,7 @@
 
   $: activityDirectivesWithErrorCounts = (activityDirectives || []).map(activityDirective => ({
     ...activityDirective,
-    errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.errorCounts,
+    errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.statusCounts,
   }));
 
   $: {

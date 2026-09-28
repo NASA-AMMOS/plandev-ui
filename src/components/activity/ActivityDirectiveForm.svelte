@@ -9,7 +9,7 @@
   import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityArgumentDefaultsMap } from '../../stores/activities';
-  import { activityErrorRollupsMap, activityValidationErrors } from '../../stores/console';
+  import { activityStatusRollupsMap, activityValidationErrors } from '../../stores/console';
   import { field } from '../../stores/form';
   import { plan, planReadOnly } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -25,8 +25,8 @@
   import type { User } from '../../types/app';
   import type {
     ActivityDirectiveInstantiationFailure,
-    ActivityErrorCategories,
-    ActivityErrorRollup,
+    ActivityStatusCategories,
+    ActivityStatusRollup,
   } from '../../types/console';
   import type { FieldStore } from '../../types/form';
   import type { Argument, ArgumentsMap, FormParameter, ParameterName } from '../../types/parameter';
@@ -75,7 +75,7 @@
     viewChangelog: void;
   }>();
 
-  let activityErrorRollup: ActivityErrorRollup | undefined;
+  let activityErrorRollup: ActivityStatusRollup | undefined;
   let activityNameField = field<string>(activityDirective.name);
   let editingActivityName: boolean = false;
   let extraArguments: string[] = [];
@@ -123,7 +123,7 @@
   $: numOfUserChanges = formParameters.reduce((previousHasChanges: number, formParameter) => {
     return /user/.test(formParameter.valueSource) ? previousHasChanges + 1 : previousHasChanges;
   }, 0);
-  $: activityErrorRollup = $activityErrorRollupsMap[activityDirective.id];
+  $: activityErrorRollup = $activityStatusRollupsMap[activityDirective.id];
   $: if (parameterErrorMap || $activityValidationErrors.length) {
     let missing: Record<string, true> = {};
     const activityValidationErrorsMap = keyBy($activityValidationErrors, 'activityId');
@@ -134,7 +134,9 @@
 
     if (activityValidationError) {
       const instantiationFailure: ActivityDirectiveInstantiationFailure | undefined =
-        activityValidationError.errors.find(isInstantiationError) as ActivityDirectiveInstantiationFailure | undefined;
+        activityValidationError.statuses.find(isInstantiationError) as
+          | ActivityDirectiveInstantiationFailure
+          | undefined;
       if (instantiationFailure) {
         const { extraneousArguments, missingArguments, unconstructableArguments } = instantiationFailure.errors;
         extraArguments = extraneousArguments;
@@ -263,7 +265,7 @@
     }
   }
 
-  function onAutoFixFormParameters(event: CustomEvent<ActivityErrorCategories>) {
+  function onAutoFixFormParameters(event: CustomEvent<ActivityStatusCategories>) {
     const { detail: selectedCategory } = event;
     const { id, arguments: activityArguments } = activityDirective;
 
@@ -482,7 +484,7 @@
       <div class="activity-header-icons">
         <div class="activity-error-rollup">
           <ActivityErrorsRollup
-            counts={activityErrorRollup?.errorCounts}
+            counts={activityErrorRollup?.statusCounts}
             hasPermission={hasUpdatePermission}
             mode="minimal"
             permissionError={updatePermissionError}

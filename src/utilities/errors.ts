@@ -4,8 +4,8 @@ import type {
   ActivityDirectiveValidationFailures,
   ActivityDirectiveValidationNoticesFailure,
   ActivityDirectiveValidationUnavailable,
-  ActivityErrorRollup,
-  ActivityValidationErrors,
+  ActivityStatusRollup,
+  ActivityValidationStatuses,
   AnchorValidationError,
   ConsoleEntry,
   LogMessage,
@@ -142,16 +142,16 @@ export function isValidationNoticesError(
   return (validation as ActivityDirectiveValidationNoticesFailure).type === ErrorTypes.VALIDATION_NOTICES;
 }
 
-export function isValidationUnavailableError(
+export function isValidationUnavailableStatus(
   validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveValidationUnavailable {
   return (validation as ActivityDirectiveValidationUnavailable).type === ErrorTypes.VALIDATION_UNAVAILABLE;
 }
 
-export function generateActivityValidationErrorRollups(
-  activityValidationErrors: ActivityValidationErrors[],
-): ActivityErrorRollup[] {
-  return activityValidationErrors.map(({ activityId, errors, status, type }) => {
+export function generateActivityValidationStatusRollups(
+  activityValidationStatuses: ActivityValidationStatuses[],
+): ActivityStatusRollup[] {
+  return activityValidationStatuses.map(({ activityId, statuses, status, type }) => {
     let extraLocations: string[] = [];
     let invalidAnchorLocations: string[] = [];
     let invalidParameterLocations: string[] = [];
@@ -161,29 +161,31 @@ export function generateActivityValidationErrorRollups(
     let wrongTypeLocations: string[] = [];
 
     if (status === 'complete') {
-      errors.forEach(error => {
-        if (isInstantiationError(error)) {
+      statuses.forEach(validation => {
+        if (isInstantiationError(validation)) {
           invalidParameterLocations = [
             ...new Set([
               ...invalidParameterLocations,
-              ...error.errors.unconstructableArguments.map(({ name }) => name),
+              ...validation.errors.unconstructableArguments.map(({ name }) => name),
             ]),
           ];
-          extraLocations = [...new Set([...extraLocations, ...error.errors.extraneousArguments])];
-          missingLocations = [...new Set([...missingLocations, ...error.errors.missingArguments])];
-        } else if (isUnknownTypeError(error)) {
-          wrongTypeLocations = [...new Set([...wrongTypeLocations, error.errors.noSuchActivityError.activity_type])];
-        } else if (isValidationNoticesError(error)) {
+          extraLocations = [...new Set([...extraLocations, ...validation.errors.extraneousArguments])];
+          missingLocations = [...new Set([...missingLocations, ...validation.errors.missingArguments])];
+        } else if (isUnknownTypeError(validation)) {
+          wrongTypeLocations = [
+            ...new Set([...wrongTypeLocations, validation.errors.noSuchActivityError.activity_type]),
+          ];
+        } else if (isValidationNoticesError(validation)) {
           invalidParameterLocations = [
             ...new Set([
               ...invalidParameterLocations,
-              ...([] as string[]).concat(...error.errors.validationNotices.map(({ subjects }) => subjects)),
+              ...([] as string[]).concat(...validation.errors.validationNotices.map(({ subjects }) => subjects)),
             ]),
           ];
-        } else if (isValidationUnavailableError(error)) {
-          unavailableLocations = [...new Set([...unavailableLocations, error.message])];
+        } else if (isValidationUnavailableStatus(validation)) {
+          unavailableLocations = [...new Set([...unavailableLocations, validation.message])];
         } else {
-          const { message } = error;
+          const { message } = validation;
           if (/end-time\sanchor/i.test(message)) {
             invalidAnchorLocations = [...new Set([...invalidAnchorLocations, message])];
           } else if (/plan\sstart/i.test(message)) {
@@ -196,7 +198,9 @@ export function generateActivityValidationErrorRollups(
     const location = [...new Set([...extraLocations, ...missingLocations, ...invalidParameterLocations])];
 
     return {
-      errorCounts: {
+      id: activityId,
+      location,
+      statusCounts: {
         extra: extraLocations.length,
         invalidAnchor: invalidAnchorLocations.length,
         invalidParameter: invalidParameterLocations.length,
@@ -206,8 +210,6 @@ export function generateActivityValidationErrorRollups(
         unavailable: unavailableLocations.length,
         wrongType: wrongTypeLocations.length,
       },
-      id: activityId,
-      location,
       type,
     };
   });

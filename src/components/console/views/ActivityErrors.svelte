@@ -4,43 +4,65 @@
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import { getContext } from 'svelte';
-  import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/console';
+  import type { ActivityStatusCategories, ActivityStatusCounts, ActivityStatusRollup } from '../../../types/console';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
 
-  type ActivityErrorsRollupRendererParams = ICellRendererParams<ActivityErrorRollup>;
+  type ActivityErrorsRollupRendererParams = ICellRendererParams<ActivityStatusRollup>;
 
-  export let activityValidationErrorRollups: ActivityErrorRollup[] = [];
-  export let activityValidationErrorTotalRollup: ActivityErrorCounts;
+  export let activityValidationStatusRollups: ActivityStatusRollup[] = [];
+  export let activityValidationStatusTotalRollup: ActivityStatusCounts;
 
   // Get state from context
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
 
-  $: hasErrors = activityValidationErrorRollups.length > 0;
+  let activityValidationErrorsTotalRollup: ActivityStatusCounts = {
+    extra: 0,
+    invalidAnchor: 0,
+    invalidParameter: 0,
+    missing: 0,
+    outOfBounds: 0,
+    pending: 0,
+    unavailable: 0,
+    wrongType: 0,
+  };
+  let activityValidationErrorRollups: ActivityStatusRollup[] = [];
 
-  function doesExternalFilterPass({ data }: IRowNode<ActivityErrorRollup>) {
+  $: hasErrors = activityValidationStatusRollups.length > 0;
+
+  // Remove unavailable from total rollup as we don't want to show any unavailable activities in the errors view
+  $: activityValidationErrorsTotalRollup = {
+    ...activityValidationStatusTotalRollup,
+    unavailable: 0,
+  };
+  // Filter rollups that have unavailable statuses
+  $: activityValidationErrorRollups = activityValidationStatusRollups.filter(
+    rollup => rollup.statusCounts.unavailable === 0,
+  );
+
+  function doesExternalFilterPass({ data }: IRowNode<ActivityStatusRollup>) {
     if (data) {
       switch (selectedCategory) {
         case 'extra':
-          return data.errorCounts.extra > 0;
+          return (data.statusCounts?.extra ?? 0) > 0;
         case 'invalidParameter':
-          return data.errorCounts.invalidParameter > 0;
+          return (data.statusCounts?.invalidParameter ?? 0) > 0;
         case 'missing':
-          return data.errorCounts.missing > 0;
+          return (data.statusCounts?.missing ?? 0) > 0;
         case 'wrongType':
-          return data.errorCounts.wrongType > 0;
+          return (data.statusCounts?.wrongType ?? 0) > 0;
         case 'invalidAnchor':
-          return data.errorCounts.invalidAnchor > 0;
+          return (data.statusCounts?.invalidAnchor ?? 0) > 0;
         case 'pending':
-          return data.errorCounts.pending > 0;
-        case 'unavailable':
-          return data.errorCounts.unavailable > 0;
+          return (data.statusCounts?.pending ?? 0) > 0;
         case 'outOfBounds':
-          return data.errorCounts.outOfBounds > 0;
+          return (data.statusCounts?.outOfBounds ?? 0) > 0;
+        default:
+          return !data.statusCounts;
       }
     }
     return false;
@@ -50,7 +72,7 @@
     return selectedCategory !== 'all';
   }
 
-  function onSelectCategory(event: CustomEvent<ActivityErrorCategories>) {
+  function onSelectCategory(event: CustomEvent<ActivityStatusCategories>) {
     const { detail: value } = event;
     if (value != null) {
       selectedCategory = value;
@@ -59,7 +81,7 @@
     dataGrid.onFilterChanged();
   }
 
-  const columnDefs: DataGridColumnDef<ActivityErrorRollup>[] = [
+  const columnDefs: DataGridColumnDef<ActivityStatusRollup>[] = [
     {
       field: 'type',
       filter: 'string',
@@ -117,7 +139,7 @@
 
         return issuesDiv;
       },
-      field: 'errorCounts',
+      field: 'statusCounts',
       headerName: 'Issue',
       resizable: true,
       sortable: false,
@@ -125,8 +147,8 @@
     },
   ];
 
-  let dataGrid: DataGrid<ActivityErrorRollup>;
-  let selectedCategory: ActivityErrorCategories = 'all';
+  let dataGrid: DataGrid<ActivityStatusRollup>;
+  let selectedCategory: ActivityStatusCategories = 'all';
 </script>
 
 <Tabs.Content value="activity" class="mt-0 h-full overflow-hidden pb-2 pr-2 pt-2">
@@ -135,7 +157,7 @@
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
         <div class="overflow-y-auto pt-4">
           <ActivityErrorsRollup
-            counts={activityValidationErrorTotalRollup}
+            counts={activityValidationErrorsTotalRollup}
             selectable
             showTotalCount
             on:selectCategory={onSelectCategory}

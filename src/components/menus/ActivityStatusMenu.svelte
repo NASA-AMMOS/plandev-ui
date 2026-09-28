@@ -4,11 +4,11 @@
   import { ChartGantt } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Status } from '../../enums/status';
-  import type { ActivityDirectiveValidationStatus, ActivityErrorCounts } from '../../types/console';
+  import type { ActivityDirectiveValidationStatus, ActivityStatusCounts } from '../../types/console';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
   import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
 
-  export let activityErrorCounts: ActivityErrorCounts;
+  export let activityErrorCounts: ActivityStatusCounts;
   export let activityDirectiveValidationStatuses: ActivityDirectiveValidationStatus[] = [];
   export let invalidActivityCount: number = 0;
   export let isModelExecutable: boolean = true;

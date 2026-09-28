@@ -2,8 +2,8 @@
 
 <script lang="ts">
   interface $$Events extends ComponentEvents<SvelteComponent> {
-    resetCategory: CustomEvent<ActivityErrorCategories>;
-    selectCategory: CustomEvent<ActivityErrorCategories>;
+    resetCategory: CustomEvent<ActivityStatusCategories>;
+    selectCategory: CustomEvent<ActivityStatusCategories>;
   }
 
   import IncompleteIcon from '@nasa-jpl/stellar/icons/incomplete.svg?component';
@@ -15,7 +15,7 @@
   import { SvelteComponent, createEventDispatcher, type ComponentEvents } from 'svelte';
   import OutsideBoundsIcon from '../../assets/out-of-bounds.svg?component';
   import type { Dispatcher } from '../../types/component';
-  import type { ActivityErrorCategories, ActivityErrorCounts } from '../../types/console';
+  import type { ActivityStatusCategories, ActivityStatusCounts } from '../../types/console';
   import { isMacOs } from '../../utilities/browser';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
   import { permissionHandler } from '../../utilities/permissionHandler';
@@ -24,7 +24,7 @@
 
   type Mode = 'full' | 'compact' | 'minimal' | 'iconsOnly';
 
-  export let counts: ActivityErrorCounts | undefined = undefined;
+  export let counts: ActivityStatusCounts | undefined = undefined;
   export let hasPermission: boolean = true;
   export let mode: Mode = 'full';
   export let permissionError: string | undefined = undefined;
@@ -90,18 +90,18 @@
       const { value } = currentTarget as HTMLButtonElement;
 
       if (selectable) {
-        selectedCategory = value as ActivityErrorCategories;
+        selectedCategory = value as ActivityStatusCategories;
       }
 
       if (mode === 'minimal' && isMetaOrCtrlPressed(event)) {
-        dispatch('resetCategory', value as ActivityErrorCategories);
+        dispatch('resetCategory', value as ActivityStatusCategories);
       } else {
-        dispatch('selectCategory', value as ActivityErrorCategories);
+        dispatch('selectCategory', value as ActivityStatusCategories);
       }
     }
   }
 
-  let errorCounts: ActivityErrorCounts = {
+  let errorCounts: ActivityStatusCounts = {
     all: 0,
     extra: 0,
     invalidAnchor: 0,
@@ -112,7 +112,7 @@
     unavailable: 0,
     wrongType: 0,
   };
-  let selectedCategory: ActivityErrorCategories | null = null;
+  let selectedCategory: ActivityStatusCategories | null = null;
 
   $: errorCounts = counts ?? {
     all: 0,

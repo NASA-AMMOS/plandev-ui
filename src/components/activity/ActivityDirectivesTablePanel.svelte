@@ -14,7 +14,7 @@
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
   import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { activityErrorRollupsMap } from '../../stores/console';
+  import { activityStatusRollupsMap } from '../../stores/console';
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { spansMap, spanUtilityMaps } from '../../stores/simulation';
@@ -461,7 +461,7 @@
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
       activityDirectives={$activityDirectivesMap ? Object.values($activityDirectivesMap) : null}
       activityTypes={$planModelActivityTypes}
-      activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
+      activityDirectiveErrorRollupsMap={$activityStatusRollupsMap}
       {filterExpression}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}

@@ -4,7 +4,7 @@
   import WarningExtraIcon from '@nasa-jpl/stellar/icons/warning_extra.svg?component';
   import { Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
-  import type { ActivityErrorCategories } from '../../types/console';
+  import type { ActivityStatusCategories } from '../../types/console';
   import type { ArgumentsMap } from '../../types/parameter';
   import { isMacOs } from '../../utilities/browser';
   import { isMetaOrCtrlPressed } from '../../utilities/keyboardEvents';
@@ -20,7 +20,7 @@
   export let permissionError: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
-    reset: Extract<ActivityErrorCategories, 'extra'>;
+    reset: Extract<ActivityStatusCategories, 'extra'>;
   }>();
 
   async function onCopy(event: MouseEvent) {
