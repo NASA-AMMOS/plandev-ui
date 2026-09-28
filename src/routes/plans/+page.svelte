@@ -883,7 +883,7 @@
                 <Collapse
                   ariaTitle="Plan import error"
                   defaultExpanded={false}
-                  className="text-destructive [&_*]:!text-destructive "
+                  className="text-destructive [&_*]:!text-destructive break-words"
                 >
                   <div slot="title">Plan import failed</div>
                   {planUploadFilesError}
