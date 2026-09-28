@@ -3,6 +3,7 @@ import type {
   ActivityDirectiveUnknownTypeFailure,
   ActivityDirectiveValidationFailures,
   ActivityDirectiveValidationNoticesFailure,
+  ActivityDirectiveValidationUnavailable,
   ActivityErrorRollup,
   ActivityValidationErrors,
   AnchorValidationError,
@@ -55,6 +56,7 @@ export enum ErrorTypes {
   SPECIFICATION_LOAD_EXCEPTION = 'SPECIFICATION_LOAD_EXCEPTION',
   SQL_EXCEPTION = 'SQL_EXCEPTION',
   UNAUTHORIZED = 'UNAUTHORIZED',
+  VALIDATION_UNAVAILABLE = 'UNAVAILABLE',
   UNEXPECTED_SCHEDULER_EXCEPTION = 'UNEXPECTED_SCHEDULER_EXCEPTION',
   UNEXPECTED_SIMULATION_EXCEPTION = 'UNEXPECTED_SIMULATION_EXCEPTION',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
@@ -123,33 +125,39 @@ function isSubstantive(msg: string | undefined): msg is string {
 }
 
 export function isInstantiationError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveInstantiationFailure {
   return (validation as ActivityDirectiveInstantiationFailure).type === ErrorTypes.INSTANTIATION_ERRORS;
 }
 
 export function isUnknownTypeError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveUnknownTypeFailure {
   return (validation as ActivityDirectiveUnknownTypeFailure).type === ErrorTypes.NO_SUCH_ACTIVITY_TYPE;
 }
 
 export function isValidationNoticesError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveValidationNoticesFailure {
   return (validation as ActivityDirectiveValidationNoticesFailure).type === ErrorTypes.VALIDATION_NOTICES;
+}
+
+export function isValidationUnavailableError(
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
+): validation is ActivityDirectiveValidationUnavailable {
+  return (validation as ActivityDirectiveValidationUnavailable).type === ErrorTypes.VALIDATION_UNAVAILABLE;
 }
 
 export function generateActivityValidationErrorRollups(
   activityValidationErrors: ActivityValidationErrors[],
 ): ActivityErrorRollup[] {
-  console.log('activityValidationErrors :>> ', activityValidationErrors);
   return activityValidationErrors.map(({ activityId, errors, status, type }) => {
     let extraLocations: string[] = [];
     let invalidAnchorLocations: string[] = [];
     let invalidParameterLocations: string[] = [];
     let missingLocations: string[] = [];
     let outOfBoundsLocations: string[] = [];
+    let unavailableLocations: string[] = [];
     let wrongTypeLocations: string[] = [];
 
     if (status === 'complete') {
@@ -172,6 +180,8 @@ export function generateActivityValidationErrorRollups(
               ...([] as string[]).concat(...error.errors.validationNotices.map(({ subjects }) => subjects)),
             ]),
           ];
+        } else if (isValidationUnavailableError(error)) {
+          unavailableLocations = [...new Set([...unavailableLocations, error.message])];
         } else {
           const { message } = error;
           if (/end-time\sanchor/i.test(message)) {
@@ -193,7 +203,7 @@ export function generateActivityValidationErrorRollups(
         missing: missingLocations.length,
         outOfBounds: outOfBoundsLocations.length,
         pending: status === 'pending' ? 1 : 0,
-        unavailable: status === 'unavailable' ? 1 : 0,
+        unavailable: unavailableLocations.length,
         wrongType: wrongTypeLocations.length,
       },
       id: activityId,

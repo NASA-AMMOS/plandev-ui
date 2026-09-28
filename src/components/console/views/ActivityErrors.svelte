@@ -4,8 +4,8 @@
   import { Tabs } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, IRowNode } from 'ag-grid-community';
   import { getContext } from 'svelte';
-  import type { DataGridColumnDef } from '../../../types/data-grid';
   import type { ActivityErrorCategories, ActivityErrorCounts, ActivityErrorRollup } from '../../../types/console';
+  import type { DataGridColumnDef } from '../../../types/data-grid';
   import EmptyState from '../../console/EmptyState.svelte';
   import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
@@ -37,6 +37,8 @@
           return data.errorCounts.invalidAnchor > 0;
         case 'pending':
           return data.errorCounts.pending > 0;
+        case 'unavailable':
+          return data.errorCounts.unavailable > 0;
         case 'outOfBounds':
           return data.errorCounts.outOfBounds > 0;
       }

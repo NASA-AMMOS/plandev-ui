@@ -178,6 +178,7 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
+    unavailable: 0,
     wrongType: 0,
   };
   let compactNavMode = false;
@@ -237,6 +238,7 @@
       const missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
       const outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
       const pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
+      const unavailable = prevCounts.unavailable + activityErrorRollup.errorCounts.unavailable;
       const wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
 
       const all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
@@ -258,6 +260,7 @@
         missing,
         outOfBounds,
         pending,
+        unavailable,
         wrongType,
       };
     },
@@ -270,6 +273,7 @@
       missing: 0,
       outOfBounds: 0,
       pending: 0,
+      unavailable: 0,
       wrongType: 0,
     },
   ));

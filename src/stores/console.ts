@@ -3,6 +3,8 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityDirectiveId } from '../types/activity';
 import type {
   ActivityDirectiveValidationFailureStatus,
+  ActivityDirectiveValidationStatus,
+  ActivityDirectiveValidationUnavailableStatus,
   ActivityErrorRollup,
   ActivityValidationErrors,
   AnchorValidationError,
@@ -13,11 +15,11 @@ import type {
 } from '../types/console';
 import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationErrorRollups } from '../utilities/errors';
-import { compare } from '../utilities/generic';
+import { compare, filterEmpty } from '../utilities/generic';
 import { getModelStatusRollup } from '../utilities/model';
 import { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
-import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
+import { activityDirectivesMap, activityDirectiveValidationStatuses, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
 import { plan } from './plan';
 import { simulationDataset } from './simulation';
@@ -26,14 +28,24 @@ export function parseErrorReason(error: string) {
   return error.replace(/\s*at\s(gov|com)/, ' : ').replace(/gov\S*:\s*(?<reason>[^:]+)\s*:(.|\s|\n|\t|\r)*/, '$1');
 }
 
+function isActivityDirectiveValidationFailureOrUnavailable(
+  status: ActivityDirectiveValidationStatus,
+): status is ActivityDirectiveValidationFailureStatus | ActivityDirectiveValidationUnavailableStatus {
+  const { validations } = status;
+  if (!validations.success) {
+    return true;
+  }
+  return 'type' in validations && validations.type === 'UNAVAILABLE';
+}
+
 /* Derived. */
 
-export const activityDirectiveValidationFailures: Readable<ActivityDirectiveValidationFailureStatus[]> = derived(
+export const activityDirectiveValidationFailures: Readable<
+  (ActivityDirectiveValidationFailureStatus | ActivityDirectiveValidationUnavailableStatus)[]
+> = derived(
   [activityDirectiveValidationStatuses],
   ([$activityDirectiveValidationStatuses]) => {
-    return $activityDirectiveValidationStatuses.filter(
-      ({ validations }) => !validations.success,
-    ) as ActivityDirectiveValidationFailureStatus[];
+    return $activityDirectiveValidationStatuses.filter(isActivityDirectiveValidationFailureOrUnavailable);
   },
   [],
 );
@@ -215,13 +227,17 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
             .map(error => {
               const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.errorCounts || {}).reduce(
                 (count, [key, value]) => {
-                  if (key !== 'pending') {
+                  // Only count errors that are not pending or unavailable
+                  if (key !== 'pending' && key !== 'unavailable') {
                     count += value;
                   }
                   return count;
                 },
                 0,
               );
+              if (errorCount === 0) {
+                return null;
+              }
               const errorMessage: ConsoleEntry = {
                 data: {
                   ...error,
@@ -232,6 +248,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
               };
               return errorMessage;
             })
+            .filter(filterEmpty)
         : []),
     ].sort((errorA: ConsoleEntry, errorB: ConsoleEntry) =>
       compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),

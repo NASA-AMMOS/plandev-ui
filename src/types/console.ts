@@ -30,11 +30,34 @@ export interface AnchorValidationError extends ConsoleEntry {
   type: ErrorTypes.ANCHOR_VALIDATION_ERROR;
 }
 
-export type ActivityValidationStatus = 'complete' | 'pending' | 'unavailable';
+export type ActivityValidationStatus = 'complete' | 'pending';
+export interface ActivityDirectiveValidationStatus {
+  directive_id: number;
+  plan_id: number;
+  status: ActivityValidationStatus;
+  validations: ActivityDirectiveValidationSuccess | ActivityDirectiveValidationFailures;
+}
+
+export interface BaseActivityDirectiveValidationSuccess {
+  success: true;
+}
+
+export interface ActivityDirectiveValidationUnavailable extends BaseActivityDirectiveValidationSuccess {
+  message: string;
+  type: 'UNAVAILABLE';
+}
+
+export type ActivityDirectiveValidationSuccess =
+  | BaseActivityDirectiveValidationSuccess
+  | ActivityDirectiveValidationUnavailable;
+
+export interface ActivityDirectiveValidationUnavailableStatus extends ActivityDirectiveValidationStatus {
+  validations: ActivityDirectiveValidationUnavailable;
+}
 
 export interface ActivityValidationErrors {
   activityId: number;
-  errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
+  errors: (ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError)[];
   status: ActivityValidationStatus;
   type: string;
 }
@@ -62,10 +85,7 @@ export interface ActivityDirectiveValidationNoticesError {
   }[];
 }
 
-export interface ActivityDirectiveValidationFailureStatus {
-  directive_id: number;
-  plan_id: number;
-  status: ActivityValidationStatus;
+export interface ActivityDirectiveValidationFailureStatus extends ActivityDirectiveValidationStatus {
   validations: ActivityDirectiveValidationFailures;
 }
 

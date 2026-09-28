@@ -1,11 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import type {
-  ActivityDirectiveDB,
-  ActivityDirectiveId,
-  ActivityDirectiveValidationStatus,
-  AnchorValidationStatus,
-} from '../types/activity';
+import type { ActivityDirectiveDB, ActivityDirectiveId, AnchorValidationStatus } from '../types/activity';
 import type { ActivityMetadataDefinition } from '../types/activity-metadata';
+import type { ActivityDirectiveValidationStatus } from '../types/console';
 import type { DefaultEffectiveArguments, DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { SpanId } from '../types/simulation';
 import { computeActivityDirectivesMap } from '../utilities/activities';
