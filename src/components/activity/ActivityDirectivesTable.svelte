@@ -15,7 +15,7 @@
   import effects from '../../utilities/effects';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
+  import ActivityStatusesRollup from '../ui/ActivityStatusesRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -130,7 +130,7 @@
         const issuesDiv = document.createElement('div');
         issuesDiv.className = 'issues-cell';
 
-        new ActivityErrorsRollup({
+        new ActivityStatusesRollup({
           props: {
             counts: params.value,
             mode: 'iconsOnly',

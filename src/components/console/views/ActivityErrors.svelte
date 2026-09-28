@@ -7,7 +7,7 @@
   import type { ActivityStatusCategories, ActivityStatusCounts, ActivityStatusRollup } from '../../../types/console';
   import type { DataGridColumnDef } from '../../../types/data-grid';
   import EmptyState from '../../console/EmptyState.svelte';
-  import ActivityErrorsRollup from '../../ui/ActivityErrorsRollup.svelte';
+  import ActivityStatusesRollup from '../../ui/ActivityStatusesRollup.svelte';
   import DataGrid from '../../ui/DataGrid/DataGrid.svelte';
   import { ConsoleContextKey, type ConsoleContext } from '../Console.svelte';
 
@@ -128,7 +128,7 @@
       cellRenderer: (params: ActivityErrorsRollupRendererParams) => {
         const issuesDiv = document.createElement('div');
         issuesDiv.className = 'issues-cell';
-        new ActivityErrorsRollup({
+        new ActivityStatusesRollup({
           props: {
             counts: params.value,
             mode: 'compact',
@@ -156,7 +156,7 @@
     <div class="flex h-full flex-col overflow-hidden">
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
         <div class="overflow-y-auto pt-4">
-          <ActivityErrorsRollup
+          <ActivityStatusesRollup
             counts={activityValidationErrorsTotalRollup}
             selectable
             showTotalCount

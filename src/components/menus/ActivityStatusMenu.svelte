@@ -6,7 +6,7 @@
   import { Status } from '../../enums/status';
   import type { ActivityDirectiveValidationStatus, ActivityStatusCounts } from '../../types/console';
   import PlanNavButton from '../plan/PlanNavButton.svelte';
-  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
+  import ActivityStatusesRollup from '../ui/ActivityStatusesRollup.svelte';
 
   export let activityErrorCounts: ActivityStatusCounts;
   export let activityDirectiveValidationStatuses: ActivityDirectiveValidationStatus[] = [];
@@ -60,7 +60,7 @@
           </div>
         {/if}
         <div class="activity-status-nav">
-          <ActivityErrorsRollup counts={activityErrorCounts} selectable={false} showTotalCount={false} />
+          <ActivityStatusesRollup counts={activityErrorCounts} selectable={false} showTotalCount={false} />
         </div>
         <button on:click={onClickViewConsole} class="st-button secondary view-button">View in console</button>
       {/if}

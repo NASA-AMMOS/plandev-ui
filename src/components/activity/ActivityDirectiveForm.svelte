@@ -49,7 +49,7 @@
   import Input from '../form/Input.svelte';
   import ExtraneousParameters from '../parameters/ExtraneousParameters.svelte';
   import Parameters from '../parameters/Parameters.svelte';
-  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
+  import ActivityStatusesRollup from '../ui/ActivityStatusesRollup.svelte';
   import Highlight from '../ui/Highlight.svelte';
   import TagsInput from '../ui/Tags/TagsInput.svelte';
   import ActivityAnchorForm from './ActivityAnchorForm.svelte';
@@ -483,7 +483,7 @@
       </div>
       <div class="activity-header-icons">
         <div class="activity-error-rollup">
-          <ActivityErrorsRollup
+          <ActivityStatusesRollup
             counts={activityErrorRollup?.statusCounts}
             hasPermission={hasUpdatePermission}
             mode="minimal"
