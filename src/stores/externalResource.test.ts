@@ -309,6 +309,64 @@ describe('createExternalResourceSubscription', () => {
     expect(getExternalProfileSegmentsSinceMock.mock.calls[1][2]).toBe('-00:00:01');
   });
 
+  test('ignores a response from the previous row when the row switches during fetch', async () => {
+    let resolveA: (value: ProfileSegment[]) => void = () => {};
+    getExternalProfileSegmentsSinceMock.mockReturnValueOnce(
+      new Promise<ProfileSegment[]>(resolve => {
+        resolveA = resolve;
+      }),
+    );
+
+    const profileA = makeProfile({ duration: '00:01:00', id: 11, name: 'r' });
+    planDatasetsValue.set([makePlanDataset({ datasetId: 1, profiles: [profileA] })]);
+    planDatasetsLoading.set(false);
+
+    const sub = makeSub(-1, 'r', '2024-01-01T00:00:00', null);
+    let last: any = null;
+    sub.store.subscribe(value => (last = value));
+    await flushPromises();
+
+    const profileB = makeProfile({ duration: '00:01:00', id: 99, name: 'r' });
+    getExternalProfileSegmentsSinceMock.mockResolvedValueOnce(segments([{ start_offset: '00:00:00', value: 'B' }]));
+    planDatasetsValue.set([makePlanDataset({ datasetId: 2, profiles: [profileB] })]);
+    await flushPromises();
+
+    resolveA(segments([{ start_offset: '00:00:30', value: 'A' }]));
+    await flushPromises();
+
+    expect(getExternalProfileSegmentsSinceMock).toHaveBeenCalledTimes(2);
+    expect(getExternalProfileSegmentsSinceMock.mock.calls[1][0]).toBe(2);
+    expect(last.resource.values[0].y).toBe('B');
+  });
+
+  test('offset change on the same row re-samples against the new offset without going blank', async () => {
+    // The sampler discards its samples when the x offset changes, since every x shifts. That is
+    // recoverable only because the accumulator is retained here — an append-only sampler made the
+    // same discard unrecoverable and silently emptied the row. Asserts the outcome rather than
+    // whether a refetch happened, so it holds regardless of how the store chooses to react.
+    getExternalProfileSegmentsSinceMock.mockResolvedValue(segments([{ start_offset: '00:00:30', value: 'A' }]));
+
+    const profile = makeProfile({ duration: '00:01:00', id: 11, name: 'r' });
+    planDatasetsValue.set([makePlanDataset({ datasetId: 1, offset: '00:00:00', profiles: [profile] })]);
+    planDatasetsLoading.set(false);
+
+    const sub = makeSub(-1, 'r', '2024-01-01T00:00:00', null);
+    let last: any = null;
+    sub.store.subscribe(v => (last = v));
+    await flushPromises();
+
+    const base = new Date('2024-01-01T00:00:00').getTime();
+    expect(last.resource.values.length).toBeGreaterThan(0);
+    expect(last.resource.values[0].x).toEqual(base + 30_000);
+
+    // Same dataset and profile id; only the offset moved.
+    planDatasetsValue.set([makePlanDataset({ datasetId: 1, offset: '00:00:10', profiles: [profile] })]);
+    await flushPromises();
+
+    expect(last.resource.values.length).toBeGreaterThan(0);
+    expect(last.resource.values[0].x).toEqual(base + 10_000 + 30_000);
+  });
+
   test('refetch error surfaces in state', async () => {
     getExternalProfileSegmentsSinceMock.mockRejectedValue(new Error('boom'));
 
