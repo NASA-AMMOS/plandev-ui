@@ -25,9 +25,7 @@ function appendSegmentSamples(
 ): void {
   const segmentCount = segments.length;
 
-  // Each segment's end offset is the next segment's start offset, so parse each start_offset
-  // once and carry it into the following iteration rather than parsing every offset twice.
-  // Interval parsing is ~69% of this function's cost.
+  // Carry each parsed offset into the following iteration rather than parsing it twice.
   let segmentOffset = fromSegment < segmentCount ? getIntervalInMs(segments[fromSegment].start_offset) : 0;
 
   for (let i = fromSegment; i < segmentCount; ++i) {
@@ -118,15 +116,8 @@ export type ProfileSampler = {
 /**
  * Incremental counterpart to `sampleProfiles` for the windowed-pull resource stores.
  *
- * Those stores accumulate segments and re-emit on every simulation-extent tick. Re-sampling the
- * whole accumulator each time is O(total) work per tick, which grows without bound over a long
- * simulation. This retains the samples across calls and only re-samples the tail.
- *
- * Correctness rests on one property: segment `i` closes at segment `i+1`'s offset, so once a
- * successor exists that pair is final. Only the last sampled segment is provisional — it closes
- * at `durationMs`, which moves as the simulation advances — so we drop exactly that pair and
- * re-sample from there. Output is identical to a full `sampleProfiles` pass; the equivalence is
- * pinned by a randomized oracle test in `resources.test.ts`.
+ * Retains samples across calls and only re-samples the tail. The last sampled segment must be
+ * rebuilt because its provisional end moves until a successor supplies the final offset.
  */
 export function createProfileSampler(startTimeYmd: string): ProfileSampler {
   const baseStart = new Date(startTimeYmd).getTime();
@@ -147,12 +138,7 @@ export function createProfileSampler(startTimeYmd: string): ProfileSampler {
     sample({ duration, name, offsetInterval, profileType, segments }: ProfileSampleRequest): Resource {
       const { schema, type } = profileType;
 
-      // Anything that shifts or reinterprets already-sampled values invalidates them: a changed
-      // x offset (external datasets can repoint at a different plan_dataset row), a changed
-      // profile type, or an accumulator that shrank beneath what we already sampled.
-      //
-      // Discarding is safe because the caller retains every segment, so the next call can
-      // re-sample the whole profile.
+      // Offset and type changes reinterpret retained samples; callers retain segments for rebuilds.
       if (offsetInterval !== lastOffsetInterval) {
         lastOffsetInterval = offsetInterval;
         lastStart = baseStart + getIntervalInMs(offsetInterval);
@@ -171,18 +157,8 @@ export function createProfileSampler(startTimeYmd: string): ProfileSampler {
       appendSegmentSamples(values, segments, fromSegment, type, lastStart, getIntervalInMs(duration));
       sampledSegments = segments.length;
 
-      // Hand out a snapshot rather than the retained array. Copies pointers only -- no per-value
-      // allocation, which is the expensive part being avoided. Two consumers depend on this, so it
-      // must not be "optimized" into returning the retained array:
-      //
-      //  - LayerLine's rAF time-sliced point conversion iterates `values` across frames, and would
-      //    observe a torn state if the array it holds were mutated underneath it.
-      //  - `getYAxisBounds` memoizes per-array facts keyed on this array's identity (see
-      //    `getResourceValuesMeta` in timeline.ts). That cache revalidates against a witness, so a
-      //    reused array costs a recompute rather than a wrong axis -- but the copy is still the
-      //    intended contract.
-      //
-      // Pinned by the "hands out a snapshot" test in resources.test.ts.
+      // Return a snapshot: frame-sliced consumers must not observe later mutations,
+      // and axis metadata is cached by array identity.
       return { name, schema, values: values.slice() };
     },
   };

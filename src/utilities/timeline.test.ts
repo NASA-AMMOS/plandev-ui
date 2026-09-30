@@ -10,11 +10,22 @@ import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
 import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
-import type { Axis, DiscreteTreeNode, Layer, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type {
+  Axis,
+  DiscreteTreeNode,
+  Layer,
+  LinePoint,
+  TimeRange,
+  Timeline,
+  XRangeLayer,
+  XRangePoint,
+} from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
   applyActivityLayerFilter,
+  appendLinePointSlice,
+  coalesceXRangeRuns,
   createHorizontalGuide,
   createRow,
   createTimeline,
@@ -29,6 +40,9 @@ import {
   externalEventInView,
   generateDiscreteTreeUtil,
   getMatchingTypesForActivityLayerFilter,
+  getHoverNeighbours,
+  getLinePointWindow,
+  getPointsAtX,
   getResourceForLayer,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
@@ -41,6 +55,7 @@ import {
   isSortedByX,
   isXRangeLayer,
   lowerBoundByX,
+  lowerBoundXRangeRunEnd,
   matchesDynamicFilter,
   paginateNodes,
   spanInView,
@@ -1693,11 +1708,6 @@ describe('in-view window search', () => {
     expect(isSortedByX(at(2, 1))).toBe(false);
   });
 
-  /**
-   * LayerLine replaced a full per-frame scan with binary search plus index arithmetic for the two
-   * bounding off-screen points. This pins that arithmetic against the scan it replaced, including
-   * the original's quirk of only assigning a bounding point once a preceding point had been seen.
-   */
   test('bounded window matches the linear scan it replaced', () => {
     type P = { x: number };
 
@@ -1721,29 +1731,6 @@ describe('in-view window search', () => {
       return { inView, leftPoint, rightPoint };
     }
 
-    function boundedScan(points: P[], start: number, end: number) {
-      const pointCount = points.length;
-      const firstInView = lowerBoundByX(points, start);
-      const firstAfterView = upperBoundByX(points, end);
-      const inView: P[] = [];
-      for (let i = firstInView; i < firstAfterView; ++i) {
-        inView.push(points[i]);
-      }
-      let leftPoint: P | null = null;
-      let rightPoint: P | null = null;
-      const leftIndex = Math.max(firstInView, 1);
-      if (firstInView < pointCount && leftIndex < pointCount) {
-        leftPoint = points[leftIndex - 1];
-      }
-      const rightIndex = Math.max(firstAfterView, 1);
-      if (firstAfterView < pointCount && rightIndex < pointCount) {
-        rightPoint = points[rightIndex];
-      }
-      return { inView, leftPoint, rightPoint };
-    }
-
-    // Deterministic sweep over data shapes and every meaningful window position, including
-    // windows entirely before, entirely after, and exactly on point boundaries.
     const datasets: P[][] = [
       [],
       at(50),
@@ -1756,44 +1743,22 @@ describe('in-view window search', () => {
     for (const points of datasets) {
       for (let start = -10; start <= 60; start += 5) {
         for (let end = start; end <= 60; end += 5) {
-          expect(boundedScan(points, start, end)).toEqual(linearScan(points, start, end));
+          const { firstAfterView, firstInView, leftPoint, rightPoint } = getLinePointWindow(points, start, end);
+          expect({ inView: points.slice(firstInView, firstAfterView), leftPoint, rightPoint }).toEqual(
+            linearScan(points, start, end),
+          );
         }
       }
     }
   });
 });
 
-/**
- * LayerXRange coalesces consecutive same-label points into one box, then skips boxes outside the
- * view. It now resumes at the run start nearest the view (via `lowerBoundByX` plus a backward walk)
- * and breaks once a run begins past the view, rather than scanning every point on every frame.
- *
- * Both are equivalence-critical: resuming mid-run would move a box's left edge, and breaking too
- * early would drop boxes. This models the box geometry the layer produces and pins the bounded
- * form against the full scan.
- */
 describe('x-range box scan bounding', () => {
-  type XP = { is_gap?: boolean; is_null?: boolean; label: { text: string }; x: number };
   type Box = { endMs: number; label: string; startMs: number };
 
-  function boxes(points: XP[], viewStart: number, viewEnd: number, bounded: boolean): Box[] {
+  function referenceBoxes(points: XRangePoint[], viewStart: number, viewEnd: number): Box[] {
     const out: Box[] = [];
-
-    let scanFrom = 0;
-    if (bounded && points.length > 0) {
-      const firstInView = lowerBoundByX(points, viewStart);
-      let index = Math.min(Math.max(firstInView - 1, 0), points.length - 1);
-      while (
-        index > 0 &&
-        points[index - 1].label.text === points[index].label.text &&
-        points[index - 1].is_gap === points[index].is_gap
-      ) {
-        index--;
-      }
-      scanFrom = index;
-    }
-
-    for (let i = scanFrom; i < points.length; ++i) {
+    for (let i = 0; i < points.length; ++i) {
       const point = points[i];
       if (point.is_gap || point.is_null) {
         continue;
@@ -1811,9 +1776,6 @@ describe('x-range box scan bounding', () => {
       const endMs = nextPoint ? nextPoint.x : points[i].x;
 
       if (startMs > viewEnd) {
-        if (bounded) {
-          break;
-        }
         continue;
       }
       if (endMs < viewStart) {
@@ -1821,6 +1783,19 @@ describe('x-range box scan bounding', () => {
       }
 
       out.push({ endMs, label: point.label.text, startMs });
+    }
+    return out;
+  }
+
+  function productionBoxes(points: XRangePoint[], viewStart: number, viewEnd: number): Box[] {
+    const runs = coalesceXRangeRuns(points);
+    const out: Box[] = [];
+    for (let i = lowerBoundXRangeRunEnd(runs, viewStart); i < runs.length; ++i) {
+      const { endMs, point } = runs[i];
+      if (point.x > viewEnd) {
+        break;
+      }
+      out.push({ endMs, label: point.label.text, startMs: point.x });
     }
     return out;
   }
@@ -1843,13 +1818,16 @@ describe('x-range box scan bounding', () => {
       const count = 1 + Math.floor(rng() * 40);
       // Few distinct labels so long runs occur; occasional gaps/nulls to exercise the skip paths.
       const labelPool = ['A', 'B', 'C'].slice(0, 1 + Math.floor(rng() * 3));
-      const points: XP[] = [];
+      const points: XRangePoint[] = [];
       let x = 0;
       for (let i = 0; i < count; ++i) {
         points.push({
+          id: i,
           is_gap: rng() < 0.12,
           is_null: rng() < 0.08,
           label: { text: labelPool[Math.floor(rng() * labelPool.length)] },
+          name: 'r',
+          type: 'x-range',
           x,
         });
         x += 1 + Math.floor(rng() * 10);
@@ -1859,33 +1837,66 @@ describe('x-range box scan bounding', () => {
       for (let viewStart = -5; viewStart <= maxX + 5; viewStart += 3) {
         for (const span of [0, 1, 7, 25, maxX + 10]) {
           const viewEnd = viewStart + span;
-          expect(boxes(points, viewStart, viewEnd, true)).toEqual(boxes(points, viewStart, viewEnd, false));
+          expect(productionBoxes(points, viewStart, viewEnd)).toEqual(referenceBoxes(points, viewStart, viewEnd));
         }
       }
     }
   });
 
   test('a single run spanning the whole profile still yields its one box at any zoom', () => {
-    const points: XP[] = Array.from({ length: 50 }, (_, i) => ({ label: { text: 'CONSTANT' }, x: i * 10 }));
+    const points: XRangePoint[] = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      label: { text: 'CONSTANT' },
+      name: 'r',
+      type: 'x-range',
+      x: i * 10,
+    }));
+    expect(coalesceXRangeRuns(points)).toHaveLength(1);
     for (const [viewStart, viewEnd] of [
       [0, 490],
       [200, 210],
       [-100, -1],
       [500, 600],
     ]) {
-      expect(boxes(points, viewStart, viewEnd, true)).toEqual(boxes(points, viewStart, viewEnd, false));
+      expect(productionBoxes(points, viewStart, viewEnd)).toEqual(referenceBoxes(points, viewStart, viewEnd));
     }
   });
 });
 
-/**
- * `getYAxisBounds` no longer scans every resource value on every zoom/pan frame: for sorted,
- * gap-free values it binary-searches the in-view range and reads the nearest numeric neighbour on
- * each side, falling back to the original full scan otherwise (gaps reset the neighbour mid-scan,
- * which makes the result depend on the whole array).
- *
- * `referenceGetYAxisBounds` is the original implementation, kept verbatim as the oracle.
- */
+describe('line point conversion', () => {
+  test.each(['string', 'variant'] as const)('%s conversion resumes without duplicates', schemaType => {
+    const values: ResourceValue[] = Array.from({ length: 100 }, (_, i) => ({ x: i, y: `value-${i % 4}` }));
+    const schema =
+      schemaType === 'variant'
+        ? { type: 'variant' as const, variants: ['value-0', 'value-1', 'value-2', 'value-3'].map(label => ({ label })) }
+        : { type: 'string' as const };
+    const resources: Resource[] = [{ name: 'r', schema, values } as Resource];
+    const points: LinePoint[] = [];
+    const ordinalDomain = new Set<string>();
+    let cursor = { nextId: 0, resourceIndex: 0, valueIndex: 0 };
+    let completed = false;
+    let frames = 0;
+
+    do {
+      const next = appendLinePointSlice(resources, points, ordinalDomain, cursor, () => true);
+      ++frames;
+      if (!next) {
+        completed = true;
+        break;
+      }
+      cursor = next;
+    } while (frames < 200);
+
+    expect(frames).toBeGreaterThan(1);
+    expect(completed).toBe(true);
+    expect(points).toHaveLength(values.length);
+    expect(points.map(point => point.x)).toEqual(values.map(value => value.x));
+    expect(new Set(points.map(point => point.id)).size).toBe(values.length);
+    expect(ordinalDomain).toEqual(new Set(['value-0', 'value-1', 'value-2', 'value-3']));
+  });
+});
+
+// Original full scan retained as an independent oracle.
 function referenceGetYAxisBounds(yAxis: Axis, layers: Layer[], resources: Resource[], viewTimeRange?: TimeRange) {
   const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
   let minY: number | undefined = undefined;
@@ -1977,8 +1988,6 @@ describe('getYAxisBounds bounded scan', () => {
       layers[1].filter.resource = 'r';
       const baseAxis = timelines[0].rows[0].yAxes[0];
 
-      // Mix of shapes: gap-free (bounded path), gap-bearing (fallback), and non-numeric values
-      // interleaved so the "nearest numeric neighbour" logic is exercised.
       const withGaps = iteration % 3 === 0;
       const count = 1 + Math.floor(rng() * 30);
       const values: ResourceValue[] = [];
@@ -1998,7 +2007,6 @@ describe('getYAxisBounds bounded scan', () => {
       for (const domainFitMode of ['fitTimeWindow', 'fitPlan'] as const) {
         const yAxis: Axis = { ...baseAxis, domainFitMode };
 
-        // No view range at all.
         expect(getYAxisBounds(yAxis, layers, resources)).toEqual(referenceGetYAxisBounds(yAxis, layers, resources));
 
         for (let start = -2; start <= maxX + 2; start += 2) {
@@ -2014,11 +2022,6 @@ describe('getYAxisBounds bounded scan', () => {
   });
 });
 
-/**
- * LayerLine's hover path ran two scans over every point on each mousemove: a forward walk to find the
- * cursor's neighbours, and a full filter to collect points sharing an exact x. Both are now bounded
- * by binary search. Hover fires far more often than zoom, so these have to stay exactly equivalent.
- */
 describe('hover neighbour search bounding', () => {
   type P = { x: number; y: number | null };
 
@@ -2041,32 +2044,8 @@ describe('hover neighbour search bounding', () => {
     return { leftPoint, rightPoint };
   }
 
-  function boundedNeighbours(points: P[], xDate: number) {
-    let leftPoint: P | null = null;
-    let rightPoint: P | null = null;
-    const firstAfter = upperBoundByX(points, xDate);
-    if (firstAfter > 0) {
-      leftPoint = points[firstAfter - 1];
-    }
-    if (firstAfter < points.length) {
-      rightPoint = points[firstAfter];
-    }
-    return { leftPoint, rightPoint };
-  }
-
   function linearAtX(points: P[], x: number) {
     return points.filter(p => p.y !== null && p.x === x);
-  }
-
-  function boundedAtX(points: P[], x: number) {
-    const out: P[] = [];
-    const end = upperBoundByX(points, x);
-    for (let i = lowerBoundByX(points, x); i < end; ++i) {
-      if (points[i].y !== null) {
-        out.push(points[i]);
-      }
-    }
-    return out;
   }
 
   test('bounded neighbour and exact-x lookups match the scans they replaced', () => {
@@ -2095,21 +2074,15 @@ describe('hover neighbour search bounding', () => {
 
     for (const points of datasets) {
       for (let cursor = -10; cursor <= 220; cursor += 1) {
-        expect(boundedNeighbours(points, cursor)).toEqual(linearNeighbours(points, cursor));
+        expect(getHoverNeighbours(points, cursor)).toEqual(linearNeighbours(points, cursor));
       }
       for (const x of [-5, 0, 10, 15, 20, 30, 195, 500]) {
-        expect(boundedAtX(points, x)).toEqual(linearAtX(points, x));
+        expect(getPointsAtX(points, x)).toEqual(linearAtX(points, x));
       }
     }
   });
 });
 
-/**
- * getYAxisBounds memoizes per-array facts keyed on the values array. That is only sound because the
- * sampler copies on emit, and nothing in the type system enforces it — so the cache carries a witness
- * and revalidates. These pin that the witness actually works, since the failure it prevents is a
- * silently wrong chart rather than a slow one.
- */
 describe('getYAxisBounds cache revalidation', () => {
   function fixture() {
     const timelines = generateTimelines();
@@ -2132,7 +2105,6 @@ describe('getYAxisBounds cache revalidation', () => {
 
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
 
-    // Reuse the identity, as a producer that dropped its copy-on-emit would.
     values.push({ x: 20, y: 99 });
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 99]);
   });
@@ -2147,8 +2119,6 @@ describe('getYAxisBounds cache revalidation', () => {
 
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
 
-    // Same length, changed last sample — this is what an advancing `duration` does to the provisional
-    // closing value, so it has to invalidate.
     values[1] = { x: 10, y: -3 };
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([-3, 5]);
   });
@@ -2160,7 +2130,6 @@ describe('getYAxisBounds cache revalidation', () => {
       { x: 10, y: 7 },
     ];
     const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
-    // Repeated identical calls must agree; this is the path every zoom/pan frame takes.
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
     expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);

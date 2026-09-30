@@ -53,8 +53,7 @@ export function createExternalResourceSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
-  // Retains samples across emits and re-samples only the tail. Reset via resetForNewProfile whenever
-  // this repoints at a different plan_dataset row.
+  // Sampling work tracks the segment delta; repointing to another dataset resets it.
   const sampler = createProfileSampler(planStartTimeYmd);
   let sinceOffset = INITIAL_SINCE;
   let resolved = false;
@@ -242,22 +241,14 @@ export function createExternalResourceSubscription(
       pendingMissing = false;
       const { meta } = next;
       currentMeta = meta;
-      // If we switched to a different profile row (different dataset or id), reset the accumulator
-      // and sinceOffset before refetching.
-      //
-      // A changed `offsetFromPlanStart` on the same row needs no reset: it shifts every x, so the
-      // sampler discards its samples and re-samples the accumulator against the new offset. That is
-      // only safe because the accumulator is retained — an append-only sampler made the same
-      // discard unrecoverable, which is why it was reverted.
+      // Retain segments so offset changes can rebuild samples without refetching.
       const switched =
         lastMeta !== null && (lastMeta.datasetId !== meta.datasetId || lastMeta.profileId !== meta.profileId);
       if (switched) {
         resetForNewProfile();
       }
       const durationAdvanced = lastMeta === null || lastMeta.duration !== meta.duration;
-      // A changed offset needs no refetch — the segments are unchanged — but it does need a re-emit,
-      // since every x shifts. Without this the row keeps rendering at the stale offset: nothing else
-      // here would fire, because the dataset, profile id and duration are all unchanged.
+      // Offset changes need a re-emit because every x shifts, but no refetch.
       const offsetChanged = lastMeta !== null && lastMeta.offsetFromPlanStart !== meta.offsetFromPlanStart;
       lastMeta = meta;
       // Assumption: external profiles only grow via `duration` advancement.
@@ -268,12 +259,8 @@ export function createExternalResourceSubscription(
       if (switched || durationAdvanced || !resolved) {
         refetch();
       } else if (offsetChanged || lastError) {
-        // Re-sample the retained accumulator against the new offset, and clear any lingering error
-        // if the metadata is now clean.
         emit();
       }
-      // Otherwise: meta unchanged, no error pending, no need to re-sample
-      // the profile and re-push identical state downstream.
     }),
   );
 

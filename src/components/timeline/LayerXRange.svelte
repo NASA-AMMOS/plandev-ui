@@ -26,7 +26,13 @@
     XRangePoint,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { isSortedByX, lowerBoundByX, searchQuadtreeRect } from '../../utilities/timeline';
+  import {
+    coalesceXRangeRuns,
+    isSortedByX,
+    lowerBoundXRangeRunEnd,
+    searchQuadtreeRect,
+    type XRangeRun,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
@@ -59,6 +65,7 @@
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
   let pointsSorted = true;
+  let runs: XRangeRun[] = [];
   let drawPointsRequest: number;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, XRangePoint> = {};
@@ -76,6 +83,8 @@
     mounted &&
     opacity !== undefined &&
     points &&
+    pointsSorted !== undefined &&
+    runs &&
     xScaleView
   ) {
     draw();
@@ -84,9 +93,8 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
-  // Once per data change rather than per frame, so the draw path can bound its scan to the
-  // visible window when the precondition holds.
   $: pointsSorted = isSortedByX(points);
+  $: runs = coalesceXRangeRuns(points);
 
   onMount(() => {
     if (canvas) {
@@ -115,11 +123,11 @@
       visiblePointsById = {};
 
       maxXWidth = Number.MIN_SAFE_INTEGER;
-      drawPoints(points, 0);
+      drawRuns(runs, 0);
     }
   }
 
-  function drawPoints(points: XRangePoint[], pointsStartIndex = 0) {
+  function drawRuns(runs: XRangeRun[], runStartIndex = 0) {
     if (!xScaleView) {
       return;
     }
@@ -129,58 +137,20 @@
 
     const [viewStart, viewEnd] = xScaleView.domain().map(x => x.getTime());
 
-    // Skip the leading boxes that end before the view starts.
-    //
-    // A run's box ends where the *next* run begins, so the earliest run that can still be visible
-    // is the one containing the point just before the first in-view point — not the one containing
-    // the first in-view point itself. Starting any later would drop a box that straddles the left
-    // edge of the view.
-    //
-    // Boxes are also keyed off the first point of a same-label run, so we walk back to that run's
-    // start; resuming mid-run would move the box's left edge. (The rAF continuation below relies
-    // on the same alignment — the threshold check sits at the top of the loop, where `i` is always
-    // a run start.)
-    let scanFrom = pointsStartIndex;
-    if (pointsSorted && pointsStartIndex === 0 && points.length > 0) {
-      const firstInView = lowerBoundByX(points, viewStart);
-      let index = Math.min(Math.max(firstInView - 1, 0), points.length - 1);
-      while (
-        index > 0 &&
-        points[index - 1].label.text === points[index].label.text &&
-        points[index - 1].is_gap === points[index].is_gap
-      ) {
-        index--;
-      }
-      scanFrom = index;
+    let scanFrom = runStartIndex;
+    if (pointsSorted && runStartIndex === 0) {
+      scanFrom = lowerBoundXRangeRunEnd(runs, viewStart);
     }
 
-    for (let i = scanFrom; i < points.length; ++i) {
+    for (let i = scanFrom; i < runs.length; ++i) {
       if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
-        drawPointsRequest = window.requestAnimationFrame(() => drawPoints(points, i));
+        drawPointsRequest = window.requestAnimationFrame(() => drawRuns(runs, i));
         return;
       }
 
-      const point = points[i];
-      if (point.is_gap || point.is_null) {
-        continue;
-      }
-
-      // Scan to the next point with a different label than the current point.
-      let j = i + 1;
-      let nextPoint = points[j];
-      while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
-        j = j + 1;
-        nextPoint = points[j];
-      }
-      i = j - 1; // Minus since the loop auto increments i at the end of the block.
-
+      const { endMs, point } = runs[i];
       const startMs = point.x;
-      const endMs = nextPoint ? nextPoint.x : points[i].x;
-
-      // Do not draw if box is out of view
       if (startMs > viewEnd) {
-        // Sorted points mean every later run starts later still, so nothing beyond this can be
-        // in view. Stopping here avoids walking the whole trailing tail on every frame.
         if (pointsSorted) {
           break;
         }

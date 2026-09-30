@@ -41,6 +41,7 @@ import type {
   HorizontalGuide,
   Layer,
   LineLayer,
+  LinePoint,
   QuadtreePoint,
   QuadtreeRect,
   Row,
@@ -49,6 +50,7 @@ import type {
   VerticalGuide,
   XRangeLayer,
   XRangeLayerColorScheme,
+  XRangePoint,
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
@@ -716,18 +718,7 @@ type ResourceValuesMeta = {
  */
 const resourceValuesMetaCache = new WeakMap<ResourceValue[], ResourceValuesMeta>();
 
-/**
- * Keying a cache on array identity alone would make this silently wrong if a producer ever reused an
- * array — every lookup would hit against stale bounds, drawing a wrong chart rather than a slow one,
- * and nothing would flag it. So each entry carries a witness (length plus the last sample's x and y)
- * that is checked on every lookup, which is O(1).
- *
- * That covers how this data actually changes: samples are appended, and the final sample is rewritten
- * in place as `duration` advances — the first changes `length`, the second changes `lastX`/`lastY`.
- * A same-length edit to a *middle* sample would still slip through, but nothing in this pipeline does
- * that. The point is not to make the cache infallible; it is to ensure that breaking the producer's
- * copy-on-emit costs performance instead of correctness.
- */
+/** The witness catches appends and final-sample rewrites, but not arbitrary middle edits. */
 function getResourceValuesMeta(values: ResourceValue[]): ResourceValuesMeta {
   const length = values.length;
   const lastX = length > 0 ? values[length - 1].x : 0;
@@ -793,22 +784,11 @@ export function getYAxisBounds(
       const bounded = meta.sorted && !meta.hasGap;
 
       if (bounded) {
-        if (viewTimeRange && yAxis.domainFitMode === 'fitTimeWindow') {
-          // Only values inside the window count, and the window is a contiguous index range.
-          const firstInView = lowerBoundByX(values, viewTimeRange.start);
-          const firstAfterView = upperBoundByX(values, viewTimeRange.end);
-          for (let i = firstInView; i < firstAfterView; ++i) {
-            const y = values[i].y;
-            if (typeof y === 'number') {
-              if (minY === undefined || y < minY) {
-                minY = y;
-              }
-              if (maxY === undefined || y > maxY) {
-                maxY = y;
-              }
-            }
-          }
-          // Without gaps the neighbours are simply the nearest numeric value on each side.
+        let firstInView = 0;
+        let firstAfterView = values.length;
+        if (viewTimeRange) {
+          firstInView = lowerBoundByX(values, viewTimeRange.start);
+          firstAfterView = upperBoundByX(values, viewTimeRange.end);
           for (let i = firstInView - 1; i >= 0; --i) {
             if (typeof values[i].y === 'number') {
               leftValue = values[i];
@@ -821,34 +801,29 @@ export function getYAxisBounds(
               break;
             }
           }
+        }
+
+        if (viewTimeRange && yAxis.domainFitMode === 'fitTimeWindow') {
+          for (let i = firstInView; i < firstAfterView; ++i) {
+            const y = values[i].y;
+            if (typeof y === 'number') {
+              if (minY === undefined || y < minY) {
+                minY = y;
+              }
+              if (maxY === undefined || y > maxY) {
+                maxY = y;
+              }
+            }
+          }
         } else {
-          // Every value counts regardless of the window, so reuse the cached whole-array extent.
           if (meta.minY !== undefined && (minY === undefined || meta.minY < minY)) {
             minY = meta.minY;
           }
           if (meta.maxY !== undefined && (maxY === undefined || meta.maxY > maxY)) {
             maxY = meta.maxY;
           }
-          if (viewTimeRange) {
-            const firstInView = lowerBoundByX(values, viewTimeRange.start);
-            const firstAfterView = upperBoundByX(values, viewTimeRange.end);
-            for (let i = firstInView - 1; i >= 0; --i) {
-              if (typeof values[i].y === 'number') {
-                leftValue = values[i];
-                break;
-              }
-            }
-            for (let i = firstAfterView; i < values.length; ++i) {
-              if (typeof values[i].y === 'number') {
-                rightValue = values[i];
-                break;
-              }
-            }
-          }
         }
-      }
-
-      if (!bounded) {
+      } else {
         values.forEach(value => {
           const isNumber = typeof value.y === 'number';
           // Identify the first value to the left of the viewTimeRange
@@ -1028,10 +1003,8 @@ export function upperBoundByX(points: { x: number }[], target: number): number {
 /**
  * Whether `points` is non-decreasing in `x`.
  *
- * Sampled resources are sorted by construction, but a profile whose `duration` lands before its
- * last segment offset produces an unsorted array (documented garbage-in case, pinned by
- * `resources.test.ts`). Compute this once per data change so the per-frame draw path can decide
- * between binary search and a full scan.
+ * Binary searches require sorted points. Malformed profiles can place duration before the final
+ * segment, so callers retain a full-scan fallback.
  */
 export function isSortedByX(points: { x: number }[]): boolean {
   for (let i = 1; i < points.length; ++i) {
@@ -1040,6 +1013,120 @@ export function isSortedByX(points: { x: number }[]): boolean {
     }
   }
   return true;
+}
+
+export type LinePointConversionCursor = {
+  nextId: number;
+  resourceIndex: number;
+  valueIndex: number;
+};
+
+/** Appends one frame's worth of resource values and returns where the next frame should resume. */
+export function appendLinePointSlice(
+  resources: Resource[],
+  points: LinePoint[],
+  ordinalDomain: Set<string>,
+  cursor: LinePointConversionCursor,
+  shouldYield: () => boolean,
+): LinePointConversionCursor | null {
+  let { nextId, resourceIndex, valueIndex } = cursor;
+
+  for (; resourceIndex < resources.length; ++resourceIndex) {
+    const { name, schema, values } = resources[resourceIndex];
+    const numeric =
+      schema.type === 'int' ||
+      schema.type === 'real' ||
+      schema.type === 'duration' ||
+      (schema.type === 'struct' && schema.items?.rate?.type === 'real' && schema.items?.initial?.type === 'real');
+    const ordinal = schema.type === 'string' || schema.type === 'variant';
+
+    if (schema.type === 'boolean' || numeric || ordinal) {
+      for (; valueIndex < values.length; ++valueIndex) {
+        const value = values[valueIndex];
+        let y: LinePoint['y'] = value.y;
+        if (schema.type === 'boolean') {
+          y = value.y ? 1 : 0;
+        } else if (ordinal) {
+          ordinalDomain.add(value.y as string);
+        }
+        points.push({ id: nextId++, name, type: 'line', x: value.x, y });
+
+        if (shouldYield()) {
+          return { nextId, resourceIndex, valueIndex: valueIndex + 1 };
+        }
+      }
+    }
+    valueIndex = 0;
+  }
+
+  return null;
+}
+
+export function getLinePointWindow<T extends { x: number }>(points: T[], start: number, end: number) {
+  const firstInView = lowerBoundByX(points, start);
+  const firstAfterView = upperBoundByX(points, end);
+  const leftIndex = Math.max(firstInView, 1);
+  const rightIndex = Math.max(firstAfterView, 1);
+  return {
+    firstAfterView,
+    firstInView,
+    leftPoint: firstInView < points.length && leftIndex < points.length ? points[leftIndex - 1] : null,
+    rightPoint: firstAfterView < points.length && rightIndex < points.length ? points[rightIndex] : null,
+  };
+}
+
+export function getHoverNeighbours<T extends { x: number }>(points: T[], x: number) {
+  const firstAfter = upperBoundByX(points, x);
+  return {
+    leftPoint: firstAfter > 0 ? points[firstAfter - 1] : null,
+    rightPoint: firstAfter < points.length ? points[firstAfter] : null,
+  };
+}
+
+export function getPointsAtX<T extends { x: number; y: unknown }>(points: T[], x: number): T[] {
+  const matches: T[] = [];
+  const end = upperBoundByX(points, x);
+  for (let i = lowerBoundByX(points, x); i < end; ++i) {
+    if (points[i].y !== null) {
+      matches.push(points[i]);
+    }
+  }
+  return matches;
+}
+
+export type XRangeRun = { endMs: number; point: XRangePoint };
+
+/** Builds the boxes represented by consecutive equal-label points. */
+export function coalesceXRangeRuns(points: XRangePoint[]): XRangeRun[] {
+  const runs: XRangeRun[] = [];
+  for (let i = 0; i < points.length; ++i) {
+    const point = points[i];
+    if (point.is_gap || point.is_null) {
+      continue;
+    }
+    let j = i + 1;
+    while (j < points.length && points[j].label.text === point.label.text && points[j].is_gap === point.is_gap) {
+      ++j;
+    }
+    i = j - 1;
+    runs.push({ endMs: j < points.length ? points[j].x : points[i].x, point });
+  }
+  return runs;
+}
+
+/** First run whose end reaches the viewport. Requires runs sorted by time. */
+export function lowerBoundXRangeRunEnd(runs: XRangeRun[], target: number): number {
+  let low = 0;
+  let high = runs.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (runs[mid].endMs < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
 }
 
 /**

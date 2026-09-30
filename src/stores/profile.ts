@@ -51,10 +51,7 @@ export function createProfileSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
-  // Retains samples across emits and re-samples only the tail, so per-tick cost tracks the segment
-  // delta rather than the whole accumulated profile. The accumulator is still held here: the sampler
-  // discards its samples whenever the x offset or profile type changes, and that is only recoverable
-  // because every segment is still available to re-sample.
+  // Sampling work tracks the segment delta; segments remain available for offset/type rebuilds.
   const sampler = createProfileSampler(planStartTimeYmd);
   let header: ProfileHeader | null = null;
   let sinceOffset = INITIAL_SINCE;
@@ -139,11 +136,7 @@ export function createProfileSubscription(
           appendAll(accumulator, profile.profile_segments);
           sinceOffset = profile.profile_segments[profile.profile_segments.length - 1].start_offset;
         }
-        // Copy the header fields rather than keeping the fetched object. ProfileHeader is typed to
-        // exclude profile_segments, but assigning the whole `profile` satisfies that type while
-        // retaining the segments array at runtime — which kept every segment alive and made
-        // dropping the accumulator save nothing, since that only ever held references to these
-        // same objects.
+        // Keep only this fetched batch's header; the accumulator owns the complete profile.
         header = {
           dataset_id: profile.dataset_id,
           duration: profile.duration,
