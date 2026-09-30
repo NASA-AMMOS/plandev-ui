@@ -159,6 +159,12 @@ export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation
   sim_id: number;
 };
 
+export type PlanTransferResponse = {
+  import_request_id: number;
+  model_id: number;
+  plan_id: number;
+};
+
 export type PlanMetadata = Pick<
   PlanSchema,
   | 'id'

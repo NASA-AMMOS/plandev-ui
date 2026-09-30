@@ -1,4 +1,5 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityType } from '../types/activity';
 import type { Plan, PlanImportRequest, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
 import type { PlanDataset } from '../types/simulation';
@@ -11,27 +12,6 @@ import { gqlSubscribable } from './subscribable';
 /* Writeable. */
 
 export const activityEditingLocked: Writable<boolean> = writable(false);
-
-export const planReadOnlySnapshot: Writable<boolean> = writable(false);
-
-// Used to lock the plan if there's an active merge request.
-export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
-
-// Used to indicate that the plan has a model that is not executable (i.e. it was imported with a defined model present in the JSON file)
-// The plan itself is not considered non-executable necessarily, but it is considered "readonly".
-// This store variable is to help disambiguate between the "readonly" state from a merge request and a plan with a non-executable model.
-export const planIsNonExecutable: Writable<boolean> = writable(false);
-
-export const planIsLocked: Readable<boolean> = derived(
-  [planReadOnlySnapshot, planReadOnlyMergeRequest],
-  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
-);
-
-export const planReadOnly: Readable<boolean> = derived(
-  [planReadOnlySnapshot, planReadOnlyMergeRequest, planIsNonExecutable],
-  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planIsNonExecutable]) =>
-    $planReadOnlyMergeRequest || $planReadOnlySnapshot || $planIsNonExecutable,
-);
 
 export const createPlanError: Writable<string | null> = writable(null);
 
@@ -50,6 +30,39 @@ export const initialPlan: Writable<Plan | null> = writable(null);
 export const planId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
 
 export const planMetadata = gqlSubscribable<PlanMetadata | null>(gql.SUB_PLAN_METADATA, { planId }, null);
+
+/* Plan status */
+
+export const planReadOnlySnapshot: Writable<boolean> = writable(false);
+
+// Used to lock the plan if there's an active merge request.
+export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
+
+// Used to indicate that the plan has a model that is not executable (i.e. it was imported with a defined model present in the JSON file)
+// The plan itself is not considered non-executable necessarily, but it is considered "readonly".
+// This store variable is to help disambiguate between the "readonly" state from a merge request and a plan with a non-executable model.
+export const planIsNonExecutable: Writable<boolean> = writable(false);
+
+export const planIsLocked: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
+);
+
+export const planImportRequest = gqlSubscribable<PlanImportRequest | null>(
+  gql.SUB_PLAN_IMPORT_REQUEST,
+  { planId },
+  null,
+  (importRequests: PlanImportRequest[]): PlanImportRequest | null => importRequests[0] ?? null,
+);
+
+export const planReadOnly: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest, planIsNonExecutable, planImportRequest],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planIsNonExecutable, $planImportRequest]) =>
+    $planReadOnlyMergeRequest ||
+    $planReadOnlySnapshot ||
+    $planIsNonExecutable ||
+    ($planImportRequest ? $planImportRequest.status !== PlanImportStatus.COMPLETE : false),
+);
 
 /* Derived. */
 
@@ -156,13 +169,6 @@ export const planRevision = gqlSubscribable<number>(
   { planId },
   -1,
   ({ revision }: Pick<Plan, 'revision'>) => revision,
-);
-
-export const planImportRequest = gqlSubscribable<PlanImportRequest | null>(
-  gql.SUB_PLAN_IMPORT_REQUEST,
-  { planId },
-  null,
-  (importRequests: PlanImportRequest[]): PlanImportRequest | null => importRequests[0] ?? null,
 );
 
 /* Helper Functions. */

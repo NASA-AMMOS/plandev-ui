@@ -161,6 +161,7 @@ import type {
   PlanMetadata,
   PlanSchema,
   PlanSlim,
+  PlanTransferResponse,
 } from '../types/plan';
 import type { PlanSnapshot } from '../types/plan-snapshot';
 import type {
@@ -5624,7 +5625,7 @@ const effects = {
     tagIds: number[],
     files: FileList,
     user: User | null,
-  ): Promise<{ error?: Error; plan?: PlanSlim }> {
+  ): Promise<PlanTransferResponse> {
     try {
       if (!gatewayPermissions.IMPORT_PLAN(user)) {
         throwPermissionError('import a plan');
@@ -5651,19 +5652,19 @@ const effects = {
       body.append('tags', JSON.stringify(tagIds));
       body.append('plan_file', file, file.name);
 
-      const createdPlan = await reqGateway<PlanSlim | null>('/importPlan', 'POST', body, user, true);
+      const createdRequest = await reqGateway<PlanTransferResponse>('/importPlan', 'POST', body, user, true);
 
       creatingPlanStore.set(false);
-      if (createdPlan != null) {
+      if (createdRequest != null) {
         logMessage('log', `Imported plan "${name}".`, { duration: performance.now() - requestStartTime });
-        return { plan: createdPlan };
+        return createdRequest;
       } else {
         throw new Error('Plan import failed');
       }
     } catch (e) {
       catchError('log', 'Unable to import plan', e as Error);
       creatingPlanStore.set(false);
-      return { error: e as Error };
+      throw e;
     }
   },
 

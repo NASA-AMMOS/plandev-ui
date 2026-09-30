@@ -440,6 +440,7 @@
   } else {
     createPlanButtonText = planUploadFiles ? 'Create from .json' : 'Create';
   }
+
   $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
@@ -486,24 +487,24 @@
     let startTime = getDoyTime(startTimeDate);
     let endTime = getDoyTime(endTimeDate);
     if (planUploadFiles && planUploadFiles.length) {
-      const { error } = await effects.importPlan(
-        $nameField.value,
-        $modelIdField.value,
-        startTime,
-        endTime,
-        $simTemplateField.value,
-        planTags.map(({ id }) => id),
-        planUploadFiles,
-        $user,
-      );
-      if (error) {
-        planUploadFilesError = error.message;
-      } else {
+      try {
+        await effects.importPlan(
+          $nameField.value,
+          $modelIdField.value,
+          startTime,
+          endTime,
+          $simTemplateField.value,
+          planTags.map(({ id }) => id),
+          planUploadFiles,
+          $user,
+        );
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
+      } catch (error) {
+        planUploadFilesError = (error as Error).message;
       }
     } else {
       const newPlan: PlanSlim | null = await effects.createPlan(
