@@ -18,7 +18,7 @@ import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
 import { ConstraintDefinitionInsertInput } from '../../src/types/constraint.js';
 import { ModelInsertInput } from '../../src/types/model.js';
-import { PlanInsertInput, PlanSlim, PlanTransfer } from '../../src/types/plan.js';
+import { PlanInsertInput, PlanTransfer, PlanTransferResponse } from '../../src/types/plan.js';
 import { SchedulingGoalDefinitionInsertInput, SchedulingGoalInsertInput } from '../../src/types/scheduling.js';
 import { convertToQuery } from '../../src/utilities/generic.js';
 import gql from '../../src/utilities/gql.js';
@@ -351,8 +351,8 @@ export class AerieApi {
     if (!response.ok) {
       throw new Error(`Import plan failed: ${response.statusText}`);
     }
-    const data = (await response.json()) as PlanSlim;
-    return data.id;
+    const data = (await response.json()) as PlanTransferResponse;
+    return data.plan_id;
   }
 
   /**
