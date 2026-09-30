@@ -24,6 +24,7 @@
   import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
+  import PlanImportStatusBar from '../../../components/plan/PlanImportStatusBar.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import PlanModelErrorBar from '../../../components/plan/PlanModelErrorBar.svelte';
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
@@ -76,6 +77,7 @@
     planBoundsPreviewOverride,
     planDatasets,
     planId,
+    planImportRequest,
     planIsLocked,
     planIsNonExecutable,
     planModelActivityTypes,
@@ -842,9 +844,11 @@
               title={!compactNavMode ? 'Simulation' : ''}
               menuTitle="Simulation Status"
               buttonText="Simulate"
-              buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-                ? 'Simulation up-to-date'
-                : ''}
+              buttonTooltipContent={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : $simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+                  ? 'Simulation up-to-date'
+                  : ''}
               hasPermission={hasSimulatePermission}
               indeterminate={$simulationProgress === 0}
               permissionError={$planReadOnly
@@ -860,7 +864,9 @@
               <svelte:fragment slot="metadata">
                 <div class="st-typography-body">
                   <div class="simulation-header">
-                    {#if typeof $simulationDatasetLatest?.id !== 'number'}
+                    {#if $planIsNonExecutable}
+                      <div>Simulation is unavailable in a model-free plan</div>
+                    {:else if typeof $simulationDatasetLatest?.id !== 'number'}
                       <div>Simulation not run</div>
                     {:else}
                       {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
@@ -1025,6 +1031,9 @@
             on:close={onCloseSnapshotPreview}
             on:restore={onRestoreSnapshot}
           />
+        {/if}
+        {#if $planImportRequest}
+          <PlanImportStatusBar planImportRequest={$planImportRequest} />
         {/if}
         {#if modelErrorCount && $plan?.model}
           <PlanModelErrorBar

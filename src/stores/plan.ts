@@ -1,6 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../types/activity';
-import type { Plan, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
+import type { Plan, PlanImportRequest, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
 import type { PlanDataset } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { TimeRange } from '../types/timeline';
@@ -156,6 +156,13 @@ export const planRevision = gqlSubscribable<number>(
   { planId },
   -1,
   ({ revision }: Pick<Plan, 'revision'>) => revision,
+);
+
+export const planImportRequest = gqlSubscribable<PlanImportRequest | null>(
+  gql.SUB_PLAN_IMPORT_REQUEST,
+  { planId },
+  null,
+  (importRequests: PlanImportRequest[]): PlanImportRequest | null => importRequests[0] ?? null,
 );
 
 /* Helper Functions. */

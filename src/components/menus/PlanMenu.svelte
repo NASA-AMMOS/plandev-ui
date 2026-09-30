@@ -5,12 +5,13 @@
   import { base } from '$app/paths';
   import BranchIcon from '@nasa-jpl/stellar/icons/branch.svg?component';
   import { ChevronDown } from 'lucide-svelte';
-  import { PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { PlanImportStatus, PlanStatusMessages } from '../../enums/planStatusMessages';
   import { activityDirectivesMap } from '../../stores/activities';
-  import { planReadOnly } from '../../stores/plan';
+  import { planImportRequest, planReadOnly } from '../../stores/plan';
   import { initialPlanSnapshotsLoading } from '../../stores/planSnapshots';
   import { viewTogglePanel } from '../../stores/views';
   import type { User } from '../../types/app';
+  import type { ConsoleEntry } from '../../types/console';
   import type { Plan } from '../../types/plan';
   import effects from '../../utilities/effects';
   import { showPlanBranchesModal, showPlanMergeRequestsModal } from '../../utilities/modal';
@@ -30,6 +31,12 @@
   let hasCreateSnapshotPermission: boolean = false;
   let planExporting: boolean = false;
   let planMenu: Menu;
+  let planImportRequestStatus: PlanImportStatus | null = null;
+  let planImportRequestError: ConsoleEntry | null = null;
+
+  $: planImportRequestStatus = $planImportRequest?.status ?? null;
+  $: planImportRequestError =
+    $planImportRequest && $planImportRequest.status === PlanImportStatus.FAILED ? $planImportRequest.reason : null;
 
   $: hasCreateMergeRequestPermission = plan.parent_plan
     ? featurePermissions.planBranch.canCreateRequest(
@@ -95,7 +102,13 @@
   <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
     <div class="plan-title">
       {#if plan.is_read_only}
-        <PlanName name={plan.name} isReadOnly={plan.is_read_only} size={18} /><ChevronDown size={16} />
+        <PlanName
+          name={plan.name}
+          isReadOnly={plan.is_read_only}
+          importStatus={planImportRequestStatus}
+          importError={planImportRequestError?.message ?? null}
+          size={18}
+        /><ChevronDown size={16} />
       {:else}
         {plan.name}<ChevronDown size={16} />
       {/if}

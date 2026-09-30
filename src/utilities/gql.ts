@@ -2772,6 +2772,28 @@ const gql = {
     }
   `,
 
+  SUB_PLAN_IMPORT_REQUEST: `#graphql
+    subscription SubPlanImportRequest($planId: Int!) {
+      importRequest: ${Queries.PLAN_IMPORT_REQUEST}(where: {plan_id: {_eq: $planId}}, order_by: {id: desc}, limit: 1) {
+        id
+        plan_id
+        reason
+        status
+      }
+    }
+  `,
+
+  SUB_PLAN_IMPORT_REQUESTS: `#graphql
+    subscription SubPlanImportRequests {
+      importRequests: ${Queries.PLAN_IMPORT_REQUEST} {
+        id
+        plan_id
+        reason
+        status
+      }
+    }
+  `,
+
   SUB_PLAN_LOCKED: `#graphql
     subscription SubPlanLocked($planId: Int!) {
       planLocked: ${Queries.PLAN}(id: $planId) {

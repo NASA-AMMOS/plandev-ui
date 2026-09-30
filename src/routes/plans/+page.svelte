@@ -32,7 +32,7 @@
   import { field } from '../../stores/form';
   import { executableModels, models } from '../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
-  import { plans } from '../../stores/plans';
+  import { planImportRequestsMap, plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
@@ -40,7 +40,7 @@
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { FieldStore } from '../../types/form';
   import type { ModelSlim } from '../../types/model';
-  import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
+  import type { DeprecatedPlanTransfer, Plan, PlanImportRequestFailed, PlanSlim, PlanTransfer } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
@@ -83,6 +83,120 @@
       suppressAutoSize: true,
       suppressSizeToFit: true,
       width: 75,
+    },
+    {
+      cellRenderer: (params: ICellRendererParams<Plan>) => {
+        const div = document.createElement('div');
+        let isExecutable = false;
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            isExecutable = associatedModel.is_executable;
+          }
+        }
+        new PlanName({
+          props: {
+            name: params.data?.name || '',
+            isReadOnly: !isExecutable,
+            importStatus: $planImportRequestsMap[params.data?.id ?? -1]?.status ?? null,
+            importError:
+              ($planImportRequestsMap[params.data?.id ?? -1] as PlanImportRequestFailed)?.reason?.message ?? null,
+          },
+          target: div,
+        });
+        return div;
+      },
+      field: 'name',
+      filter: 'text',
+      headerName: 'Name',
+      resizable: true,
+      sortable: true,
+      width: 150,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
+      },
+      field: 'model_id',
+      filter: 'number',
+      headerName: 'Model ID',
+      resizable: true,
+      sortable: true,
+      suppressAutoSize: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        let value: string | number = '';
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            value = associatedModel.is_executable ? associatedModel.id : '-';
+          }
+        }
+
+        return value;
+      },
+      width: 130,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
+      },
+      field: 'model_name',
+      filter: 'text',
+      headerName: 'Model Name',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            return associatedModel.is_executable ? associatedModel.name : '-';
+          }
+        }
+        return '';
+      },
+      width: 150,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
+      },
+      field: 'model_version',
+      filter: 'text',
+      headerName: 'Model Version',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            if (associatedModel.is_executable) {
+              return associatedModel.version;
+            } else {
+              return '-';
+            }
+          }
+        }
+        return '';
+      },
+      width: 150,
     },
     {
       field: 'start_time',
@@ -176,6 +290,51 @@
       sortable: false,
       width: 220,
     },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: PlanCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deletePlan,
+            deleteTooltip: {
+              content: 'Delete Plan',
+              placement: 'bottom',
+            },
+            downloadCallback: params.exportPlan,
+            downloadTooltip: {
+              content: 'Export Plan',
+              placement: 'bottom',
+            },
+            isDownloadCancellable: true,
+            useExportIcon: true,
+            hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
+            rowData: params.data,
+            viewCallback: data => $user && params.viewPlan(data),
+            viewTooltip: {
+              content: 'Open Plan',
+              placement: 'bottom',
+            },
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deletePlan,
+        exportPlan: onExportPlan,
+        viewPlan,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
+    },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
   const user = getUserStore();
@@ -190,9 +349,11 @@
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
+  let isLoadingPlanFile: boolean = false;
   let orderedModels: ModelSlim[] = [];
   let nameInputField: InputStellar;
   let planExporting: boolean = false;
+  let plansTable: SingleActionDataGrid<PlanSlim>;
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
   let selectedPlan: PlanSlim | undefined;
@@ -248,167 +409,23 @@
     return 0;
   });
 
+  $: canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
+
   $: {
-    canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
-    columnDefs = [
-      ...baseColumnDefs.slice(0, 1),
-      {
-        cellRenderer: (params: ICellRendererParams<Plan>) => {
-          const div = document.createElement('div');
-          let isExecutable = false;
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              isExecutable = associatedModel.is_executable;
-            }
-          }
-          new PlanName({
-            props: { name: params.data?.name || '', isReadOnly: !isExecutable },
-            target: div,
-          });
-          return div;
-        },
-        field: 'name',
-        filter: 'text',
-        headerName: 'Name',
-        resizable: true,
-        sortable: true,
-        width: 150,
-      },
-      ...baseColumnDefs.slice(1, 2),
-      {
-        comparator: (
-          valueA: number | string | null | undefined,
-          valueB: number | string | null | undefined,
-          _nodeA,
-          _nodeB,
-          isDescending: boolean,
-        ) => {
-          return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
-        },
-        field: 'model_id',
-        filter: 'number',
-        headerName: 'Model ID',
-        resizable: true,
-        sortable: true,
-        suppressAutoSize: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          let value: string | number = '';
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              value = associatedModel.is_executable ? associatedModel.id : '-';
-            }
-          }
-
-          return value;
-        },
-        width: 130,
-      },
-      {
-        comparator: (
-          valueA: number | string | null | undefined,
-          valueB: number | string | null | undefined,
-          _nodeA,
-          _nodeB,
-          isDescending: boolean,
-        ) => {
-          return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
-        },
-        field: 'model_name',
-        filter: 'text',
-        headerName: 'Model Name',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              return associatedModel.is_executable ? associatedModel.name : '-';
-            }
-          }
-          return '';
-        },
-        width: 150,
-      },
-      {
-        comparator: (
-          valueA: number | string | null | undefined,
-          valueB: number | string | null | undefined,
-          _nodeA,
-          _nodeB,
-          isDescending: boolean,
-        ) => {
-          return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
-        },
-        field: 'model_version',
-        filter: 'text',
-        headerName: 'Model Version',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            const associatedModel = $models.find(model => model.id === params.data?.model_id);
-            if (associatedModel) {
-              if (associatedModel.is_executable) {
-                return associatedModel.version;
-              } else {
-                return '-';
-              }
-            }
-          }
-          return '';
-        },
-        width: 150,
-      },
-      ...baseColumnDefs.slice(2),
-      {
-        cellClass: 'action-cell-container',
-        cellRenderer: (params: PlanCellRendererParams) => {
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'actions-cell';
-          new DataGridActions({
-            props: {
-              deleteCallback: params.deletePlan,
-              deleteTooltip: {
-                content: 'Delete Plan',
-                placement: 'bottom',
-              },
-              downloadCallback: params.exportPlan,
-              downloadTooltip: {
-                content: 'Export Plan',
-                placement: 'bottom',
-              },
-              isDownloadCancellable: true,
-              useExportIcon: true,
-              hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
-              rowData: params.data,
-              viewCallback: data => $user && params.viewPlan(data),
-              viewTooltip: {
-                content: 'Open Plan',
-                placement: 'bottom',
-              },
-            },
-            target: actionsDiv,
-          });
-
-          return actionsDiv;
-        },
-        cellRendererParams: {
-          deletePlan,
-          exportPlan: onExportPlan,
-          viewPlan,
-        } as CellRendererParams,
-        field: 'actions',
-        headerName: '',
-        resizable: false,
-        sortable: false,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 80,
-      },
-    ];
+    void $planImportRequestsMap;
+    plansTable?.dataGrid?.refreshCells({ columns: ['name'], force: true });
   }
+  $: {
+    void $models;
+    plansTable?.dataGrid?.refreshCells({ columns: ['model_id', 'model_name', 'model_version'], force: true });
+  }
+
+  $: {
+    void $user;
+    void featurePermissions;
+    plansTable?.dataGrid?.refreshCells({ columns: ['actions'], force: true });
+  }
+
   $: createButtonEnabled =
     !$plansLoading &&
     $endTimeField.dirtyAndValid &&
@@ -416,7 +433,8 @@
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid &&
     !planUploadFilesError &&
-    !$creatingPlan;
+    !$creatingPlan &&
+    !isLoadingPlanFile;
   $: if ($creatingPlan) {
     createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
   } else {
@@ -695,12 +713,14 @@
     }
   }
 
-  function onPlanFileChange(event: Event) {
+  async function onPlanFileChange(event: Event) {
     const files = (event.target as HTMLInputElement).files;
     if (files !== null && files.length) {
       const file = files[0];
       if (/\.json$/.test(file.name)) {
-        parsePlanFileStream(file.stream());
+        isLoadingPlanFile = true;
+        await parsePlanFileStream(file.stream());
+        isLoadingPlanFile = false;
       } else {
         planUploadFilesError = 'Plan file is not a .json file';
       }
@@ -879,6 +899,9 @@
                 }}
                 on:change={onPlanFileChange}
               />
+              {#if isLoadingPlanFile}
+                <div class="pt-1 text-xs">Loading plan file...</div>
+              {/if}
               {#if planUploadFilesError}
                 <Collapse
                   ariaTitle="Plan import error"
@@ -1120,6 +1143,7 @@
 
       <svelte:fragment slot="body">
         <SingleActionDataGrid
+          bind:this={plansTable}
           showLoadingSkeleton
           loading={$plansLoading}
           {columnDefs}

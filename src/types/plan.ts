@@ -1,5 +1,7 @@
+import type { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirective, ActivityDirectiveDB } from './activity';
 import type { UserId } from './app';
+import type { ConsoleEntry } from './console';
 import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
 import type { ArgumentsMap, ParametersMap } from './parameter';
@@ -210,3 +212,19 @@ export type ModelCompatabilityForPlanSchemaDiff = {
 };
 
 export type ModelCompatabilityForPlanIssue = 'altered' | 'removed';
+
+type BasePlanImportRequest = {
+  id: number;
+  plan_id: number;
+  // model_id: number;
+  // requested_at: string;
+  // requester: UserId;
+};
+export type PlanImportRequest = PlanImportRequestSuccess | PlanImportRequestFailed;
+export type PlanImportRequestSuccess = BasePlanImportRequest & {
+  status: Exclude<PlanImportStatus, PlanImportStatus.FAILED>;
+};
+export type PlanImportRequestFailed = BasePlanImportRequest & {
+  reason: ConsoleEntry;
+  status: PlanImportStatus.FAILED;
+};

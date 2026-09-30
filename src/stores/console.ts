@@ -1,5 +1,6 @@
 import { capitalize, keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirectiveId } from '../types/activity';
 import type {
   ActivityDirectiveValidationFailureStatus,
@@ -21,7 +22,7 @@ import { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
 import { activityDirectivesMap, activityDirectiveValidationStatuses, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
-import { plan } from './plan';
+import { plan, planImportRequest } from './plan';
 import { simulationDataset } from './simulation';
 
 export function parseErrorReason(error: string) {
@@ -190,6 +191,25 @@ export const simulationErrors: Readable<LogMessage[]> = derived(
   [],
 );
 
+export const planImportErrors: Readable<LogMessage[]> = derived(
+  [planImportRequest],
+  ([$planImportRequest]) => {
+    if ($planImportRequest && $planImportRequest.status === PlanImportStatus.FAILED) {
+      return [
+        {
+          ...$planImportRequest.reason,
+          category: 'log',
+          level: 'error',
+          message: parseErrorReason($planImportRequest.reason.message),
+          type: ErrorTypes.PLAN_IMPORT_ERROR,
+        },
+      ] as LogMessage[];
+    }
+    return [];
+  },
+  [],
+);
+
 export const allLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe => $pe.filter(e => e.category === 'log'));
 
 export const errorLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
@@ -205,6 +225,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     modelErrors,
     activityValidationErrors,
     activityStatusRollupsMap,
+    planImportErrors,
   ],
   ([
     $simulationErrors,
@@ -214,6 +235,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     $modelErrors,
     $activityValidationErrors,
     $activityErrorRollupsMap,
+    $planImportErrors,
   ]) =>
     [
       ...($simulationErrors ?? []),
@@ -221,6 +243,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
       ...($anchorValidationErrors ?? []),
       ...($constraintErrors ?? []),
       ...($modelErrors ?? []),
+      ...($planImportErrors ?? []),
       ...($activityValidationErrors
         ? $activityValidationErrors
             .filter(error => error.status === 'complete')
