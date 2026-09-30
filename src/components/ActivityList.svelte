@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button } from '@nasa-jpl/stellar-svelte';
   import CloseIcon from '@nasa-jpl/stellar/icons/close.svg?component';
   import UploadIcon from '@nasa-jpl/stellar/icons/upload.svg?component';
   import { CirclePlus } from 'lucide-svelte';
@@ -112,21 +111,17 @@
     >
       <UploadIcon />
     </button>
-    <div
+    <button
+      class="st-button secondary"
+      on:click={() => ($directiveBuilderIsVisible = true)}
       use:permissionHandler={{
         hasPermission: hasCreatePermission && !$planReadOnly,
         permissionError: $planReadOnly ? PlanStatusMessages.READ_ONLY : createPermissionError,
       }}
+      use:tooltip={{ content: 'Add Activity', disabled: !hasCreatePermission || $planReadOnly }}
     >
-      <Button
-        variant="outline"
-        aria-label="Add Activity"
-        disabled={!hasCreatePermission}
-        on:click={() => ($directiveBuilderIsVisible = true)}
-      >
-        <CirclePlus size={16} />
-      </Button>
-    </div>
+      <CirclePlus size={16} />
+    </button>
   </svelte:fragment>
 </TimelineItemList>
 

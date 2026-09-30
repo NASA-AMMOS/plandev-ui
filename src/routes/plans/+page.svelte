@@ -784,7 +784,7 @@
                 <Input layout="inline">
                   <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
                   {#if selectedPlan.is_read_only}
-                    <span>Model provided by plan</span>
+                    <span class="text-muted-foreground">Model free plan</span>
                   {:else}
                     <div class="flex gap-1">
                       <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>

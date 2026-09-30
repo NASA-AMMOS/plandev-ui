@@ -49,7 +49,7 @@
       use:tooltip={{ content: changeButtonTooltip, placement: 'top' }}
     >
       <Button
-        aria-label={changeButtonTooltip}
+        aria-label="Change plan time range"
         class="shrink-0"
         on:click={openChangePlanBoundsModal}
         size="icon"

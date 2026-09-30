@@ -191,7 +191,7 @@
         "segments": [
           { "duration": 3600000000, "dynamics": { "initial": 0.92, "rate": 0.0 } },
           { "duration": 600000000, "dynamics": { "initial": 0.92, "rate": -0.00002 } },
-          { "duration": 1800000000 },
+          { "duration": 1800000000, "dynamics": { "initial": 0.88, "rate": 0.0 } },
           { "duration": 80400000000, "dynamics": { "initial": 0.88, "rate": 0.000001 } }
         ]
       },
@@ -207,7 +207,7 @@
         "segments": [
           { "duration": 7200000000, "dynamics": "IDLE" },
           { "duration": 120000000, "dynamics": "IMAGING" },
-          { "duration": 1800000000 },
+          { "duration": 1800000000, "dynamics": "IDLE" },
           { "duration": 77280000000, "dynamics": "IDLE" }
         ]
       }

@@ -18,7 +18,7 @@ import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
 import { ConstraintDefinitionInsertInput } from '../../src/types/constraint.js';
 import { ModelInsertInput } from '../../src/types/model.js';
-import { PlanInsertInput } from '../../src/types/plan.js';
+import { PlanInsertInput, PlanSlim, PlanTransfer } from '../../src/types/plan.js';
 import { SchedulingGoalDefinitionInsertInput, SchedulingGoalInsertInput } from '../../src/types/scheduling.js';
 import { convertToQuery } from '../../src/utilities/generic.js';
 import gql from '../../src/utilities/gql.js';
@@ -327,6 +327,32 @@ export class AerieApi {
     }
 
     return json.data;
+  }
+
+  /**
+   * Import plan from JSON file
+   */
+  async importPlan(planJsonFilePath: string, planName: string): Promise<number> {
+    const planJsonFile = fs.readFileSync(planJsonFilePath);
+
+    const planJson = JSON.parse(planJsonFile.toString()) as PlanTransfer;
+    const startTime = planJson.start_time;
+    const duration = planJson.duration;
+    const formData = new FormData();
+    formData.append('name', `${planName}`);
+    formData.append('model_id', '-1');
+    formData.append('start_time', startTime);
+    formData.append('duration', duration);
+    formData.append('tags', JSON.stringify([]));
+    formData.append('plan_file', new Blob([JSON.stringify(planJson)]), planName);
+
+    const response = await this.gatewayRequest('/importPlan', 'POST', formData);
+
+    if (!response.ok) {
+      throw new Error(`Import plan failed: ${response.statusText}`);
+    }
+    const data = (await response.json()) as PlanSlim;
+    return data.id;
   }
 
   /**

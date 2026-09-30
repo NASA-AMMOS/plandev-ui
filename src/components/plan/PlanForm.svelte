@@ -218,7 +218,7 @@
         {#if $planReadOnly}
           <Input layout="inline">
             <span>Model</span>
-            <span class="text-muted-foreground">Model provided by read-only plan</span>
+            <span class="text-muted-foreground">Model free plan</span>
           </Input>
         {:else}
           <Input layout="inline">
