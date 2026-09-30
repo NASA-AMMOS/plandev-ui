@@ -42,8 +42,8 @@
       <div class="flex items-center gap-2.5 font-medium text-[var(--st-gray-100,#1b1d1e)]">
         <span
           class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
-          >Plan import in progress
-        </span>{statusMessage}
+          >This plan is still importing and is not ready to use - data may change.
+        </span>Status: {statusMessage}
       </div>
     </div>
   {/if}
