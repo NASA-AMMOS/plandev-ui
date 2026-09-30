@@ -28,6 +28,7 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
+  import { PlanImportStatus } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { executableModels, models } from '../../stores/model';
@@ -350,6 +351,7 @@
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
   let isLoadingPlanFile: boolean = false;
+  let isSelectedPlanReadOnly: boolean = false;
   let orderedModels: ModelSlim[] = [];
   let nameInputField: InputStellar;
   let planExporting: boolean = false;
@@ -397,6 +399,13 @@
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
   $: executableModels.updateValue(() => data.models.filter(model => model.is_executable));
+
+  $: isSelectedPlanReadOnly =
+    selectedPlan !== undefined &&
+    (selectedPlan.is_read_only ||
+      ($planImportRequestsMap[selectedPlan.id]
+        ? $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
+        : false));
 
   // sort in descending ID order
   $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
@@ -804,7 +813,7 @@
               <div>
                 <Input layout="inline">
                   <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
-                  {#if selectedPlan.is_read_only}
+                  {#if isSelectedPlanReadOnly}
                     <span class="text-muted-foreground">Model free plan</span>
                   {:else}
                     <div class="flex gap-1">
@@ -847,7 +856,7 @@
                 user={$user}
                 hasUpdatePermission={canUpdatePlan}
                 permissionError="You do not have permission to edit this plan."
-                isReadOnly={selectedPlan.is_read_only}
+                isReadOnly={isSelectedPlanReadOnly}
               />
               <Input layout="inline">
                 <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
