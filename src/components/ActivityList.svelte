@@ -101,6 +101,7 @@
   </div>
   <svelte:fragment slot="button">
     <button
+      aria-label="Upload Activities"
       class="st-button secondary"
       on:click={onShowUpload}
       use:permissionHandler={{
@@ -112,6 +113,7 @@
       <UploadIcon />
     </button>
     <button
+      aria-label="Add Activity"
       class="st-button secondary"
       on:click={() => ($directiveBuilderIsVisible = true)}
       use:permissionHandler={{
