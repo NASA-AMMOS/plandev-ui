@@ -10,7 +10,7 @@
   export let importStatus: PlanImportStatus | null = null;
   export let importError: string | null = null;
   export let name: string;
-  export let size: number = 18;
+  export let size: number = 16;
 
   let importStatusMessage: string | null = null;
 

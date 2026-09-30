@@ -264,7 +264,7 @@
         ...generateTooltip(mode, errorCounts.unavailable, 'unavailable', ''),
       }}
     >
-      <CircleDashed />{generateCountText(mode, errorCounts.unavailable, 'unavailable')}
+      <CircleDashed size={16} />{generateCountText(mode, errorCounts.unavailable, 'unavailable')}
     </button>
   {/if}
 </div>
