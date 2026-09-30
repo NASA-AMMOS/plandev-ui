@@ -451,6 +451,7 @@
               selectedSimulationTemplate={$simulation?.template}
               plan={$plan}
               {user}
+              disabled={$planReadOnly}
               on:applyTemplate={onApplySimulationTemplate}
               on:deleteTemplate={onDeleteSimulationTemplate}
               on:saveNewTemplate={onSaveNewSimulationTemplate}
