@@ -583,7 +583,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    if (isSaveEvent(event)) {
+    if (isSaveEvent(event) && !$planReadOnly) {
       event.preventDefault();
       effects.simulate($plan, false, $user);
     }
@@ -847,7 +847,7 @@
                 : ''}
               hasPermission={hasSimulatePermission}
               indeterminate={$simulationProgress === 0}
-              permissionError={$planIsLocked
+              permissionError={$planReadOnly
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a simulation'}
               status={$simulationStatus}
