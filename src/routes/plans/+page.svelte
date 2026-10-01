@@ -109,10 +109,11 @@
       },
       field: 'name',
       filter: 'text',
+      flex: 2,
       headerName: 'Name',
       resizable: true,
       sortable: true,
-      width: 150,
+      minWidth: 150,
     },
     {
       comparator: (
@@ -141,7 +142,8 @@
 
         return value;
       },
-      width: 130,
+      flex: 1,
+      minWidth: 50,
     },
     {
       comparator: (
@@ -155,6 +157,7 @@
       },
       field: 'model_name',
       filter: 'text',
+      flex: 2,
       headerName: 'Model Name',
       resizable: true,
       sortable: true,
@@ -167,7 +170,7 @@
         }
         return '';
       },
-      width: 150,
+      minWidth: 100,
     },
     {
       comparator: (
@@ -181,6 +184,7 @@
       },
       field: 'model_version',
       filter: 'text',
+      flex: 1,
       headerName: 'Model Version',
       resizable: true,
       sortable: true,
@@ -197,11 +201,12 @@
         }
         return '';
       },
-      width: 150,
+      minWidth: 100,
     },
     {
       field: 'start_time',
       filter: 'text',
+      flex: 2,
       headerName: 'Start Time',
       resizable: true,
       sortable: true,
@@ -223,11 +228,12 @@
 
         return div;
       },
-      width: 150,
+      minWidth: 100,
     },
     {
       field: 'end_time',
       filter: 'text',
+      flex: 2,
       headerName: 'End Time',
       resizable: true,
       sortable: true,
@@ -252,11 +258,12 @@
 
         return div;
       },
-      width: 140,
+      minWidth: 100,
     },
     {
       field: 'created_at',
       filter: 'text',
+      flex: 2,
       headerName: 'Date Created',
       resizable: true,
       sortable: true,
@@ -265,11 +272,12 @@
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
-      width: 200,
+      minWidth: 100,
     },
     {
       field: 'updated_at',
       filter: 'text',
+      flex: 2,
       headerName: 'Updated At',
       resizable: true,
       sortable: true,
@@ -278,18 +286,27 @@
           return getShortISOForDate(new Date(params.data?.updated_at));
         }
       },
+      minWidth: 100,
     },
-    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true, width: 150 },
+    {
+      field: 'updated_by',
+      filter: 'text',
+      flex: 2,
+      headerName: 'Updated By',
+      resizable: true,
+      sortable: true,
+      minWidth: 100,
+    },
     {
       autoHeight: true,
       cellRenderer: tagsCellRenderer,
       field: 'tags',
       filter: 'text',
       filterValueGetter: tagsFilterValueGetter,
+      flex: 1,
       headerName: 'Tags',
       resizable: true,
       sortable: false,
-      width: 220,
     },
     {
       cellClass: 'action-cell-container',
@@ -762,7 +779,7 @@
     <span slot="title">Plans</span>
   </Nav>
 
-  <CssGrid columns="20% auto">
+  <CssGrid columns="15% auto">
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
         {#if selectedPlan}
