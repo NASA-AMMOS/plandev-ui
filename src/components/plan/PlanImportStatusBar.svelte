@@ -14,7 +14,7 @@
       statusMessage = 'Plan import failed';
       break;
     case PlanImportStatus.IMPORTING_PLAN:
-      statusMessage = 'Plan import in progress';
+      statusMessage = 'Importing activities';
       break;
     case PlanImportStatus.EXTRACTING_MODEL:
       statusMessage = 'Extracting model from plan';
@@ -42,8 +42,13 @@
       <div class="flex items-center gap-2.5 font-medium text-[var(--st-gray-100,#1b1d1e)]">
         <span
           class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
-          >This plan is still importing and is not ready to use - data may change.
-        </span>Status: {statusMessage}
+          >Import in progress
+        </span>
+        This plan is read-only and data may continue to change until the import completes.
+        <span
+          class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
+          >Current step: {statusMessage}
+        </span>
       </div>
     </div>
   {/if}
