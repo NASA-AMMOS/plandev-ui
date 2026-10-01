@@ -291,7 +291,6 @@
     $simulationDatasetId = -1;
 
     $planReadOnlyMergeRequest = data.initialPlan.is_locked;
-    $planIsNonExecutable = data.initialPlan.is_read_only;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
