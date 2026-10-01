@@ -136,7 +136,6 @@
     pending: 0,
     wrongType: 0,
   };
-  $: console.log('isStatusUnavailable :>> ', isStatusUnavailable);
   $: selectedCategory = selectable ? 'all' : null;
 </script>
 
