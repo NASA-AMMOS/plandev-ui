@@ -1,11 +1,8 @@
 import { capitalize, keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirectiveId } from '../types/activity';
 import type {
   ActivityDirectiveValidationFailureStatus,
-  ActivityDirectiveValidationStatus,
-  ActivityDirectiveValidationUnavailableStatus,
   ActivityStatusRollup,
   ActivityValidationStatuses,
   AnchorValidationError,
@@ -16,37 +13,27 @@ import type {
 } from '../types/console';
 import type { ModelLog, ModelStatus } from '../types/model';
 import { ErrorTypes, generateActivityValidationStatusRollups } from '../utilities/errors';
-import { compare, filterEmpty } from '../utilities/generic';
+import { compare } from '../utilities/generic';
 import { getModelStatusRollup } from '../utilities/model';
 import { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
-import { activityDirectivesMap, activityDirectiveValidationStatuses, anchorValidationStatuses } from './activities';
+import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
-import { plan, planImportRequest } from './plan';
+import { plan } from './plan';
 import { simulationDataset } from './simulation';
 
 export function parseErrorReason(error: string) {
   return error.replace(/\s*at\s(gov|com)/, ' : ').replace(/gov\S*:\s*(?<reason>[^:]+)\s*:(.|\s|\n|\t|\r)*/, '$1');
 }
 
-function isActivityDirectiveValidationFailureOrUnavailable(
-  status: ActivityDirectiveValidationStatus,
-): status is ActivityDirectiveValidationFailureStatus | ActivityDirectiveValidationUnavailableStatus {
-  const { validations } = status;
-  if (!validations.success) {
-    return true;
-  }
-  return 'type' in validations && validations.type === 'UNAVAILABLE';
-}
-
 /* Derived. */
 
-export const activityDirectiveValidationFailures: Readable<
-  (ActivityDirectiveValidationFailureStatus | ActivityDirectiveValidationUnavailableStatus)[]
-> = derived(
+export const activityDirectiveValidationFailures: Readable<ActivityDirectiveValidationFailureStatus[]> = derived(
   [activityDirectiveValidationStatuses],
   ([$activityDirectiveValidationStatuses]) => {
-    return $activityDirectiveValidationStatuses.filter(isActivityDirectiveValidationFailureOrUnavailable);
+    return $activityDirectiveValidationStatuses.filter(
+      ({ validations }) => !validations.success,
+    ) as ActivityDirectiveValidationFailureStatus[];
   },
   [],
 );
@@ -113,7 +100,7 @@ export const activityStatusRollups: Readable<ActivityStatusRollup[]> = derived(
 
 export const activityStatusRollupsMap: Readable<Record<ActivityDirectiveId, ActivityStatusRollup>> = derived(
   [activityStatusRollups],
-  ([$activityErrorRollups]) => keyBy($activityErrorRollups, 'id'),
+  ([$activityStatusRollups]) => keyBy($activityStatusRollups, 'id'),
 );
 
 export const consoleEntries: Writable<LogMessage[]> = writable([]);
@@ -191,25 +178,6 @@ export const simulationErrors: Readable<LogMessage[]> = derived(
   [],
 );
 
-export const planImportErrors: Readable<LogMessage[]> = derived(
-  [planImportRequest],
-  ([$planImportRequest]) => {
-    if ($planImportRequest && $planImportRequest.status === PlanImportStatus.FAILED) {
-      return [
-        {
-          ...$planImportRequest.reason,
-          category: 'log',
-          level: 'error',
-          message: parseErrorReason($planImportRequest.reason.message),
-          type: ErrorTypes.PLAN_IMPORT_ERROR,
-        },
-      ] as LogMessage[];
-    }
-    return [];
-  },
-  [],
-);
-
 export const allLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe => $pe.filter(e => e.category === 'log'));
 
 export const errorLogs: Readable<LogMessage[]> = derived(consoleEntries, $pe =>
@@ -225,7 +193,6 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     modelErrors,
     activityValidationErrors,
     activityStatusRollupsMap,
-    planImportErrors,
   ],
   ([
     $simulationErrors,
@@ -235,7 +202,6 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     $modelErrors,
     $activityValidationErrors,
     $activityErrorRollupsMap,
-    $planImportErrors,
   ]) =>
     [
       ...($simulationErrors ?? []),
@@ -243,24 +209,19 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
       ...($anchorValidationErrors ?? []),
       ...($constraintErrors ?? []),
       ...($modelErrors ?? []),
-      ...($planImportErrors ?? []),
       ...($activityValidationErrors
         ? $activityValidationErrors
             .filter(error => error.status === 'complete')
             .map(error => {
               const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.statusCounts || {}).reduce(
                 (count, [key, value]) => {
-                  // Only count errors that are not pending or unavailable
-                  if (key !== 'pending' && key !== 'unavailable') {
+                  if (key !== 'pending') {
                     count += value;
                   }
                   return count;
                 },
                 0,
               );
-              if (errorCount === 0) {
-                return null;
-              }
               const errorMessage: ConsoleEntry = {
                 data: {
                   ...error,
@@ -271,7 +232,6 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
               };
               return errorMessage;
             })
-            .filter(filterEmpty)
         : []),
     ].sort((errorA: ConsoleEntry, errorB: ConsoleEntry) =>
       compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),

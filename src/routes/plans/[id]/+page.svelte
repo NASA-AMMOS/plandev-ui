@@ -230,7 +230,7 @@
       { error: 0, info: 0, warn: 0 },
     );
   }
-  activityStatusRollups;
+
   $: ({ invalidActivityCount, ...activityStatusCounts } = $activityStatusRollups.reduce(
     (prevCounts, activityErrorRollup) => {
       const extra = prevCounts.extra + (activityErrorRollup.statusCounts?.extra || 0);

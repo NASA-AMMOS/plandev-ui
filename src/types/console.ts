@@ -51,14 +51,10 @@ export type ActivityDirectiveValidationSuccess =
   | BaseActivityDirectiveValidationSuccess
   | ActivityDirectiveValidationUnavailable;
 
-export interface ActivityDirectiveValidationUnavailableStatus extends ActivityDirectiveValidationStatus {
-  validations: ActivityDirectiveValidationUnavailable;
-}
-
 export interface ActivityValidationStatuses {
   activityId: number;
   status: ActivityValidationStatus;
-  statuses: (ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError)[];
+  statuses: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
   type: string;
 }
 

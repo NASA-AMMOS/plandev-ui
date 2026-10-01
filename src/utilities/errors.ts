@@ -158,7 +158,6 @@ export function generateActivityValidationStatusRollups(
     let invalidParameterLocations: string[] = [];
     let missingLocations: string[] = [];
     let outOfBoundsLocations: string[] = [];
-    let unavailableLocations: string[] = [];
     let wrongTypeLocations: string[] = [];
 
     if (status === 'complete') {
@@ -183,8 +182,6 @@ export function generateActivityValidationStatusRollups(
               ...([] as string[]).concat(...validation.errors.validationNotices.map(({ subjects }) => subjects)),
             ]),
           ];
-        } else if (isValidationUnavailableStatus(validation)) {
-          unavailableLocations = [...new Set([...unavailableLocations, validation.message])];
         } else {
           const { message } = validation;
           if (/end-time\sanchor/i.test(message)) {
@@ -208,7 +205,6 @@ export function generateActivityValidationStatusRollups(
         missing: missingLocations.length,
         outOfBounds: outOfBoundsLocations.length,
         pending: status === 'pending' ? 1 : 0,
-        unavailable: unavailableLocations.length,
         wrongType: wrongTypeLocations.length,
       },
       type,

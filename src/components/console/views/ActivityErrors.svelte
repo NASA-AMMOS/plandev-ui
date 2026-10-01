@@ -20,24 +20,8 @@
   const consoleContext = getContext<ConsoleContext>(ConsoleContextKey);
   const filterStore = consoleContext?.filter;
 
-  let activityValidationErrorsTotalRollup: ActivityStatusCounts = {
-    extra: 0,
-    invalidAnchor: 0,
-    invalidParameter: 0,
-    missing: 0,
-    outOfBounds: 0,
-    pending: 0,
-    wrongType: 0,
-  };
-  let activityValidationErrorRollups: ActivityStatusRollup[] = [];
-
   $: hasErrors = activityValidationStatusRollups.length > 0;
 
-  // Remove unavailable from total rollup as we don't want to show any unavailable activities in the errors view
-  $: activityValidationErrorsTotalRollup = {
-    ...activityValidationStatusTotalRollup,
-    unavailable: 0,
-  };
   function doesExternalFilterPass({ data }: IRowNode<ActivityStatusRollup>) {
     if (data) {
       switch (selectedCategory) {
@@ -151,7 +135,7 @@
       <div class="grid min-h-0 flex-1 grid-cols-[240px_1fr] overflow-hidden bg-[var(--st-gray-15)]">
         <div class="overflow-y-auto pt-4">
           <ActivityStatusesRollup
-            counts={activityValidationErrorsTotalRollup}
+            counts={activityValidationStatusTotalRollup}
             selectable
             showTotalCount
             on:selectCategory={onSelectCategory}
@@ -162,7 +146,7 @@
             filterExpression={$filterStore}
             bind:this={dataGrid}
             {columnDefs}
-            rowData={activityValidationErrorRollups}
+            rowData={activityValidationStatusRollups}
             rowHeight={34}
             rowSelection="single"
             {doesExternalFilterPass}

@@ -191,18 +191,6 @@ describe('Errors Util', () => {
           statuses: [],
           type: 'banana',
         },
-        {
-          activityId: 3,
-          status: 'complete',
-          statuses: [
-            {
-              message: 'Arguments are not validated for activities on non-executable models.',
-              success: true,
-              type: ErrorTypes.VALIDATION_UNAVAILABLE,
-            },
-          ],
-          type: 'banana',
-        },
       ]),
     ).toEqual([
       {
@@ -215,7 +203,6 @@ describe('Errors Util', () => {
           missing: 1,
           outOfBounds: 2,
           pending: 0,
-          unavailable: 0,
           wrongType: 1,
         },
         type: 'banana',
@@ -230,22 +217,6 @@ describe('Errors Util', () => {
           missing: 0,
           outOfBounds: 0,
           pending: 1,
-          unavailable: 0,
-          wrongType: 0,
-        },
-        type: 'banana',
-      },
-      {
-        id: 3,
-        location: [],
-        statusCounts: {
-          extra: 0,
-          invalidAnchor: 0,
-          invalidParameter: 0,
-          missing: 0,
-          outOfBounds: 0,
-          pending: 0,
-          unavailable: 1,
           wrongType: 0,
         },
         type: 'banana',
