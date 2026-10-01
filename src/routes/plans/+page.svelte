@@ -88,7 +88,7 @@
     {
       cellRenderer: (params: ICellRendererParams<Plan>) => {
         const div = document.createElement('div');
-        let isExecutable = false;
+        let isExecutable = true;
         if (params.data?.model_id !== undefined) {
           const associatedModel = $models.find(model => model.id === params.data?.model_id);
           if (associatedModel) {

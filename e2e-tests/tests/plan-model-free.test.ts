@@ -57,8 +57,8 @@ test.describe.serial('Model free plan creation', () => {
     // Model input should be hidden for read-only plans
     await expect(setup.page.getByText('Model free plan')).toBeVisible();
 
-    // Time range change button should be disabledfor read-only plans
-    await expect(setup.page.getByRole('button', { name: 'Change plan time range' })).not.toBeVisible();
+    // Time range change button should be disabled for read-only plans
+    await expect(setup.page.getByRole('button', { name: 'Change plan time range' })).toBeDisabled();
   });
 });
 
