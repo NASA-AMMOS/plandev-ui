@@ -6,7 +6,7 @@ import type { DefaultEffectiveArguments, DefaultEffectiveArgumentsMap } from '..
 import type { SpanId } from '../types/simulation';
 import { computeActivityDirectivesMap } from '../utilities/activities';
 import gql from '../utilities/gql';
-import { planEndTimeDoy, planId, planStartTimeYmd } from './plan';
+import { plan, planEndTimeDoy, planId, planStartTimeYmd } from './plan';
 import { planSnapshotActivityDirectives, planSnapshotId } from './planSnapshots';
 import { selectedSpanId, spansMap, spanUtilityMaps } from './simulation';
 import { gqlSubscribable } from './subscribable';
@@ -103,6 +103,10 @@ export const selectedActivityDirective = derived(
     return null;
   },
 );
+
+export const isActivityStatusUnavailable = derived([plan], ([$plan]) => {
+  return $plan?.model?.is_executable === false;
+});
 
 /* Helper Functions. */
 

@@ -27,7 +27,6 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
-    unavailable: 0,
     wrongType: 0,
   };
   let activityValidationErrorRollups: ActivityStatusRollup[] = [];
@@ -39,11 +38,6 @@
     ...activityValidationStatusTotalRollup,
     unavailable: 0,
   };
-  // Filter rollups that have unavailable statuses
-  $: activityValidationErrorRollups = activityValidationStatusRollups.filter(
-    rollup => rollup.statusCounts.unavailable === 0,
-  );
-
   function doesExternalFilterPass({ data }: IRowNode<ActivityStatusRollup>) {
     if (data) {
       switch (selectedCategory) {

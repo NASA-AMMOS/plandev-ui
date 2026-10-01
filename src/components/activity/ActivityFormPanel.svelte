@@ -10,6 +10,7 @@
   import {
     activityDirectivesMap,
     activityMetadataDefinitions,
+    isActivityStatusUnavailable,
     selectActivity,
     selectedActivityDirective,
     selectedActivityDirectiveId,
@@ -236,6 +237,7 @@
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$planModelActivityTypes}
+        isActivityStatusUnavailable={$isActivityStatusUnavailable}
         tags={$tags}
         editable={!$activityEditingLocked && !previewRevision}
         modelId={$planModelId}

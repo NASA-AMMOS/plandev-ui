@@ -25,6 +25,7 @@
   type Mode = 'full' | 'compact' | 'minimal' | 'iconsOnly';
 
   export let counts: ActivityStatusCounts | undefined = undefined;
+  export let isStatusUnavailable: boolean = false;
   export let hasPermission: boolean = true;
   export let mode: Mode = 'full';
   export let permissionError: string | undefined = undefined;
@@ -41,6 +42,18 @@
         return `${count} ${category}`;
       case 'minimal':
         return `${count}`;
+      case 'iconsOnly':
+      default:
+        return '';
+    }
+  }
+
+  function generateUnavailableCountText(mode: Mode) {
+    switch (mode) {
+      case 'full':
+      case 'compact':
+        return 'Validation Unavailable';
+      case 'minimal':
       case 'iconsOnly':
       default:
         return '';
@@ -109,7 +122,6 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
-    unavailable: 0,
     wrongType: 0,
   };
   let selectedCategory: ActivityStatusCategories | null = null;
@@ -122,9 +134,9 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
-    unavailable: 0,
     wrongType: 0,
   };
+  $: console.log('isStatusUnavailable :>> ', isStatusUnavailable);
   $: selectedCategory = selectable ? 'all' : null;
 </script>
 
@@ -136,136 +148,146 @@
   class:minimal={mode === 'minimal'}
   class:icons-only={mode === 'iconsOnly'}
 >
-  {#if showTotalCount}
-    <button class="count all" class:selected={selectedCategory === 'all'} value="all" on:click={onSelectCategory}>
-      All ({errorCounts.all})
-    </button>
-  {/if}
-  {#if errorCounts.extra}
+  {#if isStatusUnavailable}
     <button
       class="count"
-      class:selected={selectedCategory === 'extra'}
-      class:resettable={mode === 'minimal'}
-      value="extra"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.extra, 'extraneous', 'parameter', true),
-        disabled: !hasPermission,
-      }}
-      use:permissionHandler={{
-        hasPermission,
-        permissionError,
-      }}
-    >
-      <WarningExtraIcon class="dark-red-icon" />{generateCountText(mode, errorCounts.extra, 'extraneous', 'parameter')}
-    </button>
-  {/if}
-  {#if errorCounts.missing}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'missing'}
-      value="missing"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.missing, 'missing', 'parameter'),
-      }}
-    >
-      <WarningMissingIcon class="dark-red-icon" />{generateCountText(mode, errorCounts.missing, 'missing', 'parameter')}
-    </button>
-  {/if}
-  {#if errorCounts.wrongType}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'wrongType'}
-      value="wrongType"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.wrongType, 'invalid activity type', ''),
-      }}
-    >
-      <WarningUnknownIcon class="dark-red-icon" />
-      {generateCountText(mode, errorCounts.wrongType, 'invalid activity type', '')}
-    </button>
-  {/if}
-  {#if errorCounts.invalidParameter}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'invalidParameter'}
-      class:resettable={mode === 'minimal'}
-      value="invalidParameter"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.invalidParameter, 'invalid', 'parameter', true),
-        disabled: !hasPermission,
-      }}
-      use:permissionHandler={{
-        hasPermission,
-        permissionError,
-      }}
-    >
-      <WarningIcon class="red-icon" />
-      {generateCountText(mode, errorCounts.invalidParameter, 'invalid', 'parameter')}
-    </button>
-  {/if}
-  {#if errorCounts.invalidAnchor}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'invalidAnchor'}
-      value="invalidAnchor"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.invalidAnchor, 'invalid', 'anchor'),
-      }}
-    >
-      <WarningIcon class="dark-red-icon" />{generateCountText(mode, errorCounts.invalidAnchor, 'invalid', 'anchor')}
-    </button>
-  {/if}
-  {#if errorCounts.pending}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'pending'}
-      value="pending"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.pending, 'not checked', ''),
-      }}
-    >
-      <IncompleteIcon class="yellow-icon" />{generateCountText(mode, errorCounts.pending, 'not checked')}
-    </button>
-  {/if}
-  {#if errorCounts.outOfBounds}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'outOfBounds'}
-      value="outOfBounds"
-      on:click={onSelectCategory}
-      use:tooltip={{
-        allowHTML: true,
-        ...generateTooltip(mode, errorCounts.outOfBounds, 'outside plan bounds', ''),
-      }}
-    >
-      <OutsideBoundsIcon />{generateCountText(mode, errorCounts.outOfBounds, 'outside plan bounds')}
-    </button>
-  {/if}
-  {#if errorCounts.unavailable}
-    <button
-      class="count"
-      class:selected={selectedCategory === 'unavailable'}
       value="unavailable"
       on:click={onSelectCategory}
       use:tooltip={{
         allowHTML: true,
-        ...generateTooltip(mode, errorCounts.unavailable, 'unavailable', ''),
+        content: 'Validation Unavailable',
       }}
     >
-      <CircleDashed size={16} />{generateCountText(mode, errorCounts.unavailable, 'unavailable')}
+      <CircleDashed size={16} />{generateUnavailableCountText(mode)}
     </button>
+  {:else}
+    {#if showTotalCount}
+      <button class="count all" class:selected={selectedCategory === 'all'} value="all" on:click={onSelectCategory}>
+        All ({errorCounts.all})
+      </button>
+    {/if}
+    {#if errorCounts.extra}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'extra'}
+        class:resettable={mode === 'minimal'}
+        value="extra"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.extra, 'extraneous', 'parameter', true),
+          disabled: !hasPermission,
+        }}
+        use:permissionHandler={{
+          hasPermission,
+          permissionError,
+        }}
+      >
+        <WarningExtraIcon class="dark-red-icon" />{generateCountText(
+          mode,
+          errorCounts.extra,
+          'extraneous',
+          'parameter',
+        )}
+      </button>
+    {/if}
+    {#if errorCounts.missing}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'missing'}
+        value="missing"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.missing, 'missing', 'parameter'),
+        }}
+      >
+        <WarningMissingIcon class="dark-red-icon" />{generateCountText(
+          mode,
+          errorCounts.missing,
+          'missing',
+          'parameter',
+        )}
+      </button>
+    {/if}
+    {#if errorCounts.wrongType}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'wrongType'}
+        value="wrongType"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.wrongType, 'invalid activity type', ''),
+        }}
+      >
+        <WarningUnknownIcon class="dark-red-icon" />
+        {generateCountText(mode, errorCounts.wrongType, 'invalid activity type', '')}
+      </button>
+    {/if}
+    {#if errorCounts.invalidParameter}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'invalidParameter'}
+        class:resettable={mode === 'minimal'}
+        value="invalidParameter"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.invalidParameter, 'invalid', 'parameter', true),
+          disabled: !hasPermission,
+        }}
+        use:permissionHandler={{
+          hasPermission,
+          permissionError,
+        }}
+      >
+        <WarningIcon class="red-icon" />
+        {generateCountText(mode, errorCounts.invalidParameter, 'invalid', 'parameter')}
+      </button>
+    {/if}
+    {#if errorCounts.invalidAnchor}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'invalidAnchor'}
+        value="invalidAnchor"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.invalidAnchor, 'invalid', 'anchor'),
+        }}
+      >
+        <WarningIcon class="dark-red-icon" />{generateCountText(mode, errorCounts.invalidAnchor, 'invalid', 'anchor')}
+      </button>
+    {/if}
+    {#if errorCounts.pending}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'pending'}
+        value="pending"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.pending, 'not checked', ''),
+        }}
+      >
+        <IncompleteIcon class="yellow-icon" />{generateCountText(mode, errorCounts.pending, 'not checked')}
+      </button>
+    {/if}
+    {#if errorCounts.outOfBounds}
+      <button
+        class="count"
+        class:selected={selectedCategory === 'outOfBounds'}
+        value="outOfBounds"
+        on:click={onSelectCategory}
+        use:tooltip={{
+          allowHTML: true,
+          ...generateTooltip(mode, errorCounts.outOfBounds, 'outside plan bounds', ''),
+        }}
+      >
+        <OutsideBoundsIcon />{generateCountText(mode, errorCounts.outOfBounds, 'outside plan bounds')}
+      </button>
+    {/if}
   {/if}
 </div>
 

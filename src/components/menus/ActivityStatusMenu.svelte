@@ -11,7 +11,7 @@
   export let activityErrorCounts: ActivityStatusCounts;
   export let activityDirectiveValidationStatuses: ActivityDirectiveValidationStatus[] = [];
   export let invalidActivityCount: number = 0;
-  export let isModelExecutable: boolean = true;
+  export let isActivityStatusUnavailable: boolean = false;
   export let compactNavMode: boolean = false;
 
   const dispatch = createEventDispatcher<{
@@ -36,13 +36,13 @@
   title={!compactNavMode ? 'Activities' : ''}
   menuTitle="Activity Status"
   showStatusInMenu={false}
-  statusBadgeText={isModelExecutable ? `${invalidActivityCount}` : ''}
-  status={isModelExecutable ? activityStatus : null}
+  statusBadgeText={isActivityStatusUnavailable ? `${invalidActivityCount}` : ''}
+  status={isActivityStatusUnavailable ? activityStatus : null}
 >
   <ChartGantt size={20} />
   <svelte:fragment slot="metadata">
     <div class="activity-status-nav-container">
-      {#if !isModelExecutable}
+      {#if isActivityStatusUnavailable}
         <div class="total-count">Activity Validation Unavailable</div>
       {:else}
         <div class="total-count">

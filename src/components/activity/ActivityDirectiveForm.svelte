@@ -62,6 +62,7 @@
   export let tags: Tag[] = [];
   export let editable: boolean = true;
   export let highlightKeys: string[] = [];
+  export let isActivityStatusUnavailable: boolean = true;
   export let modelId: number;
   export let planStartTimeYmd: string;
   export let selectedParameterName: string | null = null;
@@ -485,6 +486,7 @@
         <div class="activity-error-rollup">
           <ActivityStatusesRollup
             counts={activityErrorRollup?.statusCounts}
+            isStatusUnavailable={isActivityStatusUnavailable}
             hasPermission={hasUpdatePermission}
             mode="minimal"
             permissionError={updatePermissionError}

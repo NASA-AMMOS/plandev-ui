@@ -13,7 +13,12 @@
   import { debounce } from 'lodash-es';
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
-  import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
+  import {
+    activityDirectivesMap,
+    isActivityStatusUnavailable,
+    selectActivity,
+    selectedActivityDirectiveId,
+  } from '../../stores/activities';
   import { activityStatusRollupsMap } from '../../stores/console';
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
@@ -463,6 +468,7 @@
       activityTypes={$planModelActivityTypes}
       activityDirectiveErrorRollupsMap={$activityStatusRollupsMap}
       {filterExpression}
+      isActivityStatusUnavailable={$isActivityStatusUnavailable}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       plan={$plan}

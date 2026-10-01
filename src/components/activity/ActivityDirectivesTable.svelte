@@ -29,6 +29,7 @@
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
+  export let isActivityStatusUnavailable: boolean = false;
   export let plan: Plan | null;
   export let spansMap: SpansMap | null = null;
   export let spanUtilityMaps: SpanUtilityMaps | null = null;
@@ -133,6 +134,7 @@
         new ActivityStatusesRollup({
           props: {
             counts: params.value,
+            isStatusUnavailable: isActivityStatusUnavailable,
             mode: 'iconsOnly',
             selectable: false,
           },

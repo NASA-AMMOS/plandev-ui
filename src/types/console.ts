@@ -126,7 +126,6 @@ export interface ActivityStatusCounts {
   missing: number;
   outOfBounds: number;
   pending: number;
-  unavailable: number;
   wrongType: number;
 }
 

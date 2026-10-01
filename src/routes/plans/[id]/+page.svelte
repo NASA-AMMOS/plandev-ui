@@ -39,6 +39,7 @@
     activityArgumentDefaults,
     activityArgumentDefaultsModelId,
     activityDirectiveValidationStatuses,
+    isActivityStatusUnavailable,
     resetActivityStores,
     selectActivity,
     selectedActivityDirectiveId,
@@ -180,7 +181,6 @@
     missing: 0,
     outOfBounds: 0,
     pending: 0,
-    unavailable: 0,
     wrongType: 0,
   };
   let compactNavMode = false;
@@ -192,7 +192,6 @@
   let hasSimulatePermission: boolean = false;
   let hasCheckConstraintsPermission: boolean = false;
   let invalidActivityCount: number = 0;
-  let isModelExecutable: boolean = false;
   let modelErrorCount: number = 0;
   let simulationExtent: string | null;
   let selectedSimulationStatus: Status | null;
@@ -240,7 +239,6 @@
       const missing = prevCounts.missing + (activityErrorRollup.statusCounts?.missing || 0);
       const outOfBounds = prevCounts.outOfBounds + (activityErrorRollup.statusCounts?.outOfBounds || 0);
       const pending = prevCounts.pending + (activityErrorRollup.statusCounts?.pending || 0);
-      const unavailable = prevCounts.unavailable + (activityErrorRollup.statusCounts?.unavailable || 0);
       const wrongType = prevCounts.wrongType + (activityErrorRollup.statusCounts?.wrongType || 0);
 
       const all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
@@ -262,7 +260,6 @@
         missing,
         outOfBounds,
         pending,
-        unavailable,
         wrongType,
       };
     },
@@ -275,7 +272,6 @@
       missing: 0,
       outOfBounds: 0,
       pending: 0,
-      unavailable: 0,
       wrongType: 0,
     },
   ));
@@ -493,7 +489,6 @@
   }
 
   $: if ($plan && $plan.model) {
-    isModelExecutable = $plan.model.is_executable;
     const { activityLogStatus, parameterLogStatus, resourceLogStatus } = getModelStatusRollup($plan.model);
     modelErrorCount = 0;
     if (activityLogStatus === 'error') {
@@ -814,7 +809,7 @@
               activityErrorCounts={activityStatusCounts}
               {compactNavMode}
               {invalidActivityCount}
-              {isModelExecutable}
+              isActivityStatusUnavailable={$isActivityStatusUnavailable}
               on:viewActivityValidations={() => {
                 openConsoleTab('activity');
               }}
