@@ -36,8 +36,8 @@
   title={!compactNavMode ? 'Activities' : ''}
   menuTitle="Activity Status"
   showStatusInMenu={false}
-  statusBadgeText={isActivityStatusUnavailable ? `${invalidActivityCount}` : ''}
-  status={isActivityStatusUnavailable ? activityStatus : null}
+  statusBadgeText={!isActivityStatusUnavailable ? `${invalidActivityCount}` : ''}
+  status={!isActivityStatusUnavailable ? activityStatus : null}
 >
   <ChartGantt size={20} />
   <svelte:fragment slot="metadata">
