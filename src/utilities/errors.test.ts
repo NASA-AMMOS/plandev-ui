@@ -4,7 +4,7 @@ import {
   ErrorTypes,
   composeErrorMessage,
   extractBackendMessage,
-  generateActivityValidationErrorRollups,
+  generateActivityValidationStatusRollups,
   getActivityIdsFromError,
   isInstantiationError,
   isNoSuchFileCompoundError,
@@ -113,10 +113,11 @@ describe('Errors Util', () => {
 
   test('generateActivityValidationErrorRollups - Should generate an accurate count of the types of errors per activity', () => {
     expect(
-      generateActivityValidationErrorRollups([
+      generateActivityValidationStatusRollups([
         {
           activityId: 1,
-          errors: [
+          status: 'complete',
+          statuses: [
             {
               errors: {
                 noSuchActivityError: {
@@ -182,19 +183,20 @@ describe('Errors Util', () => {
               type: ErrorTypes.ANCHOR_VALIDATION_ERROR,
             },
           ],
-          status: 'complete',
           type: 'banana',
         },
         {
           activityId: 2,
-          errors: [],
           status: 'pending',
+          statuses: [],
           type: 'banana',
         },
       ]),
     ).toEqual([
       {
-        errorCounts: {
+        id: 1,
+        location: ['foo', 'bar', 'bur', 'baz', 'buzz', 'fuu'],
+        statusCounts: {
           extra: 3,
           invalidAnchor: 1,
           invalidParameter: 4,
@@ -203,12 +205,12 @@ describe('Errors Util', () => {
           pending: 0,
           wrongType: 1,
         },
-        id: 1,
-        location: ['foo', 'bar', 'bur', 'baz', 'buzz', 'fuu'],
         type: 'banana',
       },
       {
-        errorCounts: {
+        id: 2,
+        location: [],
+        statusCounts: {
           extra: 0,
           invalidAnchor: 0,
           invalidParameter: 0,
@@ -217,8 +219,6 @@ describe('Errors Util', () => {
           pending: 1,
           wrongType: 0,
         },
-        id: 2,
-        location: [],
         type: 'banana',
       },
     ]);

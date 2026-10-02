@@ -1,6 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../types/activity';
-import type { Plan, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
+import type { Plan, PlanImportRequest, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
 import type { PlanDataset } from '../types/simulation';
 import type { Tag } from '../types/tags';
 import type { TimeRange } from '../types/timeline';
@@ -11,16 +11,6 @@ import { gqlSubscribable } from './subscribable';
 /* Writeable. */
 
 export const activityEditingLocked: Writable<boolean> = writable(false);
-
-export const planReadOnlySnapshot: Writable<boolean> = writable(false);
-
-// Used to lock the plan if there's an active merge request.
-export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
-
-export const planReadOnly: Readable<boolean> = derived(
-  [planReadOnlySnapshot, planReadOnlyMergeRequest],
-  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
-);
 
 export const createPlanError: Writable<string | null> = writable(null);
 
@@ -39,6 +29,25 @@ export const initialPlan: Writable<Plan | null> = writable(null);
 export const planId: Readable<number> = derived(initialPlan, $plan => ($plan ? $plan.id : -1));
 
 export const planMetadata = gqlSubscribable<PlanMetadata | null>(gql.SUB_PLAN_METADATA, { planId }, null);
+
+/* Plan status */
+
+export const planReadOnlySnapshot: Writable<boolean> = writable(false);
+
+// Used to lock the plan if there's an active merge request.
+export const planReadOnlyMergeRequest: Writable<boolean> = writable(false);
+
+export const planIsLocked: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest]) => $planReadOnlyMergeRequest || $planReadOnlySnapshot,
+);
+
+export const planImportRequest = gqlSubscribable<PlanImportRequest | null>(
+  gql.SUB_PLAN_IMPORT_REQUEST,
+  { planId },
+  null,
+  (importRequests: PlanImportRequest[]): PlanImportRequest | null => importRequests[0] ?? null,
+);
 
 /* Derived. */
 
@@ -66,6 +75,17 @@ export const plan: Readable<Plan | null> = derived(
 
     return newPlan;
   },
+);
+
+// Used to indicate that the plan has a model that is not executable (i.e. it was imported with a defined model present in the JSON file)
+// The plan itself is not considered non-executable necessarily, but it is considered "readonly".
+// This store variable is to help disambiguate between the "readonly" state from a merge request and a plan with a non-executable model.
+export const planIsNonExecutable: Readable<boolean> = derived(plan, $plan => $plan?.is_read_only ?? false);
+
+export const planReadOnly: Readable<boolean> = derived(
+  [planReadOnlySnapshot, planReadOnlyMergeRequest, planIsNonExecutable, planImportRequest],
+  ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planIsNonExecutable, $planImportRequest]) =>
+    $planReadOnlyMergeRequest || $planReadOnlySnapshot || $planIsNonExecutable || $planImportRequest != null,
 );
 
 export const planModelId: Readable<number> = derived(plan, $plan => $plan?.model?.id ?? -1);

@@ -8,14 +8,7 @@
   import { Button, Resizable, Select } from '@nasa-jpl/stellar-svelte';
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { capitalize } from 'lodash-es';
-  import {
-    AlertTriangle,
-    CalendarRange,
-    ChevronsLeftRight,
-    FlipHorizontal2,
-    ListX,
-    PlaySquareIcon,
-  } from 'lucide-svelte';
+  import { AlertTriangle, CalendarRange, ChevronsLeftRight, FlipHorizontal2, ListX, SquarePlay } from 'lucide-svelte';
   import type { PaneAPI } from 'paneforge';
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
@@ -31,6 +24,7 @@
   import ExtensionMenu from '../../../components/menus/ExtensionMenu.svelte';
   import PlanMenu from '../../../components/menus/PlanMenu.svelte';
   import ViewMenu from '../../../components/menus/ViewMenu.svelte';
+  import PlanImportStatusBar from '../../../components/plan/PlanImportStatusBar.svelte';
   import PlanMergeRequestsStatusButton from '../../../components/plan/PlanMergeRequestsStatusButton.svelte';
   import PlanModelErrorBar from '../../../components/plan/PlanModelErrorBar.svelte';
   import PlanNavButton from '../../../components/plan/PlanNavButton.svelte';
@@ -45,12 +39,13 @@
     activityArgumentDefaults,
     activityArgumentDefaultsModelId,
     activityDirectiveValidationStatuses,
+    isActivityStatusUnavailable,
     resetActivityStores,
     selectActivity,
     selectedActivityDirectiveId,
   } from '../../../stores/activities';
   import {
-    activityErrorRollups,
+    activityStatusRollups,
     allLogs,
     allProblems,
     clearLogs,
@@ -72,8 +67,7 @@
     uncheckedConstraintCount,
   } from '../../../stores/constraints';
   import { directiveBuilderIsVisible, resetDirectiveBuilder } from '../../../stores/directiveBuilder';
-  import { resetExpansionStores, expansionSequences } from '../../../stores/expansion';
-  import { sequenceTemplateExpansionStatus, resetSequenceTemplateStores } from '../../../stores/sequence-template';
+  import { expansionSequences, resetExpansionStores } from '../../../stores/expansion';
   import { extensions } from '../../../stores/extensions';
   import { externalEventTypes } from '../../../stores/external-event';
   import { resetExternalSourceStores } from '../../../stores/external-source';
@@ -84,6 +78,9 @@
     planBoundsPreviewOverride,
     planDatasets,
     planId,
+    planImportRequest,
+    planIsLocked,
+    planIsNonExecutable,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
@@ -109,7 +106,11 @@
     schedulingAnalysisStatus,
     schedulingGoalCount,
   } from '../../../stores/scheduling';
-  import { lastTemplatedSimulationDatasetId } from '../../../stores/sequence-template';
+  import {
+    lastTemplatedSimulationDatasetId,
+    resetSequenceTemplateStores,
+    sequenceTemplateExpansionStatus,
+  } from '../../../stores/sequence-template';
   import {
     enableSimulation,
     externalResourceNames,
@@ -136,7 +137,7 @@
     viewUpdateGrid,
   } from '../../../stores/views';
   import type { ActivityDirectiveInsertInput } from '../../../types/activity';
-  import type { ActivityErrorCounts, LogLevel } from '../../../types/console';
+  import type { ActivityStatusCounts, LogLevel } from '../../../types/console';
   import type { Extension } from '../../../types/extension';
   import type { PlanSnapshot } from '../../../types/plan-snapshot';
   import type { View, ViewSaveEvent, ViewToggleEvent } from '../../../types/view';
@@ -172,7 +173,7 @@
 
   const user = getUserStore();
 
-  let activityErrorCounts: ActivityErrorCounts = {
+  let activityStatusCounts: ActivityStatusCounts = {
     all: 0,
     extra: 0,
     invalidAnchor: 0,
@@ -230,28 +231,28 @@
     );
   }
 
-  $: ({ invalidActivityCount, ...activityErrorCounts } = $activityErrorRollups.reduce(
+  $: ({ invalidActivityCount, ...activityStatusCounts } = $activityStatusRollups.reduce(
     (prevCounts, activityErrorRollup) => {
-      const extra = prevCounts.extra + activityErrorRollup.errorCounts.extra;
-      const invalidAnchor = prevCounts.invalidAnchor + activityErrorRollup.errorCounts.invalidAnchor;
-      const invalidParameter = prevCounts.invalidParameter + activityErrorRollup.errorCounts.invalidParameter;
-      const missing = prevCounts.missing + activityErrorRollup.errorCounts.missing;
-      const outOfBounds = prevCounts.outOfBounds + activityErrorRollup.errorCounts.outOfBounds;
-      const pending = prevCounts.pending + activityErrorRollup.errorCounts.pending;
-      const wrongType = prevCounts.wrongType + activityErrorRollup.errorCounts.wrongType;
+      const extra = prevCounts.extra + (activityErrorRollup.statusCounts?.extra || 0);
+      const invalidAnchor = prevCounts.invalidAnchor + (activityErrorRollup.statusCounts?.invalidAnchor || 0);
+      const invalidParameter = prevCounts.invalidParameter + (activityErrorRollup.statusCounts?.invalidParameter || 0);
+      const missing = prevCounts.missing + (activityErrorRollup.statusCounts?.missing || 0);
+      const outOfBounds = prevCounts.outOfBounds + (activityErrorRollup.statusCounts?.outOfBounds || 0);
+      const pending = prevCounts.pending + (activityErrorRollup.statusCounts?.pending || 0);
+      const wrongType = prevCounts.wrongType + (activityErrorRollup.statusCounts?.wrongType || 0);
 
       const all = extra + invalidAnchor + invalidParameter + missing + outOfBounds + wrongType;
       return {
         all,
         extra,
         invalidActivityCount:
-          activityErrorRollup.errorCounts.extra ||
-          activityErrorRollup.errorCounts.invalidAnchor ||
-          activityErrorRollup.errorCounts.invalidParameter ||
-          activityErrorRollup.errorCounts.missing ||
-          activityErrorRollup.errorCounts.outOfBounds ||
-          activityErrorRollup.errorCounts.pending ||
-          activityErrorRollup.errorCounts.wrongType
+          activityErrorRollup.statusCounts?.extra ||
+          activityErrorRollup.statusCounts?.invalidAnchor ||
+          activityErrorRollup.statusCounts?.invalidParameter ||
+          activityErrorRollup.statusCounts?.missing ||
+          activityErrorRollup.statusCounts?.outOfBounds ||
+          activityErrorRollup.statusCounts?.pending ||
+          activityErrorRollup.statusCounts?.wrongType
             ? prevCounts.invalidActivityCount + 1
             : prevCounts.invalidActivityCount,
         invalidAnchor,
@@ -277,9 +278,9 @@
   $: hasCreateViewPermission = featurePermissions.view.canCreate($user);
   $: if ($initialPlan && $initialPlan.model) {
     hasCheckConstraintsPermission =
-      featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.constraintRuns.canCreate($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
     hasExpandPermission =
-      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
+      featurePermissions.sequenceTemplate.canExpand($user, $initialPlan, $initialPlan.model) && !$planIsLocked;
     hasScheduleAnalysisPermission =
       featurePermissions.schedulingGoalsPlanSpec.canAnalyze($user, $initialPlan, $initialPlan.model) && !$planReadOnly;
     hasSimulatePermission =
@@ -288,6 +289,8 @@
   $: if (data.initialPlan) {
     $initialPlan = data.initialPlan;
     $simulationDatasetId = -1;
+
+    $planReadOnlyMergeRequest = data.initialPlan.is_locked;
 
     const querySimulationDatasetId = $page.url.searchParams.get(SearchParameters.SIMULATION_DATASET_ID);
     if (querySimulationDatasetId) {
@@ -576,7 +579,7 @@
   }
 
   function onKeydown(event: KeyboardEvent): void {
-    if (isSaveEvent(event)) {
+    if (isSaveEvent(event) && !$planReadOnly) {
       event.preventDefault();
       effects.simulate($plan, false, $user);
     }
@@ -802,9 +805,10 @@
           <svelte:fragment slot="right">
             <ActivityStatusMenu
               activityDirectiveValidationStatuses={$activityDirectiveValidationStatuses}
-              {activityErrorCounts}
+              activityErrorCounts={activityStatusCounts}
               {compactNavMode}
               {invalidActivityCount}
+              isActivityStatusUnavailable={$isActivityStatusUnavailable}
               on:viewActivityValidations={() => {
                 openConsoleTab('activity');
               }}
@@ -813,7 +817,7 @@
               title={!compactNavMode ? 'Expansion' : ''}
               buttonText="Expand All Sequences"
               hasPermission={hasExpandPermission}
-              permissionError={$planReadOnly
+              permissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to expand sequences'}
               menuTitle="Template Expansion Status"
@@ -834,9 +838,11 @@
               title={!compactNavMode ? 'Simulation' : ''}
               menuTitle="Simulation Status"
               buttonText="Simulate"
-              buttonTooltipContent={$simulationStatus === Status.Complete || $simulationStatus === Status.Failed
-                ? 'Simulation up-to-date'
-                : ''}
+              buttonTooltipContent={$planReadOnly
+                ? PlanStatusMessages.READ_ONLY
+                : $simulationStatus === Status.Complete || $simulationStatus === Status.Failed
+                  ? 'Simulation up-to-date'
+                  : ''}
               hasPermission={hasSimulatePermission}
               indeterminate={$simulationProgress === 0}
               permissionError={$planReadOnly
@@ -844,55 +850,59 @@
                 : 'You do not have permission to run a simulation'}
               status={$simulationStatus}
               progress={$simulationProgress}
-              disabled={!$enableSimulation}
+              disabled={!$enableSimulation || $planReadOnly}
               showStatusInMenu={false}
               on:click={() => effects.simulate($plan, false, $user)}
             >
-              <PlaySquareIcon size={20} />
+              <SquarePlay size={20} />
               <svelte:fragment slot="metadata">
-                <div class="st-typography-body">
-                  <div class="simulation-header">
-                    {#if typeof $simulationDatasetLatest?.id !== 'number'}
-                      <div>Simulation not run</div>
-                    {:else}
-                      {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
-                      {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
-                        <div style="color: var(--st-gray-50)">
-                          {formatSimulationQueuePosition(
-                            getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
-                          )}
-                        </div>
+                {#if $planIsNonExecutable}
+                  <div class="st-typography-body">Simulation is unavailable in a model-free plan</div>
+                {:else}
+                  <div class="st-typography-body">
+                    <div class="simulation-header">
+                      {#if typeof $simulationDatasetLatest?.id !== 'number'}
+                        <div>Simulation not run</div>
                       {:else}
-                        {getSimulationProgress($simulationDatasetLatest).toFixed()}%
-                        {#if simulationExtent && $simulationDatasetLatest}
-                          <div
-                            use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
-                            style={`color: ${
-                              selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
-                            }`}
-                          >
-                            {getSimulationTimestamp($simulationDatasetLatest)}
+                        {getHumanReadableStatus(getSimulationStatus($simulationDatasetLatest))}:
+                        {#if selectedSimulationStatus === Status.Pending && $simulationDatasetLatest}
+                          <div style="color: var(--st-gray-50)">
+                            {formatSimulationQueuePosition(
+                              getSimulationQueuePosition($simulationDatasetLatest, $simulationDatasetsAll),
+                            )}
                           </div>
+                        {:else}
+                          {getSimulationProgress($simulationDatasetLatest).toFixed()}%
+                          {#if simulationExtent && $simulationDatasetLatest}
+                            <div
+                              use:tooltip={{ content: 'Simulation Time', placement: 'top' }}
+                              style={`color: ${
+                                selectedSimulationStatus === Status.Failed ? statusColors.red : 'var(--st-gray-50)'
+                              }`}
+                            >
+                              {getSimulationTimestamp($simulationDatasetLatest)}
+                            </div>
+                          {/if}
                         {/if}
                       {/if}
-                    {/if}
+                    </div>
                   </div>
-                </div>
-                {#if typeof $simulationDatasetLatest?.id === 'number'}
-                  <div style="width: 240px;">
-                    <ProgressLinear
-                      color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
-                      progress={getSimulationProgress($simulationDatasetLatest)}
-                    />
-                  </div>
-                  <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
-                {/if}
-                {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
-                  <button
-                    on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
-                    class="st-button danger"
-                    disabled={$planReadOnly}>Cancel</button
-                  >
+                  {#if typeof $simulationDatasetLatest?.id === 'number'}
+                    <div style="width: 240px;">
+                      <ProgressLinear
+                        color={getSimulationProgressColor($simulationDatasetLatest?.status || null)}
+                        progress={getSimulationProgress($simulationDatasetLatest)}
+                      />
+                    </div>
+                    <div>Simulation Dataset ID: {$simulationDatasetLatest?.id}</div>
+                  {/if}
+                  {#if selectedSimulationStatus === Status.Pending || selectedSimulationStatus === Status.Incomplete}
+                    <button
+                      on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
+                      class="st-button danger"
+                      disabled={$planIsLocked}>Cancel</button
+                    >
+                  {/if}
                 {/if}
               </svelte:fragment>
             </PlanNavButton>
@@ -904,7 +914,7 @@
               disabled={$simulationStatus !== Status.Complete}
               statusBadgeText={constraintsStatusText}
               buttonTooltipContent={$simulationStatus !== Status.Complete ? 'Completed simulation required' : ''}
-              permissionError={$planReadOnly
+              permissionError={$planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run a constraint check'}
               status={$constraintsStatus !== Status.Failed ? $cachedConstraintsStatus : $constraintsStatus}
@@ -985,7 +995,7 @@
                   <button
                     on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $user)}
                     class="st-button cancel-button"
-                    disabled={$planReadOnly}>Cancel</button
+                    disabled={$planIsLocked}>Cancel</button
                   >
                 {/if}
               </svelte:fragment>
@@ -1017,6 +1027,9 @@
             on:close={onCloseSnapshotPreview}
             on:restore={onRestoreSnapshot}
           />
+        {/if}
+        {#if $planImportRequest}
+          <PlanImportStatusBar planImportRequest={$planImportRequest} />
         {/if}
         {#if modelErrorCount && $plan?.model}
           <PlanModelErrorBar
@@ -1110,7 +1123,7 @@
                 <ConsoleTab value="scheduling" numberOfErrors={$schedulingErrors?.length}>Scheduling</ConsoleTab>
                 <ConsoleTab value="simulation" numberOfErrors={$simulationErrors?.length}>Simulation</ConsoleTab>
                 <ConsoleTab value="constraints" numberOfErrors={$constraintErrors?.length}>Constraints</ConsoleTab>
-                <ConsoleTab value="activity" numberOfErrors={activityErrorCounts.all}>Activity Validation</ConsoleTab>
+                <ConsoleTab value="activity" numberOfErrors={activityStatusCounts.all}>Activity Validation</ConsoleTab>
                 <ConsoleTab value="model" numberOfErrors={$modelErrors.length}>Mission Model</ConsoleTab>
                 <div
                   class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
@@ -1143,8 +1156,8 @@
             <PlanLogMessage slot="message" let:log {log} />
           </ConsoleLogs>
           <ConsoleActivityErrors
-            activityValidationErrorTotalRollup={activityErrorCounts}
-            activityValidationErrorRollups={$activityErrorRollups}
+            activityValidationStatusTotalRollup={activityStatusCounts}
+            activityValidationStatusRollups={$activityStatusRollups}
             on:selectionChanged={onActivityValidationSelected}
           />
           <ConsoleLogs value="model" showTimestamp={false} showType={false} logs={$modelErrors}>

@@ -40,14 +40,16 @@ describe('Plan utility', () => {
             end_time_doy: '2025-001T00:00:00',
             id: 1,
             is_locked: false,
+            is_read_only: false,
             model: {
               activity_types: [],
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
               default_view_id: 0,
+              definition_file_id: 123,
               derivation_group_specification: [],
               id: 1,
-              jar_id: 123,
+              is_executable: true,
               mission: 'Test',
               name: 'Test Model',
               owner: 'test',
@@ -230,14 +232,16 @@ describe('Plan utility', () => {
             end_time_doy: '2025-001T00:00:00',
             id: 1,
             is_locked: false,
+            is_read_only: false,
             model: {
               activity_types: [],
               constraint_specification: [],
               created_at: '2024-01-01T00:00:00',
               default_view_id: 0,
+              definition_file_id: 123,
               derivation_group_specification: [],
               id: 1,
-              jar_id: 123,
+              is_executable: true,
               mission: 'Test',
               name: 'Test Model',
               owner: 'test',
@@ -342,14 +346,16 @@ describe('Plan utility', () => {
         end_time_doy: '2025-001T00:00:00',
         id: 1,
         is_locked: false,
+        is_read_only: false,
         model: {
           activity_types: [],
           constraint_specification: [],
           created_at: '2024-01-01T00:00:00',
           default_view_id: 0,
+          definition_file_id: 123,
           derivation_group_specification: [],
           id: 1,
-          jar_id: 123,
+          is_executable: true,
           mission: 'Test',
           name: 'Test Model',
           owner: 'test',
@@ -436,6 +442,32 @@ describe('Plan utility', () => {
       ]);
 
       expect(downloadSpy).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('assertPlanTransferFields', () => {
+    const planFile = { duration: '24:00:00', name: 'plan', start_time: '2030-01-01T00:00:00+00:00' };
+
+    it('Should accept a plan file with a duration or a deprecated end time', () => {
+      expect(() => plan.assertPlanTransferFields(planFile)).not.toThrow();
+      expect(() =>
+        plan.assertPlanTransferFields({ end_time: '2030-01-02T00:00:00+00:00', name: 'plan', start_time: '2030-001' }),
+      ).not.toThrow();
+    });
+
+    it('Should name the missing fields', () => {
+      const { start_time: _startTime, ...withoutStartTime } = planFile;
+      expect(() => plan.assertPlanTransferFields({ ...withoutStartTime, starst_time: '2030-001' })).toThrow(
+        'Plan file is missing start_time',
+      );
+      expect(() => plan.assertPlanTransferFields({ start_time: '2030-001' })).toThrow(
+        'Plan file is missing name, duration',
+      );
+    });
+
+    it('Should reject a plan file that is not a JSON object', () => {
+      expect(() => plan.assertPlanTransferFields([])).toThrow('Plan file must contain a JSON object');
+      expect(() => plan.assertPlanTransferFields(null)).toThrow('Plan file must contain a JSON object');
     });
   });
 });

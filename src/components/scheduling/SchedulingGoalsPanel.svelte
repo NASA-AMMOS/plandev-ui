@@ -272,7 +272,7 @@
       <PanelHeaderActionButton
         title="Analyze"
         on:click={onAnalyze}
-        disabled={!$enableScheduling}
+        disabled={!$planReadOnly && !$enableScheduling}
         use={[
           [
             permissionHandler,
@@ -290,7 +290,7 @@
       <PanelHeaderActionButton
         title="Schedule"
         on:click={onSchedule}
-        disabled={!$enableScheduling}
+        disabled={!$planReadOnly && !$enableScheduling}
         use={[
           [
             permissionHandler,

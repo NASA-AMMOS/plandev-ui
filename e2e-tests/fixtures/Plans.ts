@@ -161,7 +161,7 @@ export class Plans {
     this.confirmModalDeleteButton = this.confirmModal.getByRole('button', { name: 'Delete' });
     this.createButton = page.getByRole('button', { name: 'Create' });
     this.durationDisplay = page.locator('input[name="duration"]');
-    this.importButton = page.getByRole('button', { name: 'Import' });
+    this.importButton = page.getByRole('button', { exact: true, name: 'Import' });
     this.inputEndTime = page.locator('input[name="end-time"]');
     this.inputFile = page.locator('input[name="Plan File"]');
     this.inputButtonModel = page.getByRole('combobox', { name: 'Select Model' });

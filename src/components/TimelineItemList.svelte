@@ -5,6 +5,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
   import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
+  import { PlanStatusMessages } from '../enums/planStatusMessages';
   import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
@@ -40,6 +41,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let planReadOnly: boolean = false;
   export let hasCreatePermission: boolean = true;
 
   let activeItemIndex: number = -1;
@@ -319,10 +321,16 @@
             </div>
             {#if typeName === 'activity'}
               <div
-                use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
                 use:permissionHandler={{
-                  hasPermission: hasCreatePermission,
-                  permissionError: 'You do not have permission to create activities.',
+                  hasPermission: hasCreatePermission && !planReadOnly,
+                  permissionError: planReadOnly
+                    ? PlanStatusMessages.READ_ONLY
+                    : 'You do not have permission to create activities.',
+                }}
+                use:tooltip={{
+                  content: 'Add New Directive',
+                  disabled: !hasCreatePermission || planReadOnly,
+                  placement: 'top',
                 }}
                 class="flex items-center"
               >

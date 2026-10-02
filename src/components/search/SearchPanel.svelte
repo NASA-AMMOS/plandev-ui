@@ -101,7 +101,9 @@
   $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
 
   $: {
-    modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
+    modelOptions = orderedModels
+      .filter(m => m.is_executable) // only present executable models in the models dropdown
+      .map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
 
     // If the selected model is no longer available, reset the selection
     if (modelOptions.length > 0 && selectedModelId !== undefined) {

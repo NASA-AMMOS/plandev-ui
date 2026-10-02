@@ -7,7 +7,7 @@
   import { Check, Search } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import DirectiveIcon from '../../assets/timeline-directive.svg?component';
-  import { models } from '../../stores/model';
+  import { executableModels } from '../../stores/model';
   import { gqlSubscribable } from '../../stores/subscribable';
   import type { ActivityDirective } from '../../types/activity';
   import type { User } from '../../types/app';
@@ -94,7 +94,7 @@
     incoming => getActivePlanMergeRequests(incoming),
   );
   $: previewMissionModelMigration(selectedMissionModel);
-  $: otherModels = $models.filter(m => m.id !== plan.model_id);
+  $: otherModels = $executableModels.filter(m => m.id !== plan.model_id);
 
   $: changeMissionModelDisabled = computeChangeButtonDisabled(selectedMissionModel, $planMergeRequestsIncoming);
 
@@ -264,7 +264,7 @@
                         <CssGrid columns="50% 50%" gap="8px">
                           <div class="flex flex-grow flex-col overflow-hidden">
                             <div class="mb-1 text-muted-foreground">
-                              Old Parameter Schema ({$models.find(m => m.id === plan.model_id)?.name ??
+                              Old Parameter Schema ({$executableModels.find(m => m.id === plan.model_id)?.name ??
                                 'Unknown Model'})
                             </div>
                             <div class="overflow-auto rounded bg-accent p-2 font-mono">

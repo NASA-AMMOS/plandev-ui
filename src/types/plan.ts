@@ -1,5 +1,7 @@
+import type { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirective, ActivityDirectiveDB } from './activity';
 import type { UserId } from './app';
+import type { ConsoleEntry } from './console';
 import type { ConstraintPlanSpecification } from './constraint';
 import type { Model } from './model';
 import type { ArgumentsMap, ParametersMap } from './parameter';
@@ -107,6 +109,7 @@ export type PlanSchema = {
   duration: string;
   id: number;
   is_locked: boolean;
+  is_read_only: boolean;
   model: Model | null;
   model_id: number | null;
   name: string;
@@ -128,26 +131,38 @@ export type PlanSchema = {
   updated_by: UserId;
 };
 
-export type PlanTransfer = Pick<PlanSchema, 'id' | 'duration' | 'model_id' | 'name' | 'start_time'> & {
+type ModelDeclaration = Model;
+type RunResults = [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];
+type PlanTransferBase = Pick<PlanSchema, 'id' | 'duration' | 'name' | 'start_time'> & {
   activities: Pick<
     ActivityDirective,
-    | 'anchor_id'
-    | 'anchored_to_start'
-    | 'arguments'
-    | 'id'
-    | 'metadata'
-    | 'name'
-    | 'start_offset'
-    | ('type' & { tags: { tag: Pick<Tag, 'color' | 'name'> }[] })
+    'anchor_id' | 'anchored_to_start' | 'arguments' | 'id' | 'metadata' | 'name' | 'start_offset' | 'type'
   >[];
   simulation_arguments: ArgumentsMap;
   tags?: { tag: Pick<Tag, 'color' | 'name'> }[];
   version?: string;
 };
 
+export type PlanTransfer =
+  | (PlanTransferBase & {
+      model?: never;
+      model_id: number | null;
+    })
+  | (PlanTransferBase & {
+      model: ModelDeclaration;
+      model_id?: never;
+      results?: RunResults;
+    });
+
 export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments'> & {
   end_time: string;
   sim_id: number;
+};
+
+export type PlanTransferResponse = {
+  model_id: number;
+  plan_id: number;
+  plan_import_request_id: number;
 };
 
 export type PlanMetadata = Pick<
@@ -162,6 +177,7 @@ export type PlanMetadata = Pick<
   | 'model'
   | 'start_time'
   | 'duration'
+  | 'is_read_only'
 >;
 
 export type PlanSlim = Pick<
@@ -171,6 +187,7 @@ export type PlanSlim = Pick<
   | 'duration'
   | 'end_time_doy'
   | 'id'
+  | 'is_read_only'
   | 'model_id'
   | 'name'
   | 'owner'
@@ -201,3 +218,19 @@ export type ModelCompatabilityForPlanSchemaDiff = {
 };
 
 export type ModelCompatabilityForPlanIssue = 'altered' | 'removed';
+
+type BasePlanImportRequest = {
+  id: number;
+  plan_id: number;
+  // model_id: number;
+  // requested_at: string;
+  // requester: UserId;
+};
+export type PlanImportRequest = PlanImportRequestSuccess | PlanImportRequestFailed;
+export type PlanImportRequestSuccess = BasePlanImportRequest & {
+  status: Exclude<PlanImportStatus, PlanImportStatus.FAILED>;
+};
+export type PlanImportRequestFailed = BasePlanImportRequest & {
+  reason: ConsoleEntry;
+  status: PlanImportStatus.FAILED;
+};
