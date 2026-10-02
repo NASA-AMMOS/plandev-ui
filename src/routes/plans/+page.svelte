@@ -33,7 +33,7 @@
   import { field } from '../../stores/form';
   import { executableModels, models } from '../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
-  import { planImportRequestsMap, plans } from '../../stores/plans';
+  import { planImportRequests, planImportRequestsMap, plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
@@ -56,6 +56,7 @@
     getDoyTimeFromInterval,
     getShortISOForDate,
   } from '../../utilities/time';
+  import { showFailureToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import { removeQueryParam } from '../../utilities/url';
   import { min, required, unique } from '../../utilities/validators';
@@ -365,6 +366,7 @@
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
   let filterText: string = '';
+  let currentImportRequestIds: number[] = [];
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
   let isLoadingPlanFile: boolean = false;
@@ -423,6 +425,13 @@
       ($planImportRequestsMap[selectedPlan.id]
         ? $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
         : false));
+
+  $: currentImportRequestIds.forEach(id => {
+    const request = $planImportRequests.find(request => request.id === id);
+    if (request?.status === PlanImportStatus.FAILED) {
+      showFailureToast(`Plan import failed: ${request.reason?.message ?? 'Unknown error'}`);
+    }
+  });
 
   // sort in descending ID order
   $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
@@ -514,7 +523,7 @@
     let endTime = getDoyTime(endTimeDate);
     if (planUploadFiles && planUploadFiles.length) {
       try {
-        await effects.importPlan(
+        const { plan_import_request_id } = await effects.importPlan(
           $nameField.value,
           $modelIdField.value,
           startTime,
@@ -524,6 +533,8 @@
           planUploadFiles,
           $user,
         );
+        currentImportRequestIds.push(plan_import_request_id);
+
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
         startTimeField.reset('');
