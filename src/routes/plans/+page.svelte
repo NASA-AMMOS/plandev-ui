@@ -366,7 +366,7 @@
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
   let filterText: string = '';
-  let currentImportRequestIds: number[] = [];
+  let currentImportRequests: { planName: string; requestId: number }[] = [];
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
   let isLoadingPlanFile: boolean = false;
@@ -426,10 +426,10 @@
         ? $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
         : false));
 
-  $: currentImportRequestIds.forEach(id => {
-    const request = $planImportRequests.find(request => request.id === id);
+  $: currentImportRequests.forEach(({ planName, requestId }) => {
+    const request = $planImportRequests.find(request => request.id === requestId);
     if (request?.status === PlanImportStatus.FAILED) {
-      showFailureToast(`Plan import failed: ${request.reason?.message ?? 'Unknown error'}`);
+      showFailureToast(`Plan import failed for "${planName}": ${request.reason?.message ?? 'Unknown error'}`);
     }
   });
 
@@ -533,7 +533,10 @@
           planUploadFiles,
           $user,
         );
-        currentImportRequestIds.push(plan_import_request_id);
+        currentImportRequests.push({
+          planName: $nameField.value,
+          requestId: plan_import_request_id,
+        });
 
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
