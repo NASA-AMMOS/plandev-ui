@@ -41,10 +41,8 @@
     <div class="flex items-center justify-between border-b border-[var(--st-blue)] bg-blue-50 px-4 py-2.5">
       <div class="flex items-center gap-2.5 font-medium text-[var(--st-gray-100,#1b1d1e)]">
         <span
-          class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
-          >Import in progress
-        </span>
-        This plan is read-only and data may continue to change until the import completes.
+          ><b>Import in progress.</b> This plan is read-only and data may continue to change until the import completes.</span
+        >
         <span
           class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
           >Current step: {statusMessage}
