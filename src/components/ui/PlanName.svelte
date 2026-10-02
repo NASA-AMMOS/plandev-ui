@@ -4,6 +4,7 @@
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { LoaderCircle, LockKeyhole } from 'lucide-svelte';
   import { PlanImportStatus } from '../../enums/planStatusMessages';
+  import { getPlanImportStatusMessage } from '../../utilities/plan';
   import { tooltip } from '../../utilities/tooltip';
 
   export let isReadOnly: boolean = false;
@@ -12,29 +13,11 @@
   export let name: string;
   export let size: number = 16;
 
-  let importStatusMessage: string | null = null;
-
-  $: if (importStatus !== null) {
-    switch (importStatus) {
-      case PlanImportStatus.FAILED:
-        importStatusMessage = importError;
-        break;
-      case PlanImportStatus.IMPORTING_PLAN:
-        importStatusMessage = 'Importing activities';
-        break;
-      case PlanImportStatus.EXTRACTING_MODEL:
-        importStatusMessage = 'Extracting model from plan';
-        break;
-      case PlanImportStatus.IMPORTING_DATASET:
-        importStatusMessage = 'Importing datasets';
-        break;
-      default:
-        importStatusMessage = null;
-    }
-  }
+  $: importStatusMessage =
+    importStatus === PlanImportStatus.FAILED ? importError : getPlanImportStatusMessage(importStatus);
 </script>
 
-{#if isReadOnly}
+{#if importStatus !== null || isReadOnly}
   <div class="grid w-full grid-cols-[min-content_auto] items-center gap-2">
     {#if importStatus !== null}
       <div use:tooltip={{ content: importStatusMessage }}>

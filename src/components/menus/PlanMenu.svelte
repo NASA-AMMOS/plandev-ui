@@ -101,7 +101,7 @@
 
   <div class="plan-menu st-typography-medium" role="none" on:click|stopPropagation={() => planMenu.toggle()}>
     <div class="plan-title">
-      {#if plan.is_read_only}
+      {#if plan.is_read_only || planImportRequestStatus !== null}
         <PlanName
           name={plan.name}
           isReadOnly={plan.is_read_only}

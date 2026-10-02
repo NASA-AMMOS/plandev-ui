@@ -239,17 +239,18 @@
               />
               <div
                 use:permissionHandler={{
-                  hasPermission: hasChangePlanModelPermission && !$planIsLocked,
-                  permissionError: $planIsLocked
+                  hasPermission: hasChangePlanModelPermission && !$planReadOnly,
+                  permissionError: $planReadOnly
                     ? PlanStatusMessages.READ_ONLY
                     : "You don't have permission to change mission model",
                 }}
-                use:tooltip={{ content: !$planIsLocked ? 'Change Mission Model' : '', placement: 'top' }}
+                use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
               >
                 <Button
                   class="shrink-0"
                   variant="outline"
                   size="icon"
+                  disabled={$planReadOnly}
                   on:click={openChangePlanMissionModelModal}
                   aria-label="Change mission model"
                 >

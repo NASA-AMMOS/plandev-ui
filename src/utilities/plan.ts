@@ -1,3 +1,4 @@
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirective, ActivityDirectiveDB } from '../types/activity';
 import type { User } from '../types/app';
 import type { ArgumentsMap, DefaultEffectiveArgumentsMap } from '../types/parameter';
@@ -18,6 +19,21 @@ import {
   getIntervalFromDoyRange,
   switchISOTimezoneRepresentation,
 } from './time';
+
+export function getPlanImportStatusMessage(status: PlanImportStatus | null): string | null {
+  switch (status) {
+    case PlanImportStatus.IMPORTING_PLAN:
+      return 'Importing activities';
+    case PlanImportStatus.EXTRACTING_MODEL:
+      return 'Extracting model from plan';
+    case PlanImportStatus.IMPORTING_DATASET:
+      return 'Importing datasets';
+    case PlanImportStatus.FAILED:
+      return 'Import failed';
+    default:
+      return null;
+  }
+}
 
 /**
  * Computes a human-readable duration string from start and end times.
