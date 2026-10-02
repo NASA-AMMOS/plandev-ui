@@ -20,7 +20,7 @@
         importStatusMessage = importError;
         break;
       case PlanImportStatus.IMPORTING_PLAN:
-        importStatusMessage = 'Importing plan';
+        importStatusMessage = 'Importing activities';
         break;
       case PlanImportStatus.EXTRACTING_MODEL:
         importStatusMessage = 'Extracting model from plan';
