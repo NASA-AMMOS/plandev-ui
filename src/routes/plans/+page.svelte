@@ -56,7 +56,7 @@
     getDoyTimeFromInterval,
     getShortISOForDate,
   } from '../../utilities/time';
-  import { showFailureToast } from '../../utilities/toast';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import { removeQueryParam } from '../../utilities/url';
   import { min, required, unique } from '../../utilities/validators';
@@ -366,6 +366,8 @@
   let createPlanButtonText: string = 'Create';
   let durationString: string = 'None';
   let filterText: string = '';
+  // This array should only be mutated to avoid extra re-renders. It is not needed for rendering as $planImportRequests will
+  // be used to track the status of the import requests and retrigger a render
   let currentImportRequests: { planName: string; requestId: number }[] = [];
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
@@ -426,12 +428,28 @@
         ? $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
         : false));
 
-  $: currentImportRequests.forEach(({ planName, requestId }) => {
-    const request = $planImportRequests.find(request => request.id === requestId);
-    if (request?.status === PlanImportStatus.FAILED) {
-      showFailureToast(`Plan import failed for "${planName}": ${request.reason?.message ?? 'Unknown error'}`);
-    }
-  });
+  $: {
+    const finishRequestsIds: number[] = [];
+    currentImportRequests.forEach(({ planName, requestId }) => {
+      const request = $planImportRequests.find(request => request.id === requestId);
+      if (request?.status === PlanImportStatus.FAILED) {
+        finishRequestsIds.push(requestId);
+        showFailureToast(`Plan import failed for "${planName}": ${request.reason?.message ?? 'Unknown error'}`);
+      } else if (request?.status === PlanImportStatus.COMPLETE) {
+        finishRequestsIds.push(requestId);
+        showSuccessToast(`Plan import completed for "${planName}"`);
+      }
+    });
+
+    // Remove finished requests so we're not tracking them unnecessarily
+    finishRequestsIds.forEach(requestId => {
+      const index = currentImportRequests.findIndex(request => request.requestId === requestId);
+      if (index !== -1) {
+        // Mutate the array in place to prevent retriggering this reactive statement
+        currentImportRequests.splice(index, 1);
+      }
+    });
+  }
 
   // sort in descending ID order
   $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
@@ -533,6 +551,8 @@
           planUploadFiles,
           $user,
         );
+
+        // Keep track of ongoing requests. Mutate the array to avoid triggering unnecessary re-renders
         currentImportRequests.push({
           planName: $nameField.value,
           requestId: plan_import_request_id,
