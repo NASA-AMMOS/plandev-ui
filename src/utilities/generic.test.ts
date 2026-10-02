@@ -156,6 +156,33 @@ describe('Generic utility function tests', () => {
 
       expect(await parseJSONStream(readable as unknown as ReadableStream)).toBeTypeOf('object');
     });
+
+    function streamOf(text: string): ReadableStream {
+      return new ReadableStream({
+        start(controller) {
+          if (text) {
+            controller.enqueue(text);
+          }
+          controller.close();
+        },
+      });
+    }
+
+    test('Should parse a complete JSON object', async () => {
+      expect(await parseJSONStream(streamOf('{"a": 1, "b": [true]}'))).toEqual({ a: 1, b: [true] });
+    });
+
+    test('Should reject a truncated JSON stream', async () => {
+      await expect(parseJSONStream(streamOf('{"version": "3", "name": "broken", '))).rejects.toThrow();
+    });
+
+    test('Should reject an empty stream', async () => {
+      await expect(parseJSONStream(streamOf(''))).rejects.toThrow('JSON stream is empty');
+    });
+
+    test('Should reject invalid JSON', async () => {
+      await expect(parseJSONStream(streamOf('{"a": x}'))).rejects.toThrow();
+    });
   });
 
   describe('lowercase', () => {

@@ -151,6 +151,21 @@ export function isDeprecatedPlanTransfer(
   return (planTransfer as DeprecatedPlanTransfer).end_time != null;
 }
 
+/**
+ * Throws if a parsed plan file lacks the fields the import form reads from it. Full validation happens on import.
+ */
+export function assertPlanTransferFields(planJSON: unknown): asserts planJSON is PlanTransfer | DeprecatedPlanTransfer {
+  if (typeof planJSON !== 'object' || planJSON === null || Array.isArray(planJSON)) {
+    throw new Error('Plan file must contain a JSON object');
+  }
+  const fields = planJSON as Record<string, unknown>;
+  const required = ['name', 'start_time', fields.end_time != null ? 'end_time' : 'duration'];
+  const missing = required.filter(field => typeof fields[field] !== 'string');
+  if (missing.length) {
+    throw new Error(`Plan file is missing ${missing.join(', ')}`);
+  }
+}
+
 export function getActivePlanMergeRequests(requests: PlanMergeRequestSchema[]): PlanMergeRequestSchema[] {
   const activeRequestTypes: Record<PlanMergeRequestStatus, boolean> = {
     accepted: false,

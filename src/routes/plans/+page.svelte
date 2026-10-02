@@ -48,7 +48,12 @@
   import { compareWithRankings, parseJSONStream } from '../../utilities/generic';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
+  import {
+    assertPlanTransferFields,
+    computeDurationString,
+    exportPlan,
+    isDeprecatedPlanTransfer,
+  } from '../../utilities/plan';
   import {
     convertDoyToYmd,
     formatDate,
@@ -698,6 +703,7 @@
       } catch (e) {
         throw new Error('Plan file is not valid JSON');
       }
+      assertPlanTransferFields(planJSON);
 
       nameField.validateAndSet(planJSON.name);
       const importedPlanTags = (planJSON.tags ?? []).reduce(

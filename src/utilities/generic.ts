@@ -356,12 +356,20 @@ export async function parseJSONStream<R>(jsonStream: ReadableStream): Promise<R>
       finalJSON = parent as R;
     };
     jsonParser.onEnd = () => {
-      resolve(finalJSON as R);
+      if (finalJSON === undefined) {
+        reject(new Error('JSON stream is empty'));
+      } else {
+        resolve(finalJSON as R);
+      }
     };
 
     try {
       for await (const result of streamAsyncIterable(jsonStream)) {
         jsonParser.write(result);
+      }
+      // A truncated or empty stream never ends on its own; ending it throws if the JSON is incomplete.
+      if (!jsonParser.isEnded) {
+        jsonParser.end();
       }
     } catch (e) {
       reject(e);
