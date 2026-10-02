@@ -6,7 +6,13 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { planIsLocked, planMetadata, planReadOnly, planReadOnlySnapshot } from '../../stores/plan';
+  import {
+    planIsLocked,
+    planIsNonExecutable,
+    planMetadata,
+    planReadOnly,
+    planReadOnlySnapshot,
+  } from '../../stores/plan';
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
@@ -215,7 +221,7 @@
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />
         </Input>
-        {#if $planReadOnly}
+        {#if $planIsNonExecutable}
           <Input layout="inline">
             <span>Model</span>
             <span class="text-muted-foreground">Model free plan</span>
