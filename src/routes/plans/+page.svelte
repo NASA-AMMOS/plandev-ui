@@ -779,7 +779,7 @@
     <span slot="title">Plans</span>
   </Nav>
 
-  <CssGrid columns="15% auto">
+  <CssGrid columns="15% auto" columnMinSizes={{ 0: 220 }}>
     <Panel borderRight padBody={false}>
       <svelte:fragment slot="header">
         {#if selectedPlan}
