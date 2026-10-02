@@ -1,4 +1,5 @@
 import { Queries } from '../enums/gql';
+import { PlanImportStatus } from '../enums/planStatusMessages';
 
 /**
  * GraphQL Query, Mutation, and Subscription strings.
@@ -2774,7 +2775,7 @@ const gql = {
 
   SUB_PLAN_IMPORT_REQUEST: `#graphql
     subscription SubPlanImportRequest($planId: Int!) {
-      importRequest: ${Queries.PLAN_IMPORT_REQUEST}(where: {plan_id: {_eq: $planId}}, order_by: {id: desc}, limit: 1) {
+      importRequest: ${Queries.PLAN_IMPORT_REQUEST}(where: {_and: [{plan_id: {_eq: $planId}}, {status: {_neq: "${PlanImportStatus.COMPLETE}"}}]}, order_by: {id: desc}, limit: 1) {
         id
         plan_id
         reason
@@ -2785,7 +2786,7 @@ const gql = {
 
   SUB_PLAN_IMPORT_REQUESTS: `#graphql
     subscription SubPlanImportRequests {
-      importRequests: ${Queries.PLAN_IMPORT_REQUEST} {
+      importRequests: ${Queries.PLAN_IMPORT_REQUEST}(where: {status: {_neq: "${PlanImportStatus.COMPLETE}"}}) {
         id
         plan_id
         reason

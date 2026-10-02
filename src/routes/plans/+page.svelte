@@ -422,11 +422,7 @@
   $: executableModels.updateValue(() => data.models.filter(model => model.is_executable));
 
   $: isSelectedPlanReadOnly =
-    selectedPlan !== undefined &&
-    (selectedPlan.is_read_only ||
-      ($planImportRequestsMap[selectedPlan.id]
-        ? $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
-        : false));
+    selectedPlan !== undefined && (selectedPlan.is_read_only || $planImportRequestsMap[selectedPlan.id] != null);
 
   $: {
     const finishRequestsIds: number[] = [];
@@ -435,7 +431,8 @@
       if (request?.status === PlanImportStatus.FAILED) {
         finishRequestsIds.push(requestId);
         showFailureToast(`Plan import failed for "${planName}": ${request.reason?.message ?? 'Unknown error'}`);
-      } else if (request?.status === PlanImportStatus.COMPLETE) {
+      } else if (request === undefined) {
+        // Treat the request as completed if it's not found because "complete" requests are filtered out in the query
         finishRequestsIds.push(requestId);
         showSuccessToast(`Plan import completed for "${planName}"`);
       }

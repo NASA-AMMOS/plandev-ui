@@ -1,5 +1,4 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
-import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityType } from '../types/activity';
 import type { Plan, PlanImportRequest, PlanMergeRequest, PlanMergeRequestSchema, PlanMetadata } from '../types/plan';
 import type { PlanDataset } from '../types/simulation';
@@ -86,10 +85,7 @@ export const planIsNonExecutable: Readable<boolean> = derived(plan, $plan => $pl
 export const planReadOnly: Readable<boolean> = derived(
   [planReadOnlySnapshot, planReadOnlyMergeRequest, planIsNonExecutable, planImportRequest],
   ([$planReadOnlySnapshot, $planReadOnlyMergeRequest, $planIsNonExecutable, $planImportRequest]) =>
-    $planReadOnlyMergeRequest ||
-    $planReadOnlySnapshot ||
-    $planIsNonExecutable ||
-    ($planImportRequest ? $planImportRequest.status !== PlanImportStatus.COMPLETE : false),
+    $planReadOnlyMergeRequest || $planReadOnlySnapshot || $planIsNonExecutable || $planImportRequest != null,
 );
 
 export const planModelId: Readable<number> = derived(plan, $plan => $plan?.model?.id ?? -1);

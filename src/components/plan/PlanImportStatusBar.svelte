@@ -27,7 +27,7 @@
   }
 </script>
 
-{#if planImportRequest && planImportRequest.status !== PlanImportStatus.COMPLETE}
+{#if planImportRequest}
   {#if planImportRequest.status === PlanImportStatus.FAILED}
     <div class="flex items-center justify-between border-b border-[var(--st-red)] bg-red-50 px-4 py-2.5">
       <div class="flex items-center gap-2.5 font-medium text-[var(--st-gray-100,#1b1d1e)]">

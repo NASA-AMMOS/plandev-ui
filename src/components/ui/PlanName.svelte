@@ -36,7 +36,7 @@
 
 {#if isReadOnly}
   <div class="grid w-full grid-cols-[min-content_auto] items-center gap-2">
-    {#if importStatus !== null && importStatus !== PlanImportStatus.COMPLETE}
+    {#if importStatus !== null}
       <div use:tooltip={{ content: importStatusMessage }}>
         {#if importStatus !== PlanImportStatus.FAILED}
           <LoaderCircle {size} class="animate-spin opacity-75" />
