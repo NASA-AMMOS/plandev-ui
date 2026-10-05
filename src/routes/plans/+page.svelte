@@ -339,6 +339,7 @@
               placement: 'bottom',
             },
             isDownloadCancellable: true,
+            isDownloadDisabled: importIncomplete,
             useExportIcon: true,
             hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
             rowData: params.data,
@@ -350,12 +351,6 @@
           },
           target: actionsDiv,
         });
-
-        if (importIncomplete) {
-          const exportButton = actionsDiv.querySelector<HTMLButtonElement>('button.download');
-          exportButton?.setAttribute('disabled', '');
-          exportButton?.setAttribute('title', 'Import is incomplete – export is unavailable');
-        }
 
         return actionsDiv;
       },

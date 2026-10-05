@@ -19,6 +19,7 @@
   };
 
   export let isDownloadCancellable: boolean = true;
+  export let isDownloadDisabled: boolean = false;
   export let editButtonClass: string | undefined = undefined;
   export let editTooltip: Tooltip | undefined = undefined;
   export let deleteButtonClass: string | undefined = undefined;
@@ -108,6 +109,8 @@
       class:download={true}
       class:icon={true}
       class={downloadButtonClass}
+      disabled={isDownloadDisabled}
+      title={isDownloadDisabled ? downloadTooltip?.content : undefined}
       on:click|stopPropagation={onDownload}
       use:tooltip={downloadTooltip}
     >
