@@ -57,7 +57,6 @@ export enum ErrorTypes {
   SPECIFICATION_LOAD_EXCEPTION = 'SPECIFICATION_LOAD_EXCEPTION',
   SQL_EXCEPTION = 'SQL_EXCEPTION',
   UNAUTHORIZED = 'UNAUTHORIZED',
-  VALIDATION_UNAVAILABLE = 'UNAVAILABLE',
   UNEXPECTED_SCHEDULER_EXCEPTION = 'UNEXPECTED_SCHEDULER_EXCEPTION',
   UNEXPECTED_SIMULATION_EXCEPTION = 'UNEXPECTED_SIMULATION_EXCEPTION',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
@@ -141,12 +140,6 @@ export function isValidationNoticesError(
   validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveValidationNoticesFailure {
   return (validation as ActivityDirectiveValidationNoticesFailure).type === ErrorTypes.VALIDATION_NOTICES;
-}
-
-export function isValidationUnavailableStatus(
-  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
-): validation is ActivityDirectiveValidationUnavailable {
-  return (validation as ActivityDirectiveValidationUnavailable).type === ErrorTypes.VALIDATION_UNAVAILABLE;
 }
 
 export function generateActivityValidationStatusRollups(
