@@ -148,7 +148,7 @@ export async function getPlanForTransfer(
     simulation_arguments: qualifiedSimulationArguments,
     start_time: switchISOTimezoneRepresentation(convertDoyToYmd(plan.start_time_doy) as string),
     tags: plan.tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
-    version: '2',
+    version: '3',
   };
 }
 

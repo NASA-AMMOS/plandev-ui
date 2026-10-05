@@ -171,7 +171,7 @@ describe('Plan utility', () => {
             },
           },
         ],
-        version: '2',
+        version: '3',
       });
     });
 
@@ -330,7 +330,7 @@ describe('Plan utility', () => {
             },
           },
         ],
-        version: '2',
+        version: '3',
       });
     });
   });

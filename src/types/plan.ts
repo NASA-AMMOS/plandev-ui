@@ -131,30 +131,28 @@ export type PlanSchema = {
   updated_by: UserId;
 };
 
-type ModelDeclaration = Model;
-type RunResults = [{ id: number; simulation_datasets: [{ id: number; plan_revision: number }] }];
-type PlanTransferBase = Pick<PlanSchema, 'id' | 'duration' | 'name' | 'start_time'> & {
-  activities: Pick<
+/**
+ * PlanTransfer v3, limited to the fields the UI writes on export and reads on import. The full format, including the
+ * `model` and `results` shapes, is defined by aerie-gateway `src/types/plan-transfer.ts` and its validation schema.
+ */
+export type PlanTransfer = Pick<PlanSchema, 'duration' | 'name' | 'start_time'> & {
+  activities: (Pick<
     ActivityDirective,
     'anchor_id' | 'anchored_to_start' | 'arguments' | 'id' | 'metadata' | 'name' | 'start_offset' | 'type'
-  >[];
+  > & { tags?: { tag: Pick<Tag, 'color' | 'name'> }[] })[];
+  id?: number;
+  model?: unknown;
+  model_id?: number | null;
+  results?: unknown;
   simulation_arguments: ArgumentsMap;
   tags?: { tag: Pick<Tag, 'color' | 'name'> }[];
-  version?: string;
+  version: '3';
 };
 
-export type PlanTransfer =
-  | (PlanTransferBase & {
-      model?: never;
-      model_id: number | null;
-    })
-  | (PlanTransferBase & {
-      model: ModelDeclaration;
-      model_id?: never;
-      results?: RunResults;
-    });
-
-export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments'> & {
+/**
+ * Pre-v2 plan file, still accepted on import.
+ */
+export type DeprecatedPlanTransfer = Omit<PlanTransfer, 'duration' | 'simulation_arguments' | 'version'> & {
   end_time: string;
   sim_id: number;
 };
