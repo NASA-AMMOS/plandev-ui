@@ -802,7 +802,7 @@
         await endTimeField.validateAndSet(getDoyTimeFromInterval(startTime, duration));
 
         // An embedded model makes the imported plan read only.
-        isPlanUploadReadOnly = !!planJSON.model;
+        isPlanUploadReadOnly = !!planJSON.model || !!planJSON.results;
         if (isPlanUploadReadOnly) {
           modelIdField.reset(-1);
         }
