@@ -7,9 +7,9 @@
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import {
+    planImportRequest,
     planIsLocked,
     planIsNonExecutable,
-    planImportRequest,
     planMetadata,
     planReadOnly,
     planReadOnlySnapshot,
@@ -231,7 +231,7 @@
         {#if $planIsNonExecutable}
           <Input layout="inline">
             <span>Model</span>
-            <span class="text-muted-foreground">Model free plan</span>
+            <span class="text-muted-foreground">Model-free plan</span>
           </Input>
         {:else}
           <Input layout="inline">
