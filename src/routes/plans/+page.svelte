@@ -52,6 +52,7 @@
     assertPlanTransferFields,
     computeDurationString,
     exportPlan,
+    getPlanImportStatusMessage,
     isDeprecatedPlanTransfer,
   } from '../../utilities/plan';
   import {
@@ -923,11 +924,7 @@
               <Alert.Root class="mx-4 mt-2 w-auto min-w-0">
                 <LoaderCircle class="h-4 w-4 animate-spin stroke-muted-foreground" />
                 <Alert.Description class="!translate-y-0 font-medium text-muted-foreground">
-                  {selectedPlanImportRequest?.status === PlanImportStatus.IMPORTING_PLAN
-                    ? 'Importing activities…'
-                    : selectedPlanImportRequest?.status === PlanImportStatus.IMPORTING_DATASET
-                      ? 'Importing results…'
-                      : 'Importing…'}
+                  {getPlanImportStatusMessage(selectedPlanImportRequest?.status ?? null) ?? 'Importing…'}
                 </Alert.Description>
               </Alert.Root>
             </div>
