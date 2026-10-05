@@ -18,6 +18,7 @@
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import { exportPlan } from '../../utilities/plan';
+  import { tooltip } from '../../utilities/tooltip';
   import Menu from '../menus/Menu.svelte';
   import MenuItem from '../menus/MenuItem.svelte';
   import PlanName from '../ui/PlanName.svelte';
@@ -69,7 +70,7 @@
   }
 
   async function onExportPlan() {
-    if (!planExporting && $activityDirectivesMap) {
+    if (!planExporting && !$planImportRequest && $activityDirectivesMap) {
       planExporting = true;
       await exportPlan(plan, user, Object.values($activityDirectivesMap));
       planExporting = false;
@@ -178,7 +179,11 @@
         <div class="column-name">View Snapshot History</div>
       </MenuItem>
       <MenuDivider />
-      <MenuItem on:click={onExportPlan} disabled={planExporting}>
+      <MenuItem
+        on:click={onExportPlan}
+        disabled={planExporting || !!$planImportRequest}
+        use={[[tooltip, { content: $planImportRequest ? 'Import is incomplete – export is unavailable' : '' }]]}
+      >
         {#if !planExporting}
           Export plan as .json
         {:else}

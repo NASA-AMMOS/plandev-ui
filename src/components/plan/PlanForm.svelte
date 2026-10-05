@@ -9,6 +9,7 @@
   import {
     planIsLocked,
     planIsNonExecutable,
+    planImportRequest,
     planMetadata,
     planReadOnly,
     planReadOnlySnapshot,
@@ -172,7 +173,7 @@
   }
 
   async function onExportPlan() {
-    if (plan && !planExporting && activityDirectivesMap) {
+    if (plan && !planExporting && !$planImportRequest && activityDirectivesMap) {
       planExporting = true;
       await exportPlan(plan, user, Object.values(activityDirectivesMap));
       planExporting = false;
@@ -190,13 +191,19 @@
               <ProgressRadial strokeWidth={1} />
             </button>
           {:else}
-            <button
-              class="st-button icon export"
-              on:click|stopPropagation={onExportPlan}
-              use:tooltip={{ content: 'Export Plan JSON' }}
+            <span
+              use:tooltip={{
+                content: $planImportRequest ? 'Import is incomplete – export is unavailable' : 'Export Plan JSON',
+              }}
             >
-              <FileUp size={16} />
-            </button>
+              <button
+                class="st-button icon export"
+                disabled={!!$planImportRequest}
+                on:click|stopPropagation={onExportPlan}
+              >
+                <FileUp size={16} />
+              </button>
+            </span>
           {/if}
         </svelte:fragment>
         <div class="plan-form-field">

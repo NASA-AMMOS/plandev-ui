@@ -573,7 +573,7 @@
       try {
         const { plan_import_request_id } = await effects.importPlan(
           $nameField.value,
-          $modelIdField.value,
+          isPlanUploadReadOnly ? null : $modelIdField.value,
           startTime,
           endTime,
           $simTemplateField.value,
@@ -795,16 +795,16 @@
         await endTimeField.validateAndSet(
           getDoyTime(new Date(`${convertDoyToYmd(planJSON.end_time.replace(/\+00:00/, ''))}`), true),
         );
+        isPlanUploadReadOnly = false;
       } else {
         const { duration } = planJSON;
 
         await endTimeField.validateAndSet(getDoyTimeFromInterval(startTime, duration));
 
-        // if the plan has a model, it means it's a read only plan
-        if (planJSON.model) {
-          isPlanUploadReadOnly = true;
-        } else {
-          isPlanUploadReadOnly = false;
+        // An embedded model makes the imported plan read only.
+        isPlanUploadReadOnly = !!planJSON.model;
+        if (isPlanUploadReadOnly) {
+          modelIdField.reset(-1);
         }
       }
 
@@ -868,7 +868,7 @@
             <div
               use:tooltip={{
                 content: selectedPlanImportRequest
-                  ? 'Import is incomplete; export is unavailable'
+                  ? 'Import is incomplete – export is unavailable'
                   : 'Export Selected Plan',
                 placement: 'top',
               }}
@@ -1193,7 +1193,7 @@
               </Field>
             {/if}
 
-            {#if selectedModel}
+            {#if selectedModel && !isPlanUploadReadOnly}
               <div class="px-4 pt-1">
                 <ModelStatusRollup mode="rollup" model={selectedModel} showCompleteStatus />
               </div>

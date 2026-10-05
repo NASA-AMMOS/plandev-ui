@@ -1,4 +1,5 @@
 import test, { expect } from '@playwright/test';
+import { Buffer } from 'buffer';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
@@ -40,6 +41,24 @@ test.describe.serial('Model free plan creation', () => {
     await expect(setup.plans.inputStartTime).toBeDisabled();
     await expect(setup.plans.inputEndTime).toBeDisabled();
 
+    const legacyPlan = {
+      end_time: '2022-006T00:00:00',
+      name: 'Legacy plan',
+      start_time: '2022-001T00:00:00',
+    };
+    await setup.plans.inputFile.setInputFiles({
+      buffer: Buffer.from(JSON.stringify(legacyPlan)),
+      mimeType: 'application/json',
+      name: 'legacy-plan.json',
+    });
+    await expect(setup.plans.inputButtonModel).toBeVisible();
+    await expect(setup.plans.inputStartTime).toBeEnabled();
+    await setup.plans.selectInputModel();
+
+    await setup.plans.fillInputFile(modelFreePlanFile);
+    await expect(setup.plans.inputButtonModel).not.toBeVisible();
+    await expect(setup.plans.modelStatus).not.toBeVisible();
+
     await setup.plans.fillInputName(modelFreePlanName);
 
     await expect(setup.plans.createButton).toBeEnabled();
@@ -55,7 +74,7 @@ test.describe.serial('Model free plan creation', () => {
     await setup.plans.tableRow(modelFreePlanName).click();
 
     // Model input should be hidden for read-only plans
-    await expect(setup.page.getByText('Model-free plan')).toBeVisible();
+    await expect(setup.page.getByRole('textbox', { name: 'Model' })).toHaveValue('Model-free plan');
 
     // The Plans page hides the time-range action for permanently read-only plans.
     await expect(setup.page.getByRole('button', { name: 'Change plan time range' })).not.toBeVisible();

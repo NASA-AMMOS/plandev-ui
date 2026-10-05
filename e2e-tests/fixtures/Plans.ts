@@ -64,8 +64,13 @@ export class Plans {
     await this.filterTable(planName);
     await expect(this.tableRow(planName)).toBeVisible();
 
-    await this.tableRow(planName).hover();
-    await expect(this.tableRow(planName).locator('.actions-cell')).toBeVisible();
+    // AG Grid only renders columns in view and the actions column is last, so scroll the grid fully right.
+    // Retry because the grid can still be sizing its columns (resetting the scroll) right after the page loads.
+    await expect(async () => {
+      await this.table.locator('.ag-center-cols-viewport').evaluate(el => (el.scrollLeft = el.scrollWidth));
+      await this.tableRow(planName).hover();
+      await expect(this.tableRow(planName).locator('.actions-cell')).toBeVisible({ timeout: 1000 });
+    }).toPass();
     await this.tableRowDeleteButton(planName).waitFor({ state: 'attached' });
     await this.tableRowDeleteButton(planName).waitFor({ state: 'visible' });
     await expect(this.tableRowDeleteButton(planName)).toBeVisible();

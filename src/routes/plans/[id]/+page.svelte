@@ -900,7 +900,7 @@
                     <button
                       on:click={() => effects.cancelSimulation($simulationDatasetId, $user)}
                       class="st-button danger"
-                      disabled={$planIsLocked}>Cancel</button
+                      disabled={$planReadOnly}>Cancel</button
                     >
                   {/if}
                 {/if}
@@ -995,7 +995,7 @@
                   <button
                     on:click={() => effects.cancelSchedulingRequest($latestSchedulingRequest.analysis_id, $user)}
                     class="st-button cancel-button"
-                    disabled={$planIsLocked}>Cancel</button
+                    disabled={$planReadOnly}>Cancel</button
                   >
                 {/if}
               </svelte:fragment>
