@@ -18,7 +18,7 @@
         <span
           class="inline-flex items-center gap-2 rounded-[16px] border border-[var(--st-gray-100,#1b1d1e)] bg-[var(--st-white,#fff)] px-3 py-1"
           ><WarningIcon class="red-icon" /> {statusMessage}
-        </span>{planImportRequest.reason.message}
+        </span>{planImportRequest.reason?.message || 'Unknown error'}
       </div>
     </div>
   {:else}
