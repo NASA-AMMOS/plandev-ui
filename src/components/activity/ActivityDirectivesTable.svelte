@@ -39,12 +39,11 @@
   export let user: User | null;
   export let filterExpression: string = '';
 
-  let showPackLeftMenu: boolean = true;
-  let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
-  let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackLeftMenu = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackRightMenu = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackOffsetMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityStatusCounts };
+  type CellRendererParams = {
+    deleteActivityDirective: (activity: ActivityDirective) => void;
+  };
+  type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
 
   const pluralItemDisplayText: string = 'Activity Directives';
   const singleItemDisplayText: string = 'Activity Directive';
@@ -54,12 +53,6 @@
     scrollTimelineToTime: number;
   }>();
 
-  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityStatusCounts };
-  type CellRendererParams = {
-    deleteActivityDirective: (activity: ActivityDirective) => void;
-  };
-  type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
-
   let activityActionColumnDef: DataGridColumnDef | null = null;
   let activityErrorColumnDef: DataGridColumnDef | null = null;
   let activityDirectivesWithErrorCounts: ActivityDirectiveWithErrorCounts[] = [];
@@ -68,6 +61,21 @@
   let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
   let permissionErrorText: string | null = null;
+  let showPackLeftMenu: boolean = true;
+  let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  let readonlyPermission: { hasPermission: boolean; permissionError?: string } = {
+    hasPermission: false,
+    permissionError: PlanStatusMessages.READ_ONLY,
+  };
+
+  $: readonlyPermission = {
+    hasPermission: !planReadOnly,
+    permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+  };
+  $: showPackLeftMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackRightMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackOffsetMenu = bulkSelectedActivityDirectiveIds.length > 1;
 
   $: hasDeletePermission =
     plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) && !planReadOnly : false;
@@ -301,12 +309,7 @@
 
   <svelte:fragment slot="context-menu-bottom">
     {#if showBulkShiftMenu}
-      <div
-        use:permissionHandler={{
-          hasPermission: !planReadOnly,
-          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
-        }}
-      >
+      <div use:permissionHandler={readonlyPermission}>
         <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
           Shift {bulkSelectedActivityDirectiveIds.length}
           {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
@@ -315,12 +318,7 @@
     {/if}
 
     {#if showPackLeftMenu}
-      <div
-        use:permissionHandler={{
-          hasPermission: !planReadOnly,
-          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
-        }}
-      >
+      <div use:permissionHandler={readonlyPermission}>
         <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
           Pack Left {bulkSelectedActivityDirectiveIds.length}
           {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
@@ -329,12 +327,7 @@
     {/if}
 
     {#if showPackRightMenu}
-      <div
-        use:permissionHandler={{
-          hasPermission: !planReadOnly,
-          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
-        }}
-      >
+      <div use:permissionHandler={readonlyPermission}>
         <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
           Pack Right {bulkSelectedActivityDirectiveIds.length}
           {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
@@ -343,12 +336,7 @@
     {/if}
 
     {#if showPackOffsetMenu}
-      <div
-        use:permissionHandler={{
-          hasPermission: !planReadOnly,
-          permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
-        }}
-      >
+      <div use:permissionHandler={readonlyPermission}>
         <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
           Pack {bulkSelectedActivityDirectiveIds.length}
           {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
