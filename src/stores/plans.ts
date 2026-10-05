@@ -1,3 +1,4 @@
+import { keyBy } from 'lodash-es';
 import { derived } from 'svelte/store';
 import type { PlanImportRequest, PlanSlim } from '../types/plan';
 import type { GqlSubscribable } from '../types/subscribable';
@@ -23,13 +24,5 @@ export const planImportRequests = gqlSubscribable<PlanImportRequest[]>(gql.SUB_P
 
 export const planImportRequestsMap = derived<[GqlSubscribable<PlanImportRequest[]>], Record<number, PlanImportRequest>>(
   [planImportRequests],
-  ([$requests]) => {
-    return $requests.reduce(
-      (acc, request) => {
-        acc[request.plan_id] = request;
-        return acc;
-      },
-      {} as Record<number, PlanImportRequest>,
-    );
-  },
+  ([$requests]) => keyBy($requests, 'plan_id'),
 );
