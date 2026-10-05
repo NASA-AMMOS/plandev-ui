@@ -4,27 +4,11 @@
   import WarningIcon from '@nasa-jpl/stellar/icons/warning.svg?component';
   import { PlanImportStatus } from '../../enums/planStatusMessages';
   import type { PlanImportRequest } from '../../types/plan';
+  import { getPlanImportStatusMessage } from '../../utilities/plan';
 
   export let planImportRequest: PlanImportRequest | null = null;
 
-  let statusMessage: string = '';
-
-  $: switch (planImportRequest?.status) {
-    case PlanImportStatus.FAILED:
-      statusMessage = 'Plan import failed';
-      break;
-    case PlanImportStatus.IMPORTING_PLAN:
-      statusMessage = 'Importing activities';
-      break;
-    case PlanImportStatus.EXTRACTING_MODEL:
-      statusMessage = 'Extracting model from plan';
-      break;
-    case PlanImportStatus.IMPORTING_DATASET:
-      statusMessage = 'Importing datasets';
-      break;
-    default:
-      statusMessage = '';
-  }
+  $: statusMessage = getPlanImportStatusMessage(planImportRequest?.status ?? null);
 </script>
 
 {#if planImportRequest}
