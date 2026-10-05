@@ -333,6 +333,11 @@ export class AerieApi {
    * Import plan from JSON file
    */
   async importPlan(planJsonFilePath: string, planName: string): Promise<number> {
+    return (await this.importPlanTransfer(planJsonFilePath, planName)).plan_id;
+  }
+
+  /** Starts an import and returns the Gateway's response; the import itself finishes in the background. */
+  async importPlanTransfer(planJsonFilePath: string, planName: string): Promise<PlanTransferResponse> {
     const planJsonFile = fs.readFileSync(planJsonFilePath);
 
     const planJson = JSON.parse(planJsonFile.toString()) as PlanTransfer;
@@ -351,8 +356,7 @@ export class AerieApi {
     if (!response.ok) {
       throw new Error(`Import plan failed: ${response.statusText}`);
     }
-    const data = (await response.json()) as PlanTransferResponse;
-    return data.plan_id;
+    return (await response.json()) as PlanTransferResponse;
   }
 
   /**
@@ -447,6 +451,24 @@ export class AerieApi {
     const response = await this.gatewayRequest('/file', 'POST', formData);
     const data = await response.json();
     return data.id;
+  }
+
+  /** Resolves once the plan's import is complete, so the plan can be opened with everything it imports in place. */
+  async waitForPlanImport(planId: number, timeoutMs = 30000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const { importRequest } = await this.gqlQuery<{
+        importRequest: { reason: { message?: string } | null; status: string }[];
+      }>(convertToQuery(gql.SUB_PLAN_IMPORT_REQUEST), { planId });
+      if (importRequest.length === 0) {
+        return;
+      }
+      if (importRequest[0].status === 'failed') {
+        throw new Error(`Plan import failed: ${importRequest[0].reason?.message ?? 'unknown reason'}`);
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    throw new Error(`Plan ${planId} import did not complete within ${timeoutMs}ms`);
   }
 
   /**

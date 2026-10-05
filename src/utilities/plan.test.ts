@@ -1,5 +1,6 @@
 import { describe } from 'node:test';
 import { expect, it, vi } from 'vitest';
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import { mockUser } from '../tests/mocks/user/mockUser';
 import type { ActivityDirective } from '../types/activity';
 import type { Plan } from '../types/plan';
@@ -442,6 +443,20 @@ describe('Plan utility', () => {
       ]);
 
       expect(downloadSpy).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('getPlanImportStatusMessage', () => {
+    it('Should describe each in-progress and failed status', () => {
+      expect(plan.getPlanImportStatusMessage(PlanImportStatus.EXTRACTING_MODEL)).toBe('Extracting model from plan');
+      expect(plan.getPlanImportStatusMessage(PlanImportStatus.IMPORTING_PLAN)).toBe('Importing activities');
+      expect(plan.getPlanImportStatusMessage(PlanImportStatus.IMPORTING_DATASET)).toBe('Importing datasets');
+      expect(plan.getPlanImportStatusMessage(PlanImportStatus.FAILED)).toBe('Import failed');
+    });
+
+    it('Should have no message for a completed import or no import', () => {
+      expect(plan.getPlanImportStatusMessage(PlanImportStatus.COMPLETE)).toBeNull();
+      expect(plan.getPlanImportStatusMessage(null)).toBeNull();
     });
   });
 

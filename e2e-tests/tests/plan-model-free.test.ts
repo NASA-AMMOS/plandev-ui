@@ -88,6 +88,7 @@ test.describe.serial('Model free plan viewing', () => {
 
   test.beforeAll(async () => {
     modelFreePlanId = await setup.api.importPlan(modelFreePlanFile, modelFreePlanName);
+    await setup.api.waitForPlanImport(modelFreePlanId);
     const constraints = new Constraints(setup.page);
     const schedulingConditions = new SchedulingConditions(setup.page);
     const schedulingGoals = new SchedulingGoals(setup.page);
@@ -99,6 +100,15 @@ test.describe.serial('Model free plan viewing', () => {
     if (modelFreePlanId) {
       await setup.api.deletePlan(modelFreePlanId);
     }
+  });
+
+  test('finishes importing and lists the imported resources', async () => {
+    await expect(plan.page.getByText('Import in progress')).not.toBeVisible();
+    await expect(plan.page.getByText('Plan import failed')).not.toBeVisible();
+    await plan.panelActivityTypes.getByRole('tab', { exact: true, name: 'Resources' }).click();
+    await expect(plan.panelActivityTypes.getByText('/battery/state_of_charge')).toBeVisible();
+    await expect(plan.panelActivityTypes.getByText('/camera/mode')).toBeVisible();
+    await plan.panelActivityTypes.getByRole('tab', { exact: true, name: 'Activities' }).click();
   });
 
   test('should not be able to add activities to a model free plan', async () => {
@@ -126,5 +136,50 @@ test.describe.serial('Model free plan viewing', () => {
     await plan.showPanel(PanelNames.PLAN_METADATA);
     await expect(plan.page.getByRole('button', { name: 'Change plan time range' })).toBeVisible();
     await expect(plan.page.getByRole('button', { name: 'Change plan time range' })).toBeDisabled();
+  });
+});
+
+test.describe.serial('Failed plan import', () => {
+  const failedPlanName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  let importedModelId: number | null = null;
+  let importedPlanId: number | null = null;
+  let plan: Plan;
+
+  test.beforeAll(async () => {
+    // The file has an unparseable activity start_offset, which fails after the Gateway has accepted the import
+    const response = await setup.api.importPlanTransfer('e2e-tests/data/plan-import-bad-interval.json', failedPlanName);
+    importedModelId = response.model_id;
+    importedPlanId = response.plan_id;
+    const constraints = new Constraints(setup.page);
+    const schedulingConditions = new SchedulingConditions(setup.page);
+    const schedulingGoals = new SchedulingGoals(setup.page);
+    plan = new Plan(setup.page, setup.plans, constraints, schedulingGoals, schedulingConditions, failedPlanName);
+  });
+
+  test.afterAll(async () => {
+    if (importedPlanId) {
+      await setup.api.deletePlan(importedPlanId);
+    }
+    if (importedModelId) {
+      await setup.api.deleteModel(importedModelId);
+    }
+  });
+
+  test('shows the failure in the plans list', async () => {
+    await setup.plans.goto();
+    await setup.plans.filterTable(failedPlanName);
+    await expect(setup.plans.tableRow(failedPlanName)).toBeVisible();
+    // The failure is flagged by a warning icon whose tooltip carries the message
+    await setup.plans.tableRow(failedPlanName).locator('svg').first().hover();
+    await expect(setup.page.getByText('Import failed: select plan for details')).toBeVisible();
+  });
+
+  test('shows the failure reason and keeps the plan read-only', async () => {
+    await plan.goto(`${importedPlanId}`);
+    await expect(
+      plan.page.getByText('Plan import failed invalid input syntax for type interval').first(),
+    ).toBeVisible();
+    await plan.page.getByRole('button', { name: 'Add Activity' }).click();
+    await expect(setup.page.getByText('Activity Directive Builder')).not.toBeVisible();
   });
 });
