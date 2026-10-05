@@ -1,5 +1,6 @@
 import { capitalize, keyBy } from 'lodash-es';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirectiveId } from '../types/activity';
 import type {
   ActivityDirectiveValidationFailureStatus,
@@ -19,7 +20,7 @@ import { CompoundError } from '../utilities/requests';
 import { pluralize } from '../utilities/text';
 import { activityDirectiveValidationStatuses, activityDirectivesMap, anchorValidationStatuses } from './activities';
 import { relevantConstraintRuns } from './constraints';
-import { plan } from './plan';
+import { plan, planImportRequest } from './plan';
 import { simulationDataset } from './simulation';
 
 export function parseErrorReason(error: string) {
@@ -193,6 +194,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     modelErrors,
     activityValidationErrors,
     activityStatusRollupsMap,
+    planImportRequest,
   ],
   ([
     $simulationErrors,
@@ -201,7 +203,8 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
     $constraintErrors,
     $modelErrors,
     $activityValidationErrors,
-    $activityErrorRollupsMap,
+    $activityStatusRollupsMap,
+    $planImportRequest,
   ]) =>
     [
       ...($simulationErrors ?? []),
@@ -213,7 +216,7 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
         ? $activityValidationErrors
             .filter(error => error.status === 'complete')
             .map(error => {
-              const errorCount = Object.entries($activityErrorRollupsMap[error.activityId]?.statusCounts || {}).reduce(
+              const errorCount = Object.entries($activityStatusRollupsMap[error.activityId]?.statusCounts || {}).reduce(
                 (count, [key, value]) => {
                   if (key !== 'pending') {
                     count += value;
@@ -232,6 +235,9 @@ export const allProblems: Readable<ConsoleEntry[]> = derived(
               };
               return errorMessage;
             })
+        : []),
+      ...($planImportRequest && $planImportRequest.status === PlanImportStatus.FAILED
+        ? [$planImportRequest.reason]
         : []),
     ].sort((errorA: ConsoleEntry, errorB: ConsoleEntry) =>
       compare(`${new Date(errorA.timestamp)}`, `${new Date(errorB.timestamp)}`, false),
