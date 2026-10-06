@@ -19,7 +19,8 @@ export const modelId: Readable<number> = derived(initialModel, $model => ($model
 export const model = gqlSubscribable<Model | null>(gql.SUB_MODEL, { id: modelId }, null);
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
-export const executableModels = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, { is_executable: [true] }, []);
+
+export const executableModels = derived(models, $models => $models.filter(model => model.is_executable));
 
 /* Helper Functions. */
 

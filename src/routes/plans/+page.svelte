@@ -428,7 +428,6 @@
   }
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
-  $: executableModels.updateValue(() => data.models.filter(model => model.is_executable));
 
   $: selectedPlanImportRequest =
     selectedPlan && $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
