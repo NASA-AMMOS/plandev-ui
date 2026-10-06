@@ -6,7 +6,7 @@
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, CircleQuestionMark } from 'lucide-svelte';
-  import { models } from '../../stores/model';
+  import { executableModels, models } from '../../stores/model';
   import { schedulingGoalResponses } from '../../stores/scheduling';
   import {
     hasSearched,
@@ -98,12 +98,10 @@
 
   $: selectedModel = selectedModelId !== undefined ? $models.find(m => m.id === selectedModelId) : undefined;
 
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
+  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => idB - idA);
 
   $: {
-    modelOptions = orderedModels
-      .filter(m => m.is_executable) // only present executable models in the models dropdown
-      .map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
+    modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
 
     // If the selected model is no longer available, reset the selection
     if (modelOptions.length > 0 && selectedModelId !== undefined) {
