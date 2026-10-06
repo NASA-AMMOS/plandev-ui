@@ -158,7 +158,7 @@
         _nodeB,
         isDescending: boolean,
       ) => {
-        return compareWithRankings(valueA, valueB, isDescending ? ['', 'N/A', 'string'] : ['string', 'N/A', '']);
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
       },
       field: 'model_name',
       filter: 'text',

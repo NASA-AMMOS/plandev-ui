@@ -20,7 +20,7 @@
 {#if importStatus !== null || isReadOnly}
   <div class="grid w-full grid-cols-[min-content_auto] items-center gap-2">
     {#if importStatus !== null}
-      <div use:tooltip={{ content: importStatusMessage }}>
+      <div role="img" aria-label={importStatusMessage ?? undefined} use:tooltip={{ content: importStatusMessage }}>
         {#if importStatus !== PlanImportStatus.FAILED}
           <LoaderCircle {size} class="animate-spin opacity-75" />
         {:else}

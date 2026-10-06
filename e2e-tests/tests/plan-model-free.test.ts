@@ -170,8 +170,11 @@ test.describe.serial('Failed plan import', () => {
     await setup.plans.filterTable(failedPlanName);
     await expect(setup.plans.tableRow(failedPlanName)).toBeVisible();
     // The failure is flagged by a warning icon whose tooltip carries the message
-    await setup.plans.tableRow(failedPlanName).locator('svg').first().hover();
-    await expect(setup.page.getByText('Import failed: select plan for details')).toBeVisible();
+    await setup.plans
+      .tableRow(failedPlanName)
+      .getByRole('img', { name: 'Import failed: select plan for details' })
+      .hover();
+    await expect(setup.page.getByText('Import failed: select plan for details').first()).toBeVisible();
   });
 
   test('shows the failure reason and keeps the plan read-only', async () => {
