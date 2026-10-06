@@ -99,19 +99,13 @@
     {
       cellRenderer: (params: ICellRendererParams<Plan>) => {
         const div = document.createElement('div');
-        let isExecutable = true;
-        if (params.data?.model_id !== undefined) {
-          const associatedModel = $models.find(model => model.id === params.data?.model_id);
-          if (associatedModel) {
-            isExecutable = associatedModel.is_executable;
-          }
-        }
-        const importStatus = $planImportRequestsMap[params.data?.id ?? -1]?.status ?? null;
+        const plan = params.data;
+        const importStatus = $planImportRequestsMap[plan?.id ?? -1]?.status ?? null;
         new PlanName({
           props: {
-            name: params.data?.name || '',
-            isReadOnly: !isExecutable,
-            importStatus: importStatus === PlanImportStatus.COMPLETE ? null : importStatus,
+            name: plan?.name || '',
+            isReadOnly: plan?.is_read_only,
+            importStatus,
             importError: 'Import failed: select plan for details',
           },
           target: div,
@@ -483,8 +477,7 @@
 
   $: {
     void $planImportRequestsMap;
-    plansTable?.dataGrid?.refreshCells({ columns: ['name'], force: true });
-    plansTable?.dataGrid?.refreshCells({ columns: ['actions'], force: true });
+    plansTable?.dataGrid?.refreshCells({ columns: ['name', 'actions'], force: true });
   }
   $: {
     void $models;
@@ -1363,6 +1356,7 @@
           showLoadingSkeleton
           loading={$plansLoading}
           {columnDefs}
+          columnsToForceRefreshOnDataUpdate={['name']}
           columnShiftResize
           autoSizeColumnsToFit={false}
           hasDeletePermission={featurePermissions.plan.canDelete}
