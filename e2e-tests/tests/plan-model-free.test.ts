@@ -129,7 +129,7 @@ test.describe.serial('Model free plan viewing', () => {
 
   test('should not be able to change the model of a model free plan', async () => {
     await plan.showPanel(PanelNames.PLAN_METADATA);
-    await expect(plan.page.getByText('Model free plan')).toBeVisible();
+    await expect(plan.page.getByText('Model-free plan')).toBeVisible();
   });
 
   test('should not be able to change the time range of a model free plan', async () => {
@@ -176,9 +176,7 @@ test.describe.serial('Failed plan import', () => {
 
   test('shows the failure reason and keeps the plan read-only', async () => {
     await plan.goto(`${importedPlanId}`);
-    await expect(
-      plan.page.getByText('Plan import failed invalid input syntax for type interval').first(),
-    ).toBeVisible();
+    await expect(plan.page.getByText('Import failed invalid input syntax for type interval').first()).toBeVisible();
     await plan.page.getByRole('button', { name: 'Add Activity' }).click();
     await expect(setup.page.getByText('Activity Directive Builder')).not.toBeVisible();
   });
