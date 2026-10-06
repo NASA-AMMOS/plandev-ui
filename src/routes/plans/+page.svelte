@@ -378,11 +378,11 @@
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createButtonEnabled: boolean = false;
   let createPlanButtonText: string = 'Create';
-  let durationString: string = 'None';
-  let filterText: string = '';
   // This array should only be mutated to avoid extra re-renders. It is not needed for rendering as $planImportRequests will
   // be used to track the status of the import requests and retrigger a render
   let currentImportRequests: { planName: string; requestId: number }[] = [];
+  let durationString: string = 'None';
+  let filterText: string = '';
   let isPlanImportMode: boolean = false;
   let isPlanUploadReadOnly: boolean = false;
   let isLoadingPlanFile: boolean = false;
