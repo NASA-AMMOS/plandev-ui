@@ -40,23 +40,21 @@
   let metadataDiffers: boolean = false;
   let revisionContent: string = '';
 
+  // The diff only shows content, but a restore also replaces versioned metadata. Load both before describing the
+  // restore or enabling it, so "identical" never shows for a revision whose metadata differs.
   onMount(async () => {
     try {
-      revisionContent = await WorkspaceApi.getFileRevisionContent(workspaceId, revision.id, user);
+      const [content, { metadata }, current] = await Promise.all([
+        WorkspaceApi.getFileRevisionContent(workspaceId, revision.id, user),
+        WorkspaceApi.getFileRevision(workspaceId, revision.id, user),
+        WorkspaceApi.getFileMetadata(workspaceId, filePath, user),
+      ]);
+      revisionContent = content;
+      metadataDiffers = canonical(metadata) !== canonical(current ?? {});
     } catch {
       loadError = true;
     } finally {
       isLoading = false;
-    }
-    // The diff only shows content; a restore also replaces versioned metadata, so say when that differs.
-    try {
-      const [{ metadata }, current] = await Promise.all([
-        WorkspaceApi.getFileRevision(workspaceId, revision.id, user),
-        WorkspaceApi.getFileMetadata(workspaceId, filePath, user),
-      ]);
-      metadataDiffers = canonical(metadata) !== canonical(current ?? {});
-    } catch {
-      // Best effort: the note is informational
     }
   });
 
@@ -100,7 +98,7 @@
       {revision.createdBy ?? 'Unknown'} · {new Date(revision.createdAt).toLocaleString()}
       {#if !isLoading && !loadError}
         · {changedLines === 0
-          ? `identical to ${currentLabel.toLowerCase()}`
+          ? `${metadataDiffers ? 'content ' : ''}identical to ${currentLabel.toLowerCase()}`
           : `${changedLines} changed ${changedLines === 1 ? 'line' : 'lines'}`}
       {/if}
       {#if metadataDiffers}· File metadata also differs.{/if}

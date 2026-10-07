@@ -90,6 +90,34 @@ describe('WorkspaceRevisionsPanel', () => {
 describe('WorkspaceRevisionPreviewModal', () => {
   afterEach(() => cleanup());
 
+  it('describes and enables Restore only after both content and metadata are checked', async () => {
+    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue('same');
+    let finishMetadata = () => {};
+    vi.spyOn(WorkspaceApi, 'getFileRevision').mockReturnValue(
+      new Promise(resolve => (finishMetadata = () => resolve({ ...a, metadata: { user: { status: 'draft' } } }))),
+    );
+    vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue({ readOnly: true, user: {} } as never);
+    const { container, getByRole } = render(WorkspaceRevisionPreviewModal, {
+      props: {
+        currentContent: 'same',
+        currentLabel: 'Working copy',
+        filePath: 'a.seq',
+        restore: vi.fn(),
+        revision: a,
+        workspaceId: 1,
+      },
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(container.textContent).not.toContain('identical');
+
+    finishMetadata();
+    await waitFor(() => expect(container.textContent).toContain('File metadata also differs.'));
+    expect(container.textContent).toContain('content identical to working copy');
+    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('stays open and blocks a second restore while one is in flight', async () => {
     vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue('old');
     vi.spyOn(WorkspaceApi, 'getFileRevision').mockResolvedValue({ ...a, metadata: {} });
