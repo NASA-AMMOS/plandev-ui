@@ -2,7 +2,15 @@
 
 <script lang="ts">
   import { Button, ContextMenu } from '@nasa-jpl/stellar-svelte';
-  import type { ColDef, ColumnPinnedType, ColumnState, ICellRendererParams, SortDirection } from 'ag-grid-community';
+  import type {
+    ColDef,
+    ColumnPinnedType,
+    ColumnState,
+    ICellRendererParams,
+    IRowNode,
+    SortDirection,
+    ValueGetterParams,
+  } from 'ag-grid-community';
   import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-svelte';
   import { SEARCH_RESULTS_COLUMN_STATE_KEY } from '../../constants/localStorage';
   import {
@@ -16,7 +24,9 @@
   } from '../../stores/search';
   import type { ActivityDirective, ActivityDirectiveSearchResult } from '../../types/activity';
   import type { User } from '../../types/app';
+  import type { Plan } from '../../types/plan';
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
+  import { compareWithRankings } from '../../utilities/generic';
   import { getLocalStorageItem } from '../../utilities/localStorage';
   import { getDoyTime, getShortISOForDate, getUnixEpochTimeFromInterval } from '../../utilities/time';
   import ActivityTableMenu from '../activity/ActivityTableMenu.svelte';
@@ -142,21 +152,63 @@
     },
     {
       colId: 'plan.model.name',
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA: IRowNode<Plan>,
+        _nodeB: IRowNode<Plan>,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
+      },
       headerName: 'Model',
       hide: false,
       minWidth: 120,
       resizable: true,
       sortable: false,
-      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) => data?.plan.model?.name ?? '',
+      valueGetter: (params: ValueGetterParams<ActivityDirectiveSearchResult>) => {
+        let value: string | number = '';
+        if (params.data?.plan.model !== undefined) {
+          const associatedModel = params.data.plan.model;
+          if (associatedModel) {
+            value = associatedModel.is_executable ? associatedModel.name : '-';
+          } else {
+            value = params.data?.plan.model?.name ?? '';
+          }
+        }
+
+        return value;
+      },
     },
     {
       colId: 'plan.model.id',
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA: IRowNode<Plan>,
+        _nodeB: IRowNode<Plan>,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
+      },
       headerName: 'Model ID',
       hide: false,
       minWidth: 80,
       resizable: true,
       sortable: false,
-      valueGetter: ({ data }: { data?: ActivityDirectiveSearchResult }) => data?.plan.model?.id ?? '',
+      valueGetter: (params: ValueGetterParams<ActivityDirectiveSearchResult>) => {
+        let value: string | number = '';
+        if (params.data?.plan.model !== undefined) {
+          const associatedModel = params.data.plan.model;
+          if (associatedModel) {
+            value = associatedModel.is_executable ? associatedModel.id : '-';
+          } else {
+            value = params.data?.plan.model?.id ?? '';
+          }
+        }
+
+        return value;
+      },
     },
     {
       autoHeight: true,

@@ -76,7 +76,7 @@
     {
       "label": "PlanDev Backend",
       "type": "shell",
-      "command": "cd ../plandev && docker compose up --build plandev_gateway plandev_merlin plandev_scheduler plandev_merlin_worker_1 plandev_merlin_worker_2 plandev_scheduler_worker_1 plandev_scheduler_worker_2 plandev_sequencing plandev_workspace plandev_action hasura postgres",
+      "command": "cd ../plandev && docker compose up --build $(docker compose config --services | grep -v '^plandev_ui$')",
       "detail": "Task to start up PlanDev containers.",
       "isBackground": true,
       "problemMatcher": [],
@@ -133,15 +133,30 @@
       "label": "e2e Tests",
       "type": "shell",
       "dependsOn": ["PlanDev UI"],
-      "command": "nvm use && npm run test:e2e",
+      "command": "nvm use && npm run test:e2e ${input:e2eTestArgs}",
       "detail": "Task to run e2e tests"
     },
     {
       "label": "e2e Tests - With UI",
       "type": "shell",
       "dependsOn": ["PlanDev UI"],
-      "command": "nvm use && npm run test:e2e:with-ui",
+      "command": "nvm use && npm run test:e2e:with-ui ${input:e2eTestArgs}",
       "detail": "Task to run e2e tests with Playwright UI."
+    },
+    {
+      "label": "e2e Tests - Clear User Data",
+      "type": "shell",
+      "dependsOn": ["PlanDev UI"],
+      "command": "nvm use && npm run test:e2e:clear-cache",
+      "detail": "Task to clear Playwright user data and cache."
+    }
+  ],
+  "inputs": [
+    {
+      "id": "e2eTestArgs",
+      "type": "promptString",
+      "description": "Additional arguments to pass to the e2e tests (e.g. a spec file path or --grep pattern)",
+      "default": ""
     }
   ]
 }

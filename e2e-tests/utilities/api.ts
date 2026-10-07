@@ -18,7 +18,7 @@ import { ActivityDirectiveInsertInput } from '../../src/types/activity.js';
 import type { ReqAuthResponse } from '../../src/types/auth';
 import { ConstraintDefinitionInsertInput } from '../../src/types/constraint.js';
 import { ModelInsertInput } from '../../src/types/model.js';
-import { PlanInsertInput } from '../../src/types/plan.js';
+import { PlanInsertInput, PlanTransfer, PlanTransferResponse } from '../../src/types/plan.js';
 import { SchedulingGoalDefinitionInsertInput, SchedulingGoalInsertInput } from '../../src/types/scheduling.js';
 import { convertToQuery } from '../../src/utilities/generic.js';
 import gql from '../../src/utilities/gql.js';
@@ -45,7 +45,7 @@ export interface ApiUser {
  * Shared test data written during global setup and read by tests.
  */
 export interface SharedTestData {
-  jarId: number;
+  definitionFileId: number;
 }
 
 /**
@@ -330,6 +330,36 @@ export class AerieApi {
   }
 
   /**
+   * Import plan from JSON file
+   */
+  async importPlan(planJsonFilePath: string, planName: string): Promise<number> {
+    return (await this.importPlanTransfer(planJsonFilePath, planName)).plan_id;
+  }
+
+  /** Starts an import and returns the Gateway's response; the import itself finishes in the background. */
+  async importPlanTransfer(planJsonFilePath: string, planName: string): Promise<PlanTransferResponse> {
+    const planJsonFile = fs.readFileSync(planJsonFilePath);
+
+    const planJson = JSON.parse(planJsonFile.toString()) as PlanTransfer;
+    const startTime = planJson.start_time;
+    const duration = planJson.duration;
+    const formData = new FormData();
+    formData.append('name', `${planName}`);
+    formData.append('model_id', '-1');
+    formData.append('start_time', startTime);
+    formData.append('duration', duration);
+    formData.append('tags', JSON.stringify([]));
+    formData.append('plan_file', new Blob([JSON.stringify(planJson)]), planName);
+
+    const response = await this.gatewayRequest('/importPlan', 'POST', formData);
+
+    if (!response.ok) {
+      throw new Error(`Import plan failed: ${response.statusText}`);
+    }
+    return (await response.json()) as PlanTransferResponse;
+  }
+
+  /**
    * Login via Gateway and store the token for subsequent requests.
    */
   async login(username: string, password: string): Promise<ApiUser> {
@@ -421,6 +451,24 @@ export class AerieApi {
     const response = await this.gatewayRequest('/file', 'POST', formData);
     const data = await response.json();
     return data.id;
+  }
+
+  /** Resolves once the plan's import is complete, so the plan can be opened with everything it imports in place. */
+  async waitForPlanImport(planId: number, timeoutMs = 30000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const { importRequest } = await this.gqlQuery<{
+        importRequest: { reason: { message?: string } | null; status: string }[];
+      }>(convertToQuery(gql.SUB_PLAN_IMPORT_REQUEST), { planId });
+      if (importRequest.length === 0) {
+        return;
+      }
+      if (importRequest[0].status === 'failed') {
+        throw new Error(`Plan import failed: ${importRequest[0].reason?.message ?? 'unknown reason'}`);
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    throw new Error(`Plan ${planId} import did not complete within ${timeoutMs}ms`);
   }
 
   /**
@@ -616,12 +664,12 @@ export async function setupTest(browser: Browser, options: SetupOptions = {}): P
   await api.login(user, 'test');
 
   // Use pre-uploaded JAR from global setup
-  const { jarId } = getSharedTestData();
+  const { definitionFileId } = getSharedTestData();
 
   // Create model via API
   const modelName = options.modelName ?? uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
   const model = await api.createModel({
-    jar_id: jarId,
+    definition_file_id: definitionFileId,
     mission: 'test',
     name: modelName,
     version: '1.0.0',

@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { planReadOnly } from '../../stores/plan';
+  import { planIsLocked } from '../../stores/plan';
   import { simulationTemplates } from '../../stores/simulation';
   import type { User } from '../../types/app';
   import type {
@@ -42,21 +42,21 @@
     value: simulationTemplate.id,
   }));
   $: if (plan !== null) {
-    hasAssignPermission = featurePermissions.simulationTemplates.canAssign(user, plan) && !$planReadOnly;
+    hasAssignPermission = featurePermissions.simulationTemplates.canAssign(user, plan) && !$planIsLocked;
     // because we also assign after template creation, we must include both checks here as part of the creation permission check
     hasCreatePermission =
       featurePermissions.simulationTemplates.canCreate(user, plan) &&
       featurePermissions.simulationTemplates.canAssign(user, plan) &&
-      !$planReadOnly;
+      !$planIsLocked;
 
     const selectedTemplate = $simulationTemplates.find(
       simulationTemplate => simulationTemplate.id === selectedSimulationTemplate?.id,
     );
     if (selectedTemplate !== undefined) {
       hasDeletePermission =
-        featurePermissions.simulationTemplates.canDelete(user, plan, selectedTemplate) && !$planReadOnly;
+        featurePermissions.simulationTemplates.canDelete(user, plan, selectedTemplate) && !$planIsLocked;
       hasUpdatePermission =
-        featurePermissions.simulationTemplates.canUpdate(user, plan, selectedTemplate) && !$planReadOnly;
+        featurePermissions.simulationTemplates.canUpdate(user, plan, selectedTemplate) && !$planIsLocked;
     }
   }
 
@@ -102,7 +102,7 @@
       {options}
       optionLabel="template"
       placeholder="None"
-      planReadOnly={$planReadOnly}
+      planReadOnly={$planIsLocked}
       selectedOptionValue={selectedSimulationTemplate?.id}
       showPlaceholderOption={hasAssignPermission}
       on:deleteOption={onDeleteTemplate}

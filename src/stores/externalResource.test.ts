@@ -42,6 +42,7 @@ vi.mock('./plan', () => ({
   planDatasets: planDatasetsMock,
   planEndTimeDoy: writable(''),
   planId: writable(1),
+  planImportRequest: writable(null),
   planModelId: writable(1),
   planModelRevision: writable(1),
   planRevision: writable(1),

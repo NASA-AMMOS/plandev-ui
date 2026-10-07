@@ -12,7 +12,7 @@
     initialConstraintPlanSpecsLoading,
     initialConstraintsLoading,
   } from '../../stores/constraints';
-  import { plan, planId, planReadOnly } from '../../stores/plan';
+  import { plan, planId, planIsLocked } from '../../stores/plan';
   import type { User } from '../../types/app';
   import type {
     ConstraintMetadata,
@@ -308,8 +308,8 @@
       class="st-button"
       on:click={() => onUpdateConstraints(selectedConstraints)}
       use:permissionHandler={{
-        hasPermission: hasEditSpecPermission && !$planReadOnly,
-        permissionError: $planReadOnly
+        hasPermission: hasEditSpecPermission && !$planIsLocked,
+        permissionError: $planIsLocked
           ? PlanStatusMessages.READ_ONLY
           : 'You do not have permission to update the constraints on this plan.',
       }}

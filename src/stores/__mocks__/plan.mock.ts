@@ -1,7 +1,7 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import type { ActivityType } from '../../types/activity';
 import type { ModelSlim } from '../../types/model';
-import type { Plan, PlanMergeRequest, PlanMetadata } from '../../types/plan';
+import type { Plan, PlanImportRequest, PlanMergeRequest, PlanMetadata } from '../../types/plan';
 import type { PlanDataset } from '../../types/simulation';
 import type { Tag } from '../../types/tags';
 import type { TimeRange } from '../../types/timeline';
@@ -72,6 +72,8 @@ export const planMergeRequestsIncoming = writable<PlanMergeRequest[]>([]);
 export const planMergeRequestsOutgoing = writable<PlanMergeRequest[]>([]);
 
 export const planRevision = writable<number>(-1);
+
+export const planImportRequest = writable<PlanImportRequest | null>(null);
 
 /* Helper Functions. */
 

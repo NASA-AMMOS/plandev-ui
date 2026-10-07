@@ -1,4 +1,7 @@
-import type { PlanSlim } from '../types/plan';
+import { keyBy } from 'lodash-es';
+import { derived } from 'svelte/store';
+import type { PlanImportRequest, PlanSlim } from '../types/plan';
+import type { GqlSubscribable } from '../types/subscribable';
 import gql from '../utilities/gql';
 import { getDoyTime, getDoyTimeFromInterval } from '../utilities/time';
 import { gqlSubscribable } from './subscribable';
@@ -14,3 +17,12 @@ export const plans = gqlSubscribable<PlanSlim[]>(gql.SUB_PLANS, {}, [], plans =>
     };
   });
 });
+
+export const planImportRequests = gqlSubscribable<PlanImportRequest[]>(gql.SUB_PLAN_IMPORT_REQUESTS, {}, []);
+
+/* Derived. */
+
+export const planImportRequestsMap = derived<[GqlSubscribable<PlanImportRequest[]>], Record<number, PlanImportRequest>>(
+  [planImportRequests],
+  ([$requests]) => keyBy($requests, 'plan_id'),
+);
