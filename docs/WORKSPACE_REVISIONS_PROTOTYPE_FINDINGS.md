@@ -1,12 +1,14 @@
 # Workspace file revisions: UX prototype findings (2026-10-07)
 
 Both branches are pushed to `origin`:
+
 - UI: NASA-AMMOS/plandev-ui `prototype/workspace-file-revisions-ui-v2`, branched from develop `5520951d`.
 - Backend: NASA-AMMOS/aerie `prototype/git-authoritative-revisions`.
 
 Try it: http://localhost:3111/workspaces/2422 (`orbit_burn.seq`), login test/test. The workspace image is rebuilt on stack `workspace-file-versioning`.
 
 Screenshots (not checked in; in `~/code/claude-plans/plandev/workspace-revisions-ux-prototype/`):
+
 - 01–14 are from the first pass. Their status wording is the old one ("Matches revision X" / "Changes since revision X").
 - 15–18 show the current wording:
   - 15: saved copy matches the latest revision (Create disabled)
@@ -15,15 +17,17 @@ Screenshots (not checked in; in `~/code/claude-plans/plandev/workspace-revisions
   - 18: saved changes that no revision holds, with the restore warning
 
 ## Revision state model
+
 - **Versioned state, which revisions hold and restore replaces:** file content plus versioned sidecar metadata (fileId, createdBy/createdAt, user fields, unknown future fields).
 - **Runtime state, never in a revision:** `readOnly`.
 - **Derived state, never in a revision:** `lastEditedBy` and `lastEditedAt`.
 - Consequences:
   - Toggling readOnly is not a change to a file's revision state.
   - Restore never brings back a historical readOnly; the file keeps its current one.
-  - Restore *can* change user metadata.
+  - Restore _can_ change user metadata.
 
 ## Current behaviour
+
 - **Where it lives:** a right-panel "Revisions" tab (History icon) for any file. It stays selected when you switch files.
 - **Working copy status:**
   - "No revisions yet."
@@ -48,6 +52,7 @@ Screenshots (not checked in; in `~/code/claude-plans/plandev/workspace-revisions
   - After a restore, the editor ends clean, no revision is created, and history survives a rename.
 
 ## Findings
+
 1. **Resolved:** after restoring b, the panel said "Changes since revision e". It now reports the matching revision.
 2. **Resolved:** "Matches revision a" next to "Unsaved editor changes" read as a contradiction. It now says "Saved copy matches…".
 3. **Resolved:** a duplicate of the latest revision (e.g. g == f) can no longer be created.
