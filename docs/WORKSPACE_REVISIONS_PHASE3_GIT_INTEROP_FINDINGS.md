@@ -196,6 +196,8 @@ Only if multi-writer revision creation becomes a requirement, the alternatives a
 2. **Orphan sidecars rejected** (§5). This tightened one existing test: the rollback test's external delete of `c.seq`
    now removes its sidecar too, since a content-only `git rm` is now (correctly) rejected. **Changed conclusion:**
    external Git users must treat content + sidecar as a unit for rename _and_ delete, not only for rename.
+   This is a usability cost of the sidecar identity model: a natural `git mv a.seq b.seq` is rejected on import.
+   It is safe and needs no architecture change, but Git-link documentation/tooling must make the pairing explicit.
 
 ## Explicitly not built
 
