@@ -1,11 +1,12 @@
 # Phase 3 prototype findings: controlled Git interoperability
 
 Backend `NASA-AMMOS/plandev`, branch
-`prototype/git-authoritative-revisions`, local commit **`749510799`** on top of `52696699a`. Not pushed. No UI changes.
+`prototype/git-authoritative-revisions`: **`749510799`** on top of `52696699a`, plus post-review correctness fixes
+**`f00a78c63`** (see §13). No UI changes.
 
 **Bottom line:** the contract holds. A workspace round-trips through an ordinary Git repository with a narrow,
 fail-closed integration path (fetch → staging → validate on Git objects → forward integration → atomic promotion).
-One real design gap surfaced: **revision ordinals are not mergeable across clones** (see §12).
+One real design question surfaced: **revisions minted independently in two writable clones are not mergeable** (see §12).
 
 ## 1. Shape added
 
@@ -75,7 +76,10 @@ Staging refs and fetched/merge objects may remain. They aren't authoritative.
 - `fileId` present but not a UUID string
 - sidecar carrying runtime fields (`readOnly`, `lastEditedBy`, `lastEditedAt`). PlanDev never commits them, and a
   Git-carried `readOnly` would silently mean nothing.
-- two **live** files (sidecar whose content file exists) claiming one `fileId`
+- a sidecar whose content file is absent (`.a.seq.meta.seqdev (metadata has no corresponding file a.seq)`). This also
+  makes an incomplete external rename (content moved, sidecar left behind) or a content-only delete fail instead of
+  leaving stale identity behind.
+- two files claiming one `fileId`
 
 `requireValidIndex` + `requireClean` still run after checkout as a second guard.
 
@@ -87,7 +91,7 @@ commit, `git show <tag>:path` gives the historical content, and the annotation i
 
 **B. External commits: yes.** They update the working copy; revision count and tags unchanged.
 
-**C. fileId for rename lineage: yes.** Moving file + sidecar externally keeps `fileId`. Old revisions list under the
+**C. fileId for rename lineage: yes,** when content and sidecar move together. Moving file + sidecar externally keeps `fileId`. Old revisions list under the
 new path, preview reads from `pathAtRevision`, and the next revision is ordinal 2. No rename record needed.
 
 **D. Malformed identity rejected cheaply: yes.** It's one pass over the tree plus parsing the sidecars. Duplicate fileId →
@@ -99,8 +103,10 @@ next revision is `c`.
 
 **F. Immutability over remote Git: yes, without a distributed protocol.**
 
-- Same id with the same tag object, or the same target + message → accepted as the same revision.
-- Moved to another commit, or re-annotated → whole import rejected.
+- An already-known revision ref must point to the **exact same annotated tag object**. Recreating a tag with the same
+  target and message but a different tagger/time produces a different Git object and is rejected, as are moving it to
+  another commit or re-annotating it. Otherwise the import would succeed while the local ref kept the old object, and
+  the next non-forced push would be refused as a tag rewrite.
 - Missing on the remote → local untouched. The next push **re-publishes it**. Absence isn't deletion in either direction.
 - New tags: validated with the canonical ones, must be reachable from the post-import main (a well-formed tag on a
   side-branch commit is rejected), then promoted in **one atomic `BatchRefUpdate`**: all or none.
@@ -125,9 +131,10 @@ unrelated history (PlanDev's own root commit), which is rejected by design.
 
 ## 8. Tests
 
-`WorkspaceGitRemoteIntegrationTest`: 20 tests covering all 15 cases in the brief, plus forward-only outcomes and
-unrelated history, the post-checkout rollback, a rejected clone leaving ws2 empty, and the ordinal collision.
-Full workspace-server suite: **250 tests, 0 failures** (incl. the existing 102 history/revision tests).
+`WorkspaceGitRemoteIntegrationTest`: 22 tests covering all 15 cases in the brief, plus forward-only outcomes and
+unrelated history, the post-checkout rollback, a rejected clone leaving ws2 empty, the ordinal collision, a recreated
+tag object, and orphan/left-behind sidecars. Full workspace-server suite: **252 tests, 0 failures** (incl. the existing
+102 history/revision tests).
 
 ## 9. Size
 
@@ -154,24 +161,41 @@ support atomic push (GitHub does; verify any other target).
 4. Reindex runs only when tags were promoted. If it fails after Git accepted the import, the result is
    `REVISION_NOT_INDEXED` (Git ahead of the projection, repaired by reindex), the same as Phase 2.
 
-## 12. Design change needed: revision ordinals aren't mergeable
+## 12. Open question: who may mint revisions?
 
 Two clones that each create "the next" revision of the same file both mint ordinal 2 (`b`) with different UUIDs.
 Even when the content merges cleanly (same edit on both sides), the import is rejected (`both claim ordinal 2`).
 Then the workspace is stuck: push is non-fast-forward and integration is rejected. Recovery would require deleting a
 local revision tag, which the immutability rule forbids.
 
-UUID identity is conflict-free. The ordinal and display name (`a, b, c`) are the one part of the revision protocol
-that assumes a single writer. Options for the final design:
+UUID identity is conflict-free; the stable per-file ordinal and display name (`a, b, c`) assume a single minting
+authority. So the prototype proves that **independent revision creation in multiple writable clones is not mergeable
+under stable per-file ordinals.**
+
+Before introducing distributed sequencing, decide whether that capability is actually required:
+_do independently writable external/PlanDev clones need to mint new SeqDev revisions that can later be merged?_
+
+**Recommended direction (not implemented or enforced):** PlanDev mints explicit SeqDev revisions. Ordinary Git
+clients edit/add/delete/rename workspace content and round-trip existing `plandev/revisions/*` refs unchanged; Git users
+inspect revision history normally. Independently modified PlanDev clones are forks, not mergeable revision replicas.
+
+Only if multi-writer revision creation becomes a requirement, the alternatives are:
 
 - **(a) Single sequencer:** revision creation in a remote-linked workspace requires being up to date with the remote,
   then pushes the tag immediately (fails if the remote moved). Keeps names stable; adds a network dependency to "Create Revision".
 - **(b) Drop ordinal uniqueness:** order by `(createdAt, id)` and derive names at read time. Mergeable, but names
   can shift when older revisions arrive, which breaks "assigned once, never recomputed".
 - **(c) Unpublished revisions are provisional:** a revision that hasn't been pushed can be renumbered on integrate.
-  This is the most complex option, and it weakens immutability.
+  The most complex option, and it weakens immutability.
 
-(a) fits the "PlanDev owns canonical main" stance best. This should be decided before the real implementation.
+## 13. Post-review corrections (`f00a78c63`)
+
+1. **Exact tag identity.** `sameTag` (same object, or same target + message) was removed; a known revision ref now
+   requires `known.getObjectId().equals(staged.getObjectId())`. The looser rule accepted a state PlanDev could not
+   push back without force.
+2. **Orphan sidecars rejected** (§5). This tightened one existing test: the rollback test's external delete of `c.seq`
+   now removes its sidecar too, since a content-only `git rm` is now (correctly) rejected. **Changed conclusion:**
+   external Git users must treat content + sidecar as a unit for rename _and_ delete, not only for rename.
 
 ## Explicitly not built
 
