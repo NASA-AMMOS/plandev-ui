@@ -465,7 +465,7 @@
           timeFilteredSpans = [];
         }
 
-        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredActivityDirectives.length > 0;
+        hasActivityLayer = timeFilteredActivityDirectives.length > 0 || timeFilteredSpans.length > 0;
       } else {
         hasActivityLayer = false;
       }
