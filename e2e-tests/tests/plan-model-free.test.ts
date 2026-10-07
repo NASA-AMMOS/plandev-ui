@@ -1,5 +1,6 @@
 import test, { expect } from '@playwright/test';
 import { Buffer } from 'buffer';
+import { readFileSync } from 'fs';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 import { Constraints } from '../fixtures/Constraints.js';
 import { PanelNames, Plan } from '../fixtures/Plan.js';
@@ -136,6 +137,54 @@ test.describe.serial('Model free plan viewing', () => {
     await plan.showPanel(PanelNames.PLAN_METADATA);
     await expect(plan.page.getByRole('button', { name: 'Change plan time range' })).toBeVisible();
     await expect(plan.page.getByRole('button', { name: 'Change plan time range' })).toBeDisabled();
+  });
+});
+
+test.describe('Model free plan with spans but no directives', () => {
+  const planName = uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
+  let planId: number | null = null;
+
+  test.afterAll(async () => {
+    if (planId) {
+      await setup.api.deletePlan(planId);
+    }
+  });
+
+  test('shows imported spans on the timeline', async () => {
+    const planJson = JSON.parse(readFileSync(modelFreePlanFile, 'utf8')) as {
+      activities: unknown[];
+      results: { spans: { directive_id?: number }[] };
+    };
+    planJson.activities = [];
+    planJson.results.spans.forEach(span => delete span.directive_id);
+
+    await setup.plans.goto();
+    await setup.plans.importButton.click();
+    await setup.plans.inputFile.setInputFiles({
+      buffer: Buffer.from(JSON.stringify(planJson)),
+      mimeType: 'application/json',
+      name: 'plan-with-spans-only.json',
+    });
+    await setup.plans.fillInputName(planName);
+    await expect(setup.plans.createButton).toBeEnabled();
+    await setup.plans.createButton.click();
+
+    planId = Number(await setup.plans.getPlanId(planName));
+    await setup.api.waitForPlanImport(planId);
+
+    const plan = new Plan(
+      setup.page,
+      setup.plans,
+      new Constraints(setup.page),
+      new SchedulingGoals(setup.page),
+      new SchedulingConditions(setup.page),
+      planName,
+    );
+    await plan.goto(`${planId}`);
+
+    const activityRow = setup.page.getByRole('banner').filter({ hasText: 'Activities by Type' });
+    await expect(activityRow.getByText('Calibrate', { exact: true })).toBeVisible();
+    await expect(activityRow.getByText('TakeImage', { exact: true })).toBeVisible();
   });
 });
 
