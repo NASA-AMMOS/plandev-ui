@@ -6,7 +6,13 @@ import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
 import type { LogMessage } from '../types/console';
-import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type {
+  ActionParameterPair,
+  Workspace,
+  WorkspaceFileRevision,
+  WorkspaceFileRevisionList,
+  WorkspaceInsertInput,
+} from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
   WorkspaceTreeMap,
@@ -472,6 +478,19 @@ export function replaceFileExtension(filename: string, fromExtension: string, to
 }
 
 export const WorkspaceApi = {
+  async createFileRevision(workspaceId: number, filePath: string, user: User | null): Promise<WorkspaceFileRevision> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevision>(
+      joinPath([workspaceId, filePath]),
+      'POST',
+      null,
+      user,
+      undefined,
+      true,
+      {},
+      'revisions',
+    );
+    return data;
+  },
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
   },
@@ -533,6 +552,32 @@ export const WorkspaceApi = {
   ): Promise<WorkspaceFileMetadata | null> {
     return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
   },
+  async getFileRevision(workspaceId: number, revisionId: string, user: User | null): Promise<WorkspaceFileRevision> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevision>(
+      joinPath([workspaceId, revisionId]),
+      'GET',
+      null,
+      user,
+      undefined,
+      true,
+      {},
+      'revision',
+    );
+    return data;
+  },
+  async getFileRevisionContent(workspaceId: number, revisionId: string, user: User | null): Promise<string> {
+    const { data } = await reqWorkspaceWithEtag<string>(
+      joinPath([workspaceId, revisionId, 'content']),
+      'GET',
+      null,
+      user,
+      undefined,
+      false,
+      {},
+      'revision',
+    );
+    return data;
+  },
   async getWorkspaceContents(
     workspaceId: number,
     path: string = '',
@@ -541,6 +586,23 @@ export const WorkspaceApi = {
   ): Promise<WorkspaceTreeNode[] | null> {
     const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
     return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
+  },
+  async listFileRevisions(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<WorkspaceFileRevisionList> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevisionList>(
+      joinPath([workspaceId, filePath]),
+      'GET',
+      null,
+      user,
+      undefined,
+      true,
+      {},
+      'revisions',
+    );
+    return data;
   },
   async moveFile(
     workspaceId: number,
@@ -635,6 +697,29 @@ export const WorkspaceApi = {
       false,
       { 'Content-Type': 'application/json' },
     );
+  },
+  /**
+   * Replaces the working copy with a revision. `workingCopyETag` comes from the revision list
+   * (not the editor's save ETag); a stale one `412`s as a `WorkspaceSaveConflictError`.
+   */
+  async restoreFileRevision(
+    workspaceId: number,
+    filePath: string,
+    revisionId: string,
+    workingCopyETag: string,
+    user: User | null,
+  ): Promise<WorkspaceFileRevision> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevision>(
+      joinPath(['restore', workspaceId, filePath]),
+      'POST',
+      JSON.stringify({ revisionId }),
+      user,
+      undefined,
+      true,
+      { 'Content-Type': 'application/json', 'If-Match': workingCopyETag },
+      'revisions',
+    );
+    return data;
   },
   /**
    * Saves a workspace file and returns the new `ETag`. With `ifMatch` the server runs the

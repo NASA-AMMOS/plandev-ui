@@ -21,6 +21,7 @@
   import * as Sidebar from '../ui/Sidebar/index.js';
   import PanelHeader from './PanelHeader.svelte';
   import WorkspaceMetadataPanel from './WorkspaceMetadataPanel.svelte';
+  import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
   export let activeTab: string = 'metadata';
   export let commandNodeName: string | null = null;
@@ -199,5 +200,12 @@
     {/if}
   {:else if activeTab === 'metadata'}
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
+  {:else if activeTab === 'revisions'}
+    <WorkspaceRevisionsPanel
+      {filePath}
+      {hasEditPermission}
+      isReadOnly={!!fileMetadata?.readOnly}
+      on:workingCopyChanged
+    />
   {/if}
 </div>

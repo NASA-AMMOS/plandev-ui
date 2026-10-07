@@ -1327,6 +1327,9 @@ const gatewayPermissions = {
 
 type WorkspaceKeys = keyof typeof WorkspaceApi;
 const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: any[]) => boolean> = {
+  createFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
   createFolder: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
@@ -1354,8 +1357,17 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   getFileMetadata: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
+  getFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
+  getFileRevisionContent: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['list_workspace_contents'], user, workspace);
+  },
+  listFileRevisions: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
   moveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
@@ -1376,6 +1388,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
       (getRoleWorkspacePermission(['read_file_directory'], user, workspaceSource) &&
         getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
     );
+  },
+  restoreFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);

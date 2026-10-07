@@ -378,7 +378,8 @@ export interface WorkspaceResponseWithEtag<T> {
 /**
  * Like {@link reqWorkspace}, but returns the response `ETag` + status and, on `412`,
  * throws a typed {@link WorkspaceSaveConflictError}. Used for the editor's file GET/save
- * so the save etag can be threaded through; `reqWorkspace` is left unchanged.
+ * so the save etag can be threaded through; `reqWorkspace` is left unchanged. `root` picks the
+ * service route (file revisions live beside `/ws`, at `/revisions` and `/revision`).
  */
 export async function reqWorkspaceWithEtag<T = any>(
   url: string,
@@ -388,6 +389,7 @@ export async function reqWorkspaceWithEtag<T = any>(
   signal?: AbortSignal,
   asJson: boolean = false,
   headerOverrides: HeadersInit = {},
+  root: 'ws' | 'revision' | 'revisions' = 'ws',
 ): Promise<WorkspaceResponseWithEtag<T>> {
   const WORKSPACE_URL = env.PUBLIC_WORKSPACE_CLIENT_URL;
 
@@ -407,7 +409,7 @@ export async function reqWorkspaceWithEtag<T = any>(
     options.body = body;
   }
 
-  const response = await fetch(`${WORKSPACE_URL}/ws/${url}`, options);
+  const response = await fetch(`${WORKSPACE_URL}/${root}/${url}`, options);
   // Null unless the server exposes ETag via CORS; protection degrades gracefully if so.
   const etag = response.headers.get('ETag');
 

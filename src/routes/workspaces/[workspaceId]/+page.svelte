@@ -302,7 +302,9 @@
   let previousActiveFileIsInputSequence: boolean = activeFileIsInputSequence;
   $: if (activeFileIsInputSequence !== previousActiveFileIsInputSequence) {
     previousActiveFileIsInputSequence = activeFileIsInputSequence;
-    if (!activeFileIsInputSequence) {
+    if (rightPanelActiveTab === 'revisions') {
+      // Revisions apply to any file; keep the tab while browsing.
+    } else if (!activeFileIsInputSequence) {
       rightPanelActiveTab = 'metadata';
     } else {
       rightPanelActiveTab = 'command';
@@ -1247,6 +1249,25 @@
     }
   }
 
+  /** After a revision restore (or a stale one), load the server's working copy into the clean editor. */
+  async function onRevisionWorkingCopyChanged() {
+    const path = $activeDocumentPath;
+    if (!path || $activeDocumentIsDirty) {
+      return;
+    }
+    try {
+      const { content, etag } = await WorkspaceApi.getFileContent($workspaceId, path, $user);
+      const editorRef = activeFileIsSequence ? sequenceEditorRef : textEditorRef;
+      editorRef?.rebaseContent(content);
+      activeDocument.replaceWithServer(path, content, etag);
+      // Restore also replaces versioned metadata (readOnly, user fields).
+      refreshWorkspaceContents();
+    } catch (e) {
+      catchError('log', 'Failed to reload the file', e as Error);
+      showFailureToast('Failed to reload the file');
+    }
+  }
+
   async function onUpdateUserMetadata(event: CustomEvent<Record<string, unknown>>) {
     if (!$activeDocumentPath || !$workspaceId) {
       return;
@@ -1875,6 +1896,7 @@
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
+              on:workingCopyChanged={onRevisionWorkingCopyChanged}
             />
           </Resizable.Pane>
         {/if}

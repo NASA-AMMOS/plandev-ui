@@ -43,6 +43,7 @@ import UnsavedChangesModal from '../components/modals/UnsavedChangesModal.svelte
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
+import WorkspaceRevisionPreviewModal from '../components/modals/WorkspaceRevisionPreviewModal.svelte';
 import WorkspaceSaveConflictModal from '../components/modals/WorkspaceSaveConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import type { WorkspaceContentType } from '../enums/workspace';
@@ -58,7 +59,7 @@ import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
-import type { Workspace } from '../types/workspace';
+import type { Workspace, WorkspaceFileRevision } from '../types/workspace';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import type { WorkspaceSaveConflictReason } from './requests';
 
@@ -1810,6 +1811,41 @@ export async function showWorkspaceSaveConflictModal(props: {
         );
         conflictModal.$on('recreate', () => finish({ action: 'recreate' }));
         conflictModal.$on('discard', () => finish({ action: 'discard' }));
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/** Previews a file revision against the current content; `confirm` is true when the user confirmed Restore. */
+export async function showWorkspaceRevisionPreviewModal(props: {
+  currentContent: string;
+  currentLabel: string;
+  restoreDisabledReason: string | null;
+  revision: WorkspaceFileRevision;
+  type: WorkspaceContentType | null;
+  unrevisionedWarning: string | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const previewModal = new WorkspaceRevisionPreviewModal({ props, target });
+        target.resolve = resolve;
+
+        const finish = (confirm: boolean) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm });
+          previewModal.$destroy();
+        };
+
+        previewModal.$on('close', () => finish(false));
+        previewModal.$on('restore', () => finish(true));
       }
     } else {
       resolve({ confirm: false });

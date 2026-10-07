@@ -41,3 +41,23 @@ export type ActionParameterPair = { action: ActionDefinition; parameter: string 
 export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
   actionParameterPair: ActionParameterPair;
 };
+
+/** An explicit, immutable checkpoint of one file ("a", "b", ...). Never created by a save. */
+export type WorkspaceFileRevision = {
+  createdAt: string;
+  createdBy: string | null;
+  id: string;
+  name: string;
+  ordinal: number;
+  pathAtRevision: string;
+};
+
+/** A file's revisions, oldest first, plus the working copy's state relative to the latest one. */
+export type WorkspaceFileRevisionList = {
+  fileId: string | null;
+  hasChangesSinceLatestRevision: boolean | null;
+  latestRevision: WorkspaceFileRevision | null;
+  revisions: WorkspaceFileRevision[];
+  /** Covers content plus versioned metadata; restore's If-Match. Not the editor's save ETag. */
+  workingCopyETag: string;
+};
