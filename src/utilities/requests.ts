@@ -461,6 +461,9 @@ export async function reqWorkspaceMetadata<T = any>(
     'x-hasura-user-id': user?.id ?? '',
   };
   const options: RequestInit = {
+    // The server tags metadata with the file's content ETag, which a metadata-only change doesn't
+    // move, so a revalidation 304s and the browser serves stale metadata. Always fetch fresh.
+    cache: 'no-store',
     headers,
     method,
     signal,
