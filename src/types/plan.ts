@@ -220,9 +220,6 @@ export type ModelCompatabilityForPlanIssue = 'altered' | 'removed';
 type BasePlanImportRequest = {
   id: number;
   plan_id: number;
-  // model_id: number;
-  // requested_at: string;
-  // requester: UserId;
 };
 export type PlanImportRequest = PlanImportRequestSuccess | PlanImportRequestFailed;
 export type PlanImportRequestSuccess = BasePlanImportRequest & {
