@@ -10,6 +10,7 @@ import type {
   ActionParameterPair,
   Workspace,
   WorkspaceFileRevision,
+  WorkspaceFileRevisionDetail,
   WorkspaceFileRevisionList,
   WorkspaceInsertInput,
 } from '../types/workspace';
@@ -552,8 +553,12 @@ export const WorkspaceApi = {
   ): Promise<WorkspaceFileMetadata | null> {
     return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
   },
-  async getFileRevision(workspaceId: number, revisionId: string, user: User | null): Promise<WorkspaceFileRevision> {
-    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevision>(
+  async getFileRevision(
+    workspaceId: number,
+    revisionId: string,
+    user: User | null,
+  ): Promise<WorkspaceFileRevisionDetail> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevisionDetail>(
       joinPath([workspaceId, revisionId]),
       'GET',
       null,

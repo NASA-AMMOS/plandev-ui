@@ -61,14 +61,14 @@ test('create, preview, and restore file revisions', async () => {
   await page.getByRole('button', { name: 'Revisions' }).click();
   await expect(panel).toContainText('No revisions yet.');
   await panel.getByRole('button', { name: 'Create revision' }).click();
-  await expect(panel).toContainText('Matches revision a');
+  await expect(panel).toContainText('Saved copy matches revision a');
 
   await workspace.fillSequenceContent('# version b');
   await expect(panel.getByRole('button', { name: 'Create revision' })).toBeDisabled();
   await workspace.saveSequence();
-  await expect(panel).toContainText('Changes since revision a');
+  await expect(panel).toContainText('Saved changes since revision a');
   await panel.getByRole('button', { name: 'Create revision' }).click();
-  await expect(panel).toContainText('Matches revision b');
+  await expect(panel).toContainText('Saved copy matches revision b');
 
   await revision('a').click();
   const modal = page.locator('#modal-container');
@@ -81,4 +81,6 @@ test('create, preview, and restore file revisions', async () => {
   await expect(workspace.saveSequenceButton).toBeDisabled();
   await expect(revision('a')).toBeVisible();
   await expect(revision('b')).toBeVisible();
+  await expect(panel).toContainText('Saved copy matches revision a');
+  await expect(panel.getByRole('button', { name: 'Create revision' })).toBeEnabled();
 });

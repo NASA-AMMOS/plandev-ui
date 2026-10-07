@@ -1260,7 +1260,7 @@
       const editorRef = activeFileIsSequence ? sequenceEditorRef : textEditorRef;
       editorRef?.rebaseContent(content);
       activeDocument.replaceWithServer(path, content, etag);
-      // Restore also replaces versioned metadata (readOnly, user fields).
+      // Restore also replaces versioned metadata (e.g. user fields); runtime state such as readOnly stays current.
       refreshWorkspaceContents();
     } catch (e) {
       catchError('log', 'Failed to reload the file', e as Error);
@@ -1896,7 +1896,7 @@
               {phoenixContext}
               {commandInfoMapper}
               on:updateUserMetadata={onUpdateUserMetadata}
-              on:workingCopyChanged={onRevisionWorkingCopyChanged}
+              reloadWorkingCopy={onRevisionWorkingCopyChanged}
             />
           </Resizable.Pane>
         {/if}

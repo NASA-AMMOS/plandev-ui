@@ -52,11 +52,15 @@ export type WorkspaceFileRevision = {
   pathAtRevision: string;
 };
 
-/** A file's revisions, oldest first, plus the working copy's state relative to the latest one. */
+/** A revision plus its versioned metadata as it was then (no readOnly or lastEdited*). */
+export type WorkspaceFileRevisionDetail = WorkspaceFileRevision & { metadata: Record<string, unknown> };
+
+/** A file's revisions, oldest first, plus which of them (if any) holds the saved copy. */
 export type WorkspaceFileRevisionList = {
   fileId: string | null;
-  hasChangesSinceLatestRevision: boolean | null;
   latestRevision: WorkspaceFileRevision | null;
+  /** Newest revision whose content and versioned metadata equal the saved copy's; null if none does. */
+  matchingRevision: WorkspaceFileRevision | null;
   revisions: WorkspaceFileRevision[];
   /** Covers content plus versioned metadata; restore's If-Match. Not the editor's save ETag. */
   workingCopyETag: string;

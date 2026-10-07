@@ -32,6 +32,7 @@
   export let hasEditPermission: boolean = false;
   export let isSequenceFile: boolean = false;
   export let phoenixContext: PhoenixContext;
+  export let reloadWorkingCopy: () => Promise<void>;
 
   const emptyCommandDictionary: CommandDictionary = {
     enumMap: {},
@@ -201,11 +202,6 @@
   {:else if activeTab === 'metadata'}
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
   {:else if activeTab === 'revisions'}
-    <WorkspaceRevisionsPanel
-      {filePath}
-      {hasEditPermission}
-      isReadOnly={!!fileMetadata?.readOnly}
-      on:workingCopyChanged
-    />
+    <WorkspaceRevisionsPanel {filePath} {hasEditPermission} isReadOnly={!!fileMetadata?.readOnly} {reloadWorkingCopy} />
   {/if}
 </div>

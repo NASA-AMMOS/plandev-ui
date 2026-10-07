@@ -16,6 +16,9 @@
   export let currentContent: string;
   /** "Working copy", or "Current editor (unsaved)" when comparing against unsaved edits. */
   export let currentLabel: string;
+  export let filePath: string;
+  /** Runs the restore. The modal stays open, blocking the editor, until it settles, then closes. */
+  export let restore: () => Promise<void>;
   /** Why Restore is unavailable; null when it is allowed. */
   export let restoreDisabledReason: string | null = null;
   export let revision: WorkspaceFileRevision;
@@ -25,12 +28,16 @@
   export let user: User | null = null;
   export let workspaceId: number;
 
-  const dispatch = createEventDispatcher<{ close: void; restore: void }>();
+  const dispatch = createEventDispatcher<{ close: void }>();
+  // Runtime/derived fields: not part of a revision, so not a difference.
+  const unversionedKeys = ['lastEditedAt', 'lastEditedBy', 'readOnly'];
 
   let changedLines: number = 0;
   let confirming: boolean = false;
   let isLoading: boolean = true;
+  let isRestoring: boolean = false;
   let loadError: boolean = false;
+  let metadataDiffers: boolean = false;
   let revisionContent: string = '';
 
   onMount(async () => {
@@ -41,11 +48,53 @@
     } finally {
       isLoading = false;
     }
+    // The diff only shows content; a restore also replaces versioned metadata, so say when that differs.
+    try {
+      const [{ metadata }, current] = await Promise.all([
+        WorkspaceApi.getFileRevision(workspaceId, revision.id, user),
+        WorkspaceApi.getFileMetadata(workspaceId, filePath, user),
+      ]);
+      metadataDiffers = canonical(metadata) !== canonical(current ?? {});
+    } catch {
+      // Best effort: the note is informational
+    }
   });
+
+  function canonical(value: unknown, top = true): string {
+    if (Array.isArray(value)) {
+      return `[${value.map(v => canonical(v, false)).join(',')}]`;
+    }
+    if (value && typeof value === 'object') {
+      const entries = Object.entries(value)
+        .filter(([key]) => !top || !unversionedKeys.includes(key))
+        .sort(([a], [b]) => a.localeCompare(b));
+      return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonical(v, false)}`).join(',')}}`;
+    }
+    return JSON.stringify(value);
+  }
+
+  function close() {
+    if (!isRestoring) {
+      dispatch('close');
+    }
+  }
+
+  async function onRestore() {
+    if (isRestoring) {
+      return;
+    }
+    isRestoring = true;
+    try {
+      await restore();
+    } finally {
+      isRestoring = false;
+      dispatch('close');
+    }
+  }
 </script>
 
-<Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close>
-  <ModalHeader on:close>Revision {revision.name}</ModalHeader>
+<Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
+  <ModalHeader on:close={close}>Revision {revision.name}</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
     <div class="st-typography-body flex-none text-muted-foreground">
       {revision.createdBy ?? 'Unknown'} · {new Date(revision.createdAt).toLocaleString()}
@@ -54,6 +103,7 @@
           ? `identical to ${currentLabel.toLowerCase()}`
           : `${changedLines} changed ${changedLines === 1 ? 'line' : 'lines'}`}
       {/if}
+      {#if metadataDiffers}· File metadata also differs.{/if}
     </div>
     <div class="flex min-h-0 flex-auto overflow-hidden rounded border">
       {#if isLoading}
@@ -87,13 +137,15 @@
           <span class="text-destructive">{unrevisionedWarning}</span>
         {/if}
       </div>
-      <Button variant="outline" on:click={() => (confirming = false)}>Cancel</Button>
-      <Button variant="destructive" on:click={() => dispatch('restore')}>Restore</Button>
+      <Button variant="outline" disabled={isRestoring} on:click={() => (confirming = false)}>Cancel</Button>
+      <Button variant="destructive" disabled={isRestoring} on:click={onRestore}>
+        {isRestoring ? 'Restoring…' : 'Restore'}
+      </Button>
     {:else}
       {#if restoreDisabledReason}
         <span class="mr-auto text-sm text-muted-foreground">{restoreDisabledReason}</span>
       {/if}
-      <Button variant="outline" on:click={() => dispatch('close')}>Close</Button>
+      <Button variant="outline" on:click={close}>Close</Button>
       <Button disabled={!!restoreDisabledReason || isLoading || loadError} on:click={() => (confirming = true)}>
         Restore…
       </Button>

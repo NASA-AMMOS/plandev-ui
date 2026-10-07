@@ -1818,10 +1818,12 @@ export async function showWorkspaceSaveConflictModal(props: {
   });
 }
 
-/** Previews a file revision against the current content; `confirm` is true when the user confirmed Restore. */
+/** Previews a file revision against the current content. A confirmed Restore runs `restore` before the modal closes. */
 export async function showWorkspaceRevisionPreviewModal(props: {
   currentContent: string;
   currentLabel: string;
+  filePath: string;
+  restore: () => Promise<void>;
   restoreDisabledReason: string | null;
   revision: WorkspaceFileRevision;
   type: WorkspaceContentType | null;
@@ -1837,15 +1839,12 @@ export async function showWorkspaceRevisionPreviewModal(props: {
         const previewModal = new WorkspaceRevisionPreviewModal({ props, target });
         target.resolve = resolve;
 
-        const finish = (confirm: boolean) => {
+        previewModal.$on('close', () => {
           target.replaceChildren();
           target.resolve = null;
-          resolve({ confirm });
+          resolve({ confirm: false });
           previewModal.$destroy();
-        };
-
-        previewModal.$on('close', () => finish(false));
-        previewModal.$on('restore', () => finish(true));
+        });
       }
     } else {
       resolve({ confirm: false });

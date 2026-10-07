@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { LoaderCircle } from 'lucide-svelte';
-  import { createEventDispatcher, getContext } from 'svelte';
+  import { getContext } from 'svelte';
   import { activeDocument, activeDocumentIsDirty } from '../../stores/activeDocument';
   import { catchError } from '../../stores/console';
   import { workspaceId } from '../../stores/workspaces';
@@ -21,8 +21,9 @@
   /** Write permission. Not the same as read-only: a read-only file can still get a revision. */
   export let hasEditPermission: boolean = false;
   export let isReadOnly: boolean = false;
+  /** Reload the editor from the server after a restore changed (or failed to change) the working copy. */
+  export let reloadWorkingCopy: () => Promise<void>;
 
-  const dispatch = createEventDispatcher<{ workingCopyChanged: void }>();
   const user: UserStore = getContext('user');
 
   let isCreating: boolean = false;
@@ -33,12 +34,16 @@
   let requestId: number = 0;
 
   $: newestFirst = list ? [...list.revisions].reverse() : [];
-  $: latestName = list?.latestRevision?.name ?? null;
+  $: latest = list?.latestRevision ?? null;
+  $: matching = list?.matchingRevision ?? null;
+  // Matching an older revision still allows a new one: returning to it is worth recording.
   $: createDisabledReason = !hasEditPermission
     ? "You don't have permission to create revisions."
     : $activeDocumentIsDirty
       ? 'Save your changes before creating a revision.'
-      : null;
+      : matching && matching.id === latest?.id
+        ? 'The saved copy already matches the latest revision.'
+        : null;
   $: restoreDisabledReason = !hasEditPermission
     ? "You don't have permission to restore revisions."
     : isReadOnly
@@ -47,10 +52,11 @@
         ? 'Save or discard your unsaved changes before restoring a revision.'
         : null;
 
-  // The working copy moves on open, save, restore (baseEtag) and read-only toggles (versioned metadata).
+  // The saved copy moves on open, save and restore (baseEtag). User-metadata edits happen in the Metadata tab, and
+  // switching back remounts this panel. readOnly is runtime state, not part of a revision, so it never reloads.
   // baseEtag is pulled out so keystrokes (which change $activeDocument) don't refetch.
   $: baseEtag = $activeDocument.baseEtag;
-  $: loadRevisions(filePath, baseEtag, isReadOnly);
+  $: loadRevisions(filePath, baseEtag);
 
   async function loadRevisions(path: string | null = filePath, ..._deps: unknown[]) {
     const id = ++requestId;
@@ -111,21 +117,24 @@
     }
     const path = filePath;
     const workingCopyETag = list.workingCopyETag;
-    const { confirm } = await showWorkspaceRevisionPreviewModal({
+    await showWorkspaceRevisionPreviewModal({
       currentContent: $activeDocument.currentContent,
       currentLabel: $activeDocumentIsDirty ? 'Current editor (unsaved)' : 'Working copy',
+      filePath: path,
+      restore: () => restore(path, revision, workingCopyETag),
       restoreDisabledReason,
       revision,
       type: $activeDocument.type,
       unrevisionedWarning:
-        list.hasChangesSinceLatestRevision && latestName
-          ? `Saved changes since revision ${latestName} are not in any revision and will be replaced.`
-          : null,
+        latest && !matching ? 'The saved copy is not in any revision, so it will be replaced and lost.' : null,
       user: $user,
       workspaceId: $workspaceId,
     });
-    // Re-check: the editor could not change under the modal, but don't restore over unsaved edits regardless.
-    if (!confirm || $activeDocumentIsDirty || path !== filePath) {
+  }
+
+  /** Runs inside the preview modal, which blocks the editor until this (including the reload) settles. */
+  async function restore(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
+    if ($activeDocumentIsDirty || path !== filePath) {
       return;
     }
     notice = null;
@@ -141,9 +150,8 @@
         return;
       }
     }
-    // Success or 412: the server state differs from what we showed, so the page reloads the (clean) editor;
-    // its new baseEtag reloads this list.
-    dispatch('workingCopyChanged');
+    // Success or 412: the server state differs from what we showed, so reload the (clean) editor and this list.
+    await reloadWorkingCopy();
     await loadRevisions();
   }
 
@@ -172,13 +180,13 @@
         <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Working copy</div>
         {#if list}
           <div class="text-sm">
-            {#if !latestName}
+            {#if !latest}
               No revisions yet.
-            {:else if list.hasChangesSinceLatestRevision}
-              <span class="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500" aria-hidden="true" />
-              Changes since revision <b>{latestName}</b>
+            {:else if matching}
+              Saved copy matches revision <b>{matching.name}</b>
             {:else}
-              Matches revision <b>{latestName}</b>
+              <span class="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500" aria-hidden="true" />
+              Saved changes since revision <b>{latest.name}</b>
             {/if}
           </div>
         {/if}
