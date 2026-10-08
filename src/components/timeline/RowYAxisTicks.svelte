@@ -1,15 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { axisLeft as d3AxisLeft } from 'd3-axis';
-  import type { Axis, Layer, LineLayer } from '../../types/timeline';
+  import type { ComputedAxis, Layer, LineLayer } from '../../types/timeline';
   import { hexToRgba } from '../../utilities/color';
-  import { getYScale, isLineLayer } from '../../utilities/timeline';
+  import { getLogTickValues, getYScale, isLineLayer, thinTicksByPixelSpacing } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let layers: Layer[];
-  export let yAxes: Axis[] = [];
+  export let yAxes: ComputedAxis[] = [];
 
   let ticks: { color: string; values: number[] }[] = [];
   $: if (drawHeight && drawWidth) {
@@ -26,10 +25,12 @@
         typeof scaleDomain[0] === 'number' &&
         typeof scaleDomain[1] === 'number'
       ) {
-        const scale = getYScale(scaleDomain as number[], drawHeight);
-        const axisLeft = d3AxisLeft(scale).ticks(tickCount);
-        const tickValues = (axisLeft.scale() as any).ticks(tickCount) as number[];
-        const scaledTickValues = tickValues.map(tick => scale(tick));
+        const scale = getYScale(scaleDomain as number[], drawHeight, axis.scaleType, axis.logConstant);
+        // Same tick source and thinning rule RowYAxes uses, so grid lines stay aligned with the labels
+        const candidateTicks =
+          axis.scaleType === 'log' ? getLogTickValues(scaleDomain as number[], axis.logBase) : scale.ticks(tickCount);
+        const tickValues = thinTicksByPixelSpacing(candidateTicks, value => scale(value));
+        const scaledTickValues = tickValues.map(tick => scale(tick)).filter(Number.isFinite) as number[];
 
         let color = 'var(--timeline-divider-color)';
         if (yAxes.length > 1) {
