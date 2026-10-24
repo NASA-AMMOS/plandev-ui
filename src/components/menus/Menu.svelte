@@ -28,6 +28,7 @@
 </script>
 
 <script lang="ts">
+  import type { ModifierPhases, State } from '@popperjs/core';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
   import type { Placement } from 'tippy.js';
@@ -83,6 +84,9 @@
     show: void;
   }>();
 
+  // Minimum gap between a menu and the edge of the viewport
+  const viewportPadding: number = 8;
+
   const [popperRef, popperContent] = createPopperActions({
     placement,
     strategy: 'fixed',
@@ -97,6 +101,34 @@
         },
       },
       { name: 'offset', options: { offset } },
+      {
+        // Caps the menu to the space left in the viewport so long menus scroll (or clip) instead of being cut off.
+        // On the axis the menu is placed along, the space between the reference and the viewport edge is available;
+        // on the other axis `preventOverflow` shifts the menu into view, so the full viewport is available.
+        enabled: true,
+        fn: ({ state }: { state: State }) => {
+          const { bottom, left, right, top } = state.elements.reference.getBoundingClientRect();
+          const { innerHeight, innerWidth } = window;
+          const distance = offset[1] || 0;
+          const basePlacement = state.placement.split('-')[0];
+          let availableHeight = innerHeight - viewportPadding * 2;
+          let availableWidth = innerWidth - viewportPadding * 2;
+          if (basePlacement === 'top') {
+            availableHeight = top - distance - viewportPadding;
+          } else if (basePlacement === 'bottom') {
+            availableHeight = innerHeight - bottom - distance - viewportPadding;
+          } else if (basePlacement === 'left') {
+            availableWidth = left - distance - viewportPadding;
+          } else if (basePlacement === 'right') {
+            availableWidth = innerWidth - right - distance - viewportPadding;
+          }
+          state.styles.popper.maxHeight = `${Math.max(availableHeight, 0)}px`;
+          state.styles.popper.maxWidth = `${Math.max(availableWidth, 0)}px`;
+        },
+        name: 'fitViewport',
+        phase: 'beforeWrite' as ModifierPhases,
+        requires: ['computeStyles'],
+      },
     ],
   };
 
@@ -132,7 +164,11 @@
       style:width={typeof width === 'number' ? `${width}px` : null}
       use:popperContent={extraOpts}
     >
-      <slot />
+      <!-- Scroll the content rather than the positioned element: popper listens for scroll on the
+           element it positions and would re-run positioning on every scroll tick, which fights a scrollbar drag -->
+      <div class="menu-content">
+        <slot />
+      </div>
     </div>
   </div>
 {/if}
@@ -144,5 +180,15 @@
     position: absolute;
     top: 4px;
     width: 100%;
+  }
+
+  .st-menu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-content {
+    min-height: 0;
+    overflow: hidden auto;
   }
 </style>
