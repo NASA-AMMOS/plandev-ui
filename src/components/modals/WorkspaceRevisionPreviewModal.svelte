@@ -35,17 +35,10 @@
 
   export let currentContent: string;
   /** "Working copy", or "Current editor (unsaved)" when comparing against unsaved edits. */
-  export let currentLabel: string;
   export let filePath: string;
-  /** Restores the given revision into the working copy. The modal stays open, blocking the editor, until it settles. */
-  export let restore: (revision: WorkspaceFileRevision) => Promise<void>;
-  /** Why Restore is unavailable regardless of which sides are selected; null when permission/dirty state allow it. */
-  export let restoreDisabledReason: string | null = null;
   /** The revision that was clicked to open this modal; preselected on the right. */
   export let revision: WorkspaceFileRevision;
   export let type: WorkspaceContentType | null = null;
-  /** Extra confirm-step warning, e.g. saved changes that no revision holds. */
-  export let unrevisionedWarning: string | null = null;
   export let user: User | null = null;
   export let workspaceId: number;
 
@@ -63,11 +56,8 @@
   };
 
   let changedLines: number = 0;
-  let confirming: boolean = false;
-  let effectiveRestoreDisabledReason: string | null;
   let filename: string = '';
   let isLoading: boolean;
-  let isRestoring: boolean = false;
   let leftDownloadOptions: ReturnType<typeof getDownloadOptionsForFile>;
   let leftLabel: string;
   let leftSide: Side = { kind: 'workingCopy' };
@@ -75,8 +65,6 @@
   let loadError: boolean;
   let metadataDiffers: boolean;
   let pathDiffers: boolean;
-  let revisions: WorkspaceFileRevision[] = [];
-  let revisionToRestore: WorkspaceFileRevision | null;
   let rightDownloadOptions: ReturnType<typeof getDownloadOptionsForFile>;
   let rightLabel: string;
   let rightRevision: WorkspaceFileRevision = revision;
@@ -88,10 +76,6 @@
   $: metadataDiffers =
     !isLoading && !loadError && canonical(leftState.metadata) !== canonical(rightState.metadata ?? {});
   $: pathDiffers = !isLoading && !loadError && leftState.pathAtRevision !== rightState.pathAtRevision;
-  $: revisionToRestore = leftSide.kind === 'workingCopy' ? rightRevision : null;
-  $: effectiveRestoreDisabledReason =
-    restoreDisabledReason ??
-    (!revisionToRestore ? 'Restoring is only available when comparing against the working copy.' : null);
   $: leftLabel = sideLabel(leftSide);
   $: rightRevision = revision;
   $: rightLabel = getVersionedFileName(filename, rightRevision.name);
@@ -103,35 +87,12 @@
   $: rightDownloadOptions = getDownloadOptionsForFile(filename, true, rightRevision.name);
 
   function sideLabel(side: Side): string {
-    return side.kind === 'workingCopy'
-      ? `${filename} (${currentLabel})`
-      : getVersionedFileName(filename, side.revision.name);
-  }
-
-  async function loadRevisionsFor(filePath: string): Promise<WorkspaceFileRevision[]> {
-    try {
-      const { revisions } = await WorkspaceApi.getFileRevisionList(workspaceId, filePath, user);
-      return revisions;
-    } catch {
-      return [];
-    }
-  }
-
-  function sideKey(side: Side): string {
-    return side.kind === 'workingCopy' ? 'workingCopy' : side.revision.name;
-  }
-
-  function sideFromKey(key: string): Side {
-    if (key === 'workingCopy') {
-      return { kind: 'workingCopy' };
-    }
-    const found = revisions.find(r => r.name === key);
-    return found ? { kind: 'revision', revision: found } : { kind: 'workingCopy' };
+    return side.kind === 'workingCopy' ? `${filename}` : getVersionedFileName(filename, side.revision.name);
   }
 
   async function loadRevisionState(rev: WorkspaceFileRevision): Promise<SideState> {
     try {
-      const [content, data] = await Promise.all([
+      const [{ content }, data] = await Promise.all([
         WorkspaceApi.getFileRevisionContent(workspaceId, filePath, rev.name, user),
         WorkspaceApi.getFileRevision(workspaceId, filePath, rev.name, user),
       ]);
@@ -204,32 +165,8 @@
     return JSON.stringify(value);
   }
 
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString(undefined, {
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      month: 'short',
-    });
-  }
-
   function close() {
-    if (!isRestoring) {
-      dispatch('close');
-    }
-  }
-
-  async function onRestore() {
-    if (isRestoring || !revisionToRestore) {
-      return;
-    }
-    isRestoring = true;
-    try {
-      await restore(revisionToRestore);
-    } finally {
-      isRestoring = false;
-      dispatch('close');
-    }
+    dispatch('close');
   }
 
   /** Downloads a side's already-loaded content under the given name (plain, or with its revision letter). */
@@ -241,7 +178,6 @@
   }
 
   onMount(async () => {
-    revisions = await loadRevisionsFor(filePath);
     selectLeft(leftSide);
     rightState = await loadRevisionState(rightRevision);
   });
@@ -250,46 +186,14 @@
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
   <ModalHeader on:close={close}>Comparing {leftLabel} with {rightLabel}</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
-    <div class="grid grid-cols-2">
-      <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
-        <span class="text-muted-foreground">Compare</span>
-        <select
-          class="st-select"
-          value={sideKey(leftSide)}
-          on:change={e => selectLeft(sideFromKey(e.currentTarget.value))}
-        >
-          <option value="workingCopy">{currentLabel}</option>
-          {#each revisions as rev (rev.name)}
-            <option value={rev.name}>Revision {rev.name} · {formatDate(rev.createdAt)}</option>
-          {/each}
-        </select>
-        <DownloadMenu
-          align="start"
-          className="px-2"
-          size="icon"
-          disabled={leftState.loading || leftState.error}
-          label="Download {leftLabel}"
-          options={leftDownloadOptions}
-          onDownload={name => onDownloadSide(leftState, name)}
-        />
-      </div>
-      <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
-        <span class="text-muted-foreground">with</span>
-        <span class="font-medium">{rightLabel}</span>
-        <DownloadMenu
-          align="start"
-          className="px-2"
-          size="icon"
-          disabled={rightState.loading || rightState.error}
-          label="Download {rightLabel}"
-          options={rightDownloadOptions}
-          onDownload={name => onDownloadSide(rightState, name)}
-        />
-      </div>
-    </div>
+    <div class="grid grid-cols-2"></div>
     <div class="st-typography-body flex-none text-muted-foreground">
       {#if !isLoading && !loadError}
-        {changedLines > 0 ? 'Content contains' : 'No content'} differences
+        {#if changedLines > 0}
+          Content contains: {changedLines} changed {changedLines === 1 ? 'line' : 'lines'}
+        {:else}
+          No content changes
+        {/if}
         {#if metadataDiffers}· File metadata differs{/if}
         {#if pathDiffers}· File path differs ({leftState.pathAtRevision} vs {rightState.pathAtRevision}){/if}
       {/if}
@@ -315,37 +219,37 @@
           mineEditedAt={rightState.lastEditedAt}
           {type}
           on:stats={e => (changedLines = e.detail.changedLines)}
-        />
+        >
+          <div slot="theirs-header-slot">
+            <div class="grid grid-cols-[auto_min-content] items-center gap-2">
+              <span>(Working Copy)</span>
+              <DownloadMenu
+                align="start"
+                className="px-2"
+                size="icon"
+                disabled={leftState.loading || leftState.error}
+                label="Download {leftLabel}"
+                options={leftDownloadOptions}
+                onDownload={name => onDownloadSide(leftState, name)}
+              />
+            </div>
+          </div>
+          <div class="inline-block text-nowrap text-xs text-muted-foreground" slot="mine-header-slot">
+            <DownloadMenu
+              align="start"
+              className="px-2"
+              size="icon"
+              disabled={rightState.loading || rightState.error}
+              label="Download {rightLabel}"
+              options={rightDownloadOptions}
+              onDownload={name => onDownloadSide(rightState, name)}
+            />
+          </div>
+        </WorkspaceDiffViewer>
       {/if}
     </div>
   </ModalContent>
   <div class="flex flex-none items-center justify-end gap-3 rounded-b border-t bg-muted px-4 py-3">
-    {#if confirming && revisionToRestore}
-      <div class="mr-auto flex flex-col text-sm">
-        <span class="font-semibold">Restore revision {revisionToRestore.name}?</span>
-        <span class="text-muted-foreground">
-          The working copy will be replaced with revision {revisionToRestore.name}. Existing revisions will not be
-          changed.
-        </span>
-        {#if unrevisionedWarning}
-          <span class="text-destructive">{unrevisionedWarning}</span>
-        {/if}
-      </div>
-      <Button variant="outline" disabled={isRestoring} on:click={() => (confirming = false)}>Cancel</Button>
-      <Button variant="destructive" disabled={isRestoring} on:click={onRestore}>
-        {isRestoring ? 'Restoring…' : 'Restore'}
-      </Button>
-    {:else}
-      {#if effectiveRestoreDisabledReason}
-        <span class="mr-auto text-sm text-muted-foreground">{effectiveRestoreDisabledReason}</span>
-      {/if}
-      <Button variant="outline" on:click={close}>Close</Button>
-      <Button
-        disabled={!!effectiveRestoreDisabledReason || isLoading || loadError}
-        on:click={() => (confirming = true)}
-      >
-        Restore…
-      </Button>
-    {/if}
+    <Button variant="outline" on:click={close}>Close</Button>
   </div>
 </Modal>

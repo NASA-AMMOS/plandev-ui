@@ -173,7 +173,7 @@
   let commandDictionary: CommandDictionary | null = null;
   let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
-  let doesWorkingCopyMatchRevision: boolean = false;
+  let doesWorkingCopyMatchLatestRevision: boolean = false;
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
@@ -731,7 +731,7 @@
     if (path !== selectedFilePath || !path) {
       revisionList = [];
       matchingRevisionName = null;
-      doesWorkingCopyMatchRevision = false;
+      doesWorkingCopyMatchLatestRevision = false;
     }
     if (!path) {
       return;
@@ -751,7 +751,7 @@
       );
       revisionList = revisions;
       matchingRevisionName = matchingRevision;
-      doesWorkingCopyMatchRevision = matchingRevision != null && matchingRevision === revisionList[0]?.name;
+      doesWorkingCopyMatchLatestRevision = matchingRevision != null && matchingRevision === revisionList[0]?.name;
     } catch (e) {
       catchError('log', 'Failed to load revisions', e as Error);
     } finally {
@@ -1035,60 +1035,48 @@
     });
   }
 
-  /** Restores an arbitrary (not necessarily active) file's revision, from the "Compare revisions" context menu. */
-  async function restoreArbitraryFileRevision(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
-    if (!$workspace) {
-      return;
-    }
-    try {
-      await WorkspaceApi.restoreFileRevision($workspace.id, path, revision.name, workingCopyETag, $user);
-      showSuccessToast(`Restored revision ${revision.name}`);
-    } catch (e) {
-      if (e instanceof WorkspaceSaveConflictError) {
-        showFailureToast('The working copy changed since this list loaded; try again.');
-      } else {
-        catchError('log', 'Failed to restore revision', e as Error);
-        showFailureToast('Failed to restore revision');
-      }
-      return;
-    }
-    // Reload the editor only if the restored file happens to be the one currently open.
-    if (path === $activeDocumentPath) {
-      await onRevisionWorkingCopyChanged();
-    } else {
-      refreshWorkspaceContents();
-    }
-  }
+  // /** Restores an arbitrary (not necessarily active) file's revision, from the "Compare revisions" context menu. */
+  // async function restoreArbitraryFileRevision(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
+  //   if (!$workspace) {
+  //     return;
+  //   }
+  //   try {
+  //     await WorkspaceApi.restoreFileRevision($workspace.id, path, revision.name, workingCopyETag, $user);
+  //     showSuccessToast(`Restored revision ${revision.name}`);
+  //   } catch (e) {
+  //     if (e instanceof WorkspaceSaveConflictError) {
+  //       showFailureToast('The working copy changed since this list loaded; try again.');
+  //     } else {
+  //       catchError('log', 'Failed to restore revision', e as Error);
+  //       showFailureToast('Failed to restore revision');
+  //     }
+  //     return;
+  //   }
+  //   // Reload the editor only if the restored file happens to be the one currently open.
+  //   if (path === $activeDocumentPath) {
+  //     await onRevisionWorkingCopyChanged();
+  //   } else {
+  //     refreshWorkspaceContents();
+  //   }
+  // }
 
   async function onCompareRevisions({ detail: { treeNode, treeNodePath: path } }: CustomEvent<WorkspaceNodeEvent>) {
     if (!$workspace) {
       return;
     }
     try {
-      const { matchingRevision, revisions } = await WorkspaceApi.getFileRevisionList($workspace.id, path, $user);
+      const { revisions } = await WorkspaceApi.getFileRevisionList($workspace.id, path, $user);
       if (revisions.length === 0) {
         showFailureToast('This file has no revisions yet.');
         return;
       }
       const { content, etag } = await WorkspaceApi.getFileContent($workspace.id, path, $user);
-      const isReadOnly = workspaceTreeMap[path]?.metadata?.readOnly ?? false;
       if (etag) {
         await showWorkspaceRevisionPreviewModal({
           currentContent: content,
-          currentLabel: 'Working copy',
           filePath: path,
-          restore: revisionToRestore => restoreArbitraryFileRevision(path, revisionToRestore, etag),
-          restoreDisabledReason: isReadOnly
-            ? 'This file is read-only, so revisions can be previewed but not restored.'
-            : !hasEditWorkspacePermission
-              ? "You don't have permission to restore revisions."
-              : null,
           revision: revisions[0],
           type: treeNode.type,
-          unrevisionedWarning:
-            revisions[0] && !matchingRevision
-              ? 'The saved copy is not in any revision, so it will be replaced and lost.'
-              : null,
           user: $user,
           workspaceId: $workspace.id,
         });
@@ -1925,10 +1913,12 @@
                     availableActions={availableActionsForActiveFile}
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
+                    isDirty={$activeDocumentIsDirty}
                     isLoading={$activeDocumentIsLoading}
                     isInputFile={activeFileIsInputSequence}
-                    {doesWorkingCopyMatchRevision}
+                    {doesWorkingCopyMatchLatestRevision}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                    {matchingRevisionName}
                     {preserveAdaptationLog}
                     previewOnly={!hasEditFilePermission}
                     readOnly={isFileReadOnly}
@@ -1962,7 +1952,8 @@
                     includeActions={true}
                     isJSON={$activeDocument.type === WorkspaceContentType.Json}
                     isLoading={$activeDocumentIsLoading}
-                    {doesWorkingCopyMatchRevision}
+                    {doesWorkingCopyMatchLatestRevision}
+                    isDirty={$activeDocumentIsDirty}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     previewOnly={!hasEditFilePermission}
                     readOnly={isFileReadOnly}
@@ -2041,7 +2032,7 @@
             <WorkspaceRightPanel
               bind:activeTab={rightPanelActiveTab}
               bind:commandNodeName={rightPanelCommandNodeName}
-              {doesWorkingCopyMatchRevision}
+              {doesWorkingCopyMatchLatestRevision}
               editorSequenceView={activeEditorView}
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}

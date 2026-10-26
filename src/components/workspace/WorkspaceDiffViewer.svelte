@@ -10,6 +10,8 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
+  import { getShortISOForDate } from '../../utilities/time';
+  import { getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
 
   /**
    * When true, the "Mine" pane is editable with revert chevrons to pull in "Theirs" — a
@@ -148,24 +150,39 @@
     class:grid-cols-2={!isSinglePane}
   >
     {#if !isSinglePane}
-      <div class="grid grid-cols-[1fr_1fr] px-3 py-1.5 text-muted-foreground">
-        <div>{theirsLabel}</div>
-        {#if theirsEditBy || theirsEditedAt}
-          <div class="st-typography-body text-right text-xs">
-            <div>{theirsEditBy}</div>
-            <div>{theirsEditedAt}</div>
+      <div class="px-3 py-1.5">
+        <div class="flex flex-col gap-1">
+          <div class="grid grid-cols-[1fr_auto] items-center justify-center gap-2">
+            <span class="overflow-hidden text-ellipsis" title={theirsLabel}>{theirsLabel}</span>
+            <slot name="theirs-header-slot" />
+          </div>
+          {#if theirsEditBy || theirsEditedAt}
+            <div class="flex gap-1 text-nowrap text-xs text-muted-foreground">
+              <span>Edited by: {getUserDisplayNameFromIdentity(theirsEditBy || '')}</span>{#if theirsEditedAt}
+                <span>@{getShortISOForDate(new Date(theirsEditedAt || ''))}</span>{/if}
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+    <div class="border-l px-3 py-1.5">
+      <div class="flex flex-col gap-1">
+        <div class="grid grid-cols-[1fr_auto] items-center justify-center gap-2">
+          <span
+            class="overflow-hidden text-ellipsis"
+            title={mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
+          >
+            {mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
+          </span>
+          <slot name="mine-header-slot" />
+        </div>
+        {#if mineEditBy || mineEditedAt}
+          <div class="flex gap-1 text-nowrap text-xs text-muted-foreground">
+            <span>Edited by: {getUserDisplayNameFromIdentity(mineEditBy || '')}</span>{#if mineEditedAt}
+              <span>@{getShortISOForDate(new Date(mineEditedAt || ''))}</span>{/if}
           </div>
         {/if}
       </div>
-    {/if}
-    <div class="grid grid-cols-[1fr_1fr] border-l px-3 py-1.5 text-muted-foreground">
-      <div>{mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}</div>
-      {#if mineEditBy || mineEditedAt}
-        <div class="st-typography-body text-right text-xs">
-          <div>{mineEditBy}</div>
-          <div>{mineEditedAt}</div>
-        </div>
-      {/if}
     </div>
   </div>
   <!-- Scroll the whole diff here so both panes stay aligned (MergeView's recommended setup). -->

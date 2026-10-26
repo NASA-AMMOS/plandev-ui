@@ -45,6 +45,7 @@ import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
 import WorkspaceFileComparisonModal from '../components/modals/WorkspaceFileComparisonModal.svelte';
 import WorkspaceRevisionPreviewModal from '../components/modals/WorkspaceRevisionPreviewModal.svelte';
+import WorkspaceRevisionRestoreModal from '../components/modals/WorkspaceRevisionRestoreModal.svelte';
 import WorkspaceSaveConflictModal from '../components/modals/WorkspaceSaveConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import type { WorkspaceContentType } from '../enums/workspace';
@@ -1820,11 +1821,43 @@ export async function showWorkspaceSaveConflictModal(props: {
 }
 
 /**
+ * Previews a file revision against the current content.
+ */
+export async function showWorkspaceRevisionPreviewModal(props: {
+  currentContent: string;
+  filePath: string;
+  revision: WorkspaceFileRevision;
+  type: WorkspaceContentType | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const previewModal = new WorkspaceRevisionPreviewModal({ props, target });
+        target.resolve = resolve;
+
+        previewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          previewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
  * Previews a file revision against the current content, or lets the user pick any two of
  * {revisions, working copy} to compare. A confirmed Restore runs `restore` (with whichever revision ends up
  * on the non-working-copy side) before the modal closes.
  */
-export async function showWorkspaceRevisionPreviewModal(props: {
+export async function showWorkspaceRevisionRestorePreviewModal(props: {
   currentContent: string;
   currentLabel: string;
   filePath: string;
@@ -1841,7 +1874,7 @@ export async function showWorkspaceRevisionPreviewModal(props: {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
 
       if (target) {
-        const previewModal = new WorkspaceRevisionPreviewModal({ props, target });
+        const previewModal = new WorkspaceRevisionRestoreModal({ props, target });
         target.resolve = resolve;
 
         previewModal.$on('close', () => {

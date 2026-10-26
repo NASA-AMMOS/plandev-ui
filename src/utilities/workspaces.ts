@@ -892,7 +892,7 @@ export async function downloadWorkspaceNodesAsZip(options: {
  */
 export function getDownloadOptionsForFile(
   name: string,
-  doesWorkingCopyMatchRevision: boolean,
+  doesWorkingCopyMatchLatestRevision: boolean,
   revisionName: string | null,
 ): DownloadMenuOption[] {
   const { extension } = separateFilenameFromExtension(name);
@@ -901,13 +901,29 @@ export function getDownloadOptionsForFile(
     const versionedFilename = revisionName ? getVersionedFileName(name, revisionName) : name;
     const { extension: versionedExtension } = separateFilenameFromExtension(versionedFilename);
     options.push({
-      disabled: !doesWorkingCopyMatchRevision,
-      disabledReason: doesWorkingCopyMatchRevision ? undefined : 'The working copy contains unrevisioned changes.',
+      disabled: !doesWorkingCopyMatchLatestRevision,
+      disabledReason: doesWorkingCopyMatchLatestRevision
+        ? undefined
+        : 'The working copy contains unrevisioned changes.',
       label: `Download with revision (...${versionedExtension})`,
       name: versionedFilename,
     });
   }
   return options;
+}
+
+export function getUserDisplayNameFromIdentity(identity: string): string {
+  const match: RegExpMatchArray | null = identity.match(/(?<username>.+)\s<[^>]*>/);
+
+  if (match?.groups?.username) {
+    return match.groups.username;
+  }
+
+  return identity;
+}
+
+export function getRevisionDisplayName(revisionName: string): string {
+  return revisionName.toUpperCase();
 }
 
 export const WorkspaceApi = {
@@ -970,9 +986,9 @@ export const WorkspaceApi = {
     workspaceId: number,
     filePath: string,
     user: User | null,
-  ): Promise<{ content: string; etag: string | null }> {
+  ): Promise<{ content: string; etag: string | null; renderType: WorkspaceContentType }> {
     // Throws an Error or CompoundError on any non-2xx — content is never null.
-    const { data, etag } = await reqWorkspaceWithEtag<string>(
+    const { data, etag, headers } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'GET',
       null,
@@ -980,7 +996,8 @@ export const WorkspaceApi = {
       undefined,
       false,
     );
-    return { content: data, etag };
+    const renderType = headers.get('x-render-type') as WorkspaceContentType;
+    return { content: data, etag, renderType };
   },
   async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
     return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
@@ -1015,8 +1032,8 @@ export const WorkspaceApi = {
     filePath: string,
     revisionId: string | null,
     user: User | null,
-  ): Promise<string> {
-    const { data } = await reqWorkspaceWithEtag<string>(
+  ): Promise<{ content: string; renderType: WorkspaceContentType }> {
+    const { data, headers } = await reqWorkspaceWithEtag<string>(
       `${joinPath([workspaceId, filePath])}${revisionId ? `?revision=${revisionId}` : ''}`,
       'GET',
       null,
@@ -1026,7 +1043,9 @@ export const WorkspaceApi = {
       {},
       'versioning',
     );
-    return data;
+
+    const renderType = headers.get('x-render-type') as WorkspaceContentType;
+    return { content: data, renderType };
   },
   async getFileRevisionList(
     workspaceId: number,

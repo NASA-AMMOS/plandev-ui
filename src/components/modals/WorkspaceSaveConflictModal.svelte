@@ -10,7 +10,7 @@
   import { isNoSuchFileCompoundError } from '../../utilities/errors';
   import type { WorkspaceSaveConflictReason } from '../../utilities/requests';
   import { getTimeAgo } from '../../utilities/time';
-  import { WorkspaceApi } from '../../utilities/workspaces';
+  import { getUserDisplayNameFromIdentity, WorkspaceApi } from '../../utilities/workspaces';
   import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
@@ -46,7 +46,7 @@
   let theirsEtag: string | null = null;
   let variant: WorkspaceSaveConflictReason = reason === 'deleted' ? 'deleted' : 'conflict';
 
-  $: editedByText = lastEditedBy ?? 'another user';
+  $: editedByText = lastEditedBy ? getUserDisplayNameFromIdentity(lastEditedBy) : 'another user';
   $: whenText = lastEditedAt ? getTimeAgo(new Date(lastEditedAt)) : '';
   $: changedLinesText = changedLines > 0 ? ` · ${changedLines} changed ${changedLines === 1 ? 'line' : 'lines'}` : '';
 

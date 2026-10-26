@@ -4,12 +4,13 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { LoaderCircle, TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
-  import type { WorkspaceContentType } from '../../enums/workspace';
+  import { WorkspaceContentType } from '../../enums/workspace';
   import type { User } from '../../types/app';
   import type { WorkspaceFileRevision } from '../../types/workspace';
   import { downloadBlob } from '../../utilities/generic';
   import {
     getDownloadOptionsForFile,
+    getRevisionDisplayName,
     getVersionedFileName,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -129,7 +130,7 @@
           metadata,
         };
       }
-      const [content, { fileMetadata }] = await Promise.all([
+      const [{ content }, { fileMetadata }] = await Promise.all([
         WorkspaceApi.getFileRevisionContent(workspaceId, filePath, side.revision.name, user),
         WorkspaceApi.getFileRevision(workspaceId, filePath, side.revision.name, user),
       ]);
@@ -141,8 +142,16 @@
         loading: false,
         metadata: fileMetadata,
       };
-    } catch {
-      return { content: '', error: true, lastEditedAt: null, lastEditedBy: null, loading: false, metadata: null };
+    } catch (error) {
+      console.error('Error loading side:', error);
+      return {
+        content: '',
+        error: true,
+        lastEditedAt: null,
+        lastEditedBy: null,
+        loading: false,
+        metadata: null,
+      };
     }
   }
 
@@ -205,60 +214,14 @@
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
   <ModalHeader on:close={close}>Comparing {leftLabel} with {rightLabel}</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
-    <div class="grid grid-cols-2">
-      <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
-        <span class="text-muted-foreground">Compare</span>
-        <span class="font-medium">{leftFilename}</span>
-        <select
-          class="st-select"
-          value={sideKey(leftSide)}
-          on:change={e => selectLeft(sideFromKey(e.currentTarget.value, leftRevisions))}
-        >
-          <option value="workingCopy">Working copy</option>
-          {#each leftRevisions as rev (rev.name)}
-            <option value={rev.name}>Revision {rev.name} · {formatDate(rev.createdAt)}</option>
-          {/each}
-        </select>
-        <DownloadMenu
-          align="start"
-          className="px-2"
-          size="icon"
-          disabled={leftState.loading || leftState.error}
-          label="Download {leftLabel}"
-          options={leftDownloadOptions}
-          onDownload={name => onDownloadSide(leftState, name)}
-        />
-      </div>
-      <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
-        <span class="text-muted-foreground">with</span>
-        <span class="font-medium">{rightFilename}</span>
-        <select
-          class="st-select"
-          value={sideKey(rightSide)}
-          on:change={e => selectRight(sideFromKey(e.currentTarget.value, rightRevisions))}
-        >
-          <option value="workingCopy">Working copy</option>
-          {#each rightRevisions as rev (rev.name)}
-            <option value={rev.name}>Revision {rev.name} · {formatDate(rev.createdAt)}</option>
-          {/each}
-        </select>
-        <DownloadMenu
-          align="start"
-          className="px-2"
-          size="icon"
-          disabled={rightState.loading || rightState.error}
-          label="Download {rightLabel}"
-          options={rightDownloadOptions}
-          onDownload={name => onDownloadSide(rightState, name)}
-        />
-      </div>
-    </div>
     <div class="st-typography-body flex-none text-muted-foreground">
       {#if !isLoading && !loadError}
-        {changedLines === 0
-          ? `${metadataDiffers ? 'Content is' : 'No'} differences`
-          : `${changedLines} changed ${changedLines === 1 ? 'line' : 'lines'}`}
-        {#if metadataDiffers}· File metadata also differs.{/if}
+        {#if changedLines > 0}
+          Content contains: {changedLines} changed {changedLines === 1 ? 'line' : 'lines'}
+        {:else}
+          No content changes
+        {/if}
+        {#if metadataDiffers}· File metadata differs{/if}
       {/if}
     </div>
     <div class="flex min-h-0 flex-auto overflow-hidden rounded border">
@@ -282,7 +245,58 @@
           mineEditedAt={rightState.lastEditedAt}
           {type}
           on:stats={e => (changedLines = e.detail.changedLines)}
-        />
+        >
+          <div class="inline-block text-nowrap text-xs text-muted-foreground" slot="theirs-header-slot">
+            <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
+              <select
+                class="st-select"
+                value={sideKey(leftSide)}
+                on:change={e => selectLeft(sideFromKey(e.currentTarget.value, leftRevisions))}
+              >
+                <option value="workingCopy">{leftLabel}</option>
+                {#each leftRevisions as rev (rev.name)}
+                  <option value={rev.name}
+                    >Revision {getRevisionDisplayName(rev.name)} · {formatDate(rev.createdAt)}</option
+                  >
+                {/each}
+              </select>
+              <DownloadMenu
+                align="start"
+                className="px-2"
+                size="icon"
+                disabled={leftState.loading || leftState.error}
+                label="Download {leftLabel}"
+                options={leftDownloadOptions}
+                onDownload={name => onDownloadSide(leftState, name)}
+              />
+            </div>
+          </div>
+          <div class="inline-block text-nowrap text-xs text-muted-foreground" slot="mine-header-slot">
+            <div class="flex flex-none flex-wrap items-center gap-2 text-sm">
+              <select
+                class="st-select"
+                value={sideKey(rightSide)}
+                on:change={e => selectRight(sideFromKey(e.currentTarget.value, rightRevisions))}
+              >
+                <option value="workingCopy">{rightLabel}</option>
+                {#each rightRevisions as rev (rev.name)}
+                  <option value={rev.name}
+                    >Revision {getRevisionDisplayName(rev.name)} · {formatDate(rev.createdAt)}</option
+                  >
+                {/each}
+              </select>
+              <DownloadMenu
+                align="start"
+                className="px-2"
+                size="icon"
+                disabled={rightState.loading || rightState.error}
+                label="Download {rightLabel}"
+                options={rightDownloadOptions}
+                onDownload={name => onDownloadSide(rightState, name)}
+              />
+            </div>
+          </div>
+        </WorkspaceDiffViewer>
       {/if}
     </div>
   </ModalContent>

@@ -374,6 +374,7 @@ export class WorkspaceSaveConflictError extends Error {
 export interface WorkspaceResponseWithEtag<T> {
   data: T;
   etag: string | null;
+  headers: Headers;
   status: number;
 }
 
@@ -504,7 +505,7 @@ export async function reqWorkspaceWithEtag<T = any>(
 
   const data = (asJson ? await response.json() : await response.text()) as T;
 
-  return { data, etag, status: response.status };
+  return { data, etag, headers: response.headers, status: response.status };
 }
 
 export async function reqWorkspaceMetadata<T = any>(

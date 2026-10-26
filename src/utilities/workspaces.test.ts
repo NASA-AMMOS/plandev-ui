@@ -17,6 +17,7 @@ import {
   getDownloadOptionsForFile,
   getFolderPathForNode,
   getSelectedFilesDisplay,
+  getUserDisplayNameFromIdentity,
   getVersionedFileName,
   getWorkspaceFileFolderDisplay,
   hasReadonlyInTree,
@@ -249,6 +250,27 @@ describe('Workspace utility function tests', () => {
 
     test('Should handle empty string', () => {
       expect(removeFirstPathSegment('')).toEqual('');
+    });
+  });
+
+  describe('getUserDisplayNameFromIdentity', () => {
+    test('Should extract the username from a "name <email>" identity string', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe <john.doe@jpl.nasa.gov>')).toEqual('John Doe');
+    });
+
+    test('Should handle usernames containing multiple words and special characters', () => {
+      expect(getUserDisplayNameFromIdentity('Mary Jane O\'Brien <mjobrien@jpl.nasa.gov>')).toEqual(
+        "Mary Jane O'Brien",
+      );
+    });
+
+    test('Should handle an empty email', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe <>')).toEqual('John Doe');
+    });
+
+    test('Should return the identity unchanged when it does not match the expected format', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe')).toEqual('John Doe');
+      expect(getUserDisplayNameFromIdentity('')).toEqual('');
     });
   });
 

@@ -42,13 +42,15 @@
   import OutputToolbar from './OutputToolbar.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
-  export let doesWorkingCopyMatchRevision: boolean = false;
+  export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let phoenixContext: PhoenixContext | undefined;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
+  export let isDirty: boolean = false;
   export let isLoading: boolean = false;
   export let isInputFile: boolean = false;
+  export let matchingRevisionName: string | null = null;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let revisionList: WorkspaceFileRevision[] = [];
@@ -475,7 +477,7 @@
           downloadLabel="Download sequence contents"
           downloadOptions={getDownloadOptionsForFile(
             sequenceName,
-            doesWorkingCopyMatchRevision,
+            doesWorkingCopyMatchLatestRevision,
             revisionList[0]?.name ?? null,
           )}
           onDownload={downloadInputFormat}
@@ -489,7 +491,14 @@
 
       <svelte:fragment slot="body">
         {#if fileMetadata}
-          <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
+          <FileMetadataBanner
+            {doesWorkingCopyMatchLatestRevision}
+            {fileMetadata}
+            hasEditPermission={!previewOnly}
+            {isDirty}
+            {matchingRevisionName}
+            {onReadOnlyChange}
+          />
         {/if}
         <div class="p-2" bind:this={editorSequenceDiv} />
       </svelte:fragment>
@@ -514,7 +523,7 @@
                       sequenceAdaptation.input.fileExtension,
                       selectedOutputFormat.fileExtension,
                     ),
-                    doesWorkingCopyMatchRevision,
+                    doesWorkingCopyMatchLatestRevision,
                     revisionList[0]?.name ?? null,
                   )
                 : []}

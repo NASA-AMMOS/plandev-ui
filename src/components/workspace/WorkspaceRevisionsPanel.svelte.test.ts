@@ -29,11 +29,11 @@ const revision = (name: string): WorkspaceFileRevision => ({
 const [a, b, c] = [revision('a'), revision('b'), revision('c')];
 const revisionList = [c, b, a];
 
-// Mirrors how +page.svelte derives doesWorkingCopyMatchRevision from the loaded revision list.
+// Mirrors how +page.svelte derives doesWorkingCopyMatchLatestRevision from the loaded revision list.
 function renderPanel(matchingRevisionName: string | null) {
   return render(WorkspaceRevisionsPanel, {
     props: {
-      doesWorkingCopyMatchRevision: matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
+      doesWorkingCopyMatchLatestRevision: matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
       filePath: 'a.seq',
       hasEditPermission: true,
       matchingRevisionName,

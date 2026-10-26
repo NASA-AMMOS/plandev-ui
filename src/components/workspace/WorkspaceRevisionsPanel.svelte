@@ -4,6 +4,8 @@
   import { Button } from '@nasa-jpl/stellar-svelte';
   import { Info, LoaderCircle } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+
+  import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
   import { activeDocument, activeDocumentIsDirty } from '../../stores/activeDocument';
   import { catchError } from '../../stores/console';
   import { getUserStore } from '../../stores/user';
@@ -11,17 +13,23 @@
   import type { UserStore } from '../../types/app';
   import type { WorkspaceFileRevision } from '../../types/workspace';
   import { downloadBlob } from '../../utilities/generic';
-  import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
+  import { showWorkspaceRevisionPreviewModal, showWorkspaceRevisionRestorePreviewModal } from '../../utilities/modal';
   import { CompoundError, WorkspaceSaveConflictError } from '../../utilities/requests';
+  import { getShortISOForDate } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
-  import { WorkspaceApi, getDownloadOptionsForFile, separateFilenameFromPath } from '../../utilities/workspaces';
+  import {
+    WorkspaceApi,
+    getDownloadOptionsForFile,
+    getRevisionDisplayName,
+    separateFilenameFromPath,
+  } from '../../utilities/workspaces';
   import DownloadMenu from '../ui/DownloadMenu.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
   import PanelHeader from './PanelHeader.svelte';
 
-  export let doesWorkingCopyMatchRevision: boolean = false;
+  export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let filePath: string | null = null;
   /** Write permission. Not the same as read-only: a read-only file can still get a revision. */
   export let hasEditPermission: boolean = false;
@@ -46,8 +54,10 @@
   let notice: string | null = null;
   let restoreDisabledReason: string | null = null;
   let revisionStart: string = 'a';
+  let revisionStartError: string | null = null;
 
   $: latest = revisionList[0] ?? null;
+  $: revisionStartError = getRevisionStartError(revisionStart);
 
   $: baseFilename = filePath ? separateFilenameFromPath(filePath).filename : '';
 
@@ -55,10 +65,10 @@
   $: workingCopyStatus = getWorkingCopyStatus(
     hasEditPermission,
     $activeDocumentIsDirty,
-    doesWorkingCopyMatchRevision,
+    doesWorkingCopyMatchLatestRevision,
     matchingRevisionName,
   );
-  $: createDisabled = getCreateDisabled(hasEditPermission, $activeDocumentIsDirty, doesWorkingCopyMatchRevision);
+  $: createDisabled = getCreateDisabled(hasEditPermission, $activeDocumentIsDirty, doesWorkingCopyMatchLatestRevision);
   $: restoreDisabledReason = getRestoreDisabledReason(hasEditPermission, isReadOnly, $activeDocumentIsDirty);
 
   // The saved copy moves on open, save and restore (baseEtag). User-metadata edits happen in the Metadata tab, and
@@ -69,7 +79,7 @@
   function getWorkingCopyStatus(
     hasEditPermission: boolean,
     isDirty: boolean,
-    doesWorkingCopyMatchRevision: boolean,
+    doesWorkingCopyMatchLatestRevision: boolean,
     matchingRevisionName: string | null,
   ): string | null {
     if (!hasEditPermission) {
@@ -78,7 +88,7 @@
     if (isDirty) {
       return 'Save your changes before creating a revision.';
     }
-    if (doesWorkingCopyMatchRevision) {
+    if (doesWorkingCopyMatchLatestRevision) {
       return 'The saved copy matches the latest revision.';
     }
     if (matchingRevisionName) {
@@ -90,7 +100,7 @@
   function getCreateDisabled(
     hasEditPermission: boolean,
     isDirty: boolean,
-    doesWorkingCopyMatchRevision: boolean,
+    doesWorkingCopyMatchLatestRevision: boolean,
   ): boolean {
     if (!hasEditPermission) {
       return true;
@@ -98,7 +108,7 @@
     if (isDirty) {
       return true;
     }
-    return doesWorkingCopyMatchRevision;
+    return doesWorkingCopyMatchLatestRevision;
   }
 
   function getRestoreDisabledReason(hasEditPermission: boolean, isReadOnly: boolean, isDirty: boolean): string | null {
@@ -114,14 +124,21 @@
     return null;
   }
 
+  function getRevisionStartError(revisionStart: string): string | null {
+    if (!/^[A-Za-z]*$/.test(revisionStart)) {
+      return 'Only letters are allowed. No numbers, spaces, or symbols.';
+    }
+    return null;
+  }
+
   async function onCreate() {
-    if (!filePath || workingCopyStatus) {
+    if (!filePath || doesWorkingCopyMatchLatestRevision || (!latest && revisionStartError)) {
       return;
     }
     isCreating = true;
     notice = null;
     try {
-      // TODO: add `revisionStart` parameter to `createFileRevision`
+      // TODO: add `revisionStart || 'a'` parameter to `createFileRevision`
       const revision = await WorkspaceApi.createFileRevision($workspaceId, filePath, baseEtag, commitMessage, $user);
       commitMessage = '';
       showSuccessToast(`Created revision ${revision}`);
@@ -151,6 +168,24 @@
     if (workingCopyETag) {
       await showWorkspaceRevisionPreviewModal({
         currentContent: $activeDocument.currentContent,
+        filePath: path,
+        revision,
+        type: $activeDocument.type,
+        user: $user,
+        workspaceId: $workspaceId,
+      });
+    }
+  }
+
+  async function onRestore(revision: WorkspaceFileRevision) {
+    if (!filePath || !revisionList) {
+      return;
+    }
+    const path = filePath;
+    const workingCopyETag = $activeDocument.baseEtag;
+    if (workingCopyETag) {
+      await showWorkspaceRevisionRestorePreviewModal({
+        currentContent: $activeDocument.currentContent,
         currentLabel: $activeDocumentIsDirty ? 'Current editor (unsaved)' : 'Working copy',
         filePath: path,
         restore: revisionToRestore => restore(path, revisionToRestore, workingCopyETag),
@@ -158,7 +193,7 @@
         revision,
         type: $activeDocument.type,
         unrevisionedWarning:
-          latest && !doesWorkingCopyMatchRevision
+          latest && !doesWorkingCopyMatchLatestRevision
             ? 'The saved copy is not in any revision, so it will be replaced and lost.'
             : null,
         user: $user,
@@ -173,7 +208,7 @@
       return;
     }
     try {
-      const content = await WorkspaceApi.getFileRevisionContent($workspaceId, filePath, revision.name, $user);
+      const { content } = await WorkspaceApi.getFileRevisionContent($workspaceId, filePath, revision.name, $user);
       downloadBlob(new Blob([content], { type: 'text/plain' }), name);
     } catch (e) {
       catchError('log', 'Failed to download revision', e as Error);
@@ -217,15 +252,6 @@
       },
     };
   }
-
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString(undefined, {
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      month: 'short',
-    });
-  }
 </script>
 
 <div class="grid h-full grid-rows-[min-content_auto]">
@@ -263,7 +289,11 @@
                   </div>
                 {/if}
                 <div class="flex min-h-[26px] items-center gap-2">
-                  <Button class="w-fit" disabled={createDisabled || isCreating} on:click={onCreate}>
+                  <Button
+                    class="w-fit"
+                    disabled={createDisabled || isCreating || (!latest && !!revisionStartError)}
+                    on:click={onCreate}
+                  >
                     {isCreating ? 'Creating…' : 'Create revision'}
                   </Button>
                   {#if !latest}
@@ -272,13 +302,22 @@
                       <input
                         id="revision-start"
                         type="text"
+                        title="Only letters are allowed. No numbers, spaces, or symbols."
                         bind:value={revisionStart}
+                        placeholder="a"
+                        aria-invalid={revisionStartError ? 'true' : 'false'}
+                        aria-describedby={revisionStartError ? 'revision-start-error' : undefined}
                         size={Math.max(1, revisionStart.length)}
-                        class="rounded border border-border bg-background p-1 text-xs"
+                        class="rounded border bg-background p-1 text-xs {revisionStartError
+                          ? 'border-destructive'
+                          : 'border-border'}"
                       />
                     </div>
                   {/if}
                 </div>
+                {#if !latest && revisionStartError}
+                  <div id="revision-start-error" class="text-destructive" role="alert">{revisionStartError}</div>
+                {/if}
                 {#if workingCopyStatus}
                   <div class="text-muted-foreground">{workingCopyStatus}</div>
                 {/if}
@@ -287,21 +326,24 @@
                 {/if}
               </section>
               <div class="flex flex-col gap-1">
-                <span class="font-medium text-muted-foreground">History</span>
+                <span class="font-medium text-muted-foreground">Revision History</span>
                 {#if latest}
                   <ul class="flex flex-col overflow-hidden rounded border border-border" aria-label="Revisions">
                     {#each revisionList as revision, i (revision.name)}
+                      {@const revisionDisplayName = getRevisionDisplayName(revision.name)}
                       <li class={i > 0 ? 'border-t border-border' : ''}>
-                        <div class="flex items-stretch">
+                        <div class="grid grid-cols-[auto_min-content]">
                           <button
                             class="flex w-full items-baseline gap-3 px-2 py-1.5 text-left hover:bg-muted"
-                            title="Preview revision {revision.name}"
+                            title="Preview revision {revisionDisplayName}"
                             on:click={() => onPreview(revision)}
                           >
-                            <div class="w-6 flex-none text-sm font-semibold">{revision.name}</div>
+                            <div class="w-6 flex-none text-sm font-semibold">
+                              {revisionDisplayName}
+                            </div>
                             <div class="flex min-w-0 flex-col text-muted-foreground">
                               <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
-                              <span>{formatDate(revision.createdAt)}</span>
+                              <span>{getShortISOForDate(new Date(revision.createdAt))}</span>
                             </div>
                             {#if revision.message}
                               <div class="ml-auto self-start">
@@ -314,14 +356,27 @@
                               </div>
                             {/if}
                           </button>
-                          <DownloadMenu
-                            align="end"
-                            variant="ghost"
-                            className="flex-none px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            label="Download revision {revision.name}"
-                            options={getDownloadOptionsForFile(baseFilename, true, revision.name)}
-                            onDownload={name => onDownloadRevision(revision, name)}
-                          />
+                          <div class="grid grid-rows-2 justify-items-end gap-1">
+                            <DownloadMenu
+                              align="end"
+                              variant="ghost"
+                              className="flex-none px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              label="Download revision {revision.name}"
+                              options={getDownloadOptionsForFile(baseFilename, true, revision.name)}
+                              onDownload={name => onDownloadRevision(revision, name)}
+                            />
+
+                            <Button
+                              class="text-muted-foreground"
+                              variant="ghost"
+                              size="icon"
+                              title={`Restore file to revision ${revisionDisplayName}`}
+                              aria-label={`Restore file to revision ${revisionDisplayName}`}
+                              on:click={() => onRestore(revision)}
+                            >
+                              <RotateCcwClock size={10} />
+                            </Button>
+                          </div>
                         </div>
                       </li>
                     {/each}

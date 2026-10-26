@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { WorkspaceContentType } from '../../enums/workspace';
 import type { WorkspaceFileRevision } from '../../types/workspace';
 import { WorkspaceApi } from '../../utilities/workspaces';
-import WorkspaceRevisionPreviewModal from './WorkspaceRevisionPreviewModal.svelte';
+import WorkspaceRevisionRestoreModal from './WorkspaceRevisionRestoreModal.svelte';
 
 vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
 
@@ -20,7 +21,10 @@ describe('WorkspaceRevisionPreviewModal', () => {
   afterEach(() => cleanup());
 
   it('describes and enables Restore only after both content and metadata are checked', async () => {
-    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue('same');
+    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
+      content: 'same',
+      renderType: WorkspaceContentType.Text,
+    });
     let finishMetadata = () => {};
     vi.spyOn(WorkspaceApi, 'getFileRevision').mockReturnValue(
       new Promise(
@@ -30,10 +34,9 @@ describe('WorkspaceRevisionPreviewModal', () => {
       ),
     );
     vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue({ readOnly: true, user: {} } as never);
-    const { container, getByRole } = render(WorkspaceRevisionPreviewModal, {
+    const { container, getByRole } = render(WorkspaceRevisionRestoreModal, {
       props: {
         currentContent: 'same',
-        currentLabel: 'Working copy',
         filePath: 'a.seq',
         restore: vi.fn(),
         revision: a,
@@ -52,16 +55,18 @@ describe('WorkspaceRevisionPreviewModal', () => {
   });
 
   it('stays open and blocks a second restore while one is in flight', async () => {
-    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue('old');
+    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
+      content: 'old',
+      renderType: WorkspaceContentType.Text,
+    });
     vi.spyOn(WorkspaceApi, 'getFileRevision').mockResolvedValue({ fileMetadata: {}, versionMetadata: { ...a } });
     vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue(null);
     let finish = () => {};
     const restore = vi.fn(() => new Promise<void>(resolve => (finish = resolve)));
     const onClose = vi.fn();
-    const { component, getByRole } = render(WorkspaceRevisionPreviewModal, {
+    const { component, getByRole } = render(WorkspaceRevisionRestoreModal, {
       props: {
         currentContent: 'new',
-        currentLabel: 'Working copy',
         filePath: 'a.seq',
         restore,
         revision: a,

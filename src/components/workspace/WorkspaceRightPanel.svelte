@@ -28,7 +28,7 @@
   export let activeTab: WorkspaceRightPanelTab = WorkspaceRightPanelTab.METADATA;
   export let commandInfoMapper: CommandInfoMapper | null = null;
   export let commandNodeName: string | null = null;
-  export let doesWorkingCopyMatchRevision: boolean = false;
+  export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let editorSequenceView: EditorView | null = null;
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let filePath: string | null = null;
@@ -209,7 +209,7 @@
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
   {:else if activeTab === WorkspaceRightPanelTab.REVISIONS}
     <WorkspaceRevisionsPanel
-      {doesWorkingCopyMatchRevision}
+      {doesWorkingCopyMatchLatestRevision}
       {filePath}
       {hasEditPermission}
       isReadOnly={!!fileMetadata?.readOnly}
