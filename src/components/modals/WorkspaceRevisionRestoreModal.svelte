@@ -36,8 +36,6 @@
   export let currentContent: string;
   /** "Working copy", or "Current editor (unsaved)" when comparing against unsaved edits. */
   export let filePath: string;
-  /** Restores the given revision into the working copy. The modal stays open, blocking the editor, until it settles. */
-  export let restore: (revision: WorkspaceFileRevision) => Promise<void>;
   /** Why Restore is unavailable regardless of which sides are selected; null when permission/dirty state allow it. */
   export let restoreDisabledReason: string | null = null;
   /** The revision that was clicked to open this modal; preselected on the right. */
@@ -48,7 +46,7 @@
   export let user: User | null = null;
   export let workspaceId: number;
 
-  const dispatch = createEventDispatcher<{ close: void }>();
+  const dispatch = createEventDispatcher<{ close: void; restore: { revision: WorkspaceFileRevision } }>();
   // Runtime/derived fields: not part of a revision, so not a difference.
   const unversionedKeys = ['lastEditedAt', 'lastEditedBy', 'readOnly'];
   const emptySideState: SideState = {
@@ -65,7 +63,6 @@
   let effectiveRestoreDisabledReason: string | null;
   let filename: string = '';
   let isLoading: boolean;
-  let isRestoring: boolean = false;
   let leftDownloadOptions: ReturnType<typeof getDownloadOptionsForFile>;
   let leftLabel: string;
   let leftSide: Side = { kind: 'workingCopy' };
@@ -179,21 +176,12 @@
   }
 
   function close() {
-    if (!isRestoring) {
-      dispatch('close');
-    }
+    dispatch('close');
   }
 
-  async function onRestore() {
-    if (isRestoring || !revisionToRestore) {
-      return;
-    }
-    isRestoring = true;
-    try {
-      await restore(revisionToRestore);
-    } finally {
-      isRestoring = false;
-      dispatch('close');
+  function onRestore() {
+    if (revisionToRestore && !effectiveRestoreDisabledReason && !isLoading && !loadError) {
+      dispatch('restore', { revision: revisionToRestore });
     }
   }
 
@@ -293,13 +281,13 @@
         <span class="mr-auto text-sm text-muted-foreground">{effectiveRestoreDisabledReason}</span>
       {/if}
       <div class="flex gap-2 self-end">
-        <Button variant="outline" disabled={isRestoring} on:click={close}>Cancel</Button>
+        <Button variant="outline" on:click={close}>Cancel</Button>
         <Button
           variant="destructive"
-          disabled={isRestoring || !!effectiveRestoreDisabledReason || !!loadError}
+          disabled={!!effectiveRestoreDisabledReason || isLoading || !!loadError}
           on:click={onRestore}
         >
-          {isRestoring ? 'Restoring…' : 'Restore'}
+          Restore
         </Button>
       </div>
     {/if}

@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activeDocument } from '../../stores/activeDocument';
 import type { WorkspaceFileRevision } from '../../types/workspace';
-import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
+import effects from '../../utilities/effects';
 import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
 vi.mock('svelte', async importOriginal => {
@@ -16,6 +16,9 @@ vi.mock('svelte', async importOriginal => {
 });
 vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
 vi.mock('../../utilities/modal', () => ({ showWorkspaceRevisionPreviewModal: vi.fn().mockResolvedValue({}) }));
+vi.mock('../../utilities/effects', () => ({
+  default: { restoreWorkspaceFileRevision: vi.fn().mockResolvedValue(null) },
+}));
 
 const revision = (name: string): WorkspaceFileRevision => ({
   createdAt: '2026-10-07T10:42:00Z',
@@ -81,10 +84,10 @@ describe('WorkspaceRevisionsPanel', () => {
       [b.name, true],
       [null, true],
     ] as const) {
-      const { getByTitle } = renderPanel(matchingRevisionName);
-      await fireEvent.click(getByTitle('Preview revision a'));
-      const props = vi.mocked(showWorkspaceRevisionPreviewModal).mock.lastCall?.[0];
-      expect(!!props?.unrevisionedWarning).toBe(warns);
+      const { getByLabelText } = renderPanel(matchingRevisionName);
+      await fireEvent.click(getByLabelText('Restore file to revision A'));
+      const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
+      expect(!!options?.unrevisionedWarning).toBe(warns);
       cleanup();
     }
   });

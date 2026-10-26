@@ -38,55 +38,72 @@ describe('WorkspaceRevisionPreviewModal', () => {
       props: {
         currentContent: 'same',
         filePath: 'a.seq',
-        restore: vi.fn(),
         revision: a,
         workspaceId: 1,
       },
     });
 
     await new Promise(resolve => setTimeout(resolve, 20));
-    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(true);
     expect(container.textContent).not.toContain('File metadata differs');
 
     finishMetadata();
     await waitFor(() => expect(container.textContent).toContain('File metadata differs'));
-    expect(container.textContent).toContain('No content differences');
-    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(container.textContent).toContain('No content changes');
+    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('stays open and blocks a second restore while one is in flight', async () => {
+  it('dispatches restore with the selected revision without performing the request itself', async () => {
     vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
       content: 'old',
       renderType: WorkspaceContentType.Text,
     });
     vi.spyOn(WorkspaceApi, 'getFileRevision').mockResolvedValue({ fileMetadata: {}, versionMetadata: { ...a } });
     vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue(null);
-    let finish = () => {};
-    const restore = vi.fn(() => new Promise<void>(resolve => (finish = resolve)));
+    const restoreFileRevision = vi.spyOn(WorkspaceApi, 'restoreFileRevision');
     const onClose = vi.fn();
+    const onRestore = vi.fn();
     const { component, getByRole } = render(WorkspaceRevisionRestoreModal, {
       props: {
         currentContent: 'new',
         filePath: 'a.seq',
-        restore,
         revision: a,
         workspaceId: 1,
       },
     });
     component.$on('close', onClose);
+    component.$on('restore', onRestore);
 
-    await waitFor(() => expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(false));
-    await fireEvent.click(getByRole('button', { name: 'Restore…' }));
+    await waitFor(() => expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(false));
     await fireEvent.click(getByRole('button', { name: 'Restore' }));
-    const restoring = getByRole('button', { name: 'Restoring…' });
-    expect((restoring as HTMLButtonElement).disabled).toBe(true);
-    expect((getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true);
-    await fireEvent.click(restoring);
-    await fireEvent.keyDown(document, { key: 'Escape' });
-    expect(restore).toHaveBeenCalledTimes(1);
+    expect(onRestore).toHaveBeenCalledTimes(1);
+    expect(onRestore.mock.calls[0][0].detail).toEqual({ revision: a });
+    expect(restoreFileRevision).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+  });
 
-    finish();
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  it('does not dispatch restore when restoring is disabled', async () => {
+    vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
+      content: 'old',
+      renderType: WorkspaceContentType.Text,
+    });
+    vi.spyOn(WorkspaceApi, 'getFileRevision').mockResolvedValue({ fileMetadata: {}, versionMetadata: { ...a } });
+    vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue(null);
+    const onRestore = vi.fn();
+    const { component, getByRole } = render(WorkspaceRevisionRestoreModal, {
+      props: {
+        currentContent: 'new',
+        filePath: 'a.seq',
+        restoreDisabledReason: 'No permission',
+        revision: a,
+        workspaceId: 1,
+      },
+    });
+    component.$on('restore', onRestore);
+
+    await waitFor(() => expect(getByRole('button', { name: 'Restore' })).toBeTruthy());
+    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(true);
+    await fireEvent.click(getByRole('button', { name: 'Restore' }));
+    expect(onRestore).not.toHaveBeenCalled();
   });
 });

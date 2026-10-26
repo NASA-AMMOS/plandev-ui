@@ -12,9 +12,10 @@
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
   import type { WorkspaceFileRevision } from '../../types/workspace';
+  import effects from '../../utilities/effects';
   import { downloadBlob } from '../../utilities/generic';
-  import { showWorkspaceRevisionPreviewModal, showWorkspaceRevisionRestorePreviewModal } from '../../utilities/modal';
-  import { CompoundError, WorkspaceSaveConflictError } from '../../utilities/requests';
+  import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
+  import { CompoundError } from '../../utilities/requests';
   import { getShortISOForDate } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import {
@@ -50,6 +51,7 @@
   let createDisabled: boolean = false;
   let workingCopyStatus: string | null = null;
   let isCreating: boolean = false;
+  let isRestoring: boolean = false;
   let latest: WorkspaceFileRevision | null = null;
   let notice: string | null = null;
   let restoreDisabledReason: string | null = null;
@@ -178,27 +180,41 @@
   }
 
   async function onRestore(revision: WorkspaceFileRevision) {
-    if (!filePath || !revisionList) {
+    if (!filePath || !revisionList || isRestoring) {
       return;
     }
-    const path = filePath;
     const workingCopyETag = $activeDocument.baseEtag;
-    if (workingCopyETag) {
-      await showWorkspaceRevisionRestorePreviewModal({
-        currentContent: $activeDocument.currentContent,
-        currentLabel: $activeDocumentIsDirty ? 'Current editor (unsaved)' : 'Working copy',
-        filePath: path,
-        restore: revisionToRestore => restore(path, revisionToRestore, workingCopyETag),
-        restoreDisabledReason,
+    if (!workingCopyETag) {
+      return;
+    }
+    notice = null;
+    isRestoring = true;
+    try {
+      const result = await effects.restoreWorkspaceFileRevision(
+        $workspaceId,
+        filePath,
         revision,
-        type: $activeDocument.type,
-        unrevisionedWarning:
-          latest && !doesWorkingCopyMatchLatestRevision
-            ? 'The saved copy is not in any revision, so it will be replaced and lost.'
-            : null,
-        user: $user,
-        workspaceId: $workspaceId,
-      });
+        workingCopyETag,
+        {
+          currentContent: $activeDocument.currentContent,
+          restoreDisabledReason,
+          type: $activeDocument.type,
+          unrevisionedWarning:
+            latest && !doesWorkingCopyMatchLatestRevision
+              ? 'The saved copy is not in any revision, so it will be replaced and lost.'
+              : null,
+        },
+        $user,
+      );
+      if (result === 'conflict') {
+        notice = `The working copy changed since this list loaded, so revision ${revision.name} was not restored. Review the refreshed state and try again.`;
+      }
+      // Success or 412: the server state differs from what we showed, so reload the (clean) editor and this list.
+      if (result !== null) {
+        await reloadWorkingCopy();
+      }
+    } finally {
+      isRestoring = false;
     }
   }
 
@@ -214,28 +230,6 @@
       catchError('log', 'Failed to download revision', e as Error);
       showFailureToast('Failed to download revision');
     }
-  }
-
-  /** Runs inside the preview modal, which blocks the editor until this (including the reload) settles. */
-  async function restore(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
-    if ($activeDocumentIsDirty || path !== filePath) {
-      return;
-    }
-    notice = null;
-    try {
-      await WorkspaceApi.restoreFileRevision($workspaceId, path, revision.name, workingCopyETag, $user);
-      showSuccessToast(`Restored revision ${revision.name}`);
-    } catch (e) {
-      if (e instanceof WorkspaceSaveConflictError) {
-        notice = `The working copy changed since this list loaded, so revision ${revision.name} was not restored. Review the refreshed state and try again.`;
-      } else {
-        catchError('log', 'Failed to restore revision', e as Error);
-        showFailureToast('Failed to restore revision');
-        return;
-      }
-    }
-    // Success or 412: the server state differs from what we showed, so reload the (clean) editor and this list.
-    await reloadWorkingCopy();
   }
 
   /** Grows a textarea's height to fit its content as the user types. */
@@ -372,6 +366,7 @@
                               size="icon"
                               title={`Restore file to revision ${revisionDisplayName}`}
                               aria-label={`Restore file to revision ${revisionDisplayName}`}
+                              disabled={isRestoring}
                               on:click={() => onRestore(revision)}
                             >
                               <RotateCcwClock size={10} />

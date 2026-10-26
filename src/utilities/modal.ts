@@ -1854,21 +1854,19 @@ export async function showWorkspaceRevisionPreviewModal(props: {
 
 /**
  * Previews a file revision against the current content, or lets the user pick any two of
- * {revisions, working copy} to compare. A confirmed Restore runs `restore` (with whichever revision ends up
- * on the non-working-copy side) before the modal closes.
+ * {revisions, working copy} to compare. A confirmed Restore resolves with whichever revision ends up
+ * on the non-working-copy side.
  */
 export async function showWorkspaceRevisionRestorePreviewModal(props: {
   currentContent: string;
-  currentLabel: string;
   filePath: string;
-  restore: (revision: WorkspaceFileRevision) => Promise<void>;
   restoreDisabledReason: string | null;
   revision: WorkspaceFileRevision;
   type: WorkspaceContentType | null;
   unrevisionedWarning: string | null;
   user: User | null;
   workspaceId: number;
-}): Promise<ModalElementValue> {
+}): Promise<ModalElementValue<{ revision: WorkspaceFileRevision }>> {
   return new Promise(resolve => {
     if (browser) {
       const target: ModalElement | null = document.querySelector('#svelte-modal');
@@ -1881,6 +1879,13 @@ export async function showWorkspaceRevisionRestorePreviewModal(props: {
           target.replaceChildren();
           target.resolve = null;
           resolve({ confirm: false });
+          previewModal.$destroy();
+        });
+
+        previewModal.$on('restore', (e: CustomEvent<{ revision: WorkspaceFileRevision }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
           previewModal.$destroy();
         });
       }
