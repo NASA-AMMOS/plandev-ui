@@ -6,8 +6,9 @@
   export let activityTypeName: string;
   export let activityTypes: ActivityType[];
   export let args: ArgumentsMap;
+  export let defaultArgs: ArgumentsMap = {};
 
-  let formattedArguments: { key: string; value: string }[] = [];
+  let formattedArguments: { isDefault: boolean; key: string; value: string }[] = [];
 
   $: {
     if (!args || typeof args !== 'object') {
@@ -15,7 +16,9 @@
     } else {
       const activityType = activityTypes.find((type: ActivityType) => type.name === activityTypeName);
 
-      formattedArguments = Object.entries(args)
+      // Coalesce mission model defaults with the explicitly set arguments so the
+      // cell matches the effective arguments shown in the activity form
+      formattedArguments = Object.entries({ ...defaultArgs, ...args })
         .sort(([keyA], [keyB]) => {
           const orderA = activityType?.parameters[keyA]?.order ?? Number.MAX_SAFE_INTEGER;
           const orderB = activityType?.parameters[keyB]?.order ?? Number.MAX_SAFE_INTEGER;
@@ -28,15 +31,15 @@
         .map(([key, value]) => {
           const parameterSchema = activityType?.parameters[key]?.schema;
           const formattedValue = parameterSchema ? formatParameterValue(value, parameterSchema) : String(value);
-          return { key, value: formattedValue };
+          return { isDefault: !(key in args), key, value: formattedValue };
         });
     }
   }
 </script>
 
 <div class="arguments-container">
-  {#each formattedArguments as { key, value }}
-    <div class="argument-line">
+  {#each formattedArguments as { isDefault, key, value }}
+    <div class="argument-line" class:argument-line--default={isDefault}>
       <strong>{key}:</strong>
       {value}
     </div>
@@ -52,5 +55,9 @@
 
   .argument-line {
     margin-bottom: 0;
+  }
+
+  .argument-line--default {
+    color: var(--st-gray-60);
   }
 </style>
