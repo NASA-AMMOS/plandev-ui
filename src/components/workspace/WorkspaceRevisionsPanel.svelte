@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
-  import { Info, LoaderCircle } from 'lucide-svelte';
+  import { LoaderCircle } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
   import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
@@ -27,7 +27,6 @@
   import DownloadMenu from '../ui/DownloadMenu.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
-  import Tooltip from '../ui/Tooltip.svelte';
   import PanelHeader from './PanelHeader.svelte';
 
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
@@ -328,27 +327,28 @@
                       <li class={i > 0 ? 'border-t border-border' : ''}>
                         <div class="grid grid-cols-[auto_min-content]">
                           <button
-                            class="flex w-full items-baseline gap-3 px-2 py-1.5 text-left hover:bg-muted"
+                            class="h-full w-full items-baseline px-2 py-1.5 hover:bg-muted"
                             title="Preview revision {revisionDisplayName}"
                             on:click={() => onPreview(revision)}
                           >
-                            <div class="w-6 flex-none text-sm font-semibold">
-                              {revisionDisplayName}
-                            </div>
-                            <div class="flex min-w-0 flex-col text-muted-foreground">
-                              <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
-                              <span>{getShortISOForDate(new Date(revision.createdAt))}</span>
-                            </div>
-                            {#if revision.message}
-                              <div class="ml-auto self-start">
-                                <Tooltip
-                                  content={revision.message}
-                                  wrapperClass="flex-none self-center text-muted-foreground"
-                                >
-                                  <Info size={14} />
-                                </Tooltip>
+                            <div class="grid h-full grid-cols-[min-content_auto] items-start gap-2">
+                              <div class="w-6 text-left text-sm font-semibold">
+                                {revisionDisplayName}
                               </div>
-                            {/if}
+                              <div class="flex flex-col gap-1">
+                                <div
+                                  class="min-h-4 overflow-hidden text-ellipsis text-nowrap text-left"
+                                  title={revision.message}
+                                >
+                                  {revision.message}
+                                </div>
+                                <div class="text-left text-muted-foreground">
+                                  <span>Created by:</span>
+                                  <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
+                                  <span>@{getShortISOForDate(new Date(revision.createdAt))}</span>
+                                </div>
+                              </div>
+                            </div>
                           </button>
                           <div class="grid grid-rows-2 justify-items-end gap-1">
                             <DownloadMenu
