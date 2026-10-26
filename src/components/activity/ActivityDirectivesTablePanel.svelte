@@ -14,6 +14,7 @@
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
   import {
+    activityArgumentDefaultsMap,
     activityDirectivesMap,
     isActivityStatusUnavailable,
     selectActivity,
@@ -123,6 +124,7 @@
             activityTypeName: params.data.type,
             activityTypes: $planModelActivityTypes,
             args: params.data.arguments,
+            defaultArgs: $activityArgumentDefaultsMap[params.data.type] ?? {},
           },
         });
         return div;
