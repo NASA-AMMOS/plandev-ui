@@ -24,6 +24,7 @@ export type ExternalEventDB = {
   attributes: object;
   derivation_group_name: string;
   duration: string;
+  end_time: string;
   event_type_name: string;
   key: string;
   source?: ExternalSourceDB;
@@ -46,6 +47,7 @@ export type ExternalEvent = {
   attributes: { [name: string]: any };
   duration: string;
   duration_ms: number;
+  end_time: string;
   pkey: ExternalEventPkey;
   source?: ExternalSourceDB;
   start_ms: number;

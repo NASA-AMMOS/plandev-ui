@@ -2758,8 +2758,15 @@ const gql = {
   `,
 
   SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP: `#graphql
-    subscription SubPlanExternalEventsDerivationGroup($derivation_group_names: [String!]!){
-      events: ${Queries.DERIVED_EVENTS}(where: {derivation_group_name: {_in: $derivation_group_names}}) {
+    subscription SubPlanExternalEventsDerivationGroup(
+      $derivation_group_names: [String!]!,
+      $plan_end: timestamptz!,
+      $plan_start: timestamptz!,
+    ){
+      events: ${Queries.DERIVED_EVENTS}(where: {
+        derivation_group_name: {_in: $derivation_group_names},
+        start_time: {_gte: $plan_start, _lte: $plan_end}
+      }) {
         external_event {
           attributes
           event_type_name

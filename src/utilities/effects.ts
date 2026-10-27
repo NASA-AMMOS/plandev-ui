@@ -4491,6 +4491,7 @@ const effects = {
           attributes: event.attributes,
           duration: event.duration,
           duration_ms: getIntervalInMs(event.duration),
+          end_time: event.end_time,
           pkey: {
             derivation_group_name: event.derivation_group_name,
             event_type_name: event.event_type_name,
