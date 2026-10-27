@@ -6,7 +6,9 @@
   import { MergeView } from '@codemirror/merge';
   import { EditorState, type Extension } from '@codemirror/state';
   import { EditorView, lineNumbers } from '@codemirror/view';
+  import { Button } from '@nasa-jpl/stellar-svelte';
   import { basicSetup } from 'codemirror';
+  import { ArrowLeftRight } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import { readOnlyChangeGuard } from '../../../utilities/codemirror/readOnly';
@@ -46,12 +48,21 @@
   let isSinglePane: boolean = true;
   let mergeView: MergeView | null = null;
   let singleView: EditorView | null = null;
+  /** When true, "Mine" is shown on the left and "Theirs" on the right. */
+  let swapped: boolean = false;
 
   $: isSinglePane = theirs === null;
 
   /** Get the current contents of the editable "Mine" pane (for the merge flow). */
   export function getMergedContent(): string {
-    return mergeView?.b.state.doc.toString() ?? mine;
+    return (swapped ? mergeView?.a : mergeView?.b)?.state.doc.toString() ?? mine;
+  }
+
+  function swapSides() {
+    // Carry over any in-progress edits to "Mine" across the rebuild.
+    const mineDoc = getMergedContent();
+    swapped = !swapped;
+    buildViews(mineDoc);
   }
 
   function languageExtensions(): Extension[] {
@@ -105,7 +116,7 @@
     return total;
   }
 
-  function buildViews() {
+  function buildViews(mineDoc: string = mine) {
     destroyViews();
     if (!container) {
       return;
@@ -113,7 +124,7 @@
 
     if (theirs === null) {
       singleView = new EditorView({
-        doc: mine,
+        doc: mineDoc,
         extensions: readOnlyExtensions(),
         parent: container,
       });
@@ -121,17 +132,20 @@
     }
 
     const dividerTheme = EditorView.theme({ '&': { borderLeft: '1px solid hsl(var(--border))' } });
+    const theirsConfig = { doc: theirs, extensions: readOnlyExtensions() };
+    const mineConfig = { doc: mineDoc, extensions: editable ? editableExtensions() : readOnlyExtensions() };
+    const [left, right] = swapped ? [mineConfig, theirsConfig] : [theirsConfig, mineConfig];
 
-    // `a` = Theirs (read-only), `b` = Mine (editable in merge mode). revertControls are the
-    // chevrons that copy Theirs chunks into Mine.
+    // `a` = left pane, `b` = right pane. Theirs is read-only, Mine is editable in merge mode.
+    // revertControls are the chevrons that copy Theirs chunks into Mine.
     mergeView = new MergeView({
-      a: { doc: theirs, extensions: readOnlyExtensions() },
-      b: { doc: mine, extensions: [...(editable ? editableExtensions() : readOnlyExtensions()), dividerTheme] },
+      a: left,
+      b: { ...right, extensions: [...right.extensions, dividerTheme] },
       collapseUnchanged: { margin: 3, minSize: 4 },
       gutter: true,
       highlightChanges: true,
       parent: container,
-      revertControls: editable ? 'a-to-b' : undefined,
+      revertControls: editable ? (swapped ? 'b-to-a' : 'a-to-b') : undefined,
     });
 
     dispatch('stats', { changedLines: countChangedLines(mergeView) });
@@ -147,8 +161,9 @@
 </script>
 
 <div class="flex h-full min-h-0 w-full flex-col">
+  <!-- Headers are positioned with CSS `order` so swapping doesn't re-render the slotted content. -->
   <div
-    class="st-typography-medium grid flex-none border-b"
+    class="st-typography-medium relative grid flex-none border-b"
     class:grid-cols-1={isSinglePane}
     class:grid-cols-2={!isSinglePane}
   >
@@ -158,6 +173,7 @@
         editedAt={theirsEditedAt}
         label={theirsLabel}
         message={theirsMessage}
+        className={swapped ? 'order-2 border-l pl-6' : 'order-1 pr-6'}
       >
         <slot name="theirs-header-slot" slot="header-slot" />
       </WorkspaceDiffSideHeader>
@@ -167,10 +183,22 @@
       editedAt={mineEditedAt}
       label={mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
       message={mineMessage}
-      className={!isSinglePane ? 'border-l' : ''}
+      className={isSinglePane ? '' : swapped ? 'order-1 pr-6' : 'order-2 border-l pl-6'}
     >
       <slot name="mine-header-slot" slot="header-slot" />
     </WorkspaceDiffSideHeader>
+    {#if !isSinglePane}
+      <Button
+        class="absolute left-1/2 top-1/2 z-10 h-6 w-6 -translate-x-1/2 -translate-y-1/2 bg-background text-muted-foreground"
+        variant="outline"
+        size="icon"
+        title="Swap sides"
+        aria-label="Swap sides"
+        on:click={swapSides}
+      >
+        <ArrowLeftRight size={14} />
+      </Button>
+    {/if}
   </div>
   <!-- Scroll the whole diff here so both panes stay aligned (MergeView's recommended setup). -->
   <div class="min-h-0 flex-auto overflow-auto" bind:this={container} />
