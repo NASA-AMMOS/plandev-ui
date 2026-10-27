@@ -66,3 +66,22 @@ export type WorkspaceFileRevisionList = {
   matchingRevision: string | null;
   revisions: WorkspaceFileRevision[];
 };
+
+/**
+ * State for a side of a file comparison.
+ */
+export interface SideState {
+  content: string;
+  error: boolean;
+  lastEditedAt: string | null;
+  lastEditedBy: string | null;
+  loading: boolean;
+  message: string;
+  metadata: Record<string, unknown> | null;
+  pathAtRevision: string;
+}
+
+/**
+ * A side of a file comparison.
+ */
+export type Side = { kind: 'workingCopy' } | { kind: 'revision'; revision: WorkspaceFileRevision };

@@ -334,15 +334,17 @@
                       <li class={i > 0 ? 'border-t border-border' : ''}>
                         <div class="grid grid-cols-[auto_min-content]">
                           <button
-                            class="h-full w-full items-baseline px-2 py-1.5 hover:bg-muted"
+                            class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 hover:bg-muted"
                             title="Preview revision {revisionDisplayName}"
                             on:click={() => onPreview(revision)}
                           >
-                            <div class="grid h-full grid-cols-[min-content_auto] items-start gap-2">
+                            <div
+                              class="grid h-full w-full grid-cols-[min-content_auto] items-start gap-1 overflow-hidden"
+                            >
                               <div class="w-6 text-left text-sm font-semibold">
                                 {revisionDisplayName}
                               </div>
-                              <div class="flex flex-col gap-1">
+                              <div class="flex flex-col gap-1 overflow-hidden">
                                 <div
                                   class="min-h-4 overflow-hidden text-ellipsis text-nowrap text-left"
                                   title={revision.message}

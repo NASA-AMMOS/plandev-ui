@@ -8,10 +8,9 @@
   import { EditorView, lineNumbers } from '@codemirror/view';
   import { basicSetup } from 'codemirror';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import { WorkspaceContentType } from '../../enums/workspace';
-  import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
-  import { getShortISOForDate } from '../../utilities/time';
-  import { getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
+  import { WorkspaceContentType } from '../../../enums/workspace';
+  import { readOnlyChangeGuard } from '../../../utilities/codemirror/readOnly';
+  import WorkspaceDiffSideHeader from './WorkspaceDiffSideHeader.svelte';
 
   /**
    * When true, the "Mine" pane is editable with revert chevrons to pull in "Theirs" — a
@@ -27,6 +26,8 @@
   export let mineEditedAt: string | null = null;
   /** Header over the "Mine" pane; defaults to the save-conflict wording. */
   export let mineLabel: string | null = null;
+  /** Message to display in the "Mine" pane. */
+  export let mineMessage: string | null = null;
   /** Current server content ("Theirs"). When null the file was deleted — "Mine" shows alone. */
   export let theirs: string | null;
   /** Subtext under the "Theirs" header, e.g. who last edited it and when. */
@@ -34,6 +35,8 @@
   export let theirsEditedAt: string | null = null;
   /** Header over the "Theirs" pane. */
   export let theirsLabel: string = 'Theirs (server)';
+  /** Message to display in the "Theirs" pane. */
+  export let theirsMessage: string | null = null;
   /** File type, used to pick the fallback language extension. */
   export let type: WorkspaceContentType | null = null;
 
@@ -150,40 +153,24 @@
     class:grid-cols-2={!isSinglePane}
   >
     {#if !isSinglePane}
-      <div class="px-3 py-1.5">
-        <div class="flex flex-col gap-1">
-          <div class="grid grid-cols-[1fr_auto] items-center justify-center gap-2">
-            <span class="overflow-hidden text-ellipsis" title={theirsLabel}>{theirsLabel}</span>
-            <slot name="theirs-header-slot" />
-          </div>
-          {#if theirsEditBy || theirsEditedAt}
-            <div class="flex gap-1 text-nowrap text-xs text-muted-foreground">
-              <span>Edited by: {getUserDisplayNameFromIdentity(theirsEditBy || '')}</span>{#if theirsEditedAt}
-                <span>@{getShortISOForDate(new Date(theirsEditedAt || ''))}</span>{/if}
-            </div>
-          {/if}
-        </div>
-      </div>
+      <WorkspaceDiffSideHeader
+        editBy={theirsEditBy}
+        editedAt={theirsEditedAt}
+        label={theirsLabel}
+        message={theirsMessage}
+      >
+        <slot name="theirs-header-slot" slot="header-slot" />
+      </WorkspaceDiffSideHeader>
     {/if}
-    <div class="border-l px-3 py-1.5">
-      <div class="flex flex-col gap-1">
-        <div class="grid grid-cols-[1fr_auto] items-center justify-center gap-2">
-          <span
-            class="overflow-hidden text-ellipsis"
-            title={mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
-          >
-            {mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
-          </span>
-          <slot name="mine-header-slot" />
-        </div>
-        {#if mineEditBy || mineEditedAt}
-          <div class="flex gap-1 text-nowrap text-xs text-muted-foreground">
-            <span>Edited by: {getUserDisplayNameFromIdentity(mineEditBy || '')}</span>{#if mineEditedAt}
-              <span>@{getShortISOForDate(new Date(mineEditedAt || ''))}</span>{/if}
-          </div>
-        {/if}
-      </div>
-    </div>
+    <WorkspaceDiffSideHeader
+      editBy={mineEditBy}
+      editedAt={mineEditedAt}
+      label={mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
+      message={mineMessage}
+      className={!isSinglePane ? 'border-l' : ''}
+    >
+      <slot name="mine-header-slot" slot="header-slot" />
+    </WorkspaceDiffSideHeader>
   </div>
   <!-- Scroll the whole diff here so both panes stay aligned (MergeView's recommended setup). -->
   <div class="min-h-0 flex-auto overflow-auto" bind:this={container} />

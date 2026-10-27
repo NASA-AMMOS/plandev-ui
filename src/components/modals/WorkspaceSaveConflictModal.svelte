@@ -11,7 +11,7 @@
   import type { WorkspaceSaveConflictReason } from '../../utilities/requests';
   import { getTimeAgo } from '../../utilities/time';
   import { getUserDisplayNameFromIdentity, WorkspaceApi } from '../../utilities/workspaces';
-  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
+  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer/WorkspaceDiffViewer.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalHeader from './ModalHeader.svelte';

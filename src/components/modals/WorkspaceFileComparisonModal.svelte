@@ -6,7 +6,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
   import type { User } from '../../types/app';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { Side, SideState, WorkspaceFileRevision } from '../../types/workspace';
   import { downloadBlob } from '../../utilities/generic';
   import {
     getDownloadOptionsForFile,
@@ -16,22 +16,10 @@
     WorkspaceApi,
   } from '../../utilities/workspaces';
   import DownloadMenu from '../ui/DownloadMenu.svelte';
-  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
+  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer/WorkspaceDiffViewer.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalHeader from './ModalHeader.svelte';
-
-  /** One side of the comparison: either a specific revision of that side's file, or its working copy. */
-  type Side = { kind: 'workingCopy' } | { kind: 'revision'; revision: WorkspaceFileRevision };
-
-  interface SideState {
-    content: string;
-    error: boolean;
-    lastEditedAt: string | null;
-    lastEditedBy: string | null;
-    loading: boolean;
-    metadata: Record<string, unknown> | null;
-  }
 
   export let leftFilePath: string;
   export let rightFilePath: string;
@@ -48,7 +36,9 @@
     lastEditedAt: null,
     lastEditedBy: null,
     loading: true,
+    message: '',
     metadata: null,
+    pathAtRevision: '',
   };
 
   let changedLines: number = 0;
@@ -127,7 +117,9 @@
           lastEditedAt: metadata?.lastEditedAt ?? null,
           lastEditedBy: metadata?.lastEditedBy ?? null,
           loading: false,
+          message: '',
           metadata,
+          pathAtRevision: filePath,
         };
       }
       const [{ content }, { fileMetadata }] = await Promise.all([
@@ -140,7 +132,9 @@
         lastEditedAt: side.revision.lastEditedAt,
         lastEditedBy: side.revision.lastEditedBy,
         loading: false,
+        message: side.revision.message,
         metadata: fileMetadata,
+        pathAtRevision: filePath,
       };
     } catch (error) {
       console.error('Error loading side:', error);
@@ -150,7 +144,9 @@
         lastEditedAt: null,
         lastEditedBy: null,
         loading: false,
+        message: '',
         metadata: null,
+        pathAtRevision: filePath,
       };
     }
   }
@@ -239,10 +235,12 @@
           theirsLabel={leftLabel}
           theirsEditBy={leftState.lastEditedBy}
           theirsEditedAt={leftState.lastEditedAt}
+          theirsMessage={leftState.message}
           mine={rightState.content}
           mineLabel={rightLabel}
           mineEditBy={rightState.lastEditedBy}
           mineEditedAt={rightState.lastEditedAt}
+          mineMessage={rightState.message}
           {type}
           on:stats={e => (changedLines = e.detail.changedLines)}
         >

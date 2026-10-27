@@ -35,7 +35,7 @@
       {size}
       disabled={disabled || (singleOption.disabled && !singleOption.disabledReason)}
       class={cn(
-        'flex shrink-0 items-center gap-0.5',
+        'flex shrink-0 items-center gap-0.5 text-muted-foreground',
         singleOption.disabled && singleOption.disabledReason ? 'cursor-not-allowed opacity-50' : '',
         className,
       )}

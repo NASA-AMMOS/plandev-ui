@@ -6,7 +6,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import type { WorkspaceContentType } from '../../enums/workspace';
   import type { User } from '../../types/app';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { Side, SideState, WorkspaceFileRevision } from '../../types/workspace';
   import { downloadBlob } from '../../utilities/generic';
   import {
     getDownloadOptionsForFile,
@@ -15,23 +15,10 @@
     WorkspaceApi,
   } from '../../utilities/workspaces';
   import DownloadMenu from '../ui/DownloadMenu.svelte';
-  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer.svelte';
+  import WorkspaceDiffViewer from '../workspace/WorkspaceDiffViewer/WorkspaceDiffViewer.svelte';
   import Modal from './Modal.svelte';
   import ModalContent from './ModalContent.svelte';
   import ModalHeader from './ModalHeader.svelte';
-
-  /** One side of the comparison: either a specific revision, or the (not-yet-revisioned) working copy. */
-  type Side = { kind: 'workingCopy' } | { kind: 'revision'; revision: WorkspaceFileRevision };
-
-  interface SideState {
-    content: string;
-    error: boolean;
-    lastEditedAt: string | null;
-    lastEditedBy: string | null;
-    loading: boolean;
-    metadata: Record<string, unknown> | null;
-    pathAtRevision: string;
-  }
 
   export let currentContent: string;
   /** "Working copy", or "Current editor (unsaved)" when comparing against unsaved edits. */
@@ -55,6 +42,7 @@
     lastEditedAt: null,
     lastEditedBy: null,
     loading: true,
+    message: '',
     metadata: null,
     pathAtRevision: '',
   };
@@ -112,6 +100,7 @@
         lastEditedAt: rev.lastEditedAt,
         lastEditedBy: rev.lastEditedBy,
         loading: false,
+        message: rev.message,
         metadata: data.fileMetadata,
         pathAtRevision: rev.pathAtRevision,
       };
@@ -122,6 +111,7 @@
         lastEditedAt: null,
         lastEditedBy: null,
         loading: false,
+        message: '',
         metadata: null,
         pathAtRevision: '',
       };
@@ -138,6 +128,7 @@
           lastEditedAt: metadata?.lastEditedAt ?? null,
           lastEditedBy: metadata?.lastEditedBy ?? null,
           loading: false,
+          message: '',
           metadata,
           pathAtRevision: filePath,
         };
@@ -148,6 +139,7 @@
           lastEditedAt: null,
           lastEditedBy: null,
           loading: false,
+          message: '',
           metadata: null,
           pathAtRevision: filePath,
         };
@@ -229,10 +221,12 @@
           theirsLabel={leftLabel}
           theirsEditBy={leftState.lastEditedBy}
           theirsEditedAt={leftState.lastEditedAt}
+          theirsMessage={leftState.message}
           mine={rightState.content}
           mineLabel={rightLabel}
           mineEditBy={rightState.lastEditedBy}
           mineEditedAt={rightState.lastEditedAt}
+          mineMessage={rightState.message}
           {type}
           on:stats={e => (changedLines = e.detail.changedLines)}
         >
