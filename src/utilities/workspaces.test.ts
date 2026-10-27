@@ -14,6 +14,7 @@ import {
   flattenWorkspaceTreeWithPaths,
   getAvailableActionsForNodes,
   getCommonPathPrefix,
+  getDefaultRevisionName,
   getDownloadOptionsForFile,
   getFolderPathForNode,
   getSelectedFilesDisplay,
@@ -34,6 +35,7 @@ import {
   separateFilenameFromPath,
   shouldNodeBeVisible,
   sortWorkspaceTree,
+  validateRevisionName,
   WorkspaceApi,
 } from './workspaces';
 
@@ -45,7 +47,7 @@ const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({}
 const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
 const reqWorkspaceWithEtagMock = vi
   .spyOn(requests, 'reqWorkspaceWithEtag')
-  .mockResolvedValue({ data: '', etag: null, status: 200 });
+  .mockResolvedValue({ data: '', etag: null, headers: new Headers(), status: 200 });
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -120,13 +122,75 @@ describe('Workspace utility function tests', () => {
     });
   });
 
+  describe('getDefaultRevisionName', () => {
+    test('Should return "a" as the default revision name', () => {
+      expect(getDefaultRevisionName()).toEqual('a');
+    });
+
+    test('Should return a revision name that passes validation', () => {
+      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+    });
+  });
+
+  describe('validateRevisionName', () => {
+    const errorMessage = 'Only letters are allowed. No numbers, spaces, or symbols.';
+
+    test('Should accept lowercase, uppercase, and mixed-case letters', () => {
+      expect(validateRevisionName('a')).toBeNull();
+      expect(validateRevisionName('Z')).toBeNull();
+      expect(validateRevisionName('abc')).toBeNull();
+      expect(validateRevisionName('AbCd')).toBeNull();
+    });
+
+    test('Should accept an empty string', () => {
+      expect(validateRevisionName('')).toBeNull();
+    });
+
+    test('Should reject names containing numbers', () => {
+      expect(validateRevisionName('1')).toEqual(errorMessage);
+      expect(validateRevisionName('a1')).toEqual(errorMessage);
+    });
+
+    test('Should reject names containing whitespace', () => {
+      expect(validateRevisionName(' ')).toEqual(errorMessage);
+      expect(validateRevisionName('a b')).toEqual(errorMessage);
+      expect(validateRevisionName(' a')).toEqual(errorMessage);
+      expect(validateRevisionName('a\n')).toEqual(errorMessage);
+    });
+
+    test('Should reject names containing symbols', () => {
+      expect(validateRevisionName('a.b')).toEqual(errorMessage);
+      expect(validateRevisionName('a-b')).toEqual(errorMessage);
+      expect(validateRevisionName('a_b')).toEqual(errorMessage);
+      expect(validateRevisionName('a/b')).toEqual(errorMessage);
+    });
+
+    test('Should reject non-ASCII letters', () => {
+      expect(validateRevisionName('é')).toEqual(errorMessage);
+      expect(validateRevisionName('ä')).toEqual(errorMessage);
+    });
+  });
+
   describe('resolveDownloadRevisionName', () => {
     afterEach(() => {
       vi.mocked(WorkspaceApi.getFileRevisionList).mockRestore();
     });
 
     test('Should return the matching revision name', async () => {
-      vi.spyOn(WorkspaceApi, 'getFileRevisionList').mockResolvedValue({ matchingRevision: 'b', revisions: [] });
+      vi.spyOn(WorkspaceApi, 'getFileRevisionList').mockResolvedValue({
+        matchingRevision: 'b',
+        revisions: [
+          {
+            name: 'b',
+            createdAt: '',
+            createdBy: '',
+            lastEditedAt: '',
+            lastEditedBy: '',
+            message: '',
+            pathAtRevision: '',
+          },
+        ],
+      });
       expect(await resolveDownloadRevisionName(1, 'foo/bar.seq', null)).toEqual('b');
     });
 
@@ -259,9 +323,7 @@ describe('Workspace utility function tests', () => {
     });
 
     test('Should handle usernames containing multiple words and special characters', () => {
-      expect(getUserDisplayNameFromIdentity('Mary Jane O\'Brien <mjobrien@jpl.nasa.gov>')).toEqual(
-        "Mary Jane O'Brien",
-      );
+      expect(getUserDisplayNameFromIdentity("Mary Jane O'Brien <mjobrien@jpl.nasa.gov>")).toEqual("Mary Jane O'Brien");
     });
 
     test('Should handle an empty email', () => {

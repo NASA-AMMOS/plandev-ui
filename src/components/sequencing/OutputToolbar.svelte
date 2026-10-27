@@ -33,8 +33,8 @@
     dispatch('copyOutput');
   }
 
-  function onDownload(name: string) {
-    dispatch('downloadOutput', { name });
+  function onDownload(event: CustomEvent<{ name: string }>) {
+    dispatch('downloadOutput', event.detail);
   }
 
   function onTogglePreview() {
@@ -66,7 +66,7 @@
       disabled={outputDisabled}
       label={downloadTooltip}
       options={downloadOptions}
-      {onDownload}
+      on:download={onDownload}
     />
 
     <Tooltip content={isPreviewOpen ? `Collapse Editor` : `Expand Editor`}>

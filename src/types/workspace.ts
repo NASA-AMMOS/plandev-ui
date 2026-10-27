@@ -63,11 +63,6 @@ export type WorkspaceFileRevisionDetail = {
 
 /** A file's revisions, oldest first, plus which of them (if any) holds the saved copy. */
 export type WorkspaceFileRevisionList = {
-  // fileId: string | null;
-  // latestRevision: WorkspaceFileRevision | null;
-  /** Newest revision whose content and versioned metadata equal the saved copy's; null if none does. */
   matchingRevision: string | null;
   revisions: WorkspaceFileRevision[];
-  /** Covers content plus versioned metadata; restore's If-Match. Not the editor's save ETag. */
-  // workingCopyETag: string;
 };

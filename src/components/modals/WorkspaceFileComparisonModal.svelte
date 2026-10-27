@@ -267,7 +267,7 @@
                 disabled={leftState.loading || leftState.error}
                 label="Download {leftLabel}"
                 options={leftDownloadOptions}
-                onDownload={name => onDownloadSide(leftState, name)}
+                on:download={e => onDownloadSide(leftState, e.detail.name)}
               />
             </div>
           </div>
@@ -292,7 +292,7 @@
                 disabled={rightState.loading || rightState.error}
                 label="Download {rightLabel}"
                 options={rightDownloadOptions}
-                onDownload={name => onDownloadSide(rightState, name)}
+                on:download={e => onDownloadSide(rightState, e.detail.name)}
               />
             </div>
           </div>

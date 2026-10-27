@@ -20,9 +20,11 @@
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import {
     WorkspaceApi,
+    getDefaultRevisionName,
     getDownloadOptionsForFile,
     getRevisionDisplayName,
     separateFilenameFromPath,
+    validateRevisionName,
   } from '../../utilities/workspaces';
   import DownloadMenu from '../ui/DownloadMenu.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
@@ -54,11 +56,12 @@
   let latest: WorkspaceFileRevision | null = null;
   let notice: string | null = null;
   let restoreDisabledReason: string | null = null;
-  let revisionStart: string = 'a';
+  let revisionStart: string | null = null;
   let revisionStartError: string | null = null;
 
   $: latest = revisionList[0] ?? null;
-  $: revisionStartError = getRevisionStartError(revisionStart);
+  $: revisionStart = !latest ? getDefaultRevisionName() : null;
+  $: revisionStartError = revisionStart ? validateRevisionName(revisionStart) : null;
 
   $: baseFilename = filePath ? separateFilenameFromPath(filePath).filename : '';
 
@@ -93,7 +96,7 @@
       return 'The saved copy matches the latest revision.';
     }
     if (matchingRevisionName) {
-      return `The saved copy matches revision ${matchingRevisionName}`;
+      return `The saved copy matches revision ${getRevisionDisplayName(matchingRevisionName)}`;
     }
     return null;
   }
@@ -125,13 +128,6 @@
     return null;
   }
 
-  function getRevisionStartError(revisionStart: string): string | null {
-    if (!/^[A-Za-z]*$/.test(revisionStart)) {
-      return 'Only letters are allowed. No numbers, spaces, or symbols.';
-    }
-    return null;
-  }
-
   async function onCreate() {
     if (!filePath || doesWorkingCopyMatchLatestRevision || (!latest && revisionStartError)) {
       return;
@@ -139,8 +135,19 @@
     isCreating = true;
     notice = null;
     try {
-      // TODO: add `revisionStart || 'a'` parameter to `createFileRevision`
-      const revision = await WorkspaceApi.createFileRevision($workspaceId, filePath, baseEtag, commitMessage, $user);
+      let revision: string | null = null;
+      if (latest) {
+        revision = await WorkspaceApi.createFileRevision($workspaceId, filePath, baseEtag, commitMessage, $user);
+      } else {
+        revision = await WorkspaceApi.createFileRevision(
+          $workspaceId,
+          filePath,
+          baseEtag,
+          commitMessage,
+          $user,
+          revisionStart,
+        );
+      }
       commitMessage = '';
       showSuccessToast(`Created revision ${revision}`);
     } catch (e) {
@@ -289,7 +296,7 @@
                   >
                     {isCreating ? 'Creating…' : 'Create revision'}
                   </Button>
-                  {#if !latest}
+                  {#if !latest && revisionStart !== null}
                     <div class="grid h-full grid-cols-[auto_1fr] items-center gap-2">
                       <span>starting with revision</span>
                       <input
@@ -357,7 +364,7 @@
                               className="flex-none px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                               label="Download revision {revision.name}"
                               options={getDownloadOptionsForFile(baseFilename, true, revision.name)}
-                              onDownload={name => onDownloadRevision(revision, name)}
+                              on:download={e => onDownloadRevision(revision, e.detail.name)}
                             />
 
                             <Button

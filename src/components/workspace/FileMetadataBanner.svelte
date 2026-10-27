@@ -5,38 +5,43 @@
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { getShortISOForDate } from '../../utilities/time';
-  import { getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
+  import { getRevisionDisplayName, getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
 
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let isDirty: boolean = false;
   export let fileMetadata: WorkspaceFileMetadata;
   export let hasEditPermission: boolean = false;
+  export let hasRevisions: boolean = false;
   export let matchingRevisionName: string | null = null;
   export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 </script>
 
-<div class="flex h-8 items-center gap-4 border-b bg-[var(--sidebar)] px-3 py-1.5 text-xs text-muted-foreground">
-  {#if fileMetadata.lastEditedBy}
-    <span
-      ><span class="font-medium">Last edited by:</span>
-      {getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}</span
-    >
-  {/if}
-  {#if fileMetadata.lastEditedAt}
-    <span><span class="font-medium">Last edited:</span> {getShortISOForDate(new Date(fileMetadata.lastEditedAt))}</span>
-  {/if}
-  {#if isDirty}
-    <span><span class="font-medium">Working Copy:</span> Unsaved Changes</span>
-  {:else if matchingRevisionName}
-    <span
-      ><span class="font-medium">Revision:</span>
-      {matchingRevisionName}
+<div class="flex min-h-8 items-center gap-4 border-b bg-[var(--sidebar)] px-3 py-1.5 text-xs text-muted-foreground">
+  <div>
+    {#if fileMetadata.lastEditedBy}
+      <span class="font-medium">Last edited by:</span>
+      {getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}
+    {/if}
+    {#if fileMetadata.lastEditedAt}
+      @{getShortISOForDate(new Date(fileMetadata.lastEditedAt))}
+    {/if}
+  </div>
+  <div>
+    <span class="font-medium">Working Copy:</span>
+    {#if isDirty}
+      Unsaved Changes
+    {:else if matchingRevisionName}
       {#if doesWorkingCopyMatchLatestRevision}
-        (latest){/if}</span
-    >
-  {:else}
-    <span><span class="font-medium">Working Copy:</span> Modified</span>
-  {/if}
+        Latest Revision ({getRevisionDisplayName(matchingRevisionName)})
+      {:else}
+        Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span>
+      {/if}
+    {:else if !hasRevisions}
+      Unrevisioned
+    {:else}
+      Modified
+    {/if}
+  </div>
   <div
     class="ml-auto flex items-center gap-1.5"
     use:permissionHandler={{

@@ -278,6 +278,7 @@
         {doesWorkingCopyMatchLatestRevision}
         {fileMetadata}
         hasEditPermission={!previewOnly}
+        hasRevisions={revisionList.length > 0}
         {isDirty}
         {onReadOnlyChange}
       />

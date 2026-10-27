@@ -92,7 +92,7 @@
       disabled={downloadDisabled}
       label={downloadLabel}
       options={downloadOptions}
-      {onDownload}
+      on:download={e => onDownload?.(e.detail.name)}
     />
   {/if}
 

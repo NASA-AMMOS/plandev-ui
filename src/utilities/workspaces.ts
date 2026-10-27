@@ -107,8 +107,9 @@ export async function resolveDownloadRevisionName(
   user: User | null,
 ): Promise<string | null> {
   try {
-    const list = await WorkspaceApi.getFileRevisionList(workspaceId, filePath, user);
-    return list.matchingRevision ?? null;
+    const { matchingRevision } = await WorkspaceApi.getFileRevisionList(workspaceId, filePath, user);
+
+    return matchingRevision || null;
   } catch {
     return null;
   }
@@ -926,6 +927,17 @@ export function getRevisionDisplayName(revisionName: string): string {
   return revisionName.toUpperCase();
 }
 
+export function getDefaultRevisionName(): string {
+  return 'a';
+}
+
+export function validateRevisionName(revisionName: string): string | null {
+  if (!/^[A-Za-z]*$/.test(revisionName)) {
+    return 'Only letters are allowed. No numbers, spaces, or symbols.';
+  }
+  return null;
+}
+
 export const WorkspaceApi = {
   async createFileRevision(
     workspaceId: number,
@@ -933,11 +945,12 @@ export const WorkspaceApi = {
     ifMatch: string | null,
     message: string | null,
     user: User | null,
+    startAtRevision?: string | null,
   ): Promise<string> {
     const { data } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'POST',
-      message ? JSON.stringify({ message }) : null,
+      JSON.stringify({ message, startAtRevision }),
       ifMatch,
       user,
       undefined,

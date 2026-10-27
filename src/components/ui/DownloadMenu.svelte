@@ -3,6 +3,7 @@
 <script lang="ts">
   import { Button, cn, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, Download } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
   import type { DownloadMenuOption } from '../../types/dropdown';
   import Tooltip from './Tooltip.svelte';
 
@@ -10,20 +11,19 @@
   export let align: 'start' | 'end' = 'end';
   export let className: string = '';
   export let disabled: boolean = false;
-  /** Used for the trigger's title/aria-label, e.g. "Download revision b" or "Download foo.txt (Working copy)". */
   export let label: string;
-  /** Called with the chosen option's `name` (the filename to save it as) when an item is clicked. */
-  export let onDownload: (name: string) => void;
   /** One entry per naming convention offered, e.g. plain filename and/or the revision-versioned filename. */
   export let options: DownloadMenuOption[];
   export let size: 'icon' | undefined = undefined;
   export let variant: 'ghost' | 'default' | 'link' | 'destructive' | 'outline' | 'secondary' | undefined = 'outline';
 
+  const dispatch = createEventDispatcher<{ download: { name: string } }>();
+
   $: singleOption = options.length === 1 ? options[0] : null;
 
   function selectOption(option: DownloadMenuOption) {
     if (!option.disabled) {
-      onDownload(option.name);
+      dispatch('download', { name: option.name });
     }
   }
 </script>
