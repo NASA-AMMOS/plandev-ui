@@ -6,16 +6,17 @@
   import { MergeView } from '@codemirror/merge';
   import { EditorState, type Extension } from '@codemirror/state';
   import { EditorView, lineNumbers } from '@codemirror/view';
-  import { Button } from '@nasa-jpl/stellar-svelte';
+  import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { basicSetup } from 'codemirror';
   import { ArrowLeftRight } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { DownloadMenuOption } from '../../../types/dropdown';
+  import type { WorkspaceRevisionName } from '../../../types/workspace';
   import { readOnlyChangeGuard } from '../../../utilities/codemirror/readOnly';
   import { createUnifiedDiff } from '../../../utilities/codemirror/unifiedDiff';
   import { downloadBlob } from '../../../utilities/generic';
-  import { cleanPath, separateFilenameFromPath } from '../../../utilities/workspaces';
+  import { cleanPath, getVersionedFileName } from '../../../utilities/workspaces';
   import DownloadMenu from '../../ui/DownloadMenu.svelte';
   import Tooltip from '../../ui/Tooltip.svelte';
   import WorkspaceDiffSideHeader from './WorkspaceDiffSideHeader.svelte';
@@ -38,6 +39,8 @@
   export let mineLabel: string | null = null;
   /** Message to display in the "Mine" pane. */
   export let mineMessage: string | null = null;
+  /** Revision shown in the "Mine" pane, used to version its name in the downloaded diff; null for a working copy. */
+  export let mineRevisionName: WorkspaceRevisionName | null = null;
   /** Current server content ("Theirs"). When null the file was deleted — "Mine" shows alone. */
   export let theirs: string | null;
   /** Subtext under the "Theirs" header, e.g. who last edited it and when. */
@@ -49,6 +52,8 @@
   export let theirsLabel: string = 'Theirs (server)';
   /** Message to display in the "Theirs" pane. */
   export let theirsMessage: string | null = null;
+  /** Revision shown in the "Theirs" pane, used to version its name in the downloaded diff; null for a working copy. */
+  export let theirsRevisionName: WorkspaceRevisionName | null = null;
   /** File type, used to pick the fallback language extension. */
   export let type: WorkspaceContentType | null = null;
 
@@ -68,9 +73,28 @@
   $: diffDownloadOptions = [
     {
       label: 'Download diff',
-      name: `${separateFilenameFromPath(mineFilePath ?? theirsFilePath ?? '').filename || 'changes'}.diff`,
+      name: getDiffFilename(
+        { path: theirsFilePath, revisionName: theirsRevisionName },
+        { path: mineFilePath, revisionName: mineRevisionName },
+        swapped,
+      ),
     },
   ];
+
+  type DiffSide = { path: string | null; revisionName: WorkspaceRevisionName | null };
+
+  function getDiffFilename(theirsSide: DiffSide, mineSide: DiffSide, isSwapped: boolean): string {
+    const [leftSide, rightSide] = isSwapped ? [mineSide, theirsSide] : [theirsSide, mineSide];
+    const left = getVersionedFileName(leftSide.path ?? '', leftSide.revisionName);
+    const right = getVersionedFileName(rightSide.path ?? '', rightSide.revisionName);
+    const isSameFile =
+      cleanPath(leftSide.path) === cleanPath(rightSide.path) &&
+      `${leftSide.revisionName ?? ''}` === `${rightSide.revisionName ?? ''}`;
+    if (left && right && !isSameFile) {
+      return `${left}_vs_${right}.diff`;
+    }
+    return `${left || right || 'changes'}.diff`;
+  }
 
   /** Get the current contents of the editable "Mine" pane (for the merge flow). */
   export function getMergedContent(): string {
@@ -208,7 +232,7 @@
         editedAt={theirsEditedAt}
         label={theirsLabel}
         message={theirsMessage}
-        className={swapped ? 'order-2 border-l pl-10' : 'order-1 pr-10'}
+        className={cn(swapped ? 'order-2 border-l pl-10' : 'order-1 pr-10', 'h-[65px]')}
       >
         <slot name="theirs-header-slot" slot="header-slot" />
       </WorkspaceDiffSideHeader>

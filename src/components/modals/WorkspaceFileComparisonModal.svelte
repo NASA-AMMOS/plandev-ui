@@ -237,12 +237,14 @@
           theirsEditBy={leftState.lastEditedBy}
           theirsEditedAt={leftState.lastEditedAt}
           theirsMessage={leftState.message}
+          theirsRevisionName={leftSide.kind === 'revision' ? leftSide.revision.name : null}
           mine={rightState.content}
           mineFilePath={rightFilePath}
           mineLabel={rightLabel}
           mineEditBy={rightState.lastEditedBy}
           mineEditedAt={rightState.lastEditedAt}
           mineMessage={rightState.message}
+          mineRevisionName={rightSide.kind === 'revision' ? rightSide.revision.name : null}
           {type}
           on:stats={e => (changedLines = e.detail.changedLines)}
         >
