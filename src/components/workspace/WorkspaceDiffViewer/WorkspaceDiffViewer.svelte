@@ -11,7 +11,13 @@
   import { ArrowLeftRight } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../../enums/workspace';
+  import type { DownloadMenuOption } from '../../../types/dropdown';
   import { readOnlyChangeGuard } from '../../../utilities/codemirror/readOnly';
+  import { createUnifiedDiff } from '../../../utilities/codemirror/unifiedDiff';
+  import { downloadBlob } from '../../../utilities/generic';
+  import { cleanPath, separateFilenameFromPath } from '../../../utilities/workspaces';
+  import DownloadMenu from '../../ui/DownloadMenu.svelte';
+  import Tooltip from '../../ui/Tooltip.svelte';
   import WorkspaceDiffSideHeader from './WorkspaceDiffSideHeader.svelte';
 
   /**
@@ -26,6 +32,8 @@
   /** Subtext under the "Mine" header, e.g. who last edited it and when. */
   export let mineEditBy: string | null = null;
   export let mineEditedAt: string | null = null;
+  /** Workspace path of the "Mine" file, used to name it in the downloaded diff. */
+  export let mineFilePath: string | null = null;
   /** Header over the "Mine" pane; defaults to the save-conflict wording. */
   export let mineLabel: string | null = null;
   /** Message to display in the "Mine" pane. */
@@ -35,6 +43,8 @@
   /** Subtext under the "Theirs" header, e.g. who last edited it and when. */
   export let theirsEditBy: string | null = null;
   export let theirsEditedAt: string | null = null;
+  /** Workspace path of the "Theirs" file, used to name it in the downloaded diff. */
+  export let theirsFilePath: string | null = null;
   /** Header over the "Theirs" pane. */
   export let theirsLabel: string = 'Theirs (server)';
   /** Message to display in the "Theirs" pane. */
@@ -45,13 +55,22 @@
   const dispatch = createEventDispatcher<{ stats: { changedLines: number } }>();
 
   let container: HTMLDivElement;
+  let diffDownloadOptions: DownloadMenuOption[];
   let isSinglePane: boolean = true;
   let mergeView: MergeView | null = null;
+  let resolvedMineLabel: string;
   let singleView: EditorView | null = null;
   /** When true, "Mine" is shown on the left and "Theirs" on the right. */
   let swapped: boolean = false;
 
   $: isSinglePane = theirs === null;
+  $: resolvedMineLabel = mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)');
+  $: diffDownloadOptions = [
+    {
+      label: 'Download diff',
+      name: `${separateFilenameFromPath(mineFilePath ?? theirsFilePath ?? '').filename || 'changes'}.diff`,
+    },
+  ];
 
   /** Get the current contents of the editable "Mine" pane (for the merge flow). */
   export function getMergedContent(): string {
@@ -63,6 +82,22 @@
     const mineDoc = getMergedContent();
     swapped = !swapped;
     buildViews(mineDoc);
+  }
+
+  /** Downloads the current diff (including in-progress merge edits) as a unified diff, left side → right side. */
+  function downloadDiff(name: string) {
+    if (!mergeView) {
+      return;
+    }
+    const theirsSide = { label: theirsLabel, path: theirsFilePath };
+    const mineSide = { label: resolvedMineLabel, path: mineFilePath };
+    const [left, right] = swapped ? [mineSide, theirsSide] : [theirsSide, mineSide];
+    const diff = createUnifiedDiff(
+      { doc: mergeView.a.state.doc, label: left.label, name: left.path ? `a/${cleanPath(left.path)}` : 'a' },
+      { doc: mergeView.b.state.doc, label: right.label, name: right.path ? `b/${cleanPath(right.path)}` : 'b' },
+      mergeView.chunks,
+    );
+    downloadBlob(new Blob([diff], { type: 'text/x-diff' }), name);
   }
 
   function languageExtensions(): Extension[] {
@@ -173,32 +208,40 @@
         editedAt={theirsEditedAt}
         label={theirsLabel}
         message={theirsMessage}
-        className={swapped ? 'order-2 border-l pl-6' : 'order-1 pr-6'}
+        className={swapped ? 'order-2 border-l pl-10' : 'order-1 pr-10'}
       >
         <slot name="theirs-header-slot" slot="header-slot" />
       </WorkspaceDiffSideHeader>
+      <div class="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1">
+        <Tooltip content="Swap sides">
+          <Button
+            class="h-6 w-6 bg-background text-muted-foreground"
+            variant="outline"
+            size="icon"
+            aria-label="Swap sides"
+            on:click={swapSides}
+          >
+            <ArrowLeftRight size={14} />
+          </Button>
+        </Tooltip>
+        <DownloadMenu
+          className="h-6 w-6 bg-background"
+          size="icon"
+          label="Download diff"
+          options={diffDownloadOptions}
+          on:download={e => downloadDiff(e.detail.name)}
+        />
+      </div>
     {/if}
     <WorkspaceDiffSideHeader
       editBy={mineEditBy}
       editedAt={mineEditedAt}
-      label={mineLabel ?? (editable ? 'Mine (editable)' : 'Mine (your edits)')}
+      label={resolvedMineLabel}
       message={mineMessage}
-      className={isSinglePane ? '' : swapped ? 'order-1 pr-6' : 'order-2 border-l pl-6'}
+      className={isSinglePane ? '' : swapped ? 'order-1 pr-10' : 'order-2 border-l pl-10'}
     >
       <slot name="mine-header-slot" slot="header-slot" />
     </WorkspaceDiffSideHeader>
-    {#if !isSinglePane}
-      <Button
-        class="absolute left-1/2 top-1/2 z-10 h-6 w-6 -translate-x-1/2 -translate-y-1/2 bg-background text-muted-foreground"
-        variant="outline"
-        size="icon"
-        title="Swap sides"
-        aria-label="Swap sides"
-        on:click={swapSides}
-      >
-        <ArrowLeftRight size={14} />
-      </Button>
-    {/if}
   </div>
   <!-- Scroll the whole diff here so both panes stay aligned (MergeView's recommended setup). -->
   <div class="min-h-0 flex-auto overflow-auto" bind:this={container} />

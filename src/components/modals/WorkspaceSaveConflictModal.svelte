@@ -162,7 +162,9 @@
         <WorkspaceDiffViewer
           bind:this={diffViewer}
           mine={mineContent}
+          mineFilePath={path}
           theirs={theirsContent}
+          theirsFilePath={path}
           {type}
           {languageExtension}
           editable={allowMerge}

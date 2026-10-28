@@ -93,7 +93,7 @@
         <slot />
       </span>
     </Tooltip.Trigger>
-    <Tooltip.Content {...$$restProps} class={cn('dark', className)}>
+    <Tooltip.Content {...$$restProps} class={cn('dark z-[10001]', className)}>
       <Tooltip.Arrow />
       <span class="max-w-96 whitespace-nowrap text-xs">
         {content}

@@ -202,11 +202,13 @@
       {:else}
         <WorkspaceDiffViewer
           theirs={leftState.content}
+          theirsFilePath={filePath}
           theirsLabel={leftLabel}
           theirsEditBy={leftState.lastEditedBy}
           theirsEditedAt={leftState.lastEditedAt}
           theirsMessage={leftState.message}
           mine={rightState.content}
+          mineFilePath={filePath}
           mineLabel={rightLabel}
           mineEditBy={rightState.lastEditedBy}
           mineEditedAt={rightState.lastEditedAt}
