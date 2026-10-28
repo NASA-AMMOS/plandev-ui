@@ -11,7 +11,7 @@
   import { getUserStore } from '../../stores/user';
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { downloadBlob } from '../../utilities/generic';
   import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
@@ -23,6 +23,7 @@
     getDefaultRevisionName,
     getDownloadOptionsForFile,
     getRevisionDisplayName,
+    getRevisionNameRequirement,
     separateFilenameFromPath,
     validateRevisionName,
   } from '../../utilities/workspaces';
@@ -37,7 +38,7 @@
   export let hasEditPermission: boolean = false;
   export let isReadOnly: boolean = false;
   export let isRevisionsLoading: boolean = false;
-  export let matchingRevisionName: string | null = null;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let revisionList: WorkspaceFileRevision[] = [];
   /** Reload the editor from the server after a restore changed (or failed to change) the working copy. */
   export let reloadWorkingCopy: () => Promise<void>;
@@ -59,8 +60,11 @@
   let revisionStart: string | null = null;
   let revisionStartError: string | null = null;
 
+  const defaultRevisionName = `${getDefaultRevisionName()}`;
+  const revisionNameRequirement = getRevisionNameRequirement();
+
   $: latest = revisionList[0] ?? null;
-  $: revisionStart = !latest ? getDefaultRevisionName() : null;
+  $: revisionStart = !latest ? defaultRevisionName : null;
   $: revisionStartError = revisionStart ? validateRevisionName(revisionStart) : null;
 
   $: baseFilename = filePath ? separateFilenameFromPath(filePath).filename : '';
@@ -84,7 +88,7 @@
     hasEditPermission: boolean,
     isDirty: boolean,
     doesWorkingCopyMatchLatestRevision: boolean,
-    matchingRevisionName: string | null,
+    matchingRevisionName: WorkspaceRevisionName | null,
   ): string | null {
     if (!hasEditPermission) {
       return "You don't have permission to create revisions.";
@@ -95,7 +99,7 @@
     if (doesWorkingCopyMatchLatestRevision) {
       return 'The saved copy matches the latest revision.';
     }
-    if (matchingRevisionName) {
+    if (matchingRevisionName !== null && matchingRevisionName !== '') {
       return `The saved copy matches revision ${getRevisionDisplayName(matchingRevisionName)}`;
     }
     return null;
@@ -135,7 +139,7 @@
     isCreating = true;
     notice = null;
     try {
-      let revision: string | null = null;
+      let revision: WorkspaceRevisionName | null = null;
       if (latest) {
         revision = await WorkspaceApi.createFileRevision($workspaceId, filePath, baseEtag, commitMessage, $user);
       } else {
@@ -302,9 +306,9 @@
                       <input
                         id="revision-start"
                         type="text"
-                        title="Only letters are allowed. No numbers, spaces, or symbols."
+                        title={revisionNameRequirement}
                         bind:value={revisionStart}
-                        placeholder="a"
+                        placeholder={defaultRevisionName}
                         aria-invalid={revisionStartError ? 'true' : 'false'}
                         aria-describedby={revisionStartError ? 'revision-start-error' : undefined}
                         size={Math.max(1, revisionStart.length)}

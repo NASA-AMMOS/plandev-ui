@@ -1,3 +1,4 @@
+import { env } from '$env/dynamic/public';
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import JSZip from 'jszip';
 import { PATH_DELIMITER } from '../constants/workspaces';
@@ -13,6 +14,8 @@ import type {
   WorkspaceFileRevisionDetail,
   WorkspaceFileRevisionList,
   WorkspaceInsertInput,
+  WorkspaceRevisionName,
+  WorkspaceRevisionNameType,
 } from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
@@ -83,9 +86,9 @@ export function separateFilenameFromExtension(filename: string): { extension: st
  * Inserts a revision's letter before a file name's extension, for display/download only (e.g. "foo.txt" + "b"
  * -> "foo.b.txt"). Never changes the file's actual path or name; callers decide per-site whether/when to use it.
  */
-export function getVersionedFileName(filePath: string, revisionName: string | null | undefined): string {
+export function getVersionedFileName(filePath: string, revisionName: WorkspaceRevisionName | null | undefined): string {
   const { filename } = separateFilenameFromPath(filePath);
-  if (!revisionName) {
+  if (revisionName === null || revisionName === undefined || revisionName === '') {
     return filename;
   }
 
@@ -105,11 +108,11 @@ export async function resolveDownloadRevisionName(
   workspaceId: number,
   filePath: string,
   user: User | null,
-): Promise<string | null> {
+): Promise<WorkspaceRevisionName | null> {
   try {
     const { matchingRevision } = await WorkspaceApi.getFileRevisionList(workspaceId, filePath, user);
 
-    return matchingRevision || null;
+    return matchingRevision === '' ? null : (matchingRevision ?? null);
   } catch {
     return null;
   }
@@ -894,12 +897,12 @@ export async function downloadWorkspaceNodesAsZip(options: {
 export function getDownloadOptionsForFile(
   name: string,
   doesWorkingCopyMatchLatestRevision: boolean,
-  revisionName: string | null,
+  revisionName: WorkspaceRevisionName | null,
 ): DownloadMenuOption[] {
   const { extension } = separateFilenameFromExtension(name);
   const options: DownloadMenuOption[] = [{ label: `Download (...${extension})`, name }];
   if (revisionName !== null) {
-    const versionedFilename = revisionName ? getVersionedFileName(name, revisionName) : name;
+    const versionedFilename = revisionName !== '' ? getVersionedFileName(name, revisionName) : name;
     const { extension: versionedExtension } = separateFilenameFromExtension(versionedFilename);
     options.push({
       disabled: !doesWorkingCopyMatchLatestRevision,
@@ -923,17 +926,35 @@ export function getUserDisplayNameFromIdentity(identity: string): string {
   return identity;
 }
 
-export function getRevisionDisplayName(revisionName: string): string {
-  return revisionName.toUpperCase();
+/** Whether revision names are numeric or alphabetic, per `PUBLIC_WORKSPACE_REVISION_NAME_TYPE` (default "string"). */
+export function getRevisionNameType(): WorkspaceRevisionNameType {
+  return env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE === 'number' ? 'number' : 'string';
 }
 
-export function getDefaultRevisionName(): string {
-  return 'a';
+/** The user-facing description of what characters a revision name may contain. */
+export function getRevisionNameRequirement(): string {
+  return getRevisionNameType() === 'number'
+    ? 'Only numbers are allowed. No letters, spaces, or symbols.'
+    : 'Only letters are allowed. No numbers, spaces, or symbols.';
 }
 
-export function validateRevisionName(revisionName: string): string | null {
-  if (!/^[A-Za-z]*$/.test(revisionName)) {
-    return 'Only letters are allowed. No numbers, spaces, or symbols.';
+export function getRevisionDisplayName(revisionName: WorkspaceRevisionName): string {
+  return `${revisionName}`.toUpperCase();
+}
+
+export function getDefaultRevisionName(): WorkspaceRevisionName {
+  return getRevisionNameType() === 'number' ? 1 : 'A';
+}
+
+/** Converts user input to a revision name of the configured type. Empty input is returned unchanged. */
+export function parseRevisionName(revisionName: string): WorkspaceRevisionName {
+  return getRevisionNameType() === 'number' && revisionName !== '' ? Number(revisionName) : revisionName;
+}
+
+export function validateRevisionName(revisionName: WorkspaceRevisionName): string | null {
+  const pattern = getRevisionNameType() === 'number' ? /^[0-9]*$/ : /^[A-Za-z]*$/;
+  if (!pattern.test(`${revisionName}`)) {
+    return getRevisionNameRequirement();
   }
   return null;
 }
@@ -945,12 +966,17 @@ export const WorkspaceApi = {
     ifMatch: string | null,
     message: string | null,
     user: User | null,
-    startAtRevision?: string | null,
-  ): Promise<string> {
+    startAtRevision?: WorkspaceRevisionName | null,
+  ): Promise<WorkspaceRevisionName> {
     const { data } = await reqWorkspaceWithEtag<string>(
       joinPath([workspaceId, filePath]),
       'POST',
-      JSON.stringify({ message, startAtRevision }),
+      JSON.stringify({
+        message,
+        ...(startAtRevision != null && startAtRevision !== ''
+          ? { startAtRevision: parseRevisionName(`${startAtRevision}`) }
+          : {}),
+      }),
       ifMatch,
       user,
       undefined,
@@ -958,7 +984,7 @@ export const WorkspaceApi = {
       {},
       'versioning',
     );
-    return data;
+    return parseRevisionName(data);
   },
   async createFolder(workspaceId: number, folderPath: string, user: User | null) {
     return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
@@ -1025,7 +1051,7 @@ export const WorkspaceApi = {
   async getFileRevision(
     workspaceId: number,
     filePath: string,
-    revisionId: string,
+    revisionId: WorkspaceRevisionName,
     user: User | null,
   ): Promise<WorkspaceFileRevisionDetail> {
     const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevisionDetail>(
@@ -1043,11 +1069,12 @@ export const WorkspaceApi = {
   async getFileRevisionContent(
     workspaceId: number,
     filePath: string,
-    revisionId: string | null,
+    revisionId: WorkspaceRevisionName | null,
     user: User | null,
   ): Promise<{ content: string; renderType: WorkspaceContentType }> {
+    const hasRevision = revisionId !== null && revisionId !== '';
     const { data, headers } = await reqWorkspaceWithEtag<string>(
-      `${joinPath([workspaceId, filePath])}${revisionId ? `?revision=${revisionId}` : ''}`,
+      `${joinPath([workspaceId, filePath])}${hasRevision ? `?revision=${revisionId}` : ''}`,
       'GET',
       null,
       user,
@@ -1188,7 +1215,7 @@ export const WorkspaceApi = {
   async restoreFileRevision(
     workspaceId: number,
     filePath: string,
-    revisionId: string,
+    revisionId: WorkspaceRevisionName,
     workingCopyETag: string,
     user: User | null,
   ): Promise<string> {

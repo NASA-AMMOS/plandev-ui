@@ -98,6 +98,7 @@
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
     WorkspaceNodesEvent,
+    WorkspaceRevisionName,
   } from '../../../types/workspace';
   import type {
     WorkspaceFileMetadata,
@@ -190,7 +191,7 @@
   let loadingSpinnerTimeout: ReturnType<typeof setTimeout> | null = null;
   let logLevelLabel: string = 'Default levels';
   let logLevels: LogLevel[] = defaultLogLevels;
-  let matchingRevisionName: string | null = null;
+  let matchingRevisionName: WorkspaceRevisionName | null = null;
   let panelsReady: boolean = false;
   let parameterDictionaries: ParameterDictionary[] = [];
   let phoenixContext: PhoenixContext;

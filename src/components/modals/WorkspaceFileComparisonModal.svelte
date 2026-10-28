@@ -84,14 +84,14 @@
   }
 
   function sideKey(side: Side): string {
-    return side.kind === 'workingCopy' ? 'workingCopy' : side.revision.name;
+    return side.kind === 'workingCopy' ? 'workingCopy' : `${side.revision.name}`;
   }
 
   function sideFromKey(key: string, revisions: WorkspaceFileRevision[]): Side {
     if (key === 'workingCopy') {
       return { kind: 'workingCopy' };
     }
-    const found = revisions.find(r => r.name === key);
+    const found = revisions.find(r => `${r.name}` === key);
     return found ? { kind: 'revision', revision: found } : { kind: 'workingCopy' };
   }
 
@@ -255,7 +255,7 @@
               >
                 <option value="workingCopy">{leftLabel}</option>
                 {#each leftRevisions as rev (rev.name)}
-                  <option value={rev.name}
+                  <option value={`${rev.name}`}
                     >Revision {getRevisionDisplayName(rev.name)} · {formatDate(rev.createdAt)}</option
                   >
                 {/each}
@@ -280,7 +280,7 @@
               >
                 <option value="workingCopy">{rightLabel}</option>
                 {#each rightRevisions as rev (rev.name)}
-                  <option value={rev.name}
+                  <option value={`${rev.name}`}
                     >Revision {getRevisionDisplayName(rev.name)} · {formatDate(rev.createdAt)}</option
                   >
                 {/each}

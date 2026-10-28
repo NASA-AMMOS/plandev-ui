@@ -1,8 +1,9 @@
+import { env } from '$env/dynamic/public';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activeDocument } from '../../stores/activeDocument';
-import type { WorkspaceFileRevision } from '../../types/workspace';
+import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
 import effects from '../../utilities/effects';
 import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
@@ -14,7 +15,7 @@ vi.mock('svelte', async importOriginal => {
     untrack: vi.fn(fn => fn()), // used by SvelteKit's client, absent from Svelte 4
   };
 });
-vi.mock('$env/dynamic/public', () => import.meta.env); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => ({ env: {} })); // https://github.com/sveltejs/kit/issues/8180
 vi.mock('../../utilities/modal', () => ({ showWorkspaceRevisionPreviewModal: vi.fn().mockResolvedValue({}) }));
 vi.mock('../../utilities/effects', () => ({
   default: { restoreWorkspaceFileRevision: vi.fn().mockResolvedValue(null) },
@@ -32,11 +33,11 @@ const revision = (name: string): WorkspaceFileRevision => ({
 const [a, b, c] = [revision('a'), revision('b'), revision('c')];
 const revisionList = [c, b, a];
 
-// Mirrors how +page.svelte derives doesWorkingCopyMatchLatestRevision from the loaded revision list.
-function renderPanel(matchingRevisionName: string | null) {
+function renderPanel(matchingRevisionName: WorkspaceRevisionName | null) {
   return render(WorkspaceRevisionsPanel, {
     props: {
-      doesWorkingCopyMatchLatestRevision: matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
+      doesWorkingCopyMatchLatestRevision:
+        matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
       filePath: 'a.seq',
       hasEditPermission: true,
       matchingRevisionName,
@@ -60,7 +61,7 @@ describe('WorkspaceRevisionsPanel', () => {
   it('says which revision the saved copy matches, until unsaved editor changes make that stale', async () => {
     const { getByLabelText } = renderPanel(b.name);
     const section = getByLabelText('Working copy');
-    expect(section.textContent).toContain('The saved copy matches revision b');
+    expect(section.textContent).toContain('The saved copy matches revision B');
 
     activeDocument.updateContent('typed');
     await waitFor(() => expect(section.textContent).toContain('Unsaved editor changes'));
@@ -74,7 +75,7 @@ describe('WorkspaceRevisionsPanel', () => {
     cleanup();
 
     const older = renderPanel(b.name);
-    expect(older.getByLabelText('Working copy').textContent).toContain('matches revision b');
+    expect(older.getByLabelText('Working copy').textContent).toContain('matches revision B');
     expect((older.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -89,6 +90,24 @@ describe('WorkspaceRevisionsPanel', () => {
       const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
       expect(!!options?.unrevisionedWarning).toBe(warns);
       cleanup();
+    }
+  });
+
+  it('validates the starting revision as numeric when PUBLIC_WORKSPACE_REVISION_NAME_TYPE=number', async () => {
+    env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
+    try {
+      const { container, getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
+        props: { filePath: 'a.seq', hasEditPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
+      });
+      const input = container.querySelector('#revision-start') as HTMLInputElement;
+      expect(input.value).toBe('1');
+      expect(queryByRole('alert')).toBeNull();
+
+      await fireEvent.input(input, { target: { value: 'b' } });
+      expect(getByRole('alert').textContent).toBe('Only numbers are allowed. No letters, spaces, or symbols.');
+      expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
+    } finally {
+      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
     }
   });
 });

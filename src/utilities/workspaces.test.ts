@@ -1,5 +1,6 @@
 /* eslint-disable sort-keys */
-import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
+import { env } from '$env/dynamic/public';
+import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -17,6 +18,8 @@ import {
   getDefaultRevisionName,
   getDownloadOptionsForFile,
   getFolderPathForNode,
+  getRevisionDisplayName,
+  getRevisionNameType,
   getSelectedFilesDisplay,
   getUserDisplayNameFromIdentity,
   getVersionedFileName,
@@ -26,6 +29,7 @@ import {
   isPathInBreadcrumb,
   joinPath,
   mapWorkspaceTreePaths,
+  parseRevisionName,
   parseUrlState,
   removeFirstPathSegment,
   removeRedundantNodes,
@@ -123,8 +127,8 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('getDefaultRevisionName', () => {
-    test('Should return "a" as the default revision name', () => {
-      expect(getDefaultRevisionName()).toEqual('a');
+    test('Should return "A" as the default revision name', () => {
+      expect(getDefaultRevisionName()).toEqual('A');
     });
 
     test('Should return a revision name that passes validation', () => {
@@ -168,6 +172,58 @@ describe('Workspace utility function tests', () => {
     test('Should reject non-ASCII letters', () => {
       expect(validateRevisionName('é')).toEqual(errorMessage);
       expect(validateRevisionName('ä')).toEqual(errorMessage);
+    });
+  });
+
+  describe('numeric revision names (PUBLIC_WORKSPACE_REVISION_NAME_TYPE=number)', () => {
+    const errorMessage = 'Only numbers are allowed. No letters, spaces, or symbols.';
+
+    beforeEach(() => {
+      env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
+    });
+
+    test('Should default to the string type when unset or unrecognized', () => {
+      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
+      expect(getRevisionNameType()).toEqual('string');
+      env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'bogus';
+      expect(getRevisionNameType()).toEqual('string');
+    });
+
+    test('Should return 1 as the default revision name, which passes validation', () => {
+      expect(getRevisionNameType()).toEqual('number');
+      expect(getDefaultRevisionName()).toEqual(1);
+      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+    });
+
+    test('Should accept digits, as strings or numbers', () => {
+      expect(validateRevisionName('1')).toBeNull();
+      expect(validateRevisionName('042')).toBeNull();
+      expect(validateRevisionName(12)).toBeNull();
+      expect(validateRevisionName('')).toBeNull();
+    });
+
+    test('Should reject letters, whitespace, and symbols', () => {
+      expect(validateRevisionName('a')).toEqual(errorMessage);
+      expect(validateRevisionName('1a')).toEqual(errorMessage);
+      expect(validateRevisionName('1 2')).toEqual(errorMessage);
+      expect(validateRevisionName('-1')).toEqual(errorMessage);
+      expect(validateRevisionName('1.5')).toEqual(errorMessage);
+      expect(validateRevisionName(1.5)).toEqual(errorMessage);
+    });
+
+    test('Should parse input into a number', () => {
+      expect(parseRevisionName('3')).toEqual(3);
+      expect(parseRevisionName('')).toEqual('');
+    });
+
+    test('Should display and version file names with numeric revisions', () => {
+      expect(getRevisionDisplayName(3)).toEqual('3');
+      expect(getVersionedFileName('foo/bar.txt', 3)).toEqual('bar.3.txt');
+      expect(getVersionedFileName('foo/bar.txt', 0)).toEqual('bar.0.txt');
     });
   });
 

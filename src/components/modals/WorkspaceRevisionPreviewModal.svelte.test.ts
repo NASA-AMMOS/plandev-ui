@@ -18,9 +18,12 @@ const a: WorkspaceFileRevision = {
 };
 
 describe('WorkspaceRevisionPreviewModal', () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
-  it('describes and enables Restore only after both content and metadata are checked', async () => {
+  it('describes the differences only after both content and metadata are loaded', async () => {
     vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
       content: 'same',
       renderType: WorkspaceContentType.Text,
@@ -34,7 +37,7 @@ describe('WorkspaceRevisionPreviewModal', () => {
       ),
     );
     vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue({ readOnly: true, user: {} } as never);
-    const { container, getByRole } = render(WorkspaceRevisionPreviewModal, {
+    const { container } = render(WorkspaceRevisionPreviewModal, {
       props: {
         currentContent: 'same',
         filePath: 'a.seq',
@@ -44,26 +47,24 @@ describe('WorkspaceRevisionPreviewModal', () => {
     });
 
     await new Promise(resolve => setTimeout(resolve, 20));
-    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(container.textContent).toContain('Loading…');
     expect(container.textContent).not.toContain('File metadata differs');
 
     finishMetadata();
     await waitFor(() => expect(container.textContent).toContain('File metadata differs'));
-    expect(container.textContent).toContain('No content differences');
-    expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(container.textContent).toContain('No content changes');
   });
 
-  it('stays open and blocks a second restore while one is in flight', async () => {
+  it('is read-only: offers no restore and dispatches close from the Close button', async () => {
     vi.spyOn(WorkspaceApi, 'getFileRevisionContent').mockResolvedValue({
       content: 'old',
       renderType: WorkspaceContentType.Text,
     });
     vi.spyOn(WorkspaceApi, 'getFileRevision').mockResolvedValue({ fileMetadata: {}, versionMetadata: { ...a } });
     vi.spyOn(WorkspaceApi, 'getFileMetadata').mockResolvedValue(null);
-    let finish = () => {};
-    const restore = vi.fn(() => new Promise<void>(resolve => (finish = resolve)));
+    const restoreFileRevision = vi.spyOn(WorkspaceApi, 'restoreFileRevision');
     const onClose = vi.fn();
-    const { component, getByRole } = render(WorkspaceRevisionPreviewModal, {
+    const { component, container, getByRole, queryByRole } = render(WorkspaceRevisionPreviewModal, {
       props: {
         currentContent: 'new',
         filePath: 'a.seq',
@@ -73,18 +74,11 @@ describe('WorkspaceRevisionPreviewModal', () => {
     });
     component.$on('close', onClose);
 
-    await waitFor(() => expect((getByRole('button', { name: 'Restore…' }) as HTMLButtonElement).disabled).toBe(false));
-    await fireEvent.click(getByRole('button', { name: 'Restore…' }));
-    await fireEvent.click(getByRole('button', { name: 'Restore' }));
-    const restoring = getByRole('button', { name: 'Restoring…' });
-    expect((restoring as HTMLButtonElement).disabled).toBe(true);
-    expect((getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true);
-    await fireEvent.click(restoring);
-    await fireEvent.keyDown(document, { key: 'Escape' });
-    expect(restore).toHaveBeenCalledTimes(1);
-    expect(onClose).not.toHaveBeenCalled();
+    await waitFor(() => expect(container.textContent).not.toContain('Loading…'));
+    expect(queryByRole('button', { name: /^Restore/ })).toBeNull();
 
-    finish();
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    await fireEvent.click(getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(restoreFileRevision).not.toHaveBeenCalled();
   });
 });

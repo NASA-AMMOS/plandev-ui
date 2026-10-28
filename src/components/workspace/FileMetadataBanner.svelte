@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { Checkbox, Label } from '@nasa-jpl/stellar-svelte';
+  import type { WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { getShortISOForDate } from '../../utilities/time';
@@ -12,7 +13,7 @@
   export let fileMetadata: WorkspaceFileMetadata;
   export let hasEditPermission: boolean = false;
   export let hasRevisions: boolean = false;
-  export let matchingRevisionName: string | null = null;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 </script>
 
@@ -30,7 +31,7 @@
     <span class="font-medium">Working Copy:</span>
     {#if isDirty}
       Unsaved Changes
-    {:else if matchingRevisionName}
+    {:else if matchingRevisionName !== null && matchingRevisionName !== ''}
       {#if doesWorkingCopyMatchLatestRevision}
         Latest Revision ({getRevisionDisplayName(matchingRevisionName)})
       {:else}

@@ -17,7 +17,7 @@ const a: WorkspaceFileRevision = {
   pathAtRevision: 'a.seq',
 };
 
-describe('WorkspaceRevisionPreviewModal', () => {
+describe('WorkspaceRevisionRestoreModal', () => {
   afterEach(() => cleanup());
 
   it('describes and enables Restore only after both content and metadata are checked', async () => {

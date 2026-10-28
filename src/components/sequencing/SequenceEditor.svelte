@@ -20,7 +20,7 @@
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/console';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
@@ -50,7 +50,7 @@
   export let isDirty: boolean = false;
   export let isLoading: boolean = false;
   export let isInputFile: boolean = false;
-  export let matchingRevisionName: string | null = null;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let revisionList: WorkspaceFileRevision[] = [];

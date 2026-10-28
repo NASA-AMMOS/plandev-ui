@@ -13,7 +13,7 @@
   } from '@nasa-jpl/plandev-sequence-languages';
   import { EditorView } from 'codemirror';
   import { WorkspaceRightPanelTab } from '../../enums/workspace';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import CommandDictionaryComponent from '../sequencing/CommandPanel/CommandDictionary.svelte';
@@ -35,7 +35,7 @@
   export let hasEditPermission: boolean = false;
   export let isRevisionsLoading: boolean = false;
   export let isSequenceFile: boolean = false;
-  export let matchingRevisionName: string | null = null;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let phoenixContext: PhoenixContext;
   export let revisionList: WorkspaceFileRevision[] = [];
   export let reloadWorkingCopy: () => Promise<void>;

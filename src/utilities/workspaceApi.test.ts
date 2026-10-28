@@ -1,4 +1,6 @@
+import { env } from '$env/dynamic/public';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { WorkspaceContentType } from '../enums/workspace';
 import { WorkspaceSaveConflictError } from './requests';
 import { WorkspaceApi } from './workspaces';
 
@@ -13,13 +15,13 @@ const revision = {
   pathAtRevision: 'foo/bar.seq',
 };
 
-function stubFetch(status: number, body: unknown = revision) {
+function stubFetch(status: number, body: unknown = revision, headers: Record<string, string> = {}) {
   const fetchMock = vi.fn().mockResolvedValue({
-    headers: { get: () => null },
+    headers: { get: (name: string) => headers[name.toLowerCase()] ?? null },
     json: async () => body,
     ok: status >= 200 && status < 300,
     status,
-    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+    text: async () => (typeof body === 'object' ? JSON.stringify(body) : body),
   } as unknown as Response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -47,7 +49,7 @@ describe('WorkspaceApi file revisions', () => {
     );
   });
 
-  test('createFileRevision POSTs with no body', async () => {
+  test('createFileRevision POSTs the message, omitting an unset startAtRevision', async () => {
     const fetchMock = stubFetch(201, revision.name);
 
     await expect(WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', null, null)).resolves.toBe(
@@ -56,7 +58,30 @@ describe('WorkspaceApi file revisions', () => {
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('http://ws/versioning/3/foo/bar.seq');
     expect(options.method).toBe('POST');
-    expect(options.body).toBeUndefined();
+    expect(JSON.parse(options.body)).toEqual({ message: null });
+  });
+
+  test('createFileRevision omits an empty startAtRevision so the server uses its default', async () => {
+    const fetchMock = stubFetch(201, 'a');
+    await WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', 'msg', null, '');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ message: 'msg' });
+  });
+
+  test('createFileRevision sends a string startAtRevision for a first revision', async () => {
+    const fetchMock = stubFetch(201, 'c');
+    await expect(WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', 'msg', null, 'c')).resolves.toBe('c');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ message: 'msg', startAtRevision: 'c' });
+  });
+
+  test('createFileRevision sends a numeric startAtRevision for a first revision', async () => {
+    env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
+    try {
+      const fetchMock = stubFetch(201, 3);
+      await expect(WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', 'msg', null, 3)).resolves.toBe(3);
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ message: 'msg', startAtRevision: 3 });
+    } finally {
+      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
+    }
   });
 
   test('getFileRevision and getFileRevisionContent use /versioning/{workspaceId}/{revisionId}', async () => {
@@ -64,8 +89,11 @@ describe('WorkspaceApi file revisions', () => {
     await WorkspaceApi.getFileRevision(3, 'r-1', 'a', null);
     expect(fetchMock.mock.calls[0][0]).toBe('http://ws/versioning/metadata/3/r-1?revision=a');
 
-    fetchMock = stubFetch(200, 'old contents');
-    await expect(WorkspaceApi.getFileRevisionContent(3, 'r-1', 'a', null)).resolves.toBe('old contents');
+    fetchMock = stubFetch(200, 'old contents', { 'x-render-type': WorkspaceContentType.Text });
+    await expect(WorkspaceApi.getFileRevisionContent(3, 'r-1', 'a', null)).resolves.toEqual({
+      content: 'old contents',
+      renderType: WorkspaceContentType.Text,
+    });
     expect(fetchMock.mock.calls[0][0]).toBe('http://ws/versioning/3/r-1?revision=a');
   });
 
