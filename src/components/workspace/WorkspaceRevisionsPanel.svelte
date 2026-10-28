@@ -358,7 +358,7 @@
                                 <div class="text-left text-muted-foreground">
                                   <span>Created by:</span>
                                   <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
-                                  <span>@{getShortISOForDate(new Date(revision.createdAt))}</span>
+                                  <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
                                 </div>
                               </div>
                             </div>

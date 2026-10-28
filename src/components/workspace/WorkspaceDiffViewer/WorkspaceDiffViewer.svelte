@@ -222,7 +222,7 @@
 <div class="flex h-full min-h-0 w-full flex-col">
   <!-- Headers are positioned with CSS `order` so swapping doesn't re-render the slotted content. -->
   <div
-    class="st-typography-medium relative grid flex-none border-b"
+    class="st-typography-medium relative grid border-b"
     class:grid-cols-1={isSinglePane}
     class:grid-cols-2={!isSinglePane}
   >
@@ -232,7 +232,7 @@
         editedAt={theirsEditedAt}
         label={theirsLabel}
         message={theirsMessage}
-        className={cn(swapped ? 'order-2 border-l pl-10' : 'order-1 pr-10', 'h-[65px]')}
+        className={cn(swapped ? 'order-2 border-l pl-10' : 'order-1 pr-10', 'min-h-[65px]')}
       >
         <slot name="theirs-header-slot" slot="header-slot" />
       </WorkspaceDiffSideHeader>

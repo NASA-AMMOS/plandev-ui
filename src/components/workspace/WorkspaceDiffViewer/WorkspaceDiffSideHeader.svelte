@@ -30,8 +30,13 @@
       {/if}
       {#if editBy || editedAt}
         <div class="flex w-full gap-1 text-nowrap text-xs text-muted-foreground">
-          <span>Edited by: {getUserDisplayNameFromIdentity(editBy || '')}</span>{#if editedAt}
-            <span>@{getShortISOForDate(new Date(editedAt || ''))}</span>{/if}
+          {#if editBy && editedAt}
+            <span
+              >{getUserDisplayNameFromIdentity(editBy)} edited at {getShortISOForDate(new Date(editedAt || ''))}</span
+            >
+          {:else if editBy}
+            <span>Edited by: {getUserDisplayNameFromIdentity(editBy || '')}</span>
+          {/if}
         </div>
       {/if}
     </div>

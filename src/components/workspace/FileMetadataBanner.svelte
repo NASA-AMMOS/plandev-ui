@@ -24,7 +24,7 @@
       {getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}
     {/if}
     {#if fileMetadata.lastEditedAt}
-      @{getShortISOForDate(new Date(fileMetadata.lastEditedAt))}
+      at {getShortISOForDate(new Date(fileMetadata.lastEditedAt))}
     {/if}
   </div>
   <div>
