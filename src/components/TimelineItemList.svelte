@@ -186,11 +186,15 @@
           {/if}
           {#each filterOptions as option}
             <Input layout="inline" class="timeline-item-list-filter-option">
-              <label class="st-typography-body timeline-item-list-filter-option-label" for={option.value.toString()}>
+              <label
+                class="st-typography-body timeline-item-list-filter-option-label"
+                for={option.value.toString()}
+                title={option.label}
+              >
                 {#if option.color}
                   <div class="color" style:background={option.color} />
                 {/if}
-                {option.label}
+                <span class="timeline-item-list-filter-option-text">{option.label}</span>
               </label>
               <input
                 checked={!!selectedFilters[option.value]}
@@ -427,6 +431,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-width: 240px;
     padding: 8px;
     position: relative;
   }
@@ -447,7 +452,14 @@
     align-items: center;
     display: flex;
     flex: 1;
+    min-width: 0;
     user-select: none;
+  }
+
+  .timeline-item-list-filter-option-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .controls {
