@@ -41,6 +41,7 @@ import type {
   HorizontalGuide,
   Layer,
   LineLayer,
+  LinePoint,
   QuadtreePoint,
   QuadtreeRect,
   Row,
@@ -49,6 +50,7 @@ import type {
   VerticalGuide,
   XRangeLayer,
   XRangeLayerColorScheme,
+  XRangePoint,
 } from '../types/timeline';
 import { generateRandomPastelColor } from './color';
 import { getExternalEventRowId } from './externalEvents';
@@ -697,6 +699,64 @@ export function createTimelineXRangeLayer(
   };
 }
 
+type ResourceValuesMeta = {
+  /** Gaps make the left/right neighbour search order-dependent, forcing the full scan. */
+  hasGap: boolean;
+  /** Witness fields — see `getResourceValuesMeta`. Not facts about the data. */
+  lastX: number;
+  lastY: number | string | null;
+  length: number;
+  maxY: number | undefined;
+  minY: number | undefined;
+  sorted: boolean;
+};
+
+/**
+ * Per-values-array facts needed to bound `getYAxisBounds`, computed once per array rather than on
+ * every zoom/pan frame. Keyed weakly on the array itself, since the resource sampler hands out a
+ * fresh array per emit.
+ */
+const resourceValuesMetaCache = new WeakMap<ResourceValue[], ResourceValuesMeta>();
+
+/** The witness catches appends and final-sample rewrites, but not arbitrary middle edits. */
+function getResourceValuesMeta(values: ResourceValue[]): ResourceValuesMeta {
+  const length = values.length;
+  const lastX = length > 0 ? values[length - 1].x : 0;
+  const lastY = length > 0 ? values[length - 1].y : null;
+
+  const cached = resourceValuesMetaCache.get(values);
+  if (cached !== undefined && cached.length === length && cached.lastX === lastX && cached.lastY === lastY) {
+    return cached;
+  }
+
+  let hasGap = false;
+  let sorted = true;
+  let minY: number | undefined = undefined;
+  let maxY: number | undefined = undefined;
+
+  for (let i = 0; i < values.length; ++i) {
+    const value = values[i];
+    if (value.is_gap) {
+      hasGap = true;
+    }
+    if (i > 0 && value.x < values[i - 1].x) {
+      sorted = false;
+    }
+    if (typeof value.y === 'number') {
+      if (minY === undefined || value.y < minY) {
+        minY = value.y;
+      }
+      if (maxY === undefined || value.y > maxY) {
+        maxY = value.y;
+      }
+    }
+  }
+
+  const meta: ResourceValuesMeta = { hasGap, lastX, lastY, length, maxY, minY, sorted };
+  resourceValuesMetaCache.set(values, meta);
+  return meta;
+}
+
 /**
  * Returns the max bounds of the resources associated with an axis
  */
@@ -717,53 +777,101 @@ export function getYAxisBounds(
     if (layerResource) {
       let leftValue: ResourceValue | undefined;
       let rightValue: ResourceValue | undefined;
-      layerResource.values.forEach(value => {
-        const isNumber = typeof value.y === 'number';
-        // Identify the first value to the left of the viewTimeRange
-        if (viewTimeRange && value.x < viewTimeRange.start) {
-          // TODO shouldn't we continue on to next value if this is a gap?
-          if (value.is_gap) {
-            leftValue = undefined;
-          } else {
-            if (isNumber) {
-              if (!leftValue) {
-                leftValue = value;
-              } else if (value.x >= leftValue.x) {
-                leftValue = value;
-              }
+      const values = layerResource.values;
+      const meta = getResourceValuesMeta(values);
+      // Gaps reset the left/right neighbour mid-scan, which makes the result depend on the whole
+      // array rather than just the values adjacent to the view, so those fall back to the full scan.
+      const bounded = meta.sorted && !meta.hasGap;
+
+      if (bounded) {
+        let firstInView = 0;
+        let firstAfterView = values.length;
+        if (viewTimeRange) {
+          firstInView = lowerBoundByX(values, viewTimeRange.start);
+          firstAfterView = upperBoundByX(values, viewTimeRange.end);
+          for (let i = firstInView - 1; i >= 0; --i) {
+            if (typeof values[i].y === 'number') {
+              leftValue = values[i];
+              break;
+            }
+          }
+          for (let i = firstAfterView; i < values.length; ++i) {
+            if (typeof values[i].y === 'number') {
+              rightValue = values[i];
+              break;
             }
           }
         }
-        // Identify the first value to the right of the viewTimeRange
-        if (viewTimeRange && value.x > viewTimeRange.end) {
-          if (value.is_gap) {
-            rightValue = undefined;
-          } else {
-            if (isNumber) {
-              if (!rightValue) {
-                rightValue = value;
-              } else if (value.x < rightValue.x) {
-                rightValue = value;
+
+        if (viewTimeRange && yAxis.domainFitMode === 'fitTimeWindow') {
+          for (let i = firstInView; i < firstAfterView; ++i) {
+            const y = values[i].y;
+            if (typeof y === 'number') {
+              if (minY === undefined || y < minY) {
+                minY = y;
+              }
+              if (maxY === undefined || y > maxY) {
+                maxY = y;
               }
             }
           }
-        }
-        // Consider a value for min and max if it is a number and it falls within the time range or
-        // no time range is supplied or the domain fit mode is not fitTimeWindow
-        if (
-          typeof value.y === 'number' &&
-          (!viewTimeRange ||
-            yAxis.domainFitMode !== 'fitTimeWindow' ||
-            (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
-        ) {
-          if (minY === undefined || value.y < minY) {
-            minY = value.y;
+        } else {
+          if (meta.minY !== undefined && (minY === undefined || meta.minY < minY)) {
+            minY = meta.minY;
           }
-          if (maxY === undefined || value.y > maxY) {
-            maxY = value.y;
+          if (meta.maxY !== undefined && (maxY === undefined || meta.maxY > maxY)) {
+            maxY = meta.maxY;
           }
         }
-      });
+      } else {
+        values.forEach(value => {
+          const isNumber = typeof value.y === 'number';
+          // Identify the first value to the left of the viewTimeRange
+          if (viewTimeRange && value.x < viewTimeRange.start) {
+            // TODO shouldn't we continue on to next value if this is a gap?
+            if (value.is_gap) {
+              leftValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!leftValue) {
+                  leftValue = value;
+                } else if (value.x >= leftValue.x) {
+                  leftValue = value;
+                }
+              }
+            }
+          }
+          // Identify the first value to the right of the viewTimeRange
+          if (viewTimeRange && value.x > viewTimeRange.end) {
+            if (value.is_gap) {
+              rightValue = undefined;
+            } else {
+              if (isNumber) {
+                if (!rightValue) {
+                  rightValue = value;
+                } else if (value.x < rightValue.x) {
+                  rightValue = value;
+                }
+              }
+            }
+          }
+          // Consider a value for min and max if it is a number and it falls within the time range or
+          // no time range is supplied or the domain fit mode is not fitTimeWindow
+          if (
+            typeof value.y === 'number' &&
+            (!viewTimeRange ||
+              yAxis.domainFitMode !== 'fitTimeWindow' ||
+              (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
+          ) {
+            if (minY === undefined || value.y < minY) {
+              minY = value.y;
+            }
+            if (maxY === undefined || value.y > maxY) {
+              maxY = value.y;
+            }
+          }
+        });
+      }
       // Account for the neighboring left and right values as these values are connected to in line drawing
       if (viewTimeRange) {
         minY = Math.min(
@@ -854,6 +962,171 @@ export function duplicateRow(row: Row, timelines: Timeline[], timelineId: number
   });
 
   return newRow;
+}
+
+/**
+ * Index of the first point with `x >= target`, or `points.length` if none. Requires `points`
+ * sorted ascending by `x` — check with `isSortedByX`.
+ */
+export function lowerBoundByX(points: { x: number }[], target: number): number {
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (points[mid].x < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+/**
+ * Index of the first point with `x > target`, or `points.length` if none. Requires `points`
+ * sorted ascending by `x` — check with `isSortedByX`.
+ */
+export function upperBoundByX(points: { x: number }[], target: number): number {
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (points[mid].x <= target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+/**
+ * Whether `points` is non-decreasing in `x`.
+ *
+ * Binary searches require sorted points. Malformed profiles can place duration before the final
+ * segment, so callers retain a full-scan fallback.
+ */
+export function isSortedByX(points: { x: number }[]): boolean {
+  for (let i = 1; i < points.length; ++i) {
+    if (points[i].x < points[i - 1].x) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export type LinePointConversionCursor = {
+  nextId: number;
+  resourceIndex: number;
+  valueIndex: number;
+};
+
+/** Appends one frame's worth of resource values and returns where the next frame should resume. */
+export function appendLinePointSlice(
+  resources: Resource[],
+  points: LinePoint[],
+  ordinalDomain: Set<string>,
+  cursor: LinePointConversionCursor,
+  shouldYield: () => boolean,
+): LinePointConversionCursor | null {
+  let { nextId, resourceIndex, valueIndex } = cursor;
+
+  for (; resourceIndex < resources.length; ++resourceIndex) {
+    const { name, schema, values } = resources[resourceIndex];
+    const numeric =
+      schema.type === 'int' ||
+      schema.type === 'real' ||
+      schema.type === 'duration' ||
+      (schema.type === 'struct' && schema.items?.rate?.type === 'real' && schema.items?.initial?.type === 'real');
+    const ordinal = schema.type === 'string' || schema.type === 'variant';
+
+    if (schema.type === 'boolean' || numeric || ordinal) {
+      for (; valueIndex < values.length; ++valueIndex) {
+        const value = values[valueIndex];
+        let y: LinePoint['y'] = value.y;
+        if (schema.type === 'boolean') {
+          y = value.y ? 1 : 0;
+        } else if (ordinal) {
+          ordinalDomain.add(value.y as string);
+        }
+        points.push({ id: nextId++, name, type: 'line', x: value.x, y });
+
+        if (shouldYield()) {
+          return { nextId, resourceIndex, valueIndex: valueIndex + 1 };
+        }
+      }
+    }
+    valueIndex = 0;
+  }
+
+  return null;
+}
+
+export function getLinePointWindow<T extends { x: number }>(points: T[], start: number, end: number) {
+  const firstInView = lowerBoundByX(points, start);
+  const firstAfterView = upperBoundByX(points, end);
+  const leftIndex = Math.max(firstInView, 1);
+  const rightIndex = Math.max(firstAfterView, 1);
+  return {
+    firstAfterView,
+    firstInView,
+    leftPoint: firstInView < points.length && leftIndex < points.length ? points[leftIndex - 1] : null,
+    rightPoint: firstAfterView < points.length && rightIndex < points.length ? points[rightIndex] : null,
+  };
+}
+
+export function getHoverNeighbours<T extends { x: number }>(points: T[], x: number) {
+  const firstAfter = upperBoundByX(points, x);
+  return {
+    leftPoint: firstAfter > 0 ? points[firstAfter - 1] : null,
+    rightPoint: firstAfter < points.length ? points[firstAfter] : null,
+  };
+}
+
+export function getPointsAtX<T extends { x: number; y: unknown }>(points: T[], x: number): T[] {
+  const matches: T[] = [];
+  const end = upperBoundByX(points, x);
+  for (let i = lowerBoundByX(points, x); i < end; ++i) {
+    if (points[i].y !== null) {
+      matches.push(points[i]);
+    }
+  }
+  return matches;
+}
+
+export type XRangeRun = { endMs: number; point: XRangePoint };
+
+/** Builds the boxes represented by consecutive equal-label points. */
+export function coalesceXRangeRuns(points: XRangePoint[]): XRangeRun[] {
+  const runs: XRangeRun[] = [];
+  for (let i = 0; i < points.length; ++i) {
+    const point = points[i];
+    if (point.is_gap || point.is_null) {
+      continue;
+    }
+    let j = i + 1;
+    while (j < points.length && points[j].label.text === point.label.text && points[j].is_gap === point.is_gap) {
+      ++j;
+    }
+    i = j - 1;
+    runs.push({ endMs: j < points.length ? points[j].x : points[i].x, point });
+  }
+  return runs;
+}
+
+/** First run whose end reaches the viewport. Requires runs sorted by time. */
+export function lowerBoundXRangeRunEnd(runs: XRangeRun[], target: number): number {
+  let low = 0;
+  let high = runs.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (runs[mid].endMs < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
 }
 
 /**
