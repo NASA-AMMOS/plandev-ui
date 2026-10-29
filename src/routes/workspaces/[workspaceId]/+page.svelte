@@ -2019,6 +2019,7 @@
               {phoenixContext}
               {commandInfoMapper}
               {revisionList}
+              workspace={$workspace}
               on:createdFileRevision={onCreatedFileRevision}
               on:updateUserMetadata={onUpdateUserMetadata}
               reloadWorkingCopy={onRevisionWorkingCopyChanged}

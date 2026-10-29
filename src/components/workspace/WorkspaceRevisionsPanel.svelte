@@ -11,10 +11,12 @@
   import { getUserStore } from '../../stores/user';
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
-  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { Workspace, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { downloadBlob } from '../../utilities/generic';
   import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
+  import { permissionHandler } from '../../utilities/permissionHandler';
+  import { featurePermissions } from '../../utilities/permissions';
   import { CompoundError } from '../../utilities/requests';
   import { getShortISOForDate } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -40,6 +42,8 @@
   export let isRevisionsLoading: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let revisionList: WorkspaceFileRevision[] = [];
+  export let workspace: Workspace | null = null;
+
   /** Reload the editor from the server after a restore changed (or failed to change) the working copy. */
   export let reloadWorkingCopy: () => Promise<void>;
 
@@ -52,6 +56,8 @@
   let commitMessage: string = '';
   let createDisabled: boolean = false;
   let workingCopyStatus: string | null = null;
+  let hasCreatePermission: boolean = false;
+  let hasRestorePermission: boolean = false;
   let isCreating: boolean = false;
   let isRestoring: boolean = false;
   let latest: WorkspaceFileRevision | null = null;
@@ -63,6 +69,10 @@
   const defaultRevisionName = `${getDefaultRevisionName()}`;
   const revisionNameRequirement = getRevisionNameRequirement();
 
+  $: if (workspace) {
+    hasCreatePermission = featurePermissions.workspace.canCreate($user, workspace);
+    hasRestorePermission = featurePermissions.workspace.canUpdate($user, workspace);
+  }
   $: latest = revisionList[0] ?? null;
   $: revisionStart = !latest ? defaultRevisionName : null;
   $: revisionStartError = revisionStart ? validateRevisionName(revisionStart) : null;
@@ -292,7 +302,13 @@
                     Unsaved editor changes
                   </div>
                 {/if}
-                <div class="flex min-h-[26px] items-center gap-2">
+                <div
+                  class="flex min-h-[26px] items-center gap-2"
+                  use:permissionHandler={{
+                    hasPermission: hasCreatePermission,
+                    permissionError: 'You do not have permission to create a revision',
+                  }}
+                >
                   <Button
                     class="w-fit"
                     disabled={createDisabled || isCreating || (!latest && !!revisionStartError)}
@@ -374,17 +390,24 @@
                               on:download={e => onDownloadRevision(revision, e.detail.name)}
                             />
 
-                            <Button
-                              class="text-muted-foreground"
-                              variant="ghost"
-                              size="icon"
-                              title={`Restore file to revision ${revisionDisplayName}`}
-                              aria-label={`Restore file to revision ${revisionDisplayName}`}
-                              disabled={isRestoring}
-                              on:click={() => onRestore(revision)}
+                            <div
+                              use:permissionHandler={{
+                                hasPermission: hasRestorePermission,
+                                permissionError: 'You do not have permission to restore this revision',
+                              }}
                             >
-                              <RotateCcwClock size={10} />
-                            </Button>
+                              <Button
+                                class="text-muted-foreground"
+                                variant="ghost"
+                                size="icon"
+                                title={`Restore file to revision ${revisionDisplayName}`}
+                                aria-label={`Restore file to revision ${revisionDisplayName}`}
+                                disabled={isRestoring}
+                                on:click={() => onRestore(revision)}
+                              >
+                                <RotateCcwClock size={10} />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </li>

@@ -13,7 +13,7 @@
   } from '@nasa-jpl/plandev-sequence-languages';
   import { EditorView } from 'codemirror';
   import { WorkspaceRightPanelTab } from '../../enums/workspace';
-  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { Workspace, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import CommandDictionaryComponent from '../sequencing/CommandPanel/CommandDictionary.svelte';
@@ -38,6 +38,7 @@
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let phoenixContext: PhoenixContext;
   export let revisionList: WorkspaceFileRevision[] = [];
+  export let workspace: Workspace | null = null;
   export let reloadWorkingCopy: () => Promise<void>;
 
   const emptyCommandDictionary: CommandDictionary = {
@@ -217,6 +218,7 @@
       {matchingRevisionName}
       {revisionList}
       {reloadWorkingCopy}
+      {workspace}
       on:createdFileRevision
     />
   {/if}
