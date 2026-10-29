@@ -153,7 +153,7 @@
         );
       }
       commitMessage = '';
-      showSuccessToast(`Created revision ${revision}`);
+      showSuccessToast(`Created revision ${getRevisionDisplayName(revision)}`);
     } catch (e) {
       // The revision exists but the list can't show it yet; a retry would create the next one.
       if (
@@ -311,6 +311,7 @@
                         placeholder={defaultRevisionName}
                         aria-invalid={revisionStartError ? 'true' : 'false'}
                         aria-describedby={revisionStartError ? 'revision-start-error' : undefined}
+                        aria-label="Starting revision name"
                         size={Math.max(1, revisionStart.length)}
                         class="rounded border bg-background p-1 text-xs {revisionStartError
                           ? 'border-destructive'
@@ -356,7 +357,7 @@
                                   {revision.message}
                                 </div>
                                 <div class="text-left text-muted-foreground">
-                                  <span>Created by:</span>
+                                  <span>Created:</span>
                                   <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
                                   <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
                                 </div>

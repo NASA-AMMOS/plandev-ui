@@ -939,7 +939,7 @@ export function getRevisionNameRequirement(): string {
 }
 
 export function getRevisionDisplayName(revisionName: WorkspaceRevisionName): string {
-  return `${revisionName}`.toUpperCase();
+  return `${revisionName}`.toLocaleUpperCase();
 }
 
 export function getDefaultRevisionName(): WorkspaceRevisionName {
@@ -974,7 +974,7 @@ export const WorkspaceApi = {
       JSON.stringify({
         message,
         ...(startAtRevision != null && startAtRevision !== ''
-          ? { startAtRevision: parseRevisionName(`${startAtRevision}`) }
+          ? { startAtRevision: parseRevisionName(`${startAtRevision}`.toLocaleLowerCase()) }
           : {}),
       }),
       ifMatch,

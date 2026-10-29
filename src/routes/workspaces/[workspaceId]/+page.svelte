@@ -1036,31 +1036,6 @@
     });
   }
 
-  // /** Restores an arbitrary (not necessarily active) file's revision, from the "Compare revisions" context menu. */
-  // async function restoreArbitraryFileRevision(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
-  //   if (!$workspace) {
-  //     return;
-  //   }
-  //   try {
-  //     await WorkspaceApi.restoreFileRevision($workspace.id, path, revision.name, workingCopyETag, $user);
-  //     showSuccessToast(`Restored revision ${revision.name}`);
-  //   } catch (e) {
-  //     if (e instanceof WorkspaceSaveConflictError) {
-  //       showFailureToast('The working copy changed since this list loaded; try again.');
-  //     } else {
-  //       catchError('log', 'Failed to restore revision', e as Error);
-  //       showFailureToast('Failed to restore revision');
-  //     }
-  //     return;
-  //   }
-  //   // Reload the editor only if the restored file happens to be the one currently open.
-  //   if (path === $activeDocumentPath) {
-  //     await onRevisionWorkingCopyChanged();
-  //   } else {
-  //     refreshWorkspaceContents();
-  //   }
-  // }
-
   async function onCompareRevisions({ detail: { treeNode, treeNodePath: path } }: CustomEvent<WorkspaceNodeEvent>) {
     if (!$workspace) {
       return;

@@ -20,7 +20,7 @@
 <div class="flex min-h-8 items-center gap-4 border-b bg-[var(--sidebar)] px-3 py-1.5 text-xs text-muted-foreground">
   <div>
     {#if fileMetadata.lastEditedBy}
-      <span class="font-medium">Last edited by:</span>
+      <span class="font-medium">Last edited:</span>
       {getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}
     {/if}
     {#if fileMetadata.lastEditedAt}
