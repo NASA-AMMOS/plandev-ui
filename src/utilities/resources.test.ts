@@ -208,6 +208,83 @@ describe('sampleProfiles', () => {
     });
   });
 
+  // Backend: explicit JSON null is SerializedValue.NULL (is_gap=false); omitted dynamics is stored as null with is_gap=true.
+  describe('gaps and null dynamics', () => {
+    const realOf = (segs: Array<{ dynamics: unknown; is_gap?: boolean; start_offset: string }>): Profile => ({
+      ...realProfile('00:03:00', []),
+      profile_segments: segs.map(s => makeSegment(s.start_offset, s.dynamics, s.is_gap)),
+    });
+
+    test('discrete null with is_gap=false is a real null value, not a gap', () => {
+      const profile = discreteProfile('00:01:00', [{ start_offset: '00:00:00', value: null }]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values).toEqual([
+        { is_gap: false, x: startMs, y: null },
+        { is_gap: false, x: startMs + 60000, y: null },
+      ]);
+    });
+
+    test('discrete null with is_gap=true is a gap', () => {
+      const profile = discreteProfile('00:01:00', [{ is_gap: true, start_offset: '00:00:00', value: null }]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values).toEqual([
+        { is_gap: true, x: startMs, y: null },
+        { is_gap: true, x: startMs + 60000, y: null },
+      ]);
+    });
+
+    test('discrete array/object dynamics pass through unchanged', () => {
+      const profile = discreteProfile('00:01:00', [
+        { start_offset: '00:00:00', value: [1, 2] },
+        { start_offset: '00:00:30', value: { a: { b: null } } },
+      ]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values.map(v => v.y)).toEqual([[1, 2], [1, 2], { a: { b: null } }, { a: { b: null } }]);
+    });
+
+    test('real gap (null dynamics, is_gap=true) emits a gap interval without crashing', () => {
+      const profile = realOf([
+        { dynamics: { initial: 10, rate: 0 }, start_offset: '00:00:00' },
+        { dynamics: null, is_gap: true, start_offset: '00:01:00' },
+        { dynamics: { initial: 5, rate: 0 }, start_offset: '00:02:00' },
+      ]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values).toEqual([
+        { is_gap: false, x: startMs, y: 10 },
+        { is_gap: false, x: startMs + 60000, y: 10 },
+        { is_gap: true, x: startMs + 60000, y: null },
+        { is_gap: true, x: startMs + 120000, y: null },
+        { is_gap: false, x: startMs + 120000, y: 5 },
+        { is_gap: false, x: startMs + 180000, y: 5 },
+      ]);
+    });
+
+    // Defensive: ingestion never writes null real dynamics with is_gap=false, but it must not crash.
+    test('real null dynamics with is_gap=false is treated as a gap', () => {
+      const profile = realOf([{ dynamics: null, start_offset: '00:00:00' }]);
+      const [resource] = sampleProfiles([profile], START);
+      expect(resource.values).toEqual([
+        { is_gap: true, x: startMs, y: null },
+        { is_gap: true, x: startMs + 180000, y: null },
+      ]);
+    });
+
+    test('malformed real dynamics is a gap, so the line is not drawn through it', () => {
+      const profile = realOf([
+        { dynamics: { initial: 10, rate: 0 }, start_offset: '00:00:00' },
+        { dynamics: {}, start_offset: '00:01:00' },
+        { dynamics: { initial: 5, rate: 0 }, start_offset: '00:02:00' },
+      ]);
+      const [resource] = sampleProfiles([profile], START);
+      const malformed = resource.values.filter(v => v.x >= startMs + 60000 && v.x <= startMs + 120000 && v.is_gap);
+      expect(malformed).toEqual([
+        { is_gap: true, x: startMs + 60000, y: null },
+        { is_gap: true, x: startMs + 120000, y: null },
+      ]);
+      expect(resource.values).toHaveLength(6);
+    });
+  });
+
   describe('sort invariants', () => {
     test('values are sorted ASC by x when duration >= max segment start_offset', () => {
       const profile = discreteProfile('00:05:00', [
