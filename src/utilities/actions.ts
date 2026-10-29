@@ -85,8 +85,9 @@ export function getFileArgumentForPaths(schema: ActionValueSchema, paths: string
 }
 
 /**
- * Gives every selected file that has no revision the latest revision where its parameter doesn't allow the working copy,
- * e.g. after switching to an action version that no longer does. Chosen revisions are never changed.
+ * Converts file and sequence arguments to what their schemas take, e.g. after switching to another action version:
+ * paths become FileRefs where the parameter has `withRevision` (and back to paths where it no longer does), and working
+ * copies become the latest revision where the working copy isn't allowed. Chosen revisions are never changed.
  */
 export function normalizeFileArguments(
   schemas: Record<string, ActionValueSchema>,
@@ -95,14 +96,28 @@ export function normalizeFileArguments(
   let normalized = argumentsMap;
   for (const [name, schema] of Object.entries(schemas)) {
     const value = argumentsMap[name];
-    if (!isWithRevision(schema) || allowsWorkingCopy(schema) || value === undefined || value === null) {
+    if (
+      !(isActionValueSchemaFile(schema) || isActionValueSchemaSequence(schema)) ||
+      value === undefined ||
+      value === null
+    ) {
       continue;
     }
-    const files = [value].flat();
-    if (files.every(isFileRef) && files.some(file => file.revision === undefined)) {
-      const fill = (file: FileRef): FileRef =>
-        file.revision === undefined ? { ...file, revision: LATEST_REVISION } : file;
-      normalized = { ...normalized, [name]: Array.isArray(value) ? value.map(fill) : fill(value as FileRef) };
+    const convert = (file: unknown) => {
+      if (!isWithRevision(schema)) {
+        return isFileRef(file) ? file.path : file;
+      }
+      if (typeof file === 'string') {
+        return getDefaultFileRef(schema, file);
+      }
+      return isFileRef(file) && file.revision === undefined && !allowsWorkingCopy(schema)
+        ? { ...file, revision: LATEST_REVISION }
+        : file;
+    };
+    const files: unknown[] = [value].flat();
+    const converted = files.map(convert);
+    if (converted.some((file, i) => file !== files[i])) {
+      normalized = { ...normalized, [name]: Array.isArray(value) ? converted : converted[0] };
     }
   }
   return normalized;

@@ -105,7 +105,7 @@
     parametersMap = valueSchemaRecordToParametersMap(paramSchema);
   }
 
-  // Another version may no longer allow the working copy for a file parameter or setting
+  // Another version may take its file parameters and settings differently (paths or FileRefs, with or without the working copy)
   $: argumentsMap = normalizeFileArguments(selectedVersion?.parameter_schema ?? {}, argumentsMap);
 
   // Build settings form for non-latest versions, or for reruns on latest

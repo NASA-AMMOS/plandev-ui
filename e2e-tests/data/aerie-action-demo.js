@@ -57,12 +57,6 @@ const parameterDefinitions = {
     withRevision: true,
     allowWorkingCopy: false,
   },
-  pinnedSequences: {
-    type: 'sequenceList',
-    description: 'Sequences that must each be read at a named revision (used in "file-refs" mode)',
-    withRevision: true,
-    allowWorkingCopy: false,
-  },
   required: {
     type: 'string',
     description: 'A required parameter',
@@ -110,7 +104,6 @@ async function main(actionParameters, actionSettings, actionsAPI) {
     outputFile,
     outputContent,
     pinnedFile,
-    pinnedSequences,
     secret,
     sequence,
     sequencesAtRevision,
@@ -137,7 +130,7 @@ async function main(actionParameters, actionSettings, actionsAPI) {
       result = await runFilesMode(actionsAPI, sequence, verbose);
       break;
     case 'file-refs':
-      result = await runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision, pinnedFile, pinnedSequences);
+      result = await runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision, pinnedFile);
       break;
     case 'adaptation':
       result = await runAdaptationMode(actionsAPI, sequence);
@@ -294,14 +287,13 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
 
 // Reads each FileRef it is given (a working copy or a pinned revision) and returns it with the contents read, so the
 // result shows exactly what each selection resolved to.
-async function runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision = [], pinnedFile, pinnedSequences = []) {
+async function runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision = [], pinnedFile) {
   const read = async ref => ({ content: await actionsAPI.readFile(ref), ref });
   return {
     status: 'SUCCESS',
     data: {
       fileAtRevision: fileAtRevision ? await read(fileAtRevision) : null,
       pinnedFile: pinnedFile ? await read(pinnedFile) : null,
-      pinnedSequences: await Promise.all(pinnedSequences.map(read)),
       sequencesAtRevision: await Promise.all(sequencesAtRevision.map(read)),
     },
   };
