@@ -299,6 +299,7 @@ export async function getActivityDirectivesClipboardCount(): Promise<number> {
 
 export async function getActivityDirectivesToPaste(
   destinationPlan: Plan,
+  clampToPlanBounds: boolean,
   pasteStartingAtTime?: number,
 ): Promise<ActivityDirective[]> {
   let activities: ActivityDirective[] = [];
@@ -307,27 +308,18 @@ export async function getActivityDirectivesToPaste(
     if (serializedClipboard !== undefined) {
       const clipboard = JSON.parse(serializedClipboard);
       activities = clipboard.activities;
-
       const starts: number[] = [];
       activities.forEach(a => {
-        //unachored activities are the ones we're trying to place relative to each other in time, anchored will be calculated from offset
+        // Anchored activities are the ones we're trying to place relative to each other in time, anchored will be calculated from offset
         if (a.anchor_id === null && a.start_time_ms !== null) {
           starts.push(a.start_time_ms);
         }
       });
 
-      //bounded by plan start and plan end
+      // Bounded by plan start and plan end
       const planStart = getUnixEpochTime(destinationPlan.start_time_doy);
-      const planEnd = getUnixEpochTime(destinationPlan.end_time_doy);
       const earliestStart = Math.min(...starts);
-      // Only fall back to plan start when the caller didn't pick a paste time. A right-click → Paste
-      // at time X must always honor X — cross-plan pastes (e.g. from search results) routinely have
-      // source absolute times far outside the target plan's window.
-      if (pasteStartingAtTime === undefined && (earliestStart < planStart || earliestStart > planEnd)) {
-        pasteStartingAtTime = planStart;
-      }
-
-      //transpose in time if we're given a time or if it was out of bounds
+      // Transpose in time if we're given a time or if it was out of bounds
       let diff = 0;
       if (typeof pasteStartingAtTime === 'number') {
         diff = pasteStartingAtTime - earliestStart;
@@ -335,11 +327,15 @@ export async function getActivityDirectivesToPaste(
 
       activities.forEach(activity => {
         if (activity.start_time_ms !== null) {
-          //anchored activities don't need offset to be updated
+          // Anchored activities don't need offset to be updated
           if (activity.anchor_id === null) {
-            activity.start_time_ms += diff;
-            const startTimeDoy = getDoyTime(new Date(activity.start_time_ms));
-            activity.start_offset = getIntervalFromDoyRange(destinationPlan.start_time_doy, startTimeDoy);
+            if (clampToPlanBounds) {
+              activity.start_time_ms += planStart - activity.start_time_ms;
+            } else {
+              activity.start_time_ms += diff;
+              const startTimeDoy = getDoyTime(new Date(activity.start_time_ms));
+              activity.start_offset = getIntervalFromDoyRange(destinationPlan.start_time_doy, startTimeDoy);
+            }
           }
         }
       });
