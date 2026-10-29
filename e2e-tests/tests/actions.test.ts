@@ -163,7 +163,6 @@ test.describe.serial('Actions', () => {
   });
 
   test('File parameters read a working copy or a pinned revision', async () => {
-    test.setTimeout(90000);
     const { page } = setup;
     const results = page.getByTestId('action-run-results');
     const path = 'revisions-a.seq';
@@ -206,7 +205,6 @@ test.describe.serial('Actions', () => {
   });
 
   test('A file that must not use the working copy defaults to the latest revision, read when the action runs', async () => {
-    test.setTimeout(90000);
     const { page } = setup;
     const results = page.getByTestId('action-run-results');
     const path = 'revisions-b.seq';
