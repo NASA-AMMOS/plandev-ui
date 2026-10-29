@@ -604,10 +604,7 @@ describe('getFormParameters for file ref params', () => {
         plain: { order: 1, schema: { type: 'file' } },
       },
       {
-        files: [
-          { path: 'b.json', revision: null },
-          { path: 'gone.json', revision: 'a' },
-        ],
+        files: [{ path: 'b.json' }, { path: 'gone.json', revision: 'a' }],
         plain: 'b.json',
       },
       [],
@@ -617,10 +614,7 @@ describe('getFormParameters for file ref params', () => {
       'sequence',
     );
     expect(files.schema).toMatchObject({ options: [options[1]], type: 'options-multiple', withRevision: true });
-    expect(files.value).toEqual([
-      { path: 'b.json', revision: null },
-      { path: 'gone.json', revision: 'a' },
-    ]);
+    expect(files.value).toEqual([{ path: 'b.json' }, { path: 'gone.json', revision: 'a' }]);
     expect(files.errors).toEqual(["'gone.json' not found"]);
     expect(plain.schema).toMatchObject({ label: 'file', type: 'options-single' });
     expect(plain.schema).not.toHaveProperty('withRevision');
@@ -635,7 +629,7 @@ describe('getFormParameters for file params that must pin a revision', () => {
   test('flags a selected file that has no named revision, and clears when it has one', () => {
     const [missing] = getFormParameters(
       { file: { order: 0, schema } },
-      { file: { path: 'a.seq', revision: null } },
+      { file: { path: 'a.seq' } },
       [],
       {},
       {},

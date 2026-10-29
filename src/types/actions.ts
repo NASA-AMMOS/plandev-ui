@@ -3,9 +3,9 @@ import type { ArgumentsMap, ParameterName } from './parameter';
 
 /**
  * A workspace file chosen for a `file`/`sequence` (or list) action parameter; mirrors plandev-actions' `FileRef`.
- * `revision: null` is the working copy, read when the action runs; otherwise the name of a pinned, immutable revision.
+ * No `revision` is the working copy, read when the action runs; otherwise the name of a pinned, immutable revision.
  */
-export type FileRef = { path: string; revision: string | null };
+export type FileRef = { path: string; revision?: string };
 
 export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };
 export type ActionParametersMap = Record<ParameterName, ActionParameter>;

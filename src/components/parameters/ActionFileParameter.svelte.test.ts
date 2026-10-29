@@ -62,9 +62,9 @@ describe('ActionFileParameter', () => {
   it('lists each selected file with its own revision', () => {
     const result = renderWith({
       formParameter: formParameter([
-        { path: 'approach.seq', revision: null },
+        { path: 'approach.seq' },
         { path: 'descent.seq', revision: 'b' },
-        { path: 'parameters.json', revision: null },
+        { path: 'parameters.json' },
       ]),
     });
 
@@ -74,13 +74,21 @@ describe('ActionFileParameter', () => {
   });
 
   it('fetches revisions lazily on open and pins the chosen one', async () => {
-    const result = renderWith({ formParameter: formParameter({ path: 'descent.seq', revision: null }, false) });
+    const result = renderWith({ formParameter: formParameter({ path: 'descent.seq' }, false) });
     expect(listRevisions).not.toHaveBeenCalled();
 
     await fireEvent.click(revisionPicker(result, 'descent.seq'));
     expect(listRevisions).toHaveBeenCalledWith(expect.anything(), 'descent.seq', null);
     await fireEvent.click(revisionPicker(result, 'descent.seq'));
     expect(listRevisions).toHaveBeenCalledTimes(1); // reopening does not refetch
+  });
+
+  it('shows the latest revision without loading any revisions', () => {
+    const result = renderWith({
+      formParameter: formParameter({ path: 'descent.seq', revision: 'latest' }, false, false),
+    });
+    expect(revisionPicker(result, 'descent.seq').textContent).toContain('Latest revision');
+    expect(listRevisions).not.toHaveBeenCalled();
   });
 
   it('loads the description of an already pinned revision without opening the menu', async () => {
@@ -90,12 +98,12 @@ describe('ActionFileParameter', () => {
   });
 
   it('says so when a file has no revisions, and offers a retry on failure', async () => {
-    const empty = renderWith({ formParameter: formParameter({ path: 'a.seq', revision: null }, false) }, []);
+    const empty = renderWith({ formParameter: formParameter({ path: 'a.seq' }, false) }, []);
     await fireEvent.click(revisionPicker(empty, 'a.seq'));
-    expect(await empty.findByText('This file has no revisions yet')).toBeTruthy();
+    expect(await empty.findByText('No revisions available for this file')).toBeTruthy();
     cleanup();
 
-    const failing = renderWith({ formParameter: formParameter({ path: 'a.seq', revision: null }, false) });
+    const failing = renderWith({ formParameter: formParameter({ path: 'a.seq' }, false) });
     listRevisions.mockRejectedValueOnce(new Error('boom'));
     await fireEvent.click(revisionPicker(failing, 'a.seq'));
     await fireEvent.click(await failing.findByRole('button', { name: 'Retry' }));
@@ -106,7 +114,7 @@ describe('ActionFileParameter', () => {
   describe('when the working copy is not allowed', () => {
     it('asks for a revision instead of defaulting to the working copy', async () => {
       const result = renderWith({
-        formParameter: formParameter({ path: 'descent.seq', revision: null }, false, false),
+        formParameter: formParameter({ path: 'descent.seq' }, false, false),
       });
       expect(revisionPicker(result, 'descent.seq').textContent).toContain('Select revision');
 
@@ -116,9 +124,9 @@ describe('ActionFileParameter', () => {
     });
 
     it('explains when the file has no revisions to choose from', async () => {
-      const result = renderWith({ formParameter: formParameter({ path: 'a.seq', revision: null }, false, false) }, []);
+      const result = renderWith({ formParameter: formParameter({ path: 'a.seq' }, false, false) }, []);
       await fireEvent.click(revisionPicker(result, 'a.seq'));
-      expect(await result.findByText(/has no revisions yet, so it can’t be used/)).toBeTruthy();
+      expect(await result.findByText('No revisions available for this file')).toBeTruthy();
     });
   });
 
@@ -127,7 +135,7 @@ describe('ActionFileParameter', () => {
       disabled: true,
       formParameter: formParameter([
         { path: 'sequences/descent.seq', revision: 'b' },
-        { path: 'config/parameters.json', revision: null },
+        { path: 'config/parameters.json' },
       ]),
     });
     expect((getByRole('textbox', { name: 'inputs' }) as HTMLInputElement).value).toBe(

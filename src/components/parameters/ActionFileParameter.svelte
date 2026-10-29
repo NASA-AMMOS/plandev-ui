@@ -5,7 +5,7 @@
   import type { FileRef } from '../../types/actions';
   import type { SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { FormParameter, ParameterType } from '../../types/parameter';
-  import { allowsWorkingCopy, formatFileRef, isFileRef } from '../../utilities/actions';
+  import { allowsWorkingCopy, formatFileRef, getDefaultFileRef, isFileRef } from '../../utilities/actions';
   import { pluralize } from '../../utilities/text';
   import type { ActionArray } from '../../utilities/useActions';
   import FileRevisionSelect from './FileRevisionSelect.svelte';
@@ -37,11 +37,13 @@
     dispatch('change', { ...formParameter, value: multiple ? newFileRefs : newFileRefs[0] });
   }
 
-  // Files that stay selected keep their revision; newly selected files start on the working copy.
+  // Files that stay selected keep their revision; newly selected files start on the default one.
   function onSelectFiles({ detail }: CustomEvent<FormParameter>) {
     const paths: SelectedDropdownOptionValue[] = [detail.value].flat().filter(path => path != null);
     dispatchFileRefs(
-      paths.map(path => fileRefs.find(fileRef => fileRef.path === path) ?? { path: `${path}`, revision: null }),
+      paths.map(
+        path => fileRefs.find(fileRef => fileRef.path === path) ?? getDefaultFileRef(formParameter.schema, `${path}`),
+      ),
     );
   }
 
@@ -81,8 +83,8 @@
   </ParameterBaseDropdown>
   {#if multiple && !disabled && fileRefs.length > 0}
     <ul
-      class="-mr-0.5 mb-1 flex max-h-40 min-w-0 flex-col gap-0.5 overflow-y-auto p-0.5 text-xs"
-      style="margin-left: calc({labelColumnWidth}px - {level * levelPadding}px - 2px)"
+      class="-mt-2 mb-1 flex max-h-40 min-w-0 flex-col gap-1 overflow-y-auto rounded rounded-t-none border bg-secondary/50 px-1.5 py-1 pt-3 text-xs"
+      style="margin-left: calc({labelColumnWidth}px - {level * levelPadding}px)"
       aria-label="Revisions of {formParameter.name}"
     >
       {#each fileRefs as fileRef (fileRef.path)}

@@ -100,7 +100,7 @@
           {selectedOptionLabel}
           on:change={onChange}
         >
-          <slot slot="icon" name="icon"><ChevronDownIcon /></slot>
+          <ChevronDownIcon slot="icon" />
         </SearchableDropdown>
       </div>
       <slot name="trailing" />

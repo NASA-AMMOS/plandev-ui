@@ -16,6 +16,7 @@
     getRunnableVersions,
     getUserSequenceValueSchemaOptions,
     isMissingRevision,
+    normalizeFileArguments,
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
@@ -104,6 +105,9 @@
     parametersMap = valueSchemaRecordToParametersMap(paramSchema);
   }
 
+  // Another version may no longer allow the working copy for a file parameter or setting
+  $: argumentsMap = normalizeFileArguments(selectedVersion?.parameter_schema ?? {}, argumentsMap);
+
   // Build settings form for non-latest versions, or for reruns on latest
   $: showSettings = !isLatestSelected || (isRerun && isLatestSelected);
 
@@ -140,6 +144,8 @@
     }
   }
 
+  $: settingsArgumentsMap = normalizeFileArguments(selectedVersion?.settings_schema ?? {}, settingsArgumentsMap);
+
   function onVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     selectedRevision = target.value;
@@ -165,7 +171,10 @@
     }
 
     // Use stored settings for fresh latest runs, user-provided settings for non-latest or reruns
-    const settings = isLatestSelected && !isRerun ? actionDefinition.settings : settingsArgumentsMap;
+    const settings = normalizeFileArguments(
+      selectedVersion?.settings_schema ?? {},
+      isLatestSelected && !isRerun ? actionDefinition.settings : settingsArgumentsMap,
+    );
     const revision = isLatestSelected ? undefined : selectedVersion?.revision;
 
     const actionRunId = await effects.createActionRun(

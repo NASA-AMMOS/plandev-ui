@@ -67,18 +67,53 @@ export function isMissingRevision(schema: object, value: unknown): boolean {
   if (!isWithRevision(schema) || allowsWorkingCopy(schema)) {
     return false;
   }
-  return [value ?? []].flat().some(file => !isFileRef(file) || file.revision === null);
+  return [value ?? []].flat().some(file => !isFileRef(file) || file.revision === undefined);
 }
 
-/** The value of a file or sequence action parameter prefilled with these workspace paths (working copies if it takes revisions). */
+/** The revision name that is resolved to the file's newest revision each time the action reads it. */
+export const LATEST_REVISION = 'latest';
+
+/** A newly selected file's reference: the working copy, or the latest revision when the working copy isn't allowed. */
+export function getDefaultFileRef(schema: object, path: string): FileRef {
+  return allowsWorkingCopy(schema) ? { path } : { path, revision: LATEST_REVISION };
+}
+
+/** The value of a file or sequence action parameter prefilled with these workspace paths (default revisions if it takes them). */
 export function getFileArgumentForPaths(schema: ActionValueSchema, paths: string[]): Argument {
-  const values = isWithRevision(schema) ? paths.map((path): FileRef => ({ path, revision: null })) : paths;
+  const values = isWithRevision(schema) ? paths.map(path => getDefaultFileRef(schema, path)) : paths;
   return schema.type.endsWith('List') ? values : values[0];
+}
+
+/**
+ * Gives every selected file that has no revision the latest revision where its parameter doesn't allow the working copy,
+ * e.g. after switching to an action version that no longer does. Chosen revisions are never changed.
+ */
+export function normalizeFileArguments(
+  schemas: Record<string, ActionValueSchema>,
+  argumentsMap: ArgumentsMap,
+): ArgumentsMap {
+  let normalized = argumentsMap;
+  for (const [name, schema] of Object.entries(schemas)) {
+    const value = argumentsMap[name];
+    if (!isWithRevision(schema) || allowsWorkingCopy(schema) || value === undefined || value === null) {
+      continue;
+    }
+    const files = [value].flat();
+    if (files.every(isFileRef) && files.some(file => file.revision === undefined)) {
+      const fill = (file: FileRef): FileRef =>
+        file.revision === undefined ? { ...file, revision: LATEST_REVISION } : file;
+      normalized = { ...normalized, [name]: Array.isArray(value) ? value.map(fill) : fill(value as FileRef) };
+    }
+  }
+  return normalized;
 }
 
 /** "Working copy" or "Revision B" (revision letters are displayed uppercase, as in the revisions panel). */
 export function getFileRefRevisionLabel(fileRef: FileRef): string {
-  return fileRef.revision === null ? 'Working copy' : `Revision ${fileRef.revision.toUpperCase()}`;
+  if (fileRef.revision === undefined) {
+    return 'Working copy';
+  }
+  return fileRef.revision === LATEST_REVISION ? 'Latest revision' : `Revision ${fileRef.revision.toUpperCase()}`;
 }
 
 export function formatFileRef(fileRef: FileRef): string {
@@ -86,7 +121,15 @@ export function formatFileRef(fileRef: FileRef): string {
 }
 
 export function isFileRef(value: unknown): value is FileRef {
-  return typeof value === 'object' && value !== null && 'path' in value && 'revision' in value;
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { path, revision, ...rest } = value as Record<string, unknown>;
+  return (
+    typeof path === 'string' &&
+    (revision === undefined || typeof revision === 'string') &&
+    Object.keys(rest).length === 0
+  );
 }
 
 /**
@@ -297,11 +340,12 @@ export function truncateRunParameters(
 
   let result = '';
   for (const [key, value] of sorted) {
+    const formatFileRefs = (refs: FileRef[]) => refs.map(ref => `'${formatFileRef(ref)}'`);
     let formatted: string;
     if (isFileRef(value)) {
-      formatted = `'${formatFileRef(value)}'`;
+      formatted = formatFileRefs([value])[0];
     } else if (Array.isArray(value) && value.length > 0 && value.every(isFileRef)) {
-      formatted = `[${value.map(v => `'${formatFileRef(v)}'`).join(', ')}]`;
+      formatted = `[${formatFileRefs(value).join(', ')}]`;
     } else {
       formatted = typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
     }

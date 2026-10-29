@@ -8,7 +8,7 @@
   import type { FileRef } from '../../types/actions';
   import type { DropdownOption, SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { WorkspaceFileRevision } from '../../types/workspace';
-  import { getFileRefRevisionLabel } from '../../utilities/actions';
+  import { LATEST_REVISION, getFileRefRevisionLabel } from '../../utilities/actions';
   import { getShortISOForDate } from '../../utilities/time';
   import { WorkspaceApi } from '../../utilities/workspaces';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
@@ -30,26 +30,22 @@
   $: error = failedPath === fileRef.path;
   $: loading = loadingPath === fileRef.path;
   $: options = getOptions(revisions ?? [], fileRef, allowWorkingCopy);
-  $: selectedValues = fileRef.revision === null ? (allowWorkingCopy ? [WORKING_COPY] : []) : [fileRef.revision];
-  $: selectedMessage = revisions?.find(({ name }) => `${name}` === fileRef.revision)?.message;
-  // The pinned revision's full description, as an element so its line breaks are kept and its width is capped.
-  $: description = selectedMessage ? getDescriptionElement(selectedMessage) : '';
+  $: selectedValues = fileRef.revision === undefined ? (allowWorkingCopy ? [WORKING_COPY] : []) : [fileRef.revision];
+  $: description = revisions?.find(({ name }) => `${name}` === fileRef.revision)?.message ?? '';
   // A pinned revision's description is needed for the tooltip before the menu is opened (e.g. on a re-run).
-  $: if (fileRef.revision !== null && revisions === undefined) {
+  $: if (fileRef.revision !== undefined && fileRef.revision !== LATEST_REVISION && revisions === undefined) {
     load(fileRef.path);
-  }
-
-  function getDescriptionElement(message: string) {
-    const element = document.createElement('div');
-    element.style.cssText = 'max-width: 300px; overflow-wrap: anywhere; white-space: pre-wrap;';
-    element.textContent = message;
-    return element;
   }
 
   function getOptions(revisions: WorkspaceFileRevision[], { path, revision }: FileRef, allowWorkingCopy: boolean) {
     const options: DropdownOption[] = allowWorkingCopy
       ? [{ display: 'Working copy', subtitle: 'Latest saved file', value: WORKING_COPY }]
       : [];
+    options.push({
+      display: 'Latest revision',
+      subtitle: 'Newest revision when the file is read',
+      value: LATEST_REVISION,
+    });
     for (const { createdAt, createdBy, message, name } of revisions) {
       const display = `${getFileRefRevisionLabel({ path, revision: `${name}` })}${message ? ` — ${message}` : ''}`;
       options.push({
@@ -60,7 +56,7 @@
       });
     }
     // A pinned revision stays selected (and shown) even when it isn't in the list, e.g. before the list has loaded
-    if (revision !== null && !options.some(({ value }) => value === revision)) {
+    if (revision !== undefined && !options.some(({ value }) => value === revision)) {
       options.push({ display: getFileRefRevisionLabel({ path, revision }), value: revision });
     }
     return options;
@@ -89,7 +85,10 @@
   }
 
   function onChange({ detail }: CustomEvent<SelectedDropdownOptionValue[]>) {
-    dispatch('change', { path: fileRef.path, revision: detail[0] === WORKING_COPY ? null : `${detail[0]}` });
+    dispatch(
+      'change',
+      detail[0] === WORKING_COPY ? { path: fileRef.path } : { path: fileRef.path, revision: `${detail[0]}` },
+    );
   }
 </script>
 
@@ -115,7 +114,7 @@
       {:else if loading}
         Loading revisions…
       {:else if revisions?.length === 0}
-        {allowWorkingCopy ? 'This file has no revisions yet' : 'This file has no revisions yet, so it can’t be used'}
+        No revisions available for this file
       {/if}
     </svelte:fragment>
   </SearchableDropdown>

@@ -47,7 +47,7 @@
   export let selectedOptionValues: SelectedDropdownOptionValue[] = [];
   export let showPlaceholderOption: boolean = true;
   export let searchPlaceholder: string = 'Search Items';
-  export let selectTooltip: string | HTMLElement = '';
+  export let selectTooltip: string = '';
   export let selectTooltipPlacement: string = 'top';
 
   export function hideMenu() {
