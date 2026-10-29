@@ -14,6 +14,7 @@ import type {
   ActionParametersMap,
   ActionRunSlim,
   FileRef,
+  FileRevisionHistory,
 } from '../types/actions';
 import type { Argument, ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
@@ -68,6 +69,35 @@ export function isMissingRevision(schema: object, value: unknown): boolean {
     return false;
   }
   return [value ?? []].flat().some(file => !isFileRef(file) || file.revision === undefined);
+}
+
+/** Why a file reference can't be run yet, from its file's fetched revisions; the working copy always can be. */
+export function getRevisionProblem(
+  { path, revision }: FileRef,
+  history: FileRevisionHistory,
+): 'empty' | 'error' | 'loading' | 'missing' | undefined {
+  const revisions = history[path];
+  if (revision === undefined) {
+    return undefined;
+  }
+  if (revisions === undefined || revisions === 'loading') {
+    return 'loading';
+  }
+  if (revisions === 'error') {
+    return 'error';
+  }
+  if (revision === LATEST_REVISION) {
+    return revisions.length === 0 ? 'empty' : undefined;
+  }
+  return revisions.some(({ name }) => `${name}` === revision) ? undefined : 'missing';
+}
+
+/** Whether a revision-aware parameter has a selected file whose revision isn't known to exist (yet). */
+export function hasUnavailableRevision(schema: object, value: unknown, history: FileRevisionHistory): boolean {
+  return (
+    isWithRevision(schema) &&
+    [value ?? []].flat().some(file => isFileRef(file) && getRevisionProblem(file, history) !== undefined)
+  );
 }
 
 /** The revision name that is resolved to the file's newest revision each time the action reads it. */

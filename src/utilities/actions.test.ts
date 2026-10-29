@@ -1,14 +1,17 @@
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import { describe, expect, test } from 'vitest';
 import { Status } from '../enums/status';
-import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim, FileRevisionHistory } from '../types/actions';
 import type { ParametersMap } from '../types/parameter';
+import type { WorkspaceFileRevision } from '../types/workspace';
 import {
   getActionDefinitionForRun,
   getDefaultsFromSchema,
   getFileArgumentForPaths,
   getDefaultFileRef,
   getFileRefRevisionLabel,
+  getRevisionProblem,
+  hasUnavailableRevision,
   isFileRef,
   normalizeFileArguments,
   isMissingRevision,
@@ -329,6 +332,7 @@ describe('parseActionLogLines', () => {
 const schema = (overrides: object) => ({ type: 'file', ...overrides }) as ActionValueSchema;
 const withRevision = schema({ withRevision: true });
 const pinned = schema({ allowWorkingCopy: false, withRevision: true });
+const list = (s: ActionValueSchema) => ({ ...s, type: 'fileList' }) as ActionValueSchema;
 
 describe('file references', () => {
   test.each([
@@ -396,10 +400,45 @@ describe('file references', () => {
   });
 });
 
+describe('revision availability', () => {
+  const rev = (name: string) => ({ createdAt: '', createdBy: 'test', message: '', name }) as WorkspaceFileRevision;
+  const history = {
+    'a.seq': [rev('a'), rev('b')],
+    'empty.seq': [],
+    'failed.seq': 'error',
+    'pending.seq': 'loading',
+  } satisfies FileRevisionHistory;
+
+  test.each([
+    ['the working copy is always available', { path: 'empty.seq' }, undefined],
+    ['the working copy is available while loading or failed', { path: 'failed.seq' }, undefined],
+    ['latest is available with any revision', { path: 'a.seq', revision: 'latest' }, undefined],
+    ['latest has a problem with no revisions', { path: 'empty.seq', revision: 'latest' }, 'empty'],
+    ['a named revision that exists is available', { path: 'a.seq', revision: 'b' }, undefined],
+    ['a named revision that is not there is missing', { path: 'a.seq', revision: 'c' }, 'missing'],
+    ['revisions still loading', { path: 'pending.seq', revision: 'latest' }, 'loading'],
+    ['revisions not requested yet', { path: 'other.seq', revision: 'a' }, 'loading'],
+    ['revisions that failed to load', { path: 'failed.seq', revision: 'a' }, 'error'],
+  ])('%s', (_, fileRef, problem) => {
+    expect(getRevisionProblem(fileRef, history)).toBe(problem);
+  });
+
+  test('a parameter is unavailable if any selected revision is, and only if it takes revisions', () => {
+    const files = [
+      { path: 'a.seq', revision: 'a' },
+      { path: 'empty.seq', revision: 'latest' },
+    ];
+    expect(hasUnavailableRevision(list(withRevision), files, history)).toBe(true);
+    expect(hasUnavailableRevision(list(withRevision), files.slice(0, 1), history)).toBe(false);
+    expect(hasUnavailableRevision(list(withRevision), [{ path: 'empty.seq' }], history)).toBe(false);
+    expect(hasUnavailableRevision(schema({}), 'empty.seq', history)).toBe(false);
+    expect(hasUnavailableRevision(withRevision, null, history)).toBe(false);
+  });
+});
+
 describe('normalizeFileArguments', () => {
   const plain = schema({});
   const plainList = schema({ type: 'sequenceList' });
-  const list = (s: ActionValueSchema) => ({ ...s, type: 'fileList' }) as ActionValueSchema;
   const ref = { path: 'a.seq' };
   const latest = { path: 'a.seq', revision: 'latest' };
   const pin = { path: 'a.seq', revision: 'c' };

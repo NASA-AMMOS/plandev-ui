@@ -4,13 +4,12 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { createEventDispatcher } from 'svelte';
   import { getUserStore } from '../../stores/user';
-  import { workspaceId } from '../../stores/workspaces';
   import type { FileRef } from '../../types/actions';
   import type { DropdownOption, SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { WorkspaceFileRevision } from '../../types/workspace';
   import { LATEST_REVISION, getFileRefRevisionLabel } from '../../utilities/actions';
+  import { getFileRevisionHistory } from '../../utilities/fileRevisionHistory';
   import { getShortISOForDate } from '../../utilities/time';
-  import { WorkspaceApi } from '../../utilities/workspaces';
   import SearchableDropdown from '../ui/SearchableDropdown.svelte';
 
   export let allowWorkingCopy: boolean = true;
@@ -19,23 +18,18 @@
   // Not a possible revision name (those are letters or numbers), and truthy as the dropdown requires
   const WORKING_COPY = 'working-copy';
   const dispatch = createEventDispatcher<{ change: FileRef }>();
+  const history = getFileRevisionHistory();
   const user = getUserStore();
 
-  // Revisions per file path, fetched the first time that file's menu is opened.
-  let failedPath: string | null = null;
-  let loadingPath: string | null = null;
-  let revisionsByPath: Record<string, WorkspaceFileRevision[]> = {};
-
-  $: revisions = revisionsByPath[fileRef.path];
-  $: error = failedPath === fileRef.path;
-  $: loading = loadingPath === fileRef.path;
+  // The selected file's revisions are fetched as soon as it is selected, so its selection can be checked.
+  $: history.load(fileRef.path, $user);
+  $: entry = $history[fileRef.path];
+  $: revisions = Array.isArray(entry) ? entry : undefined;
+  $: error = entry === 'error';
+  $: loading = entry === 'loading' || entry === undefined;
   $: options = getOptions(revisions ?? [], fileRef, allowWorkingCopy);
   $: selectedValues = fileRef.revision === undefined ? (allowWorkingCopy ? [WORKING_COPY] : []) : [fileRef.revision];
   $: description = revisions?.find(({ name }) => `${name}` === fileRef.revision)?.message ?? '';
-  // A pinned revision's description is needed for the tooltip before the menu is opened (e.g. on a re-run).
-  $: if (fileRef.revision !== undefined && fileRef.revision !== LATEST_REVISION && revisions === undefined) {
-    load(fileRef.path);
-  }
 
   function getOptions(revisions: WorkspaceFileRevision[], { path, revision }: FileRef, allowWorkingCopy: boolean) {
     const options: DropdownOption[] = allowWorkingCopy
@@ -62,28 +56,6 @@
     return options;
   }
 
-  async function load(path: string) {
-    if (loadingPath === path) {
-      return;
-    }
-    failedPath = null;
-    loadingPath = path;
-    try {
-      const list = await WorkspaceApi.getFileRevisionList($workspaceId, path, $user);
-      revisionsByPath = { ...revisionsByPath, [path]: list.revisions };
-    } catch {
-      failedPath = path;
-    } finally {
-      loadingPath = null;
-    }
-  }
-
-  function onOpenMenu() {
-    if (revisions === undefined) {
-      load(fileRef.path);
-    }
-  }
-
   function onChange({ detail }: CustomEvent<SelectedDropdownOptionValue[]>) {
     dispatch(
       'change',
@@ -105,12 +77,13 @@
     showPlaceholderOption={false}
     {options}
     on:change={onChange}
-    on:openMenu={onOpenMenu}
   >
     <ChevronDownIcon slot="icon" />
     <svelte:fragment slot="status">
       {#if error}
-        Couldn't load revisions. <button class="underline" on:click={() => load(fileRef.path)}>Retry</button>
+        Couldn't load revisions. <button class="underline" on:click={() => history.load(fileRef.path, $user, true)}
+          >Retry</button
+        >
       {:else if loading}
         Loading revisions…
       {:else if revisions?.length === 0}

@@ -17,12 +17,14 @@
     getLatestRunnableVersion,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
+    hasUnavailableRevision,
     isMissingRevision,
     openActionRun,
     truncateRunParameters,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { provideFileRevisionHistory } from '../../../utilities/fileRevisionHistory';
   import { isEmpty } from '../../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
@@ -48,6 +50,7 @@
     runAction: ActionDefinition;
     viewRun: { runId: number };
   }>();
+  const revisionHistory = provideFileRevisionHistory();
 
   let actionDefinition: ActionDefinition | null = null;
   let actionRuns: ActionRunSlim[] = [];
@@ -118,8 +121,10 @@
   );
 
   $: hasEmptyRequiredSetting = requiredSettings.some(name => isEmpty(argumentsMap[name]));
-  $: hasMissingRevision = Object.entries(settingsSchema).some(([settingName, schema]) =>
-    isMissingRevision(schema, argumentsMap[settingName]),
+  $: hasMissingRevision = Object.entries(settingsSchema).some(
+    ([settingName, schema]) =>
+      isMissingRevision(schema, argumentsMap[settingName]) ||
+      hasUnavailableRevision(schema, argumentsMap[settingName], $revisionHistory),
   );
   $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting || hasMissingRevision;
 
@@ -493,7 +498,7 @@
                   content: hasEmptyRequiredSetting
                     ? 'Please fill in all required settings'
                     : hasMissingRevision
-                      ? 'Please select a revision for each file setting'
+                      ? 'Please select an available revision for each file setting'
                       : undefined,
                 }}
               >

@@ -209,12 +209,19 @@ test.describe.serial('Actions', () => {
     const results = page.getByTestId('action-run-results');
     const path = 'revisions-b.seq';
 
-    await api.createFileRevision(Number(workspaceId), path, 'first');
-
     await action.selectActionInSidebar();
     await action.runAction({
       beforeRun: async modal => {
         await selectFile(modal, 'pinnedFile', path);
+        await expect(revisionPicker(modal, path)).toHaveText('Latest revision');
+
+        // With no revisions yet, Latest revision stays selected but can't be run until one is created
+        const runButton = modal.getByRole('button', { exact: true, name: 'Run' });
+        await expect(modal.getByText('No revisions available. Create a revision before running.')).toBeVisible();
+        await expect(runButton).toBeDisabled();
+        await api.createFileRevision(Number(workspaceId), path, 'first');
+        await modal.getByRole('button', { name: 'Refresh' }).click();
+        await expect(runButton).toBeEnabled();
         await expect(revisionPicker(modal, path)).toHaveText('Latest revision');
       },
       expectedStatus: 'Complete',

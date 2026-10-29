@@ -5,7 +5,7 @@
   import { TriangleAlert } from 'lucide-svelte';
   import { createEventDispatcher, setContext } from 'svelte';
   import { readable } from 'svelte/store';
-  import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
+  import type { ActionDefinition, ActionParametersMap, FileRevisionHistory } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../types/parameter';
   import type { Workspace } from '../../types/workspace';
@@ -15,11 +15,13 @@
     getLatestRunnableVersion,
     getRunnableVersions,
     getUserSequenceValueSchemaOptions,
+    hasUnavailableRevision,
     isMissingRevision,
     normalizeFileArguments,
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
+  import { provideFileRevisionHistory } from '../../utilities/fileRevisionHistory';
   import { isEmpty } from '../../utilities/generic';
   import { applyRequiredErrors, getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
@@ -45,6 +47,7 @@
 
   // Modals are created outside the page's component tree, so give the parameter inputs inside it the user context.
   setContext('user', readable(user));
+  const revisionHistory = provideFileRevisionHistory();
 
   const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
   const initialVersionArchived =
@@ -89,11 +92,21 @@
   $: hasEmptyRequired =
     requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
     (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name]))) ||
-    hasMissingRevision(parametersMap, argumentsMap, parameterDefaults) ||
-    (showSettings && hasMissingRevision(settingsParametersMap, settingsArgumentsMap, settingsDefaults));
+    hasMissingRevision(parametersMap, argumentsMap, parameterDefaults, $revisionHistory) ||
+    (showSettings &&
+      hasMissingRevision(settingsParametersMap, settingsArgumentsMap, settingsDefaults, $revisionHistory));
 
-  function hasMissingRevision(map: ActionParametersMap, args: ArgumentsMap, defaults: ArgumentsMap) {
-    return Object.entries(map).some(([name, { schema }]) => isMissingRevision(schema, args[name] ?? defaults[name]));
+  // A file's revision must be chosen (where the working copy isn't allowed) and, once its revisions load, exist
+  function hasMissingRevision(
+    map: ActionParametersMap,
+    args: ArgumentsMap,
+    defaults: ArgumentsMap,
+    history: FileRevisionHistory,
+  ) {
+    return Object.entries(map).some(([name, { schema }]) => {
+      const value = args[name] ?? defaults[name];
+      return isMissingRevision(schema, value) || hasUnavailableRevision(schema, value, history);
+    });
   }
 
   $: if (parameters !== undefined) {

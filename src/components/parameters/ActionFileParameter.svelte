@@ -8,6 +8,7 @@
   import { allowsWorkingCopy, formatFileRef, getDefaultFileRef, isFileRef } from '../../utilities/actions';
   import { pluralize } from '../../utilities/text';
   import type { ActionArray } from '../../utilities/useActions';
+  import FileRevisionProblem from './FileRevisionProblem.svelte';
   import FileRevisionSelect from './FileRevisionSelect.svelte';
   import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
 
@@ -80,6 +81,11 @@
       {/if}
     </svelte:fragment>
   </ParameterBaseDropdown>
+  {#if !multiple && !disabled && fileRefs[0]}
+    <div style="margin-left: calc({labelColumnWidth}px - {level * levelPadding}px)">
+      <FileRevisionProblem fileRef={fileRefs[0]} />
+    </div>
+  {/if}
   {#if multiple && !disabled && fileRefs.length > 0}
     <ul
       class="-mt-2 mb-1 flex max-h-40 min-w-0 flex-col gap-1 overflow-y-auto rounded rounded-t-none border bg-secondary/50 px-1.5 py-1 pt-3 text-xs"
@@ -87,9 +93,10 @@
       aria-label="Revisions of {formParameter.name}"
     >
       {#each fileRefs as fileRef (fileRef.path)}
-        <li class="flex items-center justify-between gap-2">
+        <li class="flex flex-wrap items-center justify-between gap-x-2">
           <span class="min-w-0 flex-1 truncate" title={fileRef.path}>{fileRef.path}</span>
           <FileRevisionSelect {allowWorkingCopy} {fileRef} on:change={({ detail }) => onChangeRevision(detail)} />
+          <FileRevisionProblem {fileRef} />
         </li>
       {/each}
     </ul>
