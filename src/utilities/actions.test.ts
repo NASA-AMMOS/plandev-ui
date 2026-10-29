@@ -417,6 +417,10 @@ describe('normalizeFileArguments', () => {
     ['working copy is kept where allowed', withRevision, ref, ref],
     ['concrete revision is kept where the working copy is allowed', withRevision, pin, pin],
     ['plain path is kept', plain, 'a.seq', 'a.seq'],
+    ['single to list: wrapped, keeping its revision', list(withRevision), pin, [pin]],
+    ['single plain to list withRevision', list(pinned), 'a.seq', [latest]],
+    ['list to single: first file, keeping its revision', pinned, [pin, latest], pin],
+    ['list of refs to plain single: first path', plain, [ref, pin], 'a.seq'],
   ])('%s', (_, valueSchema, value, expected) => {
     expect(normalizeFileArguments({ p: valueSchema }, { p: value })).toEqual({ p: expected });
   });
@@ -426,5 +430,7 @@ describe('normalizeFileArguments', () => {
     const schemas = { empty: withRevision, number: { type: 'int' }, p: pinned, struct: { type: 'struct' } };
     expect(normalizeFileArguments(schemas as Record<string, ActionValueSchema>, args)).toBe(args);
     expect(normalizeFileArguments({ p: pinned }, {})).toEqual({});
+    expect(normalizeFileArguments({ p: pinned }, { p: [], q: 1 })).toEqual({ q: 1 });
+    expect(normalizeFileArguments({ p: list(pinned) }, { p: [] })).toEqual({ p: [] });
   });
 });

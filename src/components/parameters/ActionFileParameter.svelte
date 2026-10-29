@@ -52,7 +52,6 @@
   }
 </script>
 
-<!-- one root element: the parent lays its children out in a grid -->
 <div class="min-w-0">
   <ParameterBaseDropdown
     allowMultiple={multiple}

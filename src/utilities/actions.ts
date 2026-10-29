@@ -87,7 +87,8 @@ export function getFileArgumentForPaths(schema: ActionValueSchema, paths: string
 /**
  * Converts file and sequence arguments to what their schemas take, e.g. after switching to another action version:
  * paths become FileRefs where the parameter has `withRevision` (and back to paths where it no longer does), and working
- * copies become the latest revision where the working copy isn't allowed. Chosen revisions are never changed.
+ * copies become the latest revision where the working copy isn't allowed. A single file becomes a one-file list where the
+ * parameter is now a list, and a list becomes its first file where it no longer is. Chosen revisions are never changed.
  */
 export function normalizeFileArguments(
   schemas: Record<string, ActionValueSchema>,
@@ -116,8 +117,11 @@ export function normalizeFileArguments(
     };
     const files: unknown[] = [value].flat();
     const converted = files.map(convert);
-    if (converted.some((file, i) => file !== files[i])) {
-      normalized = { ...normalized, [name]: Array.isArray(value) ? converted : converted[0] };
+    const isList = schema.type.endsWith('List');
+    if (Array.isArray(value) !== isList || converted.some((file, i) => file !== files[i])) {
+      // A list keeps every file; a single file keeps the first (and is cleared if there was none)
+      const { [name]: _, ...rest } = normalized;
+      normalized = isList || converted.length > 0 ? { ...rest, [name]: isList ? converted : converted[0] } : rest;
     }
   }
   return normalized;
