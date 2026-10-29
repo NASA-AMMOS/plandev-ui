@@ -307,7 +307,7 @@
   <ModalFooter>
     <select class="st-select mr-auto" value={selectedRevision} on:change={onVersionChange}>
       {#if latestVersion}
-        <option value="latest">v{latestVersion.revision} (latest)</option>
+        <option value="@latest">v{latestVersion.revision} (latest)</option>
       {/if}
       {#each runnableVersions.filter(v => v !== latestVersion) as version (version.revision)}
         <option value={version.revision.toString()}>v{version.revision}{version.archived ? ' (archived)' : ''}</option>

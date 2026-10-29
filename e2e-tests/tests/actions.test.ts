@@ -229,9 +229,9 @@ test.describe.serial('Actions', () => {
       stringParameters: requiredParameters,
     });
     await expect(results).toContainText('// original');
-    await expect(page.getByText(`"pinnedFile":{"path":"${path}","revision":"latest"}`)).toBeVisible();
+    await expect(page.getByText(`"pinnedFile":{"path":"${path}","revision":"@latest"}`)).toBeVisible();
 
-    // A newer revision is picked up by a re-run, since "latest" was stored rather than a revision name
+    // A newer revision is picked up by a re-run, since "@latest" was stored rather than a revision name
     await api.createWorkspaceItem(Number(workspaceId), path, '// newest', true);
     await api.createFileRevision(Number(workspaceId), path, 'second');
     await page.getByRole('button', { name: 'Re-run' }).click();
