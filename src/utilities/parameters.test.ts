@@ -1,3 +1,4 @@
+import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import { describe, expect, test } from 'vitest';
 import type { FormParameter } from '../types/parameter';
 import {
@@ -5,6 +6,7 @@ import {
   formatParameterValue,
   getArgument,
   getCleansedStructArguments,
+  getFormParameters,
   getValueSchemaDefaultValue,
   isRecParameter,
   pathMatchesPattern,
@@ -586,5 +588,72 @@ describe('pathMatchesPattern', () => {
   test('Should support match-all patterns', () => {
     expect(pathMatchesPattern('anything.seq', '')).toBe(true);
     expect(pathMatchesPattern('anything.seq', '*')).toBe(true);
+  });
+});
+
+describe('getFormParameters for file ref params', () => {
+  const options = [
+    { display: 'a.seq', type: 'SEQUENCE', value: 'a.seq' },
+    { display: 'b.json', type: 'FILE', value: 'b.json' },
+  ];
+
+  test('withRevision parameters keep FileRef values and check their paths against the eligible files', () => {
+    const [files, plain] = getFormParameters(
+      {
+        files: { order: 0, schema: { pattern: '*.json', type: 'fileList', withRevision: true } as ActionValueSchema },
+        plain: { order: 1, schema: { type: 'file' } },
+      },
+      {
+        files: [
+          { path: 'b.json', revision: null },
+          { path: 'gone.json', revision: 'a' },
+        ],
+        plain: 'b.json',
+      },
+      [],
+      {},
+      {},
+      options,
+      'sequence',
+    );
+    expect(files.schema).toMatchObject({ options: [options[1]], type: 'options-multiple', withRevision: true });
+    expect(files.value).toEqual([
+      { path: 'b.json', revision: null },
+      { path: 'gone.json', revision: 'a' },
+    ]);
+    expect(files.errors).toEqual(["'gone.json' not found"]);
+    expect(plain.schema).toMatchObject({ label: 'file', type: 'options-single' });
+    expect(plain.schema).not.toHaveProperty('withRevision');
+    expect(plain.errors).toBeNull();
+  });
+});
+
+describe('getFormParameters for file params that must pin a revision', () => {
+  const options = [{ display: 'a.seq', type: 'SEQUENCE', value: 'a.seq' }];
+  const schema = { allowWorkingCopy: false, type: 'sequence', withRevision: true } as ActionValueSchema;
+
+  test('flags a selected file that has no named revision, and clears when it has one', () => {
+    const [missing] = getFormParameters(
+      { file: { order: 0, schema } },
+      { file: { path: 'a.seq', revision: null } },
+      [],
+      {},
+      {},
+      options,
+    );
+    expect(missing.errors).toEqual(['Select a revision for each file']);
+
+    const [pinned] = getFormParameters(
+      { file: { order: 0, schema } },
+      { file: { path: 'a.seq', revision: 'b' } },
+      [],
+      {},
+      {},
+      options,
+    );
+    expect(pinned.errors).toBeNull();
+
+    const [nothing] = getFormParameters({ file: { order: 0, schema } }, {}, [], {}, {}, options);
+    expect(nothing.errors).toBeNull();
   });
 });

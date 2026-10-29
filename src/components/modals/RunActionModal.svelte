@@ -3,7 +3,8 @@
 <script lang="ts">
   import { Alert } from '@nasa-jpl/stellar-svelte';
   import { TriangleAlert } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, setContext } from 'svelte';
+  import { readable } from 'svelte/store';
   import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../types/parameter';
@@ -14,6 +15,7 @@
     getLatestRunnableVersion,
     getRunnableVersions,
     getUserSequenceValueSchemaOptions,
+    isMissingRevision,
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
@@ -39,6 +41,9 @@
     close: void;
     complete: { actionRunId: number | null };
   }>();
+
+  // Modals are created outside the page's component tree, so give the parameter inputs inside it the user context.
+  setContext('user', readable(user));
 
   const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
   const initialVersionArchived =
@@ -82,7 +87,13 @@
   $: settingsDefaults = getDefaultsFromSchema(selectedVersion?.settings_schema ?? {});
   $: hasEmptyRequired =
     requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
-    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
+    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name]))) ||
+    hasMissingRevision(parametersMap, argumentsMap, parameterDefaults) ||
+    (showSettings && hasMissingRevision(settingsParametersMap, settingsArgumentsMap, settingsDefaults));
+
+  function hasMissingRevision(map: ActionParametersMap, args: ArgumentsMap, defaults: ArgumentsMap) {
+    return Object.entries(map).some(([name, { schema }]) => isMissingRevision(schema, args[name] ?? defaults[name]));
+  }
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;
@@ -174,24 +185,7 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     touchedParamNames = new Set([...touchedParamNames, formParameter.name]);
-    if (formParameter.schema.type === 'options-single') {
-      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
-      formParameter.value = files?.fullPath ?? null;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'options-multiple') {
-      const values: string[] = formParameter.value;
-      const fileNames: string[] = [];
-      values.forEach(value => {
-        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
-        if (seq !== undefined && seq.fullPath !== undefined) {
-          fileNames.push(seq.fullPath);
-        }
-      });
-      formParameter.value = fileNames;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else {
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    }
+    argumentsMap = getArguments(argumentsMap, formParameter);
   }
 
   function onResetFormParameter(event: CustomEvent<FormParameter>) {
@@ -207,7 +201,7 @@
   }
 </script>
 
-<Modal height="max-content" width={550} on:close closeOnEscape={false} closeOnOutsideClick={false}>
+<Modal height="max-content" width={600} on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>{isRerun ? `Re-run: ${actionDefinition.name}` : actionDefinition.name}</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
     {#if versionMismatch}

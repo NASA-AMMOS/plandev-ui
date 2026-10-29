@@ -6,6 +6,8 @@ import type { ParametersMap } from '../types/parameter';
 import {
   getActionDefinitionForRun,
   getDefaultsFromSchema,
+  getFileArgumentForPaths,
+  isMissingRevision,
   getLatestRunnableVersion,
   getRunnableVersions,
   getStatusForActionRun,
@@ -317,5 +319,60 @@ describe('parseActionLogLines', () => {
         timestamp: '',
       },
     ]);
+  });
+});
+
+describe('getFileArgumentForPaths', () => {
+  test('gives paths, or working-copy refs when the parameter takes revisions', () => {
+    expect(getFileArgumentForPaths({ type: 'sequence' }, ['a.seq'])).toBe('a.seq');
+    expect(getFileArgumentForPaths({ type: 'fileList' }, ['a.seq', 'b.json'])).toEqual(['a.seq', 'b.json']);
+    const withRevision = { type: 'sequence', withRevision: true } as ActionValueSchema;
+    expect(getFileArgumentForPaths(withRevision, ['a.seq'])).toEqual({ path: 'a.seq', revision: null });
+    expect(getFileArgumentForPaths({ ...withRevision, type: 'fileList' }, ['a.seq', 'b.json'])).toEqual([
+      { path: 'a.seq', revision: null },
+      { path: 'b.json', revision: null },
+    ]);
+  });
+});
+
+describe('truncateRunParameters with file refs', () => {
+  test('formats refs as path and revision rather than JSON', () => {
+    expect(
+      truncateRunParameters(
+        {
+          a: { path: 'x.seq', revision: 'b' },
+          b: [{ path: 'y.seq', revision: null }],
+        },
+        {},
+        200,
+      ),
+    ).toBe("a: 'x.seq · Revision B', b: ['y.seq · Working copy']");
+  });
+});
+
+describe('isMissingRevision', () => {
+  const pinned = { allowWorkingCopy: false, type: 'file', withRevision: true };
+
+  test('is false unless the schema requires named revisions', () => {
+    expect(isMissingRevision({ type: 'file', withRevision: true }, { path: 'a', revision: null })).toBe(false);
+    expect(isMissingRevision({ ...pinned, allowWorkingCopy: true }, { path: 'a', revision: null })).toBe(false);
+    expect(isMissingRevision({ type: 'file' }, 'a')).toBe(false);
+  });
+
+  test('is true when any selected file has no named revision', () => {
+    expect(isMissingRevision(pinned, { path: 'a', revision: null })).toBe(true);
+    expect(
+      isMissingRevision(pinned, [
+        { path: 'a', revision: 'b' },
+        { path: 'c', revision: null },
+      ]),
+    ).toBe(true);
+    expect(isMissingRevision(pinned, 'a.seq')).toBe(true);
+  });
+
+  test('is false when nothing is selected or every file names a revision', () => {
+    expect(isMissingRevision(pinned, null)).toBe(false);
+    expect(isMissingRevision(pinned, [])).toBe(false);
+    expect(isMissingRevision(pinned, [{ path: 'a', revision: 'b' }])).toBe(false);
   });
 });

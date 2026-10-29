@@ -8,8 +8,14 @@ import type {
   ActionValueSchemaSequenceList,
 } from '@nasa-jpl/plandev-actions';
 import { Status } from '../enums/status';
-import type { ActionDefinition, ActionDefinitionVersion, ActionParametersMap, ActionRunSlim } from '../types/actions';
-import type { ArgumentsMap } from '../types/parameter';
+import type {
+  ActionDefinition,
+  ActionDefinitionVersion,
+  ActionParametersMap,
+  ActionRunSlim,
+  FileRef,
+} from '../types/actions';
+import type { Argument, ArgumentsMap } from '../types/parameter';
 import type { ValueSchema, ValueSchemaOption } from '../types/schema';
 import type { WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import { isMetaOrCtrlPressed } from './keyboardEvents';
@@ -42,6 +48,45 @@ export function isActionValueSchemaFile(
   schema: ValueSchema | ActionValueSchema,
 ): schema is ActionValueSchemaFile | ActionValueSchemaFileList {
   return (schema as ActionValueSchema).type === 'file' || (schema as ActionValueSchema).type === 'fileList';
+}
+
+/** Whether a file/sequence parameter takes `FileRef`s (a path plus a revision) rather than paths. */
+export function isWithRevision(schema: object): boolean {
+  // ponytail: the installed plandev-actions predates `withRevision`; read it untyped until the UI depends on a release with it.
+  return (schema as { withRevision?: boolean }).withRevision === true;
+}
+
+/** Whether a `withRevision` parameter may use the working copy (the default) or must pin a named revision. */
+export function allowsWorkingCopy(schema: object): boolean {
+  // ponytail: untyped like `withRevision`; the installed plandev-actions predates `allowWorkingCopy` too.
+  return (schema as { allowWorkingCopy?: boolean }).allowWorkingCopy !== false;
+}
+
+/** Whether a parameter that must pin revisions has a selected file without one (the working copy is not allowed). */
+export function isMissingRevision(schema: object, value: unknown): boolean {
+  if (!isWithRevision(schema) || allowsWorkingCopy(schema)) {
+    return false;
+  }
+  return [value ?? []].flat().some(file => !isFileRef(file) || file.revision === null);
+}
+
+/** The value of a file or sequence action parameter prefilled with these workspace paths (working copies if it takes revisions). */
+export function getFileArgumentForPaths(schema: ActionValueSchema, paths: string[]): Argument {
+  const values = isWithRevision(schema) ? paths.map((path): FileRef => ({ path, revision: null })) : paths;
+  return schema.type.endsWith('List') ? values : values[0];
+}
+
+/** "Working copy" or "Revision B" (revision letters are displayed uppercase, as in the revisions panel). */
+export function getFileRefRevisionLabel(fileRef: FileRef): string {
+  return fileRef.revision === null ? 'Working copy' : `Revision ${fileRef.revision.toUpperCase()}`;
+}
+
+export function formatFileRef(fileRef: FileRef): string {
+  return `${fileRef.path} · ${getFileRefRevisionLabel(fileRef)}`;
+}
+
+export function isFileRef(value: unknown): value is FileRef {
+  return typeof value === 'object' && value !== null && 'path' in value && 'revision' in value;
 }
 
 /**
@@ -252,7 +297,14 @@ export function truncateRunParameters(
 
   let result = '';
   for (const [key, value] of sorted) {
-    const formatted = typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
+    let formatted: string;
+    if (isFileRef(value)) {
+      formatted = `'${formatFileRef(value)}'`;
+    } else if (Array.isArray(value) && value.length > 0 && value.every(isFileRef)) {
+      formatted = `[${value.map(v => `'${formatFileRef(v)}'`).join(', ')}]`;
+    } else {
+      formatted = typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
+    }
     const pair = `${key}: ${formatted}`;
     if (result.length === 0) {
       result = pair;
