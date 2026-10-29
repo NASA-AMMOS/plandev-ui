@@ -94,6 +94,7 @@ export async function reqGateway<T = any>(
   excludeContentType: boolean,
   signal?: AbortSignal,
   asJson: boolean = true,
+  asBlob: boolean = false,
 ): Promise<T> {
   const GATEWAY_URL = browser ? env.PUBLIC_GATEWAY_CLIENT_URL : env.PUBLIC_GATEWAY_SERVER_URL;
 
@@ -118,6 +119,10 @@ export async function reqGateway<T = any>(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(response.statusText + '\n' + errorText);
+  }
+
+  if (asBlob) {
+    return (await response.blob()) as T;
   }
 
   if (asJson) {
