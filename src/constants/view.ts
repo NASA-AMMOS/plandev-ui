@@ -21,12 +21,16 @@ export const ViewDefaultExternalEventOptions: ExternalEventOptions = {
   groupBy: 'event_type_name',
 };
 
+// Literals rather than DEFAULT_MARKER_STYLE: utilities/timeline.ts imports this module, so importing
+// back from it would close a cycle
 export const ViewDefaultDiscreteOptions: DiscreteOptions = {
   activityOptions: ViewDefaultActivityOptions,
+  directiveMarker: 'line',
   displayMode: 'compact',
   externalEventOptions: ViewDefaultExternalEventOptions,
   height: 16,
   labelVisibility: 'auto',
+  zeroDurationMarker: 'line',
 };
 
 export const ViewDiscreteLayerColorPresets: string[] = [

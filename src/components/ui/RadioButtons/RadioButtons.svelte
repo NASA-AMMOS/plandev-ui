@@ -13,6 +13,11 @@
   import { classNames } from '../../../utilities/generic';
 
   export { className as class };
+  /**
+   * Accessible name for the group. A `role="radiogroup"` takes no name from a sibling `<label for>`,
+   * only a labelable element does, so without this the group is announced with no name at all.
+   */
+  export let ariaLabel: string | undefined = undefined;
   export let radioButtonContextKey: string = DefaultRadioButtonContextKey;
   export let radioButtonContainerClassName: string | undefined = undefined;
   export let selectedButtonId: RadioButtonId | undefined = undefined;
@@ -82,6 +87,7 @@
     ...(radioButtonContainerClassName ? { [radioButtonContainerClassName]: !!radioButtonContainerClassName } : {}),
   })}
   role="radiogroup"
+  aria-label={ariaLabel}
   {id}
 >
   <div class="radio-buttons-background"></div>
@@ -89,12 +95,14 @@
 </div>
 
 <style>
+  /* Equal columns where every option fits in its share, with only the columns that need more taking
+     it -- plain 1fr clips a long label into 1/n of the container. Still fills the width. */
   .radio-buttons {
     align-items: center;
     background-color: var(--st-gray-10);
     border-radius: 4px;
     display: grid;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(min-content, 1fr);
     grid-auto-flow: column;
     position: relative;
     width: 100%;
