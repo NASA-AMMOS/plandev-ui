@@ -12,7 +12,6 @@
   export let className: string = '';
   export let disabled: boolean = false;
   export let label: string;
-  /** One entry per naming convention offered, e.g. plain filename and/or the revision-versioned filename. */
   export let options: DownloadMenuOption[];
   export let size: 'icon' | undefined = undefined;
   export let variant: 'ghost' | 'default' | 'link' | 'destructive' | 'outline' | 'secondary' | undefined = 'outline';
