@@ -690,6 +690,23 @@ test.describe.serial('Workspace', () => {
     await workspace.waitForToast('Workspace Collaborators Updated');
   });
 
+  // Granted and revoked within the test so that other users' access in the rest of the suite is unchanged
+  test('Grant and revoke role write access to workspace', async () => {
+    await workspace.workspaceRoleGrantInput.click();
+    await workspace.workspaceRoleGrantInput.fill('viewer');
+
+    const suggestionsDropdown = setup.page.locator('#tags-input');
+    await expect(suggestionsDropdown).toBeVisible();
+    await suggestionsDropdown.getByRole('option', { exact: true, name: 'viewer' }).click();
+    await workspace.waitForToast('Workspace Role Access Updated');
+
+    // The granted role is shown as a removable tag
+    const grantedRole = setup.page.getByRole('option', { exact: true, name: 'viewer' });
+    await expect(grantedRole).toBeVisible();
+    await grantedRole.click();
+    await workspace.waitForToast('Workspace Role Access Removed Successfully');
+  });
+
   test('Bulk workspace file operations', async () => {
     test.setTimeout(60000);
 

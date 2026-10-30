@@ -36,6 +36,7 @@ export class Workspace {
   workspaceFileGrid!: Locator;
   workspaceHeaderMenu!: Locator;
   workspaceRefreshButton!: Locator;
+  workspaceRoleGrantInput!: Locator;
   workspaceSettingsButton!: Locator;
   workspaceSidebar!: Locator;
 
@@ -335,6 +336,7 @@ export class Workspace {
     this.workspaceSettingsButton = page.getByRole('button', { name: 'Settings' });
     this.workspaceFileBrowserButton = page.getByRole('button', { name: 'Files' });
     this.workspaceCollaboratorInput = page.getByPlaceholder('Search collaborators or workspaces');
+    this.workspaceRoleGrantInput = page.getByPlaceholder('Search roles');
   }
 
   async uploadFile(filePath: string, fileName: string): Promise<void> {

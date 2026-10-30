@@ -88,6 +88,24 @@ function isUserCollaborator(
   return false;
 }
 
+/**
+ * Whether the user belongs to a role the workspace has granted write access to.
+ * Membership is evaluated against any of the user's roles, not just the active one;
+ * the active role's permissions are still checked separately.
+ */
+function isWorkspaceRoleGranted(user: User | null, workspace?: Workspace | null): boolean {
+  if (user && workspace) {
+    const roles = new Set([user.defaultRole, ...user.allowedRoles]);
+    return !!workspace.role_grants?.some(({ role }) => roles.has(role));
+  }
+  return false;
+}
+
+/** A named collaborator, or a member of a granted role */
+function hasWorkspaceCollaboratorAccess(user: User | null, workspace?: Workspace | null): boolean {
+  return isUserCollaborator(user, workspace) || isWorkspaceRoleGranted(user, workspace);
+}
+
 function isModelOwner(user: User | null, model: AssetWithOwner<ModelWithOwner> | undefined): boolean {
   return isUserOwner(user, model);
 }
@@ -316,10 +334,10 @@ function getRoleWorkspacePermission(queries: string[], user: User | null, worksp
             permission = isUserOwner(user, workspace);
             break;
           case 'COLLABORATOR':
-            permission = isUserCollaborator(user, workspace);
+            permission = hasWorkspaceCollaboratorAccess(user, workspace);
             break;
           case 'OWNER_COLLABORATOR':
-            permission = isUserOwner(user, workspace) || isUserCollaborator(user, workspace);
+            permission = isUserOwner(user, workspace) || hasWorkspaceCollaboratorAccess(user, workspace);
             break;
           case 'NO_CHECK':
             permission = true;
@@ -555,6 +573,15 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
         (isUserOwner(user, workspace) || isUserCollaborator(user, workspace)))
     );
   },
+  CREATE_WORKSPACE_ROLE_GRANTS: (user: User | null, workspace: Workspace): boolean => {
+    // Granting access is limited to the owner, so role-granted writers cannot manage grants
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.INSERT_WORKSPACE_ROLE_GRANTS], user) &&
+        !isUserViewer(user) &&
+        isUserOwner(user, workspace))
+    );
+  },
   DELETE_ACTIVITY_DIRECTIVES: (user: User | null, plan: PlanWithOwners): boolean => {
     return (
       isUserAdmin(user) ||
@@ -758,6 +785,14 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
       (getPermission([Queries.DELETE_WORKSPACE_COLLABORATOR], user) &&
         !isUserViewer(user) &&
         (isUserOwner(user, workspace) || isUserCollaborator(user, workspace)))
+    );
+  },
+  DELETE_WORKSPACE_ROLE_GRANT: (user: User | null, workspace: Workspace): boolean => {
+    return (
+      isUserAdmin(user) ||
+      (getPermission([Queries.DELETE_WORKSPACE_ROLE_GRANT], user) &&
+        !isUserViewer(user) &&
+        isUserOwner(user, workspace))
     );
   },
   DUPLICATE_PLAN: (user: User | null, plan: PlanWithOwners, model: ModelWithOwner | null): boolean => {
@@ -1024,6 +1059,7 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.TAGS], user);
   },
   SUB_USERS: () => true,
+  SUB_USER_ROLES: () => true,
   SUB_USER_SEQUENCES: (user: User | null): boolean => {
     return isUserAdmin(user) || getPermission([Queries.USER_SEQUENCES], user);
   },
@@ -1532,6 +1568,11 @@ interface WorkspaceCollaboratorsCRUDPermission {
   canDelete: WorkspaceAssetCreatePermissionCheck;
 }
 
+interface WorkspaceRoleGrantsCRUDPermission {
+  canCreate: WorkspaceAssetCreatePermissionCheck;
+  canDelete: WorkspaceAssetCreatePermissionCheck;
+}
+
 interface FeaturePermissions {
   actionDefinition: CRUDPermission<ActionDefinition>;
   actionRun: WorkspaceAssetCRUDPermission<ActionRun>;
@@ -1575,6 +1616,7 @@ interface FeaturePermissions {
   view: CRUDPermission<ViewSlim>;
   workspace: WorkspaceAssetCRUDPermission<WorkspaceTreeNode>;
   workspaceCollaborators: WorkspaceCollaboratorsCRUDPermission;
+  workspaceRoleGrants: WorkspaceRoleGrantsCRUDPermission;
   workspaces: CRUDPermission<AssetWithOwner<Workspace>>;
 }
 
@@ -1850,6 +1892,10 @@ const featurePermissions: FeaturePermissions = {
       isUserAdmin(user) || queryPermissions.CREATE_WORKSPACE_COLLABORATORS(user, workspace),
     canDelete: (user, workspace) =>
       isUserAdmin(user) || queryPermissions.DELETE_WORKSPACE_COLLABORATOR(user, workspace),
+  },
+  workspaceRoleGrants: {
+    canCreate: (user, workspace) => queryPermissions.CREATE_WORKSPACE_ROLE_GRANTS(user, workspace),
+    canDelete: (user, workspace) => queryPermissions.DELETE_WORKSPACE_ROLE_GRANT(user, workspace),
   },
   workspaces: {
     canCreate: user => isUserAdmin(user) || workspacePermissions.createWorkspace(user),

@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import type { User } from '../types/app';
+import type { Workspace } from '../types/workspace';
 import {
+  featurePermissions,
   hasNoAuthorization,
   isAdminRole,
   isPlanCollaborator,
@@ -200,5 +203,91 @@ describe('Check roles', () => {
         },
       ),
     ).toEqual(true);
+  });
+});
+
+describe('Workspace role grants', () => {
+  const rolePermissions: User['rolePermissions'] = {
+    delete_file_directory: 'OWNER_COLLABORATOR',
+    delete_workspace: 'OWNER',
+    write_file_directory: 'OWNER_COLLABORATOR',
+  };
+  const permissibleQueries: User['permissibleQueries'] = {
+    delete_workspace_collaborators_by_pk: true,
+    delete_workspace_role_grants_by_pk: true,
+    insert_workspace_collaborators: true,
+    insert_workspace_role_grants: true,
+  };
+  const makeUser = (overrides: Partial<User> = {}): User => ({
+    activeRole: 'user',
+    allowedRoles: ['user', 'mission_ops'],
+    defaultRole: 'user',
+    id: 'foo',
+    permissibleQueries,
+    rolePermissions,
+    token: '',
+    ...overrides,
+  });
+  const workspace: Workspace = {
+    collaborators: [{ collaborator: 'named', workspace_id: 1 }],
+    created_at: '',
+    disk_location: '',
+    id: 1,
+    name: 'ws',
+    owner: 'bar',
+    parcel_id: 1,
+    role_grants: [{ role: 'mission_ops' }, { role: 'science_team' }],
+    updated_at: '',
+  };
+  const canWriteFiles = (user: User, ws: Workspace = workspace) =>
+    featurePermissions.workspace.canUpdate(user, ws) &&
+    featurePermissions.workspace.canCreate(user, ws) &&
+    featurePermissions.workspace.canDelete(user, ws);
+
+  test('A member of any granted role can edit files even when it is not their active role', () => {
+    expect(canWriteFiles(makeUser())).toEqual(true);
+    expect(canWriteFiles(makeUser({ allowedRoles: ['user', 'science_team'] }))).toEqual(true);
+  });
+
+  test('A default role that is not in the allowed roles still counts as a membership', () => {
+    expect(canWriteFiles(makeUser({ allowedRoles: ['user'], defaultRole: 'mission_ops' }))).toEqual(true);
+  });
+
+  test('Users with no matching role, collaboration or ownership cannot edit files', () => {
+    expect(canWriteFiles(makeUser({ allowedRoles: ['user', 'other'] }))).toEqual(false);
+    expect(canWriteFiles(makeUser(), { ...workspace, role_grants: [] })).toEqual(false);
+  });
+
+  test('Owners and named collaborators are unaffected', () => {
+    const noGrants = { ...workspace, role_grants: [] };
+    expect(canWriteFiles(makeUser({ id: 'bar' }), noGrants)).toEqual(true);
+    expect(canWriteFiles(makeUser({ id: 'named' }), noGrants)).toEqual(true);
+  });
+
+  test('A read-only active role is not bypassed by a granted role', () => {
+    expect(canWriteFiles(makeUser({ activeRole: 'viewer', rolePermissions: {} }))).toEqual(false);
+    expect(canWriteFiles(makeUser({ activeRole: 'viewer' }))).toEqual(false);
+  });
+
+  test('Role grants do not allow administering the workspace', () => {
+    const user = makeUser();
+    expect(featurePermissions.workspaces.canUpdate(user, workspace)).toEqual(false);
+    expect(featurePermissions.workspaces.canDelete(user, workspace)).toEqual(false);
+    expect(featurePermissions.workspaceCollaborators.canCreate(user, workspace)).toEqual(false);
+    expect(featurePermissions.workspaceRoleGrants.canCreate(user, workspace)).toEqual(false);
+    expect(featurePermissions.workspaceRoleGrants.canDelete(user, workspace)).toEqual(false);
+  });
+
+  test('Owners can manage role grants', () => {
+    const owner = makeUser({ id: 'bar' });
+    expect(featurePermissions.workspaceRoleGrants.canCreate(owner, workspace)).toEqual(true);
+    expect(featurePermissions.workspaceRoleGrants.canDelete(owner, workspace)).toEqual(true);
+    expect(featurePermissions.workspaces.canUpdate(owner, workspace)).toEqual(true);
+  });
+
+  test('Named collaborators cannot manage role grants or workspace metadata', () => {
+    const collaborator = makeUser({ id: 'named' });
+    expect(featurePermissions.workspaceRoleGrants.canCreate(collaborator, workspace)).toEqual(false);
+    expect(featurePermissions.workspaces.canUpdate(collaborator, workspace)).toEqual(false);
   });
 });

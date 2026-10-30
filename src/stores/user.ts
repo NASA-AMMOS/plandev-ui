@@ -1,5 +1,5 @@
 import { getContext } from 'svelte';
-import type { UserId, UserStore } from '../types/app';
+import type { UserId, UserRole, UserStore } from '../types/app';
 import gql from '../utilities/gql';
 import { gqlSubscribable } from './subscribable';
 
@@ -16,6 +16,10 @@ export const users = gqlSubscribable<UserId[]>(gql.SUB_USERS, {}, [], users =>
   users
     .filter((user: { default_role: string; username: UserId }) => AERIE_DEFAULT_USERS.indexOf(user.username) < 0)
     .map((user: { default_role: string; username: UserId }) => user.username),
+);
+
+export const userRoles = gqlSubscribable<UserRole[]>(gql.SUB_USER_ROLES, {}, [], roles =>
+  roles.map((r: { role: UserRole }) => r.role),
 );
 
 /* Loading stores. */

@@ -239,7 +239,7 @@ import type {
 import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import type { Workspace, WorkspaceCollaborator } from '../types/workspace';
+import type { Workspace, WorkspaceCollaborator, WorkspaceRoleGrant } from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
   WorkspaceTreeMap,
@@ -2509,6 +2509,37 @@ const effects = {
     }
   },
 
+  async createWorkspaceRoleGrants(
+    workspace: Workspace,
+    roleGrants: WorkspaceRoleGrant[],
+    user: User | null,
+  ): Promise<void> {
+    try {
+      if (!queryPermissions.CREATE_WORKSPACE_ROLE_GRANTS(user, workspace)) {
+        throwPermissionError('grant roles access to this workspace');
+      }
+
+      const data = await reqHasura(gql.CREATE_WORKSPACE_ROLE_GRANTS, { roleGrants }, user);
+      const { insert_workspace_role_grants: insertWorkspaceRoleGrants } = data;
+
+      if (insertWorkspaceRoleGrants != null) {
+        if (insertWorkspaceRoleGrants.affected_rows !== roleGrants.length) {
+          throw Error('Some workspace role grants were not successfully added');
+        }
+        logMessage(
+          'log',
+          `Granted role${pluralize(roleGrants.length)} "${roleGrants.map(g => g.role).join(', ')}" write access to workspace ID=${workspace.id}.`,
+        );
+        showSuccessToast('Workspace Role Access Updated');
+      } else {
+        throw Error('Unable to create workspace role grants');
+      }
+    } catch (e) {
+      catchError('log', 'Workspace Role Grant Create Failed', e as Error);
+      showFailureToast('Workspace Role Grant Create Failed', e);
+    }
+  },
+
   async deleteActivityDirective(id: ActivityDirectiveId, plan: Plan, user: User | null): Promise<boolean> {
     try {
       if (
@@ -4017,6 +4048,27 @@ const effects = {
     }
 
     return false;
+  },
+
+  async deleteWorkspaceRoleGrant(workspace: Workspace, role: string, user: User | null): Promise<boolean> {
+    try {
+      if (!queryPermissions.DELETE_WORKSPACE_ROLE_GRANT(user, workspace)) {
+        throwPermissionError('remove role access from this workspace');
+      }
+
+      const data = await reqHasura(gql.DELETE_WORKSPACE_ROLE_GRANT, { role, workspaceId: workspace.id }, user);
+      if (data.deleteWorkspaceRoleGrant != null) {
+        logMessage('log', `Removed role "${role}" write access from workspace ID=${workspace.id}.`);
+        showSuccessToast('Workspace Role Access Removed Successfully');
+        return true;
+      } else {
+        throw Error('Unable to remove workspace role grant');
+      }
+    } catch (e) {
+      catchError('log', 'Remove Workspace Role Grant Failed', e as Error);
+      showFailureToast('Remove Workspace Role Grant Failed', e);
+      return false;
+    }
   },
 
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {

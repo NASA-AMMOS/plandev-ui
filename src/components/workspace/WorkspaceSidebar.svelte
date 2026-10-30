@@ -2,13 +2,14 @@
   import { Input as InputStellar } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
-  import type { User, UserId } from '../../types/app';
+  import type { User, UserId, UserRole } from '../../types/app';
   import type { Parcel } from '../../types/sequencing';
   import type {
     Workspace,
     WorkspaceCollaborator,
     WorkspaceMetadata,
     WorkspaceNodeRunActionEvent,
+    WorkspaceRoleGrant,
   } from '../../types/workspace';
   import type { WorkspaceTreeNode } from '../../types/workspace-tree-view';
   import { getTarget } from '../../utilities/generic';
@@ -21,15 +22,18 @@
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import WorkspaceCollaboratorInput from '../ui/Tags/WorkspaceCollaboratorInput.svelte';
+  import WorkspaceRoleGrantInput from '../ui/Tags/WorkspaceRoleGrantInput.svelte';
   import PanelHeader from './PanelHeader.svelte';
   import WorkspaceFileBrowser from './WorkspaceFileBrowser/WorkspaceFileBrowser.svelte';
   import WorkspaceTabHeader from './WorkspaceTabHeader.svelte';
 
   const dispatch = createEventDispatcher<{
     addCollaborator: WorkspaceCollaborator[];
+    addRoleGrants: WorkspaceRoleGrant[];
     copyFileLocation: string;
     copyFullPath: string;
     deleteCollaborator: string;
+    deleteRoleGrant: UserRole;
     importFile: string;
     newFile: string;
     newFolder: string;
@@ -47,6 +51,7 @@
   export let currentBreadcrumbPath: string = '';
   export let isAllRunsSelected: boolean = false;
   export let isWorkspaceLoading: boolean = false;
+  export let roles: UserRole[] = [];
   export let selectedActionId: number | null = null;
   export let selectedFilePath: string | null = null;
   export let user: User | null;
@@ -58,6 +63,8 @@
   export let parcels: Parcel[] = [];
   export let hasEditWorkspacePermission: boolean = false;
   export let hasEditWorkspaceCollaboratorsPermission: boolean = false;
+  export let hasEditWorkspaceMetadataPermission: boolean = false;
+  export let hasEditWorkspaceRoleGrantsPermission: boolean = false;
 
   const permissionError = 'You do not have permission to edit this workspace';
 
@@ -105,6 +112,21 @@
   function onWorkspaceCollaboratorsDelete(event: CustomEvent<string>) {
     if (workspace) {
       dispatch('deleteCollaborator', event.detail);
+    }
+  }
+
+  function onWorkspaceRoleGrantsCreate(event: CustomEvent<UserRole[]>) {
+    if (workspace) {
+      dispatch(
+        'addRoleGrants',
+        event.detail.map(role => ({ role, workspace_id: workspace.id })),
+      );
+    }
+  }
+
+  function onWorkspaceRoleGrantsDelete(event: CustomEvent<UserRole>) {
+    if (workspace) {
+      dispatch('deleteRoleGrant', event.detail);
     }
   }
 
@@ -215,7 +237,7 @@
                     </label>
                     <div
                       use:permissionHandler={{
-                        hasPermission: hasEditWorkspacePermission,
+                        hasPermission: hasEditWorkspaceMetadataPermission,
                         permissionError,
                       }}
                       class="w-full"
@@ -243,7 +265,7 @@
                       aria-label="Parcel"
                       value={workspace?.parcel_id}
                       use:permissionHandler={{
-                        hasPermission: hasEditWorkspacePermission,
+                        hasPermission: hasEditWorkspaceMetadataPermission,
                         permissionError,
                       }}
                       on:change={onWorkspaceParcelChange}
@@ -282,6 +304,34 @@
                         ],
                       ]}
                     />
+                  </Input>
+                </fieldset>
+                <fieldset class="pb-4">
+                  <Input layout="stacked">
+                    <label use:tooltip={{ content: 'Roles with write access', placement: 'top' }} for="role-grants">
+                      Roles with write access
+                    </label>
+                    <WorkspaceRoleGrantInput
+                      name="role-grants"
+                      {roles}
+                      selectedRoles={workspace?.role_grants?.map(({ role }) => role) ?? []}
+                      disabled={!roles.length}
+                      on:create={onWorkspaceRoleGrantsCreate}
+                      on:delete={onWorkspaceRoleGrantsDelete}
+                      use={[
+                        [
+                          permissionHandler,
+                          {
+                            hasPermission: hasEditWorkspaceRoleGrantsPermission,
+                            permissionError: 'You do not have permission to modify role access',
+                          },
+                        ],
+                      ]}
+                    />
+                    <div class="st-typography-label pt-1 text-gray-500">
+                      Members of these roles can edit workspace files, subject to their role permissions. Roles that
+                      cannot write files, such as viewer, gain no write access.
+                    </div>
                   </Input>
                 </fieldset>
               </Sidebar.Menu>

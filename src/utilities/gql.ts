@@ -626,6 +626,14 @@ const gql = {
     }
   `,
 
+  CREATE_WORKSPACE_ROLE_GRANTS: `#graphql
+    mutation CreateWorkspaceRoleGrants($roleGrants: [workspace_role_grants_insert_input!]!) {
+      ${Queries.INSERT_WORKSPACE_ROLE_GRANTS}(objects: $roleGrants){
+        affected_rows
+      }
+    }
+  `,
+
   DELETE_ACTIVITY_DIRECTIVES: `#graphql
     mutation DeleteActivityDirectives($plan_id: Int!, $activity_ids: [Int!]!) {
       deleteActivityDirectives: ${Queries.DELETE_ACTIVITY_DIRECTIVES}(
@@ -1087,6 +1095,14 @@ const gql = {
     mutation DeleteWorkspaceCollaborator($collaborator: String!, $workspaceId: Int!) {
       deleteWorkspaceCollaborator: ${Queries.DELETE_WORKSPACE_COLLABORATOR}(collaborator: $collaborator, workspace_id: $workspaceId) {
         collaborator
+      }
+    }
+  `,
+
+  DELETE_WORKSPACE_ROLE_GRANT: `#graphql
+    mutation DeleteWorkspaceRoleGrant($role: user_roles_enum!, $workspaceId: Int!) {
+      deleteWorkspaceRoleGrant: ${Queries.DELETE_WORKSPACE_ROLE_GRANT}(role: $role, workspace_id: $workspaceId) {
+        role
       }
     }
   `,
@@ -3482,6 +3498,14 @@ const gql = {
     }
   `,
 
+  SUB_USER_ROLES: `#graphql
+    subscription SubUserRoles {
+      ${Queries.USER_ROLES}(order_by: { role: asc }) {
+        role
+      }
+    }
+  `,
+
   SUB_USER_SEQUENCES: `#graphql
     subscription SubUserSequences {
       ${Queries.USER_SEQUENCES}(order_by: { id: desc }) {
@@ -3516,6 +3540,9 @@ const gql = {
         collaborators {
           collaborator
         }
+        role_grants {
+          role
+        }
         created_at
         disk_location
         id
@@ -3532,6 +3559,9 @@ const gql = {
       ${Queries.WORKSPACES}(order_by: { id: desc }) {
         collaborators {
           collaborator
+        }
+        role_grants {
+          role
         }
         created_at
         disk_location

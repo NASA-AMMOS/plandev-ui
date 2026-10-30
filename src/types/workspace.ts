@@ -1,9 +1,14 @@
 import type { ActionDefinition } from './actions';
-import type { UserId } from './app';
+import type { UserId, UserRole } from './app';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from './workspace-tree-view';
 
 export type WorkspaceCollaborator = {
   collaborator: UserId;
+  workspace_id: number;
+};
+
+export type WorkspaceRoleGrant = {
+  role: UserRole;
   workspace_id: number;
 };
 
@@ -15,6 +20,7 @@ export type Workspace = {
   name: string;
   owner: UserId;
   parcel_id: number;
+  role_grants: Pick<WorkspaceRoleGrant, 'role'>[];
   updated_at: string;
 };
 

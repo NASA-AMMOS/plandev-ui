@@ -55,7 +55,7 @@
     parameterDictionaries as parameterDictionariesStore,
     parcelToParameterDictionaries,
   } from '../../../stores/sequencing';
-  import { initialUsersLoading, users } from '../../../stores/user';
+  import { initialUsersLoading, userRoles, users } from '../../../stores/user';
   import {
     addWorkspaceAdaptationError,
     addWorkspaceAdaptationLog,
@@ -97,6 +97,7 @@
     WorkspaceNodeEvent,
     WorkspaceNodeRunActionEvent,
     WorkspaceNodesEvent,
+    WorkspaceRoleGrant,
   } from '../../../types/workspace';
   import type {
     WorkspaceFileMetadata,
@@ -176,6 +177,8 @@
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
+  let hasEditWorkspaceMetadataPermission: boolean = false;
+  let hasEditWorkspaceRoleGrantsPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
   let isFileReadOnly: boolean = false;
@@ -270,6 +273,8 @@
 
     hasEditWorkspacePermission = featurePermissions.workspace.canUpdate($user, ws);
     hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate($user, ws);
+    hasEditWorkspaceMetadataPermission = featurePermissions.workspaces.canUpdate($user, ws);
+    hasEditWorkspaceRoleGrantsPermission = featurePermissions.workspaceRoleGrants.canCreate($user, ws);
     if ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]) {
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws, workspaceTreeMap[$activeDocumentPath]);
       availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
@@ -904,6 +909,18 @@
   async function onDeleteCollaborator(event: CustomEvent<string>) {
     if ($workspace) {
       effects.deleteWorkspaceCollaborator($workspace, event.detail, $user);
+    }
+  }
+
+  async function onAddRoleGrants(event: CustomEvent<WorkspaceRoleGrant[]>) {
+    if ($workspace) {
+      effects.createWorkspaceRoleGrants($workspace, event.detail, $user);
+    }
+  }
+
+  async function onDeleteRoleGrant(event: CustomEvent<string>) {
+    if ($workspace) {
+      effects.deleteWorkspaceRoleGrant($workspace, event.detail, $user);
     }
   }
 
@@ -1682,7 +1699,10 @@
             {isWorkspaceLoading}
             {hasEditWorkspacePermission}
             {hasEditWorkspaceCollaboratorsPermission}
+            {hasEditWorkspaceMetadataPermission}
+            {hasEditWorkspaceRoleGrantsPermission}
             parcels={$parcels}
+            roles={$userRoles}
             user={$user}
             users={$users}
             usersLoading={$initialUsersLoading}
@@ -1690,6 +1710,8 @@
             workspaces={$workspaces}
             on:addCollaborator={onAddCollaborator}
             on:deleteCollaborator={onDeleteCollaborator}
+            on:addRoleGrants={onAddRoleGrants}
+            on:deleteRoleGrant={onDeleteRoleGrant}
             on:download={onDownloadNodes}
             on:deleteNodes={onDeleteNodes}
             on:moveNodes={onMoveNodes}
