@@ -2,11 +2,12 @@
 
 <script lang="ts">
   import { Button } from '@nasa-jpl/stellar-svelte';
-  import { BookA, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
+  import { BookA, History, Info, PanelRightClose, PanelRightOpen, TextCursorInput } from 'lucide-svelte';
+  import { WorkspaceRightPanelTab } from '../../enums/workspace.js';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
 
-  export let activeTab: string = 'metadata';
+  export let activeTab: WorkspaceRightPanelTab = WorkspaceRightPanelTab.METADATA;
   export let commandNodeName: string | null = null;
   export let isSequenceFile: boolean = false;
   export let panelOpen: boolean = true;
@@ -15,7 +16,7 @@
     return s.replace(/([^A-Z])(?=[A-Z])/g, '$1 ');
   }
 
-  function togglePanel(nextTab: 'metadata' | 'command' | 'dictionary') {
+  function togglePanel(nextTab: WorkspaceRightPanelTab) {
     if (activeTab === nextTab && panelOpen) {
       panelOpen = false;
     } else {
@@ -29,26 +30,34 @@
   <div class="flex h-auto w-full flex-col items-center justify-start gap-0 p-0" role="tablist">
     <Sidebar.MenuButton
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
-      isActive={activeTab === 'metadata' && panelOpen}
+      isActive={activeTab === WorkspaceRightPanelTab.METADATA && panelOpen}
       tooltipContent="Metadata"
-      on:click={() => togglePanel('metadata')}
+      on:click={() => togglePanel(WorkspaceRightPanelTab.METADATA)}
     >
       <Info size={16} />
+    </Sidebar.MenuButton>
+    <Sidebar.MenuButton
+      className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
+      isActive={activeTab === WorkspaceRightPanelTab.REVISIONS && panelOpen}
+      tooltipContent="Revisions"
+      on:click={() => togglePanel(WorkspaceRightPanelTab.REVISIONS)}
+    >
+      <History size={16} />
     </Sidebar.MenuButton>
     {#if isSequenceFile}
       <Sidebar.MenuButton
         className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
-        isActive={activeTab === 'command' && panelOpen}
+        isActive={activeTab === WorkspaceRightPanelTab.COMMAND && panelOpen}
         tooltipContent={commandNodeName ? `Selected ${formatTypeName(commandNodeName)}` : 'Selected Command'}
-        on:click={() => togglePanel('command')}
+        on:click={() => togglePanel(WorkspaceRightPanelTab.COMMAND)}
       >
         <TextCursorInput size={16} />
       </Sidebar.MenuButton>
       <Sidebar.MenuButton
         className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
-        isActive={activeTab === 'dictionary' && panelOpen}
+        isActive={activeTab === WorkspaceRightPanelTab.DICTIONARY && panelOpen}
         tooltipContent="Command Dictionary"
-        on:click={() => togglePanel('dictionary')}
+        on:click={() => togglePanel(WorkspaceRightPanelTab.DICTIONARY)}
       >
         <BookA size={16} />
       </Sidebar.MenuButton>

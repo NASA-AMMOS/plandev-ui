@@ -2,22 +2,47 @@
 
 <script lang="ts">
   import { Checkbox, Label } from '@nasa-jpl/stellar-svelte';
+  import type { WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { getShortISOForDate } from '../../utilities/time';
+  import { getRevisionDisplayName, getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
 
+  export let doesWorkingCopyMatchLatestRevision: boolean = false;
+  export let isDirty: boolean = false;
   export let fileMetadata: WorkspaceFileMetadata;
   export let hasEditPermission: boolean = false;
+  export let hasRevisions: boolean = false;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let onReadOnlyChange: ((readOnly: boolean) => void) | null = null;
 </script>
 
-<div class="flex h-8 items-center gap-4 border-b bg-[var(--sidebar)] px-3 py-1.5 text-xs text-muted-foreground">
-  {#if fileMetadata.lastEditedBy}
-    <span><span class="font-medium">Last edited by:</span> {fileMetadata.lastEditedBy}</span>
-  {/if}
-  {#if fileMetadata.lastEditedAt}
-    <span><span class="font-medium">Last edited:</span> {getShortISOForDate(new Date(fileMetadata.lastEditedAt))}</span>
-  {/if}
+<div class="flex min-h-8 items-center gap-4 border-b bg-[var(--sidebar)] px-3 py-1.5 text-xs text-muted-foreground">
+  <div>
+    {#if fileMetadata.lastEditedBy}
+      <span class="font-medium">Last edited:</span>
+      {getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}
+    {/if}
+    {#if fileMetadata.lastEditedAt}
+      at {getShortISOForDate(new Date(fileMetadata.lastEditedAt))}
+    {/if}
+  </div>
+  <div>
+    <span class="font-medium">Working Copy:</span>
+    {#if isDirty}
+      Unsaved Changes
+    {:else if matchingRevisionName !== null && matchingRevisionName !== ''}
+      {#if doesWorkingCopyMatchLatestRevision}
+        Latest Revision ({getRevisionDisplayName(matchingRevisionName)})
+      {:else}
+        Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span>
+      {/if}
+    {:else if !hasRevisions}
+      Unrevisioned
+    {:else}
+      Modified
+    {/if}
+  </div>
   <div
     class="ml-auto flex items-center gap-1.5"
     use:permissionHandler={{

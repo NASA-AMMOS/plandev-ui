@@ -1,11 +1,14 @@
 <svelte:options immutable={true} />
 
 <script lang="ts" generics="OutputFormat extends { name: string }">
+  import type { DownloadMenuOption } from '../../types/dropdown';
+
   import { Button, cn } from '@nasa-jpl/stellar-svelte';
-  import { Braces, Bug, Clipboard, Download } from 'lucide-svelte';
+  import { Braces, Bug, Clipboard } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import { isMacOs } from '../../utilities/browser';
+  import DownloadMenu from '../ui/DownloadMenu.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
   import SequenceActionCombobox from './SequenceActionCombobox.svelte';
 
@@ -31,8 +34,9 @@
   // Download button
   export let showDownloadButton: boolean = false;
   export let downloadDisabled: boolean = false;
-  export let downloadTooltip: string = 'Download';
-  export let onDownload: (() => void) | undefined = undefined;
+  export let downloadLabel: string = 'Download';
+  export let downloadOptions: DownloadMenuOption[] = [];
+  export let onDownload: ((name: string) => void) | undefined = undefined;
 
   // Save button
   export let showSaveButton: boolean = false;
@@ -81,11 +85,14 @@
   {/if}
 
   {#if showDownloadButton && onDownload}
-    <Tooltip content={downloadTooltip}>
-      <Button variant="outline" size="icon" on:click={onDownload} disabled={downloadDisabled}>
-        <Download size={16} />
-      </Button>
-    </Tooltip>
+    <DownloadMenu
+      className="px-2"
+      size="icon"
+      disabled={downloadDisabled}
+      label={downloadLabel}
+      options={downloadOptions}
+      on:download={e => onDownload?.(e.detail.name)}
+    />
   {/if}
 
   <slot name="end" />

@@ -1,5 +1,6 @@
 /* eslint-disable sort-keys */
-import { afterAll, afterEach, describe, expect, test, vi } from 'vitest';
+import { env } from '$env/dynamic/public';
+import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
@@ -14,21 +15,31 @@ import {
   flattenWorkspaceTreeWithPaths,
   getAvailableActionsForNodes,
   getCommonPathPrefix,
+  getDefaultRevisionName,
+  getDownloadOptionsForFile,
   getFolderPathForNode,
+  getRevisionDisplayName,
+  getRevisionNamingConvention,
   getSelectedFilesDisplay,
+  getUserDisplayNameFromIdentity,
+  getVersionedFileName,
   getWorkspaceFileFolderDisplay,
   hasReadonlyInTree,
   incrementFilename,
   isPathInBreadcrumb,
   joinPath,
   mapWorkspaceTreePaths,
+  parseRevisionName,
   parseUrlState,
   removeFirstPathSegment,
   removeRedundantNodes,
   replaceFileExtension,
+  resolveDownloadRevisionName,
+  separateFilenameFromExtension,
   separateFilenameFromPath,
   shouldNodeBeVisible,
   sortWorkspaceTree,
+  validateRevisionName,
   WorkspaceApi,
 } from './workspaces';
 
@@ -40,7 +51,7 @@ const reqWorkspaceMock = vi.spyOn(requests, 'reqWorkspace').mockResolvedValue({}
 const reqWorkspaceMetadataMock = vi.spyOn(requests, 'reqWorkspaceMetadata').mockResolvedValue({});
 const reqWorkspaceWithEtagMock = vi
   .spyOn(requests, 'reqWorkspaceWithEtag')
-  .mockResolvedValue({ data: '', etag: null, status: 200 });
+  .mockResolvedValue({ data: '', etag: null, headers: new Headers(), status: 200 });
 vi.stubGlobal('navigator', mockNavigator);
 vi.mock('$env/dynamic/public', () => {
   return {
@@ -49,6 +60,10 @@ vi.mock('$env/dynamic/public', () => {
 }); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Workspace utility function tests', () => {
+  beforeEach(() => {
+    env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'NUMERIC';
+  });
+
   afterAll(() => {
     vi.restoreAllMocks();
   });
@@ -74,6 +89,240 @@ describe('Workspace utility function tests', () => {
         filename: 'bar',
         path: '',
       });
+    });
+  });
+
+  describe('separateFilenameFromExtension', () => {
+    test('Should separate a simple filename from its extension', () => {
+      expect(separateFilenameFromExtension('bar.foo')).toEqual({ extension: 'foo', filename: 'bar' });
+    });
+
+    test('Should return an empty extension when the filename has none', () => {
+      expect(separateFilenameFromExtension('bar')).toEqual({ extension: '', filename: 'bar' });
+    });
+
+    test('Should keep everything after the first dot as the extension', () => {
+      expect(separateFilenameFromExtension('bar.tar.gz')).toEqual({ extension: 'tar.gz', filename: 'bar' });
+    });
+
+    test('Should treat a leading dot as having no extension', () => {
+      expect(separateFilenameFromExtension('.hidden')).toEqual({ extension: '', filename: '.hidden' });
+    });
+  });
+
+  describe('getVersionedFileName', () => {
+    test('Should insert the revision letter before the extension', () => {
+      expect(getVersionedFileName('bar.foo', 'b')).toEqual('bar.b.foo');
+    });
+
+    test('Should use just the filename, dropping any directory path', () => {
+      expect(getVersionedFileName('foo/bar.txt', 'b')).toEqual('bar.b.txt');
+    });
+
+    test('Should append the revision letter directly when there is no extension', () => {
+      expect(getVersionedFileName('bar', 'b')).toEqual('bar.b');
+    });
+
+    test('Should return just the filename when there is no revision', () => {
+      expect(getVersionedFileName('foo/bar.txt', null)).toEqual('bar.txt');
+      expect(getVersionedFileName('foo/bar.txt', undefined)).toEqual('bar.txt');
+      expect(getVersionedFileName('foo/bar.txt', '')).toEqual('bar.txt');
+    });
+  });
+
+  describe('getDefaultRevisionName', () => {
+    beforeEach(() => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+    });
+
+    test('Should return "A" as the default revision name', () => {
+      expect(getDefaultRevisionName()).toEqual('A');
+    });
+
+    test('Should return a revision name that passes validation', () => {
+      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+    });
+  });
+
+  describe('validateRevisionName', () => {
+    const errorMessage = 'Only letters are allowed. No numbers, spaces, or symbols.';
+
+    beforeEach(() => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+    });
+
+    test('Should accept lowercase, uppercase, and mixed-case letters', () => {
+      expect(validateRevisionName('a')).toBeNull();
+      expect(validateRevisionName('Z')).toBeNull();
+      expect(validateRevisionName('abc')).toBeNull();
+      expect(validateRevisionName('AbCd')).toBeNull();
+    });
+
+    test('Should accept an empty string', () => {
+      expect(validateRevisionName('')).toBeNull();
+    });
+
+    test('Should reject names containing numbers', () => {
+      expect(validateRevisionName('1')).toEqual(errorMessage);
+      expect(validateRevisionName('a1')).toEqual(errorMessage);
+    });
+
+    test('Should reject names containing whitespace', () => {
+      expect(validateRevisionName(' ')).toEqual(errorMessage);
+      expect(validateRevisionName('a b')).toEqual(errorMessage);
+      expect(validateRevisionName(' a')).toEqual(errorMessage);
+      expect(validateRevisionName('a\n')).toEqual(errorMessage);
+    });
+
+    test('Should reject names containing symbols', () => {
+      expect(validateRevisionName('a.b')).toEqual(errorMessage);
+      expect(validateRevisionName('a-b')).toEqual(errorMessage);
+      expect(validateRevisionName('a_b')).toEqual(errorMessage);
+      expect(validateRevisionName('a/b')).toEqual(errorMessage);
+    });
+
+    test('Should reject non-ASCII letters', () => {
+      expect(validateRevisionName('é')).toEqual(errorMessage);
+      expect(validateRevisionName('ä')).toEqual(errorMessage);
+    });
+  });
+
+  describe('numeric revision names (the default)', () => {
+    const errorMessage = 'Only numbers are allowed. No letters, spaces, or symbols.';
+
+    test('Should default to NUMERIC when unset or unrecognized', () => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = '';
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'bogus';
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+      expect(getRevisionNamingConvention()).toEqual('ALPHABETIC');
+    });
+
+    test('Should return 1 as the default revision name, which passes validation', () => {
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+      expect(getDefaultRevisionName()).toEqual(1);
+      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+    });
+
+    test('Should accept digits, as strings or numbers', () => {
+      expect(validateRevisionName('1')).toBeNull();
+      expect(validateRevisionName('042')).toBeNull();
+      expect(validateRevisionName(12)).toBeNull();
+      expect(validateRevisionName('')).toBeNull();
+    });
+
+    test('Should reject letters, whitespace, and symbols', () => {
+      expect(validateRevisionName('a')).toEqual(errorMessage);
+      expect(validateRevisionName('1a')).toEqual(errorMessage);
+      expect(validateRevisionName('1 2')).toEqual(errorMessage);
+      expect(validateRevisionName('-1')).toEqual(errorMessage);
+      expect(validateRevisionName('1.5')).toEqual(errorMessage);
+      expect(validateRevisionName(1.5)).toEqual(errorMessage);
+    });
+
+    test('Should parse input into a number', () => {
+      expect(parseRevisionName('3')).toEqual(3);
+      expect(parseRevisionName('')).toEqual('');
+    });
+
+    test('Should display and version file names with numeric revisions', () => {
+      expect(getRevisionDisplayName(3)).toEqual('3');
+      expect(getVersionedFileName('foo/bar.txt', 3)).toEqual('bar.3.txt');
+      expect(getVersionedFileName('foo/bar.txt', 0)).toEqual('bar.0.txt');
+    });
+  });
+
+  describe('resolveDownloadRevisionName', () => {
+    afterEach(() => {
+      vi.mocked(WorkspaceApi.getFileRevisionList).mockRestore();
+    });
+
+    test('Should return the matching revision name', async () => {
+      vi.spyOn(WorkspaceApi, 'getFileRevisionList').mockResolvedValue({
+        matchingRevision: 'b',
+        revisions: [
+          {
+            name: 'b',
+            createdAt: '',
+            createdBy: '',
+            lastEditedAt: '',
+            lastEditedBy: '',
+            message: '',
+            pathAtRevision: '',
+          },
+        ],
+      });
+      expect(await resolveDownloadRevisionName(1, 'foo/bar.seq', null)).toEqual('b');
+    });
+
+    test('Should return null when the working copy does not match a revision', async () => {
+      vi.spyOn(WorkspaceApi, 'getFileRevisionList').mockResolvedValue({ matchingRevision: null, revisions: [] });
+      expect(await resolveDownloadRevisionName(1, 'foo/bar.seq', null)).toBeNull();
+    });
+
+    test('Should return null instead of throwing when the lookup fails', async () => {
+      vi.spyOn(WorkspaceApi, 'getFileRevisionList').mockRejectedValue(new Error('failed'));
+      expect(await resolveDownloadRevisionName(1, 'foo/bar.seq', null)).toBeNull();
+    });
+  });
+
+  describe('getDownloadOptionsForFile', () => {
+    test('offers only the plain download when the file has no revisions yet', () => {
+      expect(getDownloadOptionsForFile('bar.foo', false, null)).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+      ]);
+      expect(getDownloadOptionsForFile('bar.foo', true, null)).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+      ]);
+    });
+
+    test('adds an enabled revisioned download when the working copy matches the revision', () => {
+      expect(getDownloadOptionsForFile('bar.foo', true, 'b')).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+        {
+          disabled: false,
+          disabledReason: undefined,
+          label: 'Download with revision (...b.foo)',
+          name: 'bar.b.foo',
+        },
+      ]);
+    });
+
+    test('disables the revisioned download, with a reason, when the working copy does not match the revision', () => {
+      expect(getDownloadOptionsForFile('bar.foo', false, 'b')).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+        {
+          disabled: true,
+          disabledReason: 'The working copy contains unrevisioned changes.',
+          label: 'Download with revision (...b.foo)',
+          name: 'bar.b.foo',
+        },
+      ]);
+    });
+
+    test('falls back to the plain name for the revisioned option when revisionName is an empty string', () => {
+      expect(getDownloadOptionsForFile('bar.foo', true, '')).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+        {
+          disabled: false,
+          disabledReason: undefined,
+          label: 'Download with revision (...foo)',
+          name: 'bar.foo',
+        },
+      ]);
+    });
+
+    test('handles filenames with no extension', () => {
+      expect(getDownloadOptionsForFile('bar', true, 'b')).toEqual([
+        { label: 'Download (...)', name: 'bar' },
+        {
+          disabled: false,
+          disabledReason: undefined,
+          label: 'Download with revision (...b)',
+          name: 'bar.b',
+        },
+      ]);
     });
   });
 
@@ -127,6 +376,25 @@ describe('Workspace utility function tests', () => {
 
     test('Should handle empty string', () => {
       expect(removeFirstPathSegment('')).toEqual('');
+    });
+  });
+
+  describe('getUserDisplayNameFromIdentity', () => {
+    test('Should extract the username from a "name <email>" identity string', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe <john.doe@jpl.nasa.gov>')).toEqual('John Doe');
+    });
+
+    test('Should handle usernames containing multiple words and special characters', () => {
+      expect(getUserDisplayNameFromIdentity("Mary Jane O'Brien <mjobrien@jpl.nasa.gov>")).toEqual("Mary Jane O'Brien");
+    });
+
+    test('Should handle an empty email', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe <>')).toEqual('John Doe');
+    });
+
+    test('Should return the identity unchanged when it does not match the expected format', () => {
+      expect(getUserDisplayNameFromIdentity('John Doe')).toEqual('John Doe');
+      expect(getUserDisplayNameFromIdentity('')).toEqual('');
     });
   });
 
@@ -592,9 +860,9 @@ describe('Workspace utility function tests', () => {
         'PUT',
         body,
         null,
+        null,
         undefined,
         false,
-        {},
       );
     });
 

@@ -125,13 +125,20 @@ export class Workspace {
     await this.openFileContextMenu(fileName);
 
     // Wait for menu item to be ready before clicking
-    const downloadMenuItem = this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' });
+    const downloadMenuItem = this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download' });
     await downloadMenuItem.waitFor({ state: 'visible' });
+    await downloadMenuItem.hover();
+
+    const downloadFileButton = this.workspaceFileContextMenu.getByRole('menuitem', {
+      exact: true,
+      name: 'Download File',
+    });
+    await downloadFileButton.waitFor({ state: 'visible' });
 
     // Use Promise.all to coordinate the download event with the click action
     const [download] = await Promise.all([
       this.page.waitForEvent('download', { timeout: 30000 }),
-      downloadMenuItem.click(),
+      downloadFileButton.click(),
     ]);
 
     const stream = await download.createReadStream();

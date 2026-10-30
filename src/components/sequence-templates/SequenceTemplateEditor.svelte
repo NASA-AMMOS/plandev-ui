@@ -183,7 +183,8 @@
           showFormatButton
           onFormat={formatDocument}
           showDownloadButton
-          downloadTooltip="Download sequence template"
+          downloadLabel="Download sequence template"
+          downloadOptions={[{ label: 'Download sequence template', name: sequenceName }]}
           onDownload={() => dispatch('download', { template })}
           showSaveButton
           saveDisabled={template === null}

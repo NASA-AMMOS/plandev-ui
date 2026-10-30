@@ -12,23 +12,28 @@
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/console';
+  import type { WorkspaceFileRevision } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
   import { blockTheme } from '../../utilities/codemirror/themes/block';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
+  import { getDownloadOptionsForFile } from '../../utilities/workspaces';
   import EditorToolbar from '../sequencing/EditorToolbar.svelte';
   import FileMetadataBanner from '../workspace/FileMetadataBanner.svelte';
   import Panel from './Panel.svelte';
   import SectionTitle from './SectionTitle.svelte';
 
   export let availableActions: { action: ActionDefinition; parameter: string }[] = [];
+  export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let includeActions: boolean = false;
+  export let isDirty: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
+  export let revisionList: WorkspaceFileRevision[] = [];
   export let shouldListenForKeyboardSave: boolean = true;
   export let textFileContent: string = '';
   export let textFilePath: string = '';
@@ -48,10 +53,8 @@
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
   let editorView: EditorView;
-  let isTextContentUpdated: boolean = false;
   let previousIsJSON: boolean | null = null;
   let previousTextFilePath: string = textFilePath;
-  let updatedTextContent: string = textFileContent;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
@@ -79,8 +82,6 @@
       ]),
     });
   }
-  $: updatedTextContent = textFileContent;
-  $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
@@ -162,7 +163,6 @@
   function textContentUpdateListener(viewUpdate: ViewUpdate): void {
     const updatedText = viewUpdate.state.doc.toString();
     disableCopyAndExport = updatedText === '';
-    updatedTextContent = updatedText;
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
@@ -180,7 +180,7 @@
     }
   }
 
-  function downloadInputFormat(): void {
+  function downloadInputFormat(_name: string): void {
     dispatch('download', { filePath: textFilePath });
   }
 
@@ -196,7 +196,6 @@
   function onSave(): boolean {
     const currentText = editorView.state.doc.toString();
     if (currentText !== textFileContent) {
-      updatedTextContent = currentText;
       dispatch('save', currentText);
     }
     return true;
@@ -252,10 +251,16 @@
       onCopy={copyInputFormatToClipboard}
       showDownloadButton
       downloadDisabled={disableCopyAndExport}
+      downloadLabel="Download File Contents"
+      downloadOptions={getDownloadOptionsForFile(
+        textFileName,
+        doesWorkingCopyMatchLatestRevision,
+        revisionList[0]?.name ?? null,
+      )}
       onDownload={downloadInputFormat}
       showSaveButton={!(readOnly || previewOnly || isLoading)}
-      saveDisabled={!isTextContentUpdated}
-      saveHighlighted={isTextContentUpdated}
+      saveDisabled={!isDirty}
+      saveHighlighted={isDirty}
       {onSave}
       on:runAction={e => onRunAction(e.detail.action, e.detail.parameter)}
     />
@@ -263,7 +268,14 @@
 
   <svelte:fragment slot="body">
     {#if fileMetadata}
-      <FileMetadataBanner {fileMetadata} hasEditPermission={!previewOnly} {onReadOnlyChange} />
+      <FileMetadataBanner
+        {doesWorkingCopyMatchLatestRevision}
+        {fileMetadata}
+        hasEditPermission={!previewOnly}
+        hasRevisions={revisionList.length > 0}
+        {isDirty}
+        {onReadOnlyChange}
+      />
     {/if}
     <div class="p-2" bind:this={editorDiv} />
   </svelte:fragment>

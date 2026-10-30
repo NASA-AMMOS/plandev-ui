@@ -493,7 +493,15 @@ test('getTimeAgo', () => {
 });
 
 test('getShortISOForDate', () => {
-  expect(getShortISOForDate(new Date('2023-05-23T00:00:00.000Z'))).toEqual('2023-05-23T00:00:00');
+  expect(getShortISOForDate(new Date('2023-05-23T00:00:00.000Z'))).toEqual('2023-05-23T00:00:00Z');
+  expect(getShortISOForDate(new Date('2023-05-23T00:30:09.597Z'))).toEqual('2023-05-23T00:30:09Z');
+  expect(getShortISOForDate(new Date('2023-05-23T23:59:59.999Z'))).toEqual('2023-05-23T23:59:59Z');
+  expect(getShortISOForDate(new Date('2023-05-23T05:00:00.000-07:00'))).toEqual('2023-05-23T12:00:00Z');
+  expect(getShortISOForDate(new Date('2023-12-31T20:00:00.000-05:00'))).toEqual('2024-01-01T01:00:00Z');
+  expect(getShortISOForDate(new Date('2024-02-29T12:34:56Z'))).toEqual('2024-02-29T12:34:56Z');
+  expect(getShortISOForDate(new Date(0))).toEqual('1970-01-01T00:00:00Z');
+  expect(getShortISOForDate(new Date(Date.UTC(2023, 4, 23, 1, 2, 3, 4)))).toEqual('2023-05-23T01:02:03Z');
+  expect(() => getShortISOForDate(new Date('invalid'))).toThrow(RangeError);
 });
 
 test('parseDurationString', () => {

@@ -1,3 +1,4 @@
+import { env } from '$env/dynamic/public';
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import JSZip from 'jszip';
 import { PATH_DELIMITER } from '../constants/workspaces';
@@ -6,7 +7,16 @@ import { WorkspaceContentMode, WorkspaceContentType } from '../enums/workspace';
 import type { ActionDefinition } from '../types/actions';
 import type { User } from '../types/app';
 import type { LogMessage } from '../types/console';
-import type { ActionParameterPair, Workspace, WorkspaceInsertInput } from '../types/workspace';
+import type { DownloadMenuOption } from '../types/dropdown';
+import type {
+  ActionParameterPair,
+  Workspace,
+  WorkspaceFileRevisionDetail,
+  WorkspaceFileRevisionList,
+  WorkspaceInsertInput,
+  WorkspaceRevisionName,
+  WorkspaceRevisionNamingConvention,
+} from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
   WorkspaceTreeMap,
@@ -57,6 +67,55 @@ export function separateFilenameFromPath(filePath: string): { filename: string; 
 
 export function cleanPath(path: string | null = '') {
   return (path ?? '').replace(/^\.{0,2}\//, '').replace(/\/$/, '');
+}
+
+/**
+ * Separates a filename from its extension.
+ * @param filename - The filename to separate.
+ * @returns An object with the extension and filename.
+ */
+export function separateFilenameFromExtension(filename: string): { extension: string; filename: string } {
+  const dotIndex = filename.indexOf('.');
+  return {
+    extension: dotIndex > 0 ? filename.slice(dotIndex + 1) : '',
+    filename: dotIndex > 0 ? filename.slice(0, dotIndex) : filename,
+  };
+}
+
+/**
+ * Inserts a revision's letter before a file name's extension, for display/download only (e.g. "foo.txt" + "b"
+ * -> "foo.b.txt"). Never changes the file's actual path or name; callers decide per-site whether/when to use it.
+ */
+export function getVersionedFileName(filePath: string, revisionName: WorkspaceRevisionName | null | undefined): string {
+  const { filename } = separateFilenameFromPath(filePath);
+  if (revisionName === null || revisionName === undefined || revisionName === '') {
+    return filename;
+  }
+
+  const { extension, filename: baseFilename } = separateFilenameFromExtension(filename);
+  if (!extension) {
+    return `${baseFilename}.${revisionName}`;
+  }
+  return `${baseFilename}.${revisionName}.${extension}`;
+}
+
+/**
+ * The revision letter to use for a download of the file's current working copy, or null if the feature is
+ * off or the working copy doesn't exactly match a revision (so no letter would be accurate). Best-effort: a
+ * failure to look up revisions never blocks the download, it just downloads unversioned.
+ */
+export async function resolveDownloadRevisionName(
+  workspaceId: number,
+  filePath: string,
+  user: User | null,
+): Promise<WorkspaceRevisionName | null> {
+  try {
+    const { matchingRevision } = await WorkspaceApi.getFileRevisionList(workspaceId, filePath, user);
+
+    return matchingRevision === '' ? null : (matchingRevision ?? null);
+  } catch {
+    return null;
+  }
 }
 
 export interface WorkspaceUrlState {
@@ -471,270 +530,6 @@ export function replaceFileExtension(filename: string, fromExtension: string, to
   return `${filename.slice(0, -normalizedFromExtension.length)}${normalizedToExtension}`;
 }
 
-export const WorkspaceApi = {
-  async createFolder(workspaceId: number, folderPath: string, user: User | null) {
-    return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
-  },
-  async createWorkspace(location: string, parcelId: number, user: User | null, name?: string | null): Promise<number> {
-    const workspaceInsert: WorkspaceInsertInput | null = {
-      parcelId: parcelId,
-      workspaceLocation: location,
-      ...(name ? { workspaceName: name } : {}),
-    };
-
-    return reqWorkspace<number>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
-  },
-  async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
-    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, true);
-  },
-  async deleteFileMetadata(workspaceId: number, filePath: string, user: User | null): Promise<void> {
-    return reqWorkspaceMetadata<void>(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
-  },
-  async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
-    return reqWorkspace(
-      joinPath(['bulk', workspaceId]),
-      'DELETE',
-      JSON.stringify(filePaths),
-      user,
-      undefined,
-      true,
-      false,
-      {
-        'Content-Type': 'application/json',
-      },
-    );
-  },
-  async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
-    return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
-  },
-  async getFileContent(
-    workspaceId: number,
-    filePath: string,
-    user: User | null,
-  ): Promise<{ content: string; etag: string | null }> {
-    // Throws an Error or CompoundError on any non-2xx — content is never null.
-    const { data, etag } = await reqWorkspaceWithEtag<string>(
-      joinPath([workspaceId, filePath]),
-      'GET',
-      null,
-      user,
-      undefined,
-      false,
-    );
-    return { content: data, etag };
-  },
-  async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
-    return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
-  },
-  async getFileMetadata(
-    workspaceId: number,
-    filePath: string,
-    user: User | null,
-  ): Promise<WorkspaceFileMetadata | null> {
-    return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
-  },
-  async getWorkspaceContents(
-    workspaceId: number,
-    path: string = '',
-    user: User | null,
-    withMetadata: boolean = false,
-  ): Promise<WorkspaceTreeNode[] | null> {
-    const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
-    return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
-  },
-  async moveFile(
-    workspaceId: number,
-    originalPath: string,
-    targetPath: string,
-    shouldCopy: boolean,
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<void> {
-    return reqWorkspace<void>(
-      joinPath([workspaceId, originalPath]),
-      'POST',
-      JSON.stringify({
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetPath,
-        overwrite: shouldOverwrite,
-      }),
-      user,
-      undefined,
-      false,
-      false,
-      { 'Content-Type': 'application/json' },
-    );
-  },
-  async moveFileToWorkspace(
-    workspaceId: number,
-    originalPath: string,
-    targetWorkspaceId: number,
-    targetDirectory: string,
-    shouldCopy: boolean,
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<void> {
-    return reqWorkspace<void>(
-      joinPath([workspaceId, originalPath]),
-      'POST',
-      JSON.stringify({
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
-        overwrite: shouldOverwrite,
-        toWorkspace: targetWorkspaceId,
-      }),
-      user,
-      undefined,
-      false,
-      false,
-      { 'Content-Type': 'application/json' },
-    );
-  },
-  async moveFiles(
-    workspaceId: number,
-    items: MoveFileOperation[],
-    targetDirectory: string,
-    shouldCopy: boolean,
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<BulkOperationResponses> {
-    return reqWorkspace<BulkOperationResponses>(
-      joinPath(['bulk', workspaceId]),
-      'POST',
-      JSON.stringify({
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
-        items,
-        overwrite: shouldOverwrite,
-      }),
-      user,
-      undefined,
-      true,
-      false,
-      { 'Content-Type': 'application/json' },
-    );
-  },
-  async moveFilesToWorkspace(
-    workspaceId: number,
-    items: MoveFileOperation[],
-    targetWorkspaceId: number,
-    targetDirectory: string,
-    shouldCopy: boolean,
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<BulkOperationResponses> {
-    return reqWorkspace<BulkOperationResponses>(
-      joinPath(['bulk', workspaceId]),
-      'POST',
-      JSON.stringify({
-        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
-        items,
-        overwrite: shouldOverwrite,
-        toWorkspace: targetWorkspaceId,
-      }),
-      user,
-      undefined,
-      true,
-      false,
-      { 'Content-Type': 'application/json' },
-    );
-  },
-  /**
-   * Saves a workspace file and returns the new `ETag`. With `ifMatch` the server runs the
-   * concurrency check and `412`s (as a `WorkspaceSaveConflictError`) if it changed; `'*'`
-   * forces. Only `If-Match` is injected — the browser sets the multipart `Content-Type`.
-   */
-  async saveFile(
-    workspaceId: number,
-    filePath: string,
-    fileContent: string,
-    shouldOverwrite: boolean,
-    user: User | null,
-    ifMatch?: string | '*',
-  ): Promise<string | null> {
-    const body = createFormDataWithFile(filePath, fileContent);
-    const { etag } = await reqWorkspaceWithEtag<Workspace>(
-      `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
-      'PUT',
-      body,
-      user,
-      undefined,
-      false,
-      ifMatch ? { 'If-Match': ifMatch } : {},
-    );
-    return etag;
-  },
-  async setFileMetadata(
-    workspaceId: number,
-    filePath: string,
-    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
-    user: User | null,
-  ): Promise<void> {
-    return reqWorkspaceMetadata<void>(
-      joinPath([workspaceId, filePath]),
-      'POST',
-      JSON.stringify(metadata),
-      user,
-      undefined,
-      false,
-    );
-  },
-  async unsetFileMetadataKeys(workspaceId: number, filePath: string, keys: string[], user: User | null): Promise<void> {
-    return reqWorkspaceMetadata<void>(
-      joinPath(['unset', workspaceId, filePath]),
-      'POST',
-      JSON.stringify(keys),
-      user,
-      undefined,
-      false,
-    );
-  },
-  async uploadFile(
-    workspaceId: number,
-    targetDirectory: string,
-    filename: string,
-    file: File,
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<void> {
-    const body = new FormData();
-    body.append('file', file, file.name);
-    return reqWorkspace<void>(
-      `${joinPath([workspaceId, targetDirectory, filename])}?type=file&overwrite=${shouldOverwrite}`,
-      'PUT',
-      body,
-      user,
-      undefined,
-      false,
-    );
-  },
-  async uploadFiles(
-    workspaceId: number,
-    targetDirectory: string,
-    files: File[],
-    shouldOverwrite: boolean,
-    user: User | null,
-  ): Promise<BulkOperationResponses> {
-    const body = JSON.stringify(
-      files.map(file => ({
-        overwrite: shouldOverwrite,
-        path: `${joinPath([targetDirectory, file.name])}`,
-        type: 'file',
-      })),
-    );
-    const form = new FormData();
-    form.append('body', body);
-    files.forEach(file => {
-      form.append('files', file);
-    });
-    return reqWorkspace<BulkOperationResponses>(
-      `${joinPath(['bulk', workspaceId])}`,
-      'PUT',
-      form,
-      user,
-      undefined,
-      true,
-    );
-  },
-};
-
 /**
  * Finds a node in the list that matches or contains the given path.
  * A node "affects" a path if it is the path itself, or if it is a parent directory of the path.
@@ -996,10 +791,11 @@ export async function downloadWorkspaceNodesAsZip(options: {
   nodes: WorkspaceTreeNodeWithFullPath[];
   onError?: (message: string) => void;
   user: User | null;
+  withRevision?: boolean;
   workspaceId: number;
   workspaceName?: string;
 }): Promise<void> {
-  const { allFiles, nodes, onError, user, workspaceId, workspaceName } = options;
+  const { allFiles, nodes, onError, user, workspaceId, workspaceName, withRevision = true } = options;
 
   // Compute the minimal set of nodes to zip
   const minimalNodes = removeRedundantNodes(nodes);
@@ -1031,6 +827,7 @@ export async function downloadWorkspaceNodesAsZip(options: {
 
   const fetchPromises = filesToZip.map(async filePath => {
     try {
+      const revisionName = withRevision ? await resolveDownloadRevisionName(workspaceId, filePath, user) : null;
       const blob = await WorkspaceApi.getFileContentBlob(workspaceId, filePath, user);
       if (blob) {
         // Strip common prefix to get relative path in zip, preserving folder structure
@@ -1044,7 +841,7 @@ export async function downloadWorkspaceNodesAsZip(options: {
           // Fallback for edge cases
           relativePath = filePath;
         }
-        zip.file(relativePath, blob);
+        zip.file(getVersionedFileName(relativePath || 'download', revisionName), blob);
       } else {
         failedFiles++;
       }
@@ -1091,3 +888,445 @@ export async function downloadWorkspaceNodesAsZip(options: {
   document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
+
+/**
+ * The download name choices for the input file: its plain name, and (only once the file has at least one
+ * revision) its revision-versioned name. Disabled with an explanation when revisions exist but the
+ * working copy doesn't currently match one; omitted entirely when the file has no revisions yet.
+ */
+export function getDownloadOptionsForFile(
+  name: string,
+  doesWorkingCopyMatchLatestRevision: boolean,
+  revisionName: WorkspaceRevisionName | null,
+): DownloadMenuOption[] {
+  const { extension } = separateFilenameFromExtension(name);
+  const options: DownloadMenuOption[] = [{ label: `Download (...${extension})`, name }];
+  if (revisionName !== null) {
+    const versionedFilename = revisionName !== '' ? getVersionedFileName(name, revisionName) : name;
+    const { extension: versionedExtension } = separateFilenameFromExtension(versionedFilename);
+    options.push({
+      disabled: !doesWorkingCopyMatchLatestRevision,
+      disabledReason: doesWorkingCopyMatchLatestRevision
+        ? undefined
+        : 'The working copy contains unrevisioned changes.',
+      label: `Download with revision (...${versionedExtension})`,
+      name: versionedFilename,
+    });
+  }
+  return options;
+}
+
+export function getUserDisplayNameFromIdentity(identity: string): string {
+  const match: RegExpMatchArray | null = identity.match(/(?<username>.+)\s<[^>]*>/);
+
+  if (match?.groups?.username) {
+    return match.groups.username;
+  }
+
+  return identity;
+}
+
+/** Whether revision names are numeric or alphabetic, per `PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION` (default "NUMERIC"). */
+export function getRevisionNamingConvention(): WorkspaceRevisionNamingConvention {
+  return env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION === 'ALPHABETIC' ? 'ALPHABETIC' : 'NUMERIC';
+}
+
+/** The user-facing description of what characters a revision name may contain. */
+export function getRevisionNameRequirement(): string {
+  return getRevisionNamingConvention() === 'NUMERIC'
+    ? 'Only numbers are allowed. No letters, spaces, or symbols.'
+    : 'Only letters are allowed. No numbers, spaces, or symbols.';
+}
+
+export function getRevisionDisplayName(revisionName: WorkspaceRevisionName): string {
+  return `${revisionName}`.toLocaleUpperCase();
+}
+
+export function getDefaultRevisionName(): WorkspaceRevisionName {
+  return getRevisionNamingConvention() === 'NUMERIC' ? 1 : 'A';
+}
+
+/** Converts user input to a revision name of the configured type. Empty input is returned unchanged. */
+export function parseRevisionName(revisionName: string): WorkspaceRevisionName {
+  return getRevisionNamingConvention() === 'NUMERIC' && revisionName !== '' ? Number(revisionName) : revisionName;
+}
+
+export function validateRevisionName(revisionName: WorkspaceRevisionName): string | null {
+  const pattern = getRevisionNamingConvention() === 'NUMERIC' ? /^[0-9]*$/ : /^[A-Za-z]*$/;
+  if (!pattern.test(`${revisionName}`)) {
+    return getRevisionNameRequirement();
+  }
+  return null;
+}
+
+export const WorkspaceApi = {
+  async createFileRevision(
+    workspaceId: number,
+    filePath: string,
+    ifMatch: string | null,
+    message: string | null,
+    user: User | null,
+    startAtRevision?: WorkspaceRevisionName | null,
+  ): Promise<WorkspaceRevisionName> {
+    const { data } = await reqWorkspaceWithEtag<string>(
+      joinPath([workspaceId, filePath]),
+      'POST',
+      JSON.stringify({
+        message,
+        ...(startAtRevision != null && startAtRevision !== ''
+          ? { startAtRevision: parseRevisionName(`${startAtRevision}`.toLocaleLowerCase()) }
+          : {}),
+      }),
+      ifMatch,
+      user,
+      undefined,
+      false,
+      {},
+      'versioning',
+    );
+    return parseRevisionName(data);
+  },
+  async createFolder(workspaceId: number, folderPath: string, user: User | null) {
+    return reqWorkspace<Workspace>(`${workspaceId}/${folderPath}?type=directory`, 'PUT', null, user, undefined, false);
+  },
+  async createWorkspace(location: string, parcelId: number, user: User | null, name?: string | null): Promise<number> {
+    const workspaceInsert: WorkspaceInsertInput | null = {
+      parcelId: parcelId,
+      workspaceLocation: location,
+      ...(name ? { workspaceName: name } : {}),
+    };
+
+    return reqWorkspace<number>(`create`, 'POST', JSON.stringify(workspaceInsert), user);
+  },
+  async deleteFile(workspaceId: number, filePath: string, user: User | null): Promise<void> {
+    return reqWorkspace(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, true);
+  },
+  async deleteFileMetadata(workspaceId: number, filePath: string, user: User | null): Promise<void> {
+    return reqWorkspaceMetadata<void>(joinPath([workspaceId, filePath]), 'DELETE', null, user, undefined, false);
+  },
+  async deleteFiles(workspaceId: number, filePaths: string[], user: User | null): Promise<BulkOperationResponses> {
+    return reqWorkspace(
+      joinPath(['bulk', workspaceId]),
+      'DELETE',
+      JSON.stringify(filePaths),
+      user,
+      undefined,
+      true,
+      false,
+      {
+        'Content-Type': 'application/json',
+      },
+    );
+  },
+  async deleteWorkspace(workspaceId: number, user: User | null): Promise<void> {
+    return reqWorkspace(`${workspaceId}`, 'DELETE', null, user, undefined, false);
+  },
+  async getFileContent(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<{ content: string; etag: string | null; renderType: WorkspaceContentType }> {
+    // Throws an Error or CompoundError on any non-2xx — content is never null.
+    const { data, etag, headers } = await reqWorkspaceWithEtag<string>(
+      joinPath([workspaceId, filePath]),
+      'GET',
+      null,
+      user,
+      undefined,
+      false,
+    );
+    const renderType = headers.get('x-render-type') as WorkspaceContentType;
+    return { content: data, etag, renderType };
+  },
+  async getFileContentBlob(workspaceId: number, filePath: string, user: User | null): Promise<Blob | null> {
+    return reqWorkspace<Blob>(joinPath([workspaceId, filePath]), 'GET', null, user, undefined, false, true);
+  },
+  async getFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+  ): Promise<WorkspaceFileMetadata | null> {
+    return reqWorkspaceMetadata<WorkspaceFileMetadata>(joinPath([workspaceId, filePath]), 'GET', null, user);
+  },
+  async getFileRevision(
+    workspaceId: number,
+    filePath: string,
+    revisionId: WorkspaceRevisionName,
+    user: User | null,
+  ): Promise<WorkspaceFileRevisionDetail> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevisionDetail>(
+      `${joinPath(['metadata', workspaceId, filePath])}?revision=${revisionId}`,
+      'GET',
+      null,
+      user,
+      undefined,
+      true,
+      {},
+      'versioning',
+    );
+    return data;
+  },
+  async getFileRevisionContent(
+    workspaceId: number,
+    filePath: string,
+    revisionId: WorkspaceRevisionName | null,
+    user: User | null,
+  ): Promise<{ content: string; renderType: WorkspaceContentType }> {
+    const hasRevision = revisionId !== null && revisionId !== '';
+    const { data, headers } = await reqWorkspaceWithEtag<string>(
+      `${joinPath([workspaceId, filePath])}${hasRevision ? `?revision=${revisionId}` : ''}`,
+      'GET',
+      null,
+      user,
+      undefined,
+      false,
+      {},
+      'versioning',
+    );
+
+    const renderType = headers.get('x-render-type') as WorkspaceContentType;
+    return { content: data, renderType };
+  },
+  async getFileRevisionList(
+    workspaceId: number,
+    filePath: string,
+    user: User | null,
+    signal?: AbortSignal,
+  ): Promise<WorkspaceFileRevisionList> {
+    const { data } = await reqWorkspaceWithEtag<WorkspaceFileRevisionList>(
+      `${joinPath([workspaceId, filePath])}`,
+      'GET',
+      null,
+      user,
+      signal,
+      true,
+      {},
+      'versioning',
+    );
+    return data;
+  },
+  async getWorkspaceContents(
+    workspaceId: number,
+    path: string = '',
+    user: User | null,
+    withMetadata: boolean = false,
+  ): Promise<WorkspaceTreeNode[] | null> {
+    const url = `${joinPath([workspaceId, path])}${withMetadata ? '?withMetadata=true' : ''}`;
+    return reqWorkspace<WorkspaceTreeNode[]>(url, 'GET', null, user);
+  },
+  async moveFile(
+    workspaceId: number,
+    originalPath: string,
+    targetPath: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<void> {
+    return reqWorkspace<void>(
+      joinPath([workspaceId, originalPath]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetPath,
+        overwrite: shouldOverwrite,
+      }),
+      user,
+      undefined,
+      false,
+      false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  async moveFileToWorkspace(
+    workspaceId: number,
+    originalPath: string,
+    targetWorkspaceId: number,
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<void> {
+    return reqWorkspace<void>(
+      joinPath([workspaceId, originalPath]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        overwrite: shouldOverwrite,
+        toWorkspace: targetWorkspaceId,
+      }),
+      user,
+      undefined,
+      false,
+      false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  async moveFiles(
+    workspaceId: number,
+    items: MoveFileOperation[],
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
+        overwrite: shouldOverwrite,
+      }),
+      user,
+      undefined,
+      true,
+      false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  async moveFilesToWorkspace(
+    workspaceId: number,
+    items: MoveFileOperation[],
+    targetWorkspaceId: number,
+    targetDirectory: string,
+    shouldCopy: boolean,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    return reqWorkspace<BulkOperationResponses>(
+      joinPath(['bulk', workspaceId]),
+      'POST',
+      JSON.stringify({
+        [shouldCopy ? 'copyTo' : 'moveTo']: targetDirectory,
+        items,
+        overwrite: shouldOverwrite,
+        toWorkspace: targetWorkspaceId,
+      }),
+      user,
+      undefined,
+      true,
+      false,
+      { 'Content-Type': 'application/json' },
+    );
+  },
+  /**
+   * Replaces the working copy with a revision. `workingCopyETag` comes from the revision list
+   * (not the editor's save ETag); a stale one `412`s as a `WorkspaceSaveConflictError`.
+   */
+  async restoreFileRevision(
+    workspaceId: number,
+    filePath: string,
+    revisionId: WorkspaceRevisionName,
+    workingCopyETag: string,
+    user: User | null,
+  ): Promise<string> {
+    const { data } = await reqWorkspaceWithEtag<string>(
+      `${joinPath(['restore', workspaceId, filePath])}?revision=${revisionId}`,
+      'POST',
+      JSON.stringify({ revisionId }),
+      workingCopyETag,
+      user,
+      undefined,
+      false,
+      { 'Content-Type': 'application/json' },
+      'versioning',
+    );
+    return data;
+  },
+  /**
+   * Saves a workspace file and returns the new `ETag`. With `ifMatch` the server runs the
+   * concurrency check and `412`s (as a `WorkspaceSaveConflictError`) if it changed; `'*'`
+   * forces. Only `If-Match` is injected — the browser sets the multipart `Content-Type`.
+   */
+  async saveFile(
+    workspaceId: number,
+    filePath: string,
+    fileContent: string,
+    shouldOverwrite: boolean,
+    user: User | null,
+    ifMatch?: string | '*',
+  ): Promise<string | null> {
+    const body = createFormDataWithFile(filePath, fileContent);
+    const { etag } = await reqWorkspaceWithEtag<Workspace>(
+      `${workspaceId}/${filePath}?type=file${shouldOverwrite ? '&overwrite=true' : ''}`,
+      'PUT',
+      body,
+      ifMatch ?? null,
+      user,
+      undefined,
+      false,
+    );
+    return etag;
+  },
+  async setFileMetadata(
+    workspaceId: number,
+    filePath: string,
+    metadata: Partial<Pick<WorkspaceFileMetadata, 'readOnly' | 'user'>>,
+    user: User | null,
+  ): Promise<void> {
+    return reqWorkspaceMetadata<void>(
+      joinPath([workspaceId, filePath]),
+      'POST',
+      JSON.stringify(metadata),
+      user,
+      undefined,
+      false,
+    );
+  },
+  async unsetFileMetadataKeys(workspaceId: number, filePath: string, keys: string[], user: User | null): Promise<void> {
+    return reqWorkspaceMetadata<void>(
+      joinPath(['unset', workspaceId, filePath]),
+      'POST',
+      JSON.stringify(keys),
+      user,
+      undefined,
+      false,
+    );
+  },
+  async uploadFile(
+    workspaceId: number,
+    targetDirectory: string,
+    filename: string,
+    file: File,
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<void> {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    return reqWorkspace<void>(
+      `${joinPath([workspaceId, targetDirectory, filename])}?type=file&overwrite=${shouldOverwrite}`,
+      'PUT',
+      body,
+      user,
+      undefined,
+      false,
+    );
+  },
+  async uploadFiles(
+    workspaceId: number,
+    targetDirectory: string,
+    files: File[],
+    shouldOverwrite: boolean,
+    user: User | null,
+  ): Promise<BulkOperationResponses> {
+    const body = JSON.stringify(
+      files.map(file => ({
+        overwrite: shouldOverwrite,
+        path: `${joinPath([targetDirectory, file.name])}`,
+        type: 'file',
+      })),
+    );
+    const form = new FormData();
+    form.append('body', body);
+    files.forEach(file => {
+      form.append('files', file);
+    });
+    return reqWorkspace<BulkOperationResponses>(
+      `${joinPath(['bulk', workspaceId])}`,
+      'PUT',
+      form,
+      user,
+      undefined,
+      true,
+    );
+  },
+};

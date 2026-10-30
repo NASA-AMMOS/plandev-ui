@@ -8,3 +8,10 @@ export type DropdownOption = {
 };
 
 export type DropdownOptions = DropdownOption[];
+
+export type DownloadMenuOption = {
+  disabled?: boolean;
+  disabledReason?: string;
+  label: string;
+  name: string;
+};

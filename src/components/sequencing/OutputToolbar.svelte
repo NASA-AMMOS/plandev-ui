@@ -4,18 +4,21 @@
   import type { OutputLanguage } from '@nasa-jpl/plandev-sequence-languages';
 
   import { Button, Label } from '@nasa-jpl/stellar-svelte';
-  import { Clipboard, Download, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
+  import { Clipboard, PanelBottomClose, PanelBottomOpen } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import type { DownloadMenuOption } from '../../types/dropdown';
+  import DownloadMenu from '../ui/DownloadMenu.svelte';
   import Tooltip from '../ui/Tooltip.svelte';
 
   export let isPreviewOpen: boolean = false;
   export let outputLanguages: OutputLanguage[] = [];
   export let outputDisabled: boolean = false;
   export let selectedOutputFormat: OutputLanguage | undefined;
+  export let downloadOptions: DownloadMenuOption[] = [];
 
   const dispatch = createEventDispatcher<{
     copyOutput: void;
-    downloadOutput: void;
+    downloadOutput: { name: string };
     togglePreview: void;
   }>();
 
@@ -29,8 +32,8 @@
     dispatch('copyOutput');
   }
 
-  function onDownload() {
-    dispatch('downloadOutput');
+  function onDownload(event: CustomEvent<{ name: string }>) {
+    dispatch('downloadOutput', event.detail);
   }
 
   function onTogglePreview() {
@@ -41,7 +44,7 @@
 <div class="flex items-center justify-end gap-1.5">
   {#if outputLanguages.length > 0}
     <Label size="sm" class="mr-1 whitespace-nowrap  text-muted-foreground" for="outputFormat">Output Format</Label>
-    <select bind:value={selectedOutputFormat} class="st-select w-full" id="outputFormat">
+    <select bind:value={selectedOutputFormat} class="st-select w-full min-w-20" id="outputFormat">
       {#each outputLanguages as outputFormatItem}
         <option value={outputFormatItem}>
           {outputFormatItem.name}
@@ -55,17 +58,15 @@
         <Clipboard size={16} />
       </Button>
     </Tooltip>
-    <Tooltip content={downloadTooltip}>
-      <Button
-        variant="outline"
-        aria-label={downloadTooltip}
-        size="icon"
-        on:click={onDownload}
-        disabled={outputDisabled}
-      >
-        <Download size={16} />
-      </Button>
-    </Tooltip>
+    <DownloadMenu
+      align="end"
+      size="icon"
+      className="px-2"
+      disabled={outputDisabled}
+      label={downloadTooltip}
+      options={downloadOptions}
+      on:download={onDownload}
+    />
 
     <Tooltip content={isPreviewOpen ? `Collapse Editor` : `Expand Editor`}>
       <Button

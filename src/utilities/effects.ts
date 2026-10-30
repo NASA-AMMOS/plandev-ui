@@ -239,7 +239,7 @@ import type {
 import type { ActivityTransformDirection } from '../types/time';
 import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
-import type { Workspace, WorkspaceCollaborator } from '../types/workspace';
+import type { Workspace, WorkspaceCollaborator, WorkspaceFileRevision } from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
   WorkspaceTreeMap,
@@ -287,6 +287,7 @@ import {
   showUpdatePlanMissionModelModal,
   showUploadViewModal,
   showWorkspaceBulkOperationConflictModal,
+  showWorkspaceRevisionRestorePreviewModal,
 } from './modal';
 import { featurePermissions, gatewayPermissions, queryPermissions } from './permissions';
 import { reqActionServer, reqExtension, reqGateway, reqHasura, WorkspaceSaveConflictError } from './requests';
@@ -318,6 +319,7 @@ import {
   doesFilenameMatchExtension,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
+  getRevisionDisplayName,
   getWorkspaceFileFolderDisplay,
   incrementFilename,
   isBulkOperationSuccess,
@@ -6759,6 +6761,51 @@ const effects = {
       return false;
     }
     return false;
+  },
+
+  /**
+   * Shows the revision restore preview and, if confirmed, restores the chosen revision into the working copy.
+   * Returns `'restored'` on success, `'conflict'` when the working copy changed since `workingCopyETag`
+   * (both mean the server state differs from the editor), or `null` when cancelled or failed.
+   */
+  async restoreWorkspaceFileRevision(
+    workspaceId: number,
+    filePath: string,
+    revision: WorkspaceFileRevision,
+    workingCopyETag: string,
+    previewOptions: {
+      currentContent: string;
+      restoreDisabledReason: string | null;
+      type: WorkspaceContentType | null;
+      unrevisionedWarning: string | null;
+    },
+    user: User | null,
+  ): Promise<'restored' | 'conflict' | null> {
+    try {
+      const { confirm, value } = await showWorkspaceRevisionRestorePreviewModal({
+        ...previewOptions,
+        filePath,
+        revision,
+        user,
+        workspaceId,
+      });
+
+      if (confirm && value) {
+        const { revision: revisionToRestore } = value;
+        await WorkspaceApi.restoreFileRevision(workspaceId, filePath, revisionToRestore.name, workingCopyETag, user);
+
+        showSuccessToast(`Restored revision ${getRevisionDisplayName(revisionToRestore.name)}`);
+        logMessage('log', `Restored workspace file "${filePath}" to revision ${revisionToRestore.name}.`);
+        return 'restored';
+      }
+    } catch (e) {
+      if (e instanceof WorkspaceSaveConflictError) {
+        return 'conflict';
+      }
+      catchError('log', 'Failed to restore revision', e as Error);
+      showFailureToast('Failed to restore revision');
+    }
+    return null;
   },
 
   async retriggerModelExtraction(
