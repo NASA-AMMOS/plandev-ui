@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/public';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -93,21 +92,16 @@ describe('WorkspaceRevisionsPanel', () => {
     }
   });
 
-  it('validates the starting revision as numeric when PUBLIC_WORKSPACE_REVISION_NAME_TYPE=number', async () => {
-    env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
-    try {
-      const { container, getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
-        props: { filePath: 'a.seq', hasEditPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
-      });
-      const input = container.querySelector('#revision-start') as HTMLInputElement;
-      expect(input.value).toBe('1');
-      expect(queryByRole('alert')).toBeNull();
+  it('validates the starting revision as numeric by default', async () => {
+    const { container, getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
+      props: { filePath: 'a.seq', hasEditPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
+    });
+    const input = container.querySelector('#revision-start') as HTMLInputElement;
+    expect(input.value).toBe('1');
+    expect(queryByRole('alert')).toBeNull();
 
-      await fireEvent.input(input, { target: { value: 'b' } });
-      expect(getByRole('alert').textContent).toBe('Only numbers are allowed. No letters, spaces, or symbols.');
-      expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
-    } finally {
-      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
-    }
+    await fireEvent.input(input, { target: { value: 'b' } });
+    expect(getByRole('alert').textContent).toBe('Only numbers are allowed. No letters, spaces, or symbols.');
+    expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

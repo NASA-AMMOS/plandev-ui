@@ -44,10 +44,10 @@ export type WorkspaceNodeRunActionEvent = WorkspaceNodesEvent & {
   actionParameterPair: ActionParameterPair;
 };
 
-/** How revision names are treated, set by `PUBLIC_WORKSPACE_REVISION_NAME_TYPE`. */
-export type WorkspaceRevisionNameType = 'number' | 'string';
+/** How revision names are treated, set by `PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION`. */
+export type WorkspaceRevisionNamingConvention = 'ALPHABETIC' | 'NUMERIC';
 
-/** A revision's name: letters ("a", "b", ...) or numbers (1, 2, ...) depending on the revision name type. */
+/** A revision's name: letters ("a", "b", ...) or numbers (1, 2, ...) depending on the revision naming convention. */
 export type WorkspaceRevisionName = string | number;
 
 /** An explicit, immutable checkpoint of one file ("a", "b", ...). Never created by a save. */
@@ -67,7 +67,7 @@ export type WorkspaceFileRevisionDetail = {
   versionMetadata: WorkspaceFileRevision;
 };
 
-/** A file's revisions, oldest first, plus which of them (if any) holds the saved copy. */
+/** A file's revisions, newest first, plus which of them (if any) holds the saved copy. */
 export type WorkspaceFileRevisionList = {
   matchingRevision: WorkspaceRevisionName | null;
   revisions: WorkspaceFileRevision[];

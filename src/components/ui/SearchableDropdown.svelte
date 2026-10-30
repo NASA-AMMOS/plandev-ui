@@ -32,11 +32,13 @@
   export let allowMultiple: boolean = false;
   export let className: string = '';
   export let disabled: boolean = false;
+  export let emptyMessage: string = 'No results found';
   export let error: string | undefined = undefined;
   export let hasUpdatePermission: boolean = true;
   export let loading: boolean = false;
   export let options: DropdownOptions = [];
   export let maxListHeight: string = '300px';
+  export let maxMenuWidth: number | null = null;
   export let name: string | undefined = undefined;
   export let updatePermissionError: string = 'You do not have permission to update this';
   export let placeholder: string | null = null;
@@ -112,7 +114,7 @@
     ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
     let max = 0;
     for (const opt of opts) {
-      const w = ctx.measureText(opt.display.toString()).width;
+      const w = Math.max(ctx.measureText(opt.display.toString()).width, ctx.measureText(opt.subtitle ?? '').width);
       if (w > max) {
         max = w;
       }
@@ -124,6 +126,10 @@
   //   px-3 (left) + icon 24 + gap 4 + px-3 (right) + scrollbar ~16 + small canvas-vs-browser buffer ~4
   // = 72px. Re-runs when `options` changes or once `measureRef` is bound on mount.
   $: maxWidth = measureRef ? Math.max(50, Math.ceil(measureMaxOptionWidth(options)) + 72) : 50;
+
+  $: menuWidth = maxMenuWidth === null ? maxWidth : Math.min(maxWidth, maxMenuWidth);
+  // Rows with a second line are taller
+  $: itemHeight = options.some(option => option.subtitle) ? 52 : 36;
 
   $: selectedOptions = options.filter(option => {
     return !!selectedOptionValues.find(value => value === option.value);
@@ -262,12 +268,13 @@
             />
           </Input>
         </div>
+        <div class="dropdown-status"><slot name="status" /></div>
         <RowVirtualizerFixed
           items={displayedOptions}
           overscan={100}
-          estimatedItemHeight={36}
+          estimatedItemHeight={itemHeight}
           maxHeight={maxListHeight}
-          minWidth="{maxWidth}px"
+          minWidth="min({menuWidth}px, calc(100vw - 16px))"
           selectedIndex={selectedOptions.length
             ? displayedOptions.findIndex(o => o.value === selectedOptions[0].value)
             : undefined}
@@ -299,15 +306,24 @@
                 {/if}
               </div>
 
-              <span class="dropdown-item-text st-typography-body">{displayedOption.display}</span>
+              <div class="dropdown-item-body">
+                <span class="dropdown-item-text st-typography-body" title={displayedOption.title}>
+                  {displayedOption.display}
+                </span>
+                {#if displayedOption.subtitle}
+                  <span class="dropdown-item-text st-typography-label text-muted-foreground">
+                    {displayedOption.subtitle}
+                  </span>
+                {/if}
+              </div>
             </div>
           </MenuItem>
         </RowVirtualizerFixed>
-        {#if displayedOptions.length < 1}
+        {#if displayedOptions.length < 1 && emptyMessage}
           <MenuItem selectable={false}>
             <div class="dropdown-item">
               <div class="dropdown-item-icon" />
-              <span class="dropdown-item-text st-typography-label">No results found</span>
+              <span class="dropdown-item-text st-typography-label">{emptyMessage}</span>
             </div>
           </MenuItem>
         {/if}
@@ -381,6 +397,16 @@
     display: flex;
   }
 
+  .dropdown-status {
+    color: var(--st-gray-50);
+    font-size: 12px;
+    padding: 0 12px 6px;
+  }
+
+  .dropdown-status:empty {
+    display: none;
+  }
+
   .dropdown-items {
     overflow-y: auto;
   }
@@ -396,6 +422,12 @@
     display: flex;
     flex-shrink: 0;
     width: 24px;
+  }
+
+  .dropdown-item-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .dropdown-item-text {

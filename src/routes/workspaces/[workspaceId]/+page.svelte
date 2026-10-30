@@ -106,7 +106,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { getStatusForActionRun } from '../../../utilities/actions';
+  import { getFileArgumentForPaths, getStatusForActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
@@ -1539,12 +1539,10 @@
     const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
     if (primaryParameter in latestParamSchema) {
-      const paramDefinition = latestParamSchema[primaryParameter];
-      const paramValue =
-        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
-          ? [$activeDocumentPath]
-          : $activeDocumentPath;
-      parameters[primaryParameter] = paramValue;
+      parameters[primaryParameter] = getFileArgumentForPaths(
+        latestParamSchema[primaryParameter],
+        $activeDocumentPath ? [$activeDocumentPath] : [],
+      );
     } else {
       // no primary parameter - show modal anyway, just don't pre-fill parameter
       console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);
@@ -1578,12 +1576,7 @@
     const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
     if (primaryParameter in latestParamSchema) {
-      const paramDefinition = latestParamSchema[primaryParameter];
-      const paramValue =
-        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
-          ? treeNodePaths
-          : treeNodePaths[0];
-      parameters[primaryParameter] = paramValue;
+      parameters[primaryParameter] = getFileArgumentForPaths(latestParamSchema[primaryParameter], treeNodePaths);
     } else {
       // no primary parameter - show modal anyway, just don't pre-fill parameter
       console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);

@@ -3,8 +3,9 @@
 <script lang="ts">
   import { Alert } from '@nasa-jpl/stellar-svelte';
   import { TriangleAlert } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
-  import type { ActionDefinition, ActionParametersMap } from '../../types/actions';
+  import { createEventDispatcher, setContext } from 'svelte';
+  import { readable } from 'svelte/store';
+  import type { ActionDefinition, ActionParametersMap, FileRevisionHistory } from '../../types/actions';
   import type { User } from '../../types/app';
   import type { ArgumentsMap, FormParameter, RequiredParametersList } from '../../types/parameter';
   import type { Workspace } from '../../types/workspace';
@@ -14,9 +15,13 @@
     getLatestRunnableVersion,
     getRunnableVersions,
     getUserSequenceValueSchemaOptions,
+    hasUnavailableRevision,
+    isMissingRevision,
+    normalizeFileArguments,
     valueSchemaRecordToParametersMap,
   } from '../../utilities/actions';
   import effects from '../../utilities/effects';
+  import { provideFileRevisionHistory } from '../../utilities/fileRevisionHistory';
   import { isEmpty } from '../../utilities/generic';
   import { applyRequiredErrors, getArguments, getFormParameters } from '../../utilities/parameters';
   import { tooltip } from '../../utilities/tooltip';
@@ -39,6 +44,10 @@
     close: void;
     complete: { actionRunId: number | null };
   }>();
+
+  // Modals are created outside the page's component tree, so give the parameter inputs inside it the user context.
+  setContext('user', readable(user));
+  const revisionHistory = provideFileRevisionHistory();
 
   const latestRunnable = getLatestRunnableVersion(actionDefinition.versions);
   const initialVersionArchived =
@@ -82,7 +91,23 @@
   $: settingsDefaults = getDefaultsFromSchema(selectedVersion?.settings_schema ?? {});
   $: hasEmptyRequired =
     requiredParameters.some(name => isEmpty(argumentsMap[name] ?? parameterDefaults[name])) ||
-    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name])));
+    (showSettings && requiredSettings.some(name => isEmpty(settingsArgumentsMap[name] ?? settingsDefaults[name]))) ||
+    hasMissingRevision(parametersMap, argumentsMap, parameterDefaults, $revisionHistory) ||
+    (showSettings &&
+      hasMissingRevision(settingsParametersMap, settingsArgumentsMap, settingsDefaults, $revisionHistory));
+
+  // A file's revision must be chosen (where the working copy isn't allowed) and, once its revisions load, exist
+  function hasMissingRevision(
+    map: ActionParametersMap,
+    args: ArgumentsMap,
+    defaults: ArgumentsMap,
+    history: FileRevisionHistory,
+  ) {
+    return Object.entries(map).some(([name, { schema }]) => {
+      const value = args[name] ?? defaults[name];
+      return isMissingRevision(schema, value) || hasUnavailableRevision(schema, value, history);
+    });
+  }
 
   $: if (parameters !== undefined) {
     argumentsMap = parameters;
@@ -92,6 +117,9 @@
     const paramSchema = selectedVersion?.parameter_schema ?? {};
     parametersMap = valueSchemaRecordToParametersMap(paramSchema);
   }
+
+  // Another version may take its file parameters and settings differently (paths or FileRefs, with or without the working copy)
+  $: argumentsMap = normalizeFileArguments(selectedVersion?.parameter_schema ?? {}, argumentsMap);
 
   // Build settings form for non-latest versions, or for reruns on latest
   $: showSettings = !isLatestSelected || (isRerun && isLatestSelected);
@@ -129,6 +157,8 @@
     }
   }
 
+  $: settingsArgumentsMap = normalizeFileArguments(selectedVersion?.settings_schema ?? {}, settingsArgumentsMap);
+
   function onVersionChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     selectedRevision = target.value;
@@ -154,7 +184,10 @@
     }
 
     // Use stored settings for fresh latest runs, user-provided settings for non-latest or reruns
-    const settings = isLatestSelected && !isRerun ? actionDefinition.settings : settingsArgumentsMap;
+    const settings = normalizeFileArguments(
+      selectedVersion?.settings_schema ?? {},
+      isLatestSelected && !isRerun ? actionDefinition.settings : settingsArgumentsMap,
+    );
     const revision = isLatestSelected ? undefined : selectedVersion?.revision;
 
     const actionRunId = await effects.createActionRun(
@@ -174,24 +207,7 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     touchedParamNames = new Set([...touchedParamNames, formParameter.name]);
-    if (formParameter.schema.type === 'options-single') {
-      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
-      formParameter.value = files?.fullPath ?? null;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'options-multiple') {
-      const values: string[] = formParameter.value;
-      const fileNames: string[] = [];
-      values.forEach(value => {
-        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
-        if (seq !== undefined && seq.fullPath !== undefined) {
-          fileNames.push(seq.fullPath);
-        }
-      });
-      formParameter.value = fileNames;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else {
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    }
+    argumentsMap = getArguments(argumentsMap, formParameter);
   }
 
   function onResetFormParameter(event: CustomEvent<FormParameter>) {
@@ -207,7 +223,7 @@
   }
 </script>
 
-<Modal height="max-content" width={550} on:close closeOnEscape={false} closeOnOutsideClick={false}>
+<Modal height="max-content" width={600} on:close closeOnEscape={false} closeOnOutsideClick={false}>
   <ModalHeader on:close>{isRerun ? `Re-run: ${actionDefinition.name}` : actionDefinition.name}</ModalHeader>
   <ModalContent style="max-height: 50vh;overflow: auto">
     {#if versionMismatch}
@@ -291,7 +307,7 @@
   <ModalFooter>
     <select class="st-select mr-auto" value={selectedRevision} on:change={onVersionChange}>
       {#if latestVersion}
-        <option value="latest">v{latestVersion.revision} (latest)</option>
+        <option value="@latest">v{latestVersion.revision} (latest)</option>
       {/if}
       {#each runnableVersions.filter(v => v !== latestVersion) as version (version.revision)}
         <option value={version.revision.toString()}>v{version.revision}{version.archived ? ' (archived)' : ''}</option>

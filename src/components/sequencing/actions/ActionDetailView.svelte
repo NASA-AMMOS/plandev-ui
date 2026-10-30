@@ -17,11 +17,14 @@
     getLatestRunnableVersion,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
+    hasUnavailableRevision,
+    isMissingRevision,
     openActionRun,
     truncateRunParameters,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { provideFileRevisionHistory } from '../../../utilities/fileRevisionHistory';
   import { isEmpty } from '../../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
@@ -47,6 +50,7 @@
     runAction: ActionDefinition;
     viewRun: { runId: number };
   }>();
+  const revisionHistory = provideFileRevisionHistory();
 
   let actionDefinition: ActionDefinition | null = null;
   let actionRuns: ActionRunSlim[] = [];
@@ -117,7 +121,12 @@
   );
 
   $: hasEmptyRequiredSetting = requiredSettings.some(name => isEmpty(argumentsMap[name]));
-  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting;
+  $: hasMissingRevision = Object.entries(settingsSchema).some(
+    ([settingName, schema]) =>
+      isMissingRevision(schema, argumentsMap[settingName]) ||
+      hasUnavailableRevision(schema, argumentsMap[settingName], $revisionHistory),
+  );
+  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting || hasMissingRevision;
 
   $: hasUpdatePermission = actionDefinition
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
@@ -229,24 +238,7 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     touchedSettingNames = new Set([...touchedSettingNames, formParameter.name]);
-    if (formParameter.schema.type === 'options-single') {
-      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
-      formParameter.value = files?.fullPath ?? null;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'options-multiple') {
-      const values: string[] = formParameter.value;
-      const fileNames: string[] = [];
-      values.forEach(value => {
-        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
-        if (seq !== undefined && seq.fullPath !== undefined) {
-          fileNames.push(seq.fullPath);
-        }
-      });
-      formParameter.value = fileNames;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else {
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    }
+    argumentsMap = getArguments(argumentsMap, formParameter);
     checkDirty();
   }
 
@@ -503,7 +495,11 @@
                   permissionError: 'You do not have permission to update an action',
                 }}
                 use:tooltip={{
-                  content: hasEmptyRequiredSetting ? 'Please fill in all required settings' : undefined,
+                  content: hasEmptyRequiredSetting
+                    ? 'Please fill in all required settings'
+                    : hasMissingRevision
+                      ? 'Please select an available revision for each file setting'
+                      : undefined,
                 }}
               >
                 <Button class="h-6 text-xs" disabled={saveButtonDisabled || !isDirty} on:click={save}>

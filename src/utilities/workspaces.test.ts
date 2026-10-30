@@ -19,7 +19,7 @@ import {
   getDownloadOptionsForFile,
   getFolderPathForNode,
   getRevisionDisplayName,
-  getRevisionNameType,
+  getRevisionNamingConvention,
   getSelectedFilesDisplay,
   getUserDisplayNameFromIdentity,
   getVersionedFileName,
@@ -60,6 +60,10 @@ vi.mock('$env/dynamic/public', () => {
 }); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Workspace utility function tests', () => {
+  beforeEach(() => {
+    env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'NUMERIC';
+  });
+
   afterAll(() => {
     vi.restoreAllMocks();
   });
@@ -127,8 +131,13 @@ describe('Workspace utility function tests', () => {
   });
 
   describe('getDefaultRevisionName', () => {
+    beforeEach(() => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+    });
+
     test('Should return "A" as the default revision name', () => {
       expect(getDefaultRevisionName()).toEqual('A');
+      expect(parseRevisionName(`${getDefaultRevisionName()}`)).toEqual('a'); // the server only accepts lowercase
     });
 
     test('Should return a revision name that passes validation', () => {
@@ -138,6 +147,10 @@ describe('Workspace utility function tests', () => {
 
   describe('validateRevisionName', () => {
     const errorMessage = 'Only letters are allowed. No numbers, spaces, or symbols.';
+
+    beforeEach(() => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+    });
 
     test('Should accept lowercase, uppercase, and mixed-case letters', () => {
       expect(validateRevisionName('a')).toBeNull();
@@ -175,26 +188,20 @@ describe('Workspace utility function tests', () => {
     });
   });
 
-  describe('numeric revision names (PUBLIC_WORKSPACE_REVISION_NAME_TYPE=number)', () => {
+  describe('numeric revision names (the default)', () => {
     const errorMessage = 'Only numbers are allowed. No letters, spaces, or symbols.';
 
-    beforeEach(() => {
-      env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
-    });
-
-    afterEach(() => {
-      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
-    });
-
-    test('Should default to the string type when unset or unrecognized', () => {
-      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
-      expect(getRevisionNameType()).toEqual('string');
-      env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'bogus';
-      expect(getRevisionNameType()).toEqual('string');
+    test('Should default to NUMERIC when unset or unrecognized', () => {
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = '';
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'bogus';
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+      expect(getRevisionNamingConvention()).toEqual('ALPHABETIC');
     });
 
     test('Should return 1 as the default revision name, which passes validation', () => {
-      expect(getRevisionNameType()).toEqual('number');
+      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
       expect(getDefaultRevisionName()).toEqual(1);
       expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
     });

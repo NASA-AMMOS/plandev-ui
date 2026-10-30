@@ -1,11 +1,20 @@
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import { describe, expect, test } from 'vitest';
 import { Status } from '../enums/status';
-import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim } from '../types/actions';
+import type { ActionDefinition, ActionDefinitionVersion, ActionRunSlim, FileRevisionHistory } from '../types/actions';
 import type { ParametersMap } from '../types/parameter';
+import type { WorkspaceFileRevision } from '../types/workspace';
 import {
   getActionDefinitionForRun,
   getDefaultsFromSchema,
+  getFileArgumentForPaths,
+  getDefaultFileRef,
+  getFileRefRevisionLabel,
+  getRevisionProblem,
+  hasUnavailableRevision,
+  isFileRef,
+  normalizeFileArguments,
+  isMissingRevision,
   getLatestRunnableVersion,
   getRunnableVersions,
   getStatusForActionRun,
@@ -317,5 +326,150 @@ describe('parseActionLogLines', () => {
         timestamp: '',
       },
     ]);
+  });
+});
+
+const schema = (overrides: object) => ({ type: 'file', ...overrides }) as ActionValueSchema;
+const withRevision = schema({ withRevision: true });
+const pinned = schema({ allowWorkingCopy: false, withRevision: true });
+const list = (s: ActionValueSchema) => ({ ...s, type: 'fileList' }) as ActionValueSchema;
+
+describe('file references', () => {
+  test.each([
+    ['a path for a plain parameter', { type: 'sequence' }, ['a.seq'], 'a.seq'],
+    ['paths for a plain list', { type: 'fileList' }, ['a.seq', 'b.json'], ['a.seq', 'b.json']],
+    ['a working copy ref', withRevision, ['a.seq'], { path: 'a.seq' }],
+    [
+      'working copy refs for a list',
+      { ...withRevision, type: 'fileList' },
+      ['a.seq', 'b.json'],
+      [{ path: 'a.seq' }, { path: 'b.json' }],
+    ],
+    [
+      'a latest revision ref when the working copy is not allowed',
+      pinned,
+      ['a.seq'],
+      { path: 'a.seq', revision: 'latest' },
+    ],
+  ])('getFileArgumentForPaths gives %s', (_, valueSchema, paths, expected) => {
+    expect(getFileArgumentForPaths(valueSchema as ActionValueSchema, paths)).toEqual(expected);
+  });
+
+  test('getDefaultFileRef starts on the working copy unless it is not allowed', () => {
+    expect(getDefaultFileRef(withRevision, 'a.seq')).toEqual({ path: 'a.seq' });
+    expect(getDefaultFileRef(schema({ allowWorkingCopy: true, withRevision: true }), 'a.seq')).toEqual({
+      path: 'a.seq',
+    });
+    expect(getDefaultFileRef(pinned, 'a.seq')).toEqual({ path: 'a.seq', revision: 'latest' });
+  });
+
+  test.each([
+    [undefined, 'Working copy'],
+    ['latest', 'Latest revision'],
+    ['c', 'Revision C'],
+  ])('labels revision %s as %s', (revision, label) => {
+    expect(getFileRefRevisionLabel({ path: 'a.seq', revision })).toBe(label);
+  });
+
+  test('isFileRef accepts a path with an optional revision and nothing else', () => {
+    expect([{ path: 'a' }, { path: 'a', revision: 'b' }].every(isFileRef)).toBe(true);
+    expect(
+      ['a.seq', null, { path: 'a', revision: null }, { path: 'a', revision: 2 }, { path: 'a', size: 3 }].some(
+        isFileRef,
+      ),
+    ).toBe(false);
+  });
+
+  test('isMissingRevision only applies when the working copy is not allowed', () => {
+    expect([withRevision, schema({ type: 'file' })].map(s => isMissingRevision(s, { path: 'a' }))).toEqual([
+      false,
+      false,
+    ]);
+    expect(isMissingRevision(pinned, 'a.seq')).toBe(true);
+    expect(isMissingRevision(pinned, { path: 'a' })).toBe(true);
+    expect(isMissingRevision(pinned, [{ path: 'a', revision: 'b' }, { path: 'c' }])).toBe(true);
+    expect(isMissingRevision(pinned, [{ path: 'a', revision: 'b' }])).toBe(false);
+    expect(isMissingRevision(pinned, null)).toBe(false);
+    expect(isMissingRevision(pinned, [])).toBe(false);
+  });
+
+  test('truncateRunParameters formats refs as path and revision rather than JSON', () => {
+    expect(truncateRunParameters({ a: { path: 'x.seq', revision: 'b' }, b: [{ path: 'y.seq' }] }, {}, 200)).toBe(
+      "a: 'x.seq · Revision B', b: ['y.seq · Working copy']",
+    );
+  });
+});
+
+describe('revision availability', () => {
+  const rev = (name: string) => ({ createdAt: '', createdBy: 'test', message: '', name }) as WorkspaceFileRevision;
+  const history = {
+    'a.seq': [rev('a'), rev('b')],
+    'empty.seq': [],
+    'failed.seq': 'error',
+    'pending.seq': 'loading',
+  } satisfies FileRevisionHistory;
+
+  test.each([
+    ['the working copy is always available', { path: 'empty.seq' }, undefined],
+    ['the working copy is available while loading or failed', { path: 'failed.seq' }, undefined],
+    ['latest is available with any revision', { path: 'a.seq', revision: 'latest' }, undefined],
+    ['latest has a problem with no revisions', { path: 'empty.seq', revision: 'latest' }, 'empty'],
+    ['a named revision that exists is available', { path: 'a.seq', revision: 'b' }, undefined],
+    ['a named revision that is not there is missing', { path: 'a.seq', revision: 'c' }, 'missing'],
+    ['revisions still loading', { path: 'pending.seq', revision: 'latest' }, 'loading'],
+    ['revisions not requested yet', { path: 'other.seq', revision: 'a' }, 'loading'],
+    ['revisions that failed to load', { path: 'failed.seq', revision: 'a' }, 'error'],
+  ])('%s', (_, fileRef, problem) => {
+    expect(getRevisionProblem(fileRef, history)).toBe(problem);
+  });
+
+  test('a parameter is unavailable if any selected revision is, and only if it takes revisions', () => {
+    const files = [
+      { path: 'a.seq', revision: 'a' },
+      { path: 'empty.seq', revision: 'latest' },
+    ];
+    expect(hasUnavailableRevision(list(withRevision), files, history)).toBe(true);
+    expect(hasUnavailableRevision(list(withRevision), files.slice(0, 1), history)).toBe(false);
+    expect(hasUnavailableRevision(list(withRevision), [{ path: 'empty.seq' }], history)).toBe(false);
+    expect(hasUnavailableRevision(schema({}), 'empty.seq', history)).toBe(false);
+    expect(hasUnavailableRevision(withRevision, null, history)).toBe(false);
+  });
+});
+
+describe('normalizeFileArguments', () => {
+  const plain = schema({});
+  const plainList = schema({ type: 'sequenceList' });
+  const ref = { path: 'a.seq' };
+  const latest = { path: 'a.seq', revision: 'latest' };
+  const pin = { path: 'a.seq', revision: 'c' };
+
+  test.each([
+    ['plain to withRevision: paths become working copy refs', withRevision, 'a.seq', ref],
+    ['plain to pinned: paths become latest revision refs', pinned, 'a.seq', latest],
+    ['plain list to withRevision list', list(withRevision), ['a.seq', 'b.seq'], [ref, { path: 'b.seq' }]],
+    ['withRevision to plain: refs become paths', plain, pin, 'a.seq'],
+    ['withRevision list to plain list: refs become paths', plainList, [ref, pin], ['a.seq', 'a.seq']],
+    ['working copy to not allowed: becomes the latest revision', pinned, ref, latest],
+    ['working copy list to not allowed', list(pinned), [ref, pin], [latest, pin]],
+    ['concrete revision is kept', pinned, pin, pin],
+    ['latest revision is kept', pinned, latest, latest],
+    ['working copy is kept where allowed', withRevision, ref, ref],
+    ['concrete revision is kept where the working copy is allowed', withRevision, pin, pin],
+    ['plain path is kept', plain, 'a.seq', 'a.seq'],
+    ['single to list: wrapped, keeping its revision', list(withRevision), pin, [pin]],
+    ['single plain to list withRevision', list(pinned), 'a.seq', [latest]],
+    ['list to single: first file, keeping its revision', pinned, [pin, latest], pin],
+    ['list of refs to plain single: first path', plain, [ref, pin], 'a.seq'],
+  ])('%s', (_, valueSchema, value, expected) => {
+    expect(normalizeFileArguments({ p: valueSchema }, { p: value })).toEqual({ p: expected });
+  });
+
+  test('leaves other parameters, empty values and unchanged arguments alone', () => {
+    const args = { empty: null, number: 3, p: pin, struct: { path: 'a', size: 3 } };
+    const schemas = { empty: withRevision, number: { type: 'int' }, p: pinned, struct: { type: 'struct' } };
+    expect(normalizeFileArguments(schemas as Record<string, ActionValueSchema>, args)).toBe(args);
+    expect(normalizeFileArguments({ p: pinned }, {})).toEqual({});
+    expect(normalizeFileArguments({ p: pinned }, { p: [], q: 1 })).toEqual({ q: 1 });
+    expect(normalizeFileArguments({ p: list(pinned) }, { p: [] })).toEqual({ p: [] });
   });
 });

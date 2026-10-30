@@ -20,7 +20,13 @@ import type {
   ValueSchemaSeries,
   ValueSchemaStruct,
 } from '../types/schema';
-import { isActionValueSchemaFile, isActionValueSchemaSequence } from './actions';
+import {
+  isActionValueSchemaFile,
+  isActionValueSchemaSequence,
+  isFileRef,
+  isMissingRevision,
+  isWithRevision,
+} from './actions';
 import { isEmpty } from './generic';
 import { convertUsToDurationString } from './time';
 
@@ -256,7 +262,10 @@ export function getFormParameters(
       }
 
       if (value) {
-        const optionValues: string[] = isMultiSelect ? value : [value];
+        const values: any[] = isMultiSelect ? value : [value];
+        const optionValues: string[] = isWithRevision(schema)
+          ? values.filter(isFileRef).map(({ path }) => path)
+          : values;
         // Determine if there are selected options in the value that are no longer present in the list of options
         const missingOptions = optionValues.filter(optionValue => {
           const option = options.find(dropdownOption => dropdownOption.value === optionValue);
@@ -267,6 +276,10 @@ export function getFormParameters(
           // format missing options like: 'option 1', 'option 2' not found
           errors = [`'${missingOptions.join("', '")}' not found`];
         }
+      }
+
+      if (errors === null && isMissingRevision(schema, value)) {
+        errors = ['Select a revision for each file'];
       }
     }
 
