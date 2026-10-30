@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { WorkspaceContentType } from '../enums/workspace';
 import { WorkspaceSaveConflictError } from './requests';
 import { WorkspaceApi } from './workspaces';
@@ -28,6 +28,10 @@ function stubFetch(status: number, body: unknown = revision, headers: Record<str
 }
 
 describe('WorkspaceApi file revisions', () => {
+  beforeEach(() => {
+    env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -73,14 +77,10 @@ describe('WorkspaceApi file revisions', () => {
   });
 
   test('createFileRevision sends a numeric startAtRevision for a first revision', async () => {
-    env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE = 'number';
-    try {
-      const fetchMock = stubFetch(201, 3);
-      await expect(WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', 'msg', null, 3)).resolves.toBe(3);
-      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ message: 'msg', startAtRevision: 3 });
-    } finally {
-      Reflect.deleteProperty(env, 'PUBLIC_WORKSPACE_REVISION_NAME_TYPE');
-    }
+    env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'NUMERIC';
+    const fetchMock = stubFetch(201, 3);
+    await expect(WorkspaceApi.createFileRevision(3, 'foo/bar.seq', 'someEtag', 'msg', null, 3)).resolves.toBe(3);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ message: 'msg', startAtRevision: 3 });
   });
 
   test('getFileRevision and getFileRevisionContent use /versioning/{workspaceId}/{revisionId}', async () => {

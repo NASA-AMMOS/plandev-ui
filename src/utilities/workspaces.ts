@@ -15,7 +15,7 @@ import type {
   WorkspaceFileRevisionList,
   WorkspaceInsertInput,
   WorkspaceRevisionName,
-  WorkspaceRevisionNameType,
+  WorkspaceRevisionNamingConvention,
 } from '../types/workspace';
 import type {
   WorkspaceFileMetadata,
@@ -926,14 +926,14 @@ export function getUserDisplayNameFromIdentity(identity: string): string {
   return identity;
 }
 
-/** Whether revision names are numeric or alphabetic, per `PUBLIC_WORKSPACE_REVISION_NAME_TYPE` (default "string"). */
-export function getRevisionNameType(): WorkspaceRevisionNameType {
-  return env.PUBLIC_WORKSPACE_REVISION_NAME_TYPE === 'number' ? 'number' : 'string';
+/** Whether revision names are numeric or alphabetic, per `PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION` (default "NUMERIC"). */
+export function getRevisionNamingConvention(): WorkspaceRevisionNamingConvention {
+  return env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION === 'ALPHABETIC' ? 'ALPHABETIC' : 'NUMERIC';
 }
 
 /** The user-facing description of what characters a revision name may contain. */
 export function getRevisionNameRequirement(): string {
-  return getRevisionNameType() === 'number'
+  return getRevisionNamingConvention() === 'NUMERIC'
     ? 'Only numbers are allowed. No letters, spaces, or symbols.'
     : 'Only letters are allowed. No numbers, spaces, or symbols.';
 }
@@ -943,7 +943,7 @@ export function getRevisionDisplayName(revisionName: WorkspaceRevisionName): str
 }
 
 export function getDefaultRevisionName(): WorkspaceRevisionName {
-  return getRevisionNameType() === 'number' ? 1 : 'A';
+  return getRevisionNamingConvention() === 'NUMERIC' ? 1 : 'A';
 }
 
 /**
@@ -951,14 +951,14 @@ export function getDefaultRevisionName(): WorkspaceRevisionName {
  * are only displayed uppercase). Empty input is returned unchanged.
  */
 export function parseRevisionName(revisionName: string): WorkspaceRevisionName {
-  if (getRevisionNameType() === 'number') {
+  if (getRevisionNamingConvention() === 'NUMERIC') {
     return revisionName !== '' ? Number(revisionName) : revisionName;
   }
   return revisionName.toLowerCase();
 }
 
 export function validateRevisionName(revisionName: WorkspaceRevisionName): string | null {
-  const pattern = getRevisionNameType() === 'number' ? /^[0-9]*$/ : /^[A-Za-z]*$/;
+  const pattern = getRevisionNamingConvention() === 'NUMERIC' ? /^[0-9]*$/ : /^[A-Za-z]*$/;
   if (!pattern.test(`${revisionName}`)) {
     return getRevisionNameRequirement();
   }
