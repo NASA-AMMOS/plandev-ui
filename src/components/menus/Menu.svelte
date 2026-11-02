@@ -11,6 +11,15 @@
     input: new Set<() => void>(),
   };
 
+  // popper keeps the fractional getBoundingClientRect size when it is within a pixel of the integer
+  // offsetWidth/offsetHeight, so a difference of up to a pixel is rounding, not a real size change
+  export function popperSizeChanged(
+    popper: { offsetHeight: number; offsetWidth: number },
+    measured: { height: number; width: number },
+  ): boolean {
+    return Math.abs(popper.offsetWidth - measured.width) > 1 || Math.abs(popper.offsetHeight - measured.height) > 1;
+  }
+
   export function hideAllMenus(type?: MenuType) {
     if (type) {
       hideFns[type].forEach(hideFn => {
@@ -28,7 +37,7 @@
 </script>
 
 <script lang="ts">
-  import type { ModifierPhases, State } from '@popperjs/core';
+  import type { Instance, ModifierPhases, State } from '@popperjs/core';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { createPopperActions } from 'svelte-popperjs';
   import type { Placement } from 'tippy.js';
@@ -67,6 +76,7 @@
 
   export function show(): void {
     hideAllMenus(type);
+    refitsSinceSettled = 0;
     shown = true;
     dispatch('show');
   }
@@ -86,6 +96,10 @@
 
   // Minimum gap between a menu and the edge of the viewport
   const viewportPadding: number = 8;
+  // Bounds how many times `refitAfterResize` may re-position per menu open, so a menu whose
+  // size never settles cannot keep popper updating forever
+  const maxRefits: number = 3;
+  let refitsSinceSettled: number = 0;
 
   const [popperRef, popperContent] = createPopperActions({
     placement,
@@ -128,6 +142,21 @@
         name: 'fitViewport',
         phase: 'beforeWrite' as ModifierPhases,
         requires: ['computeStyles'],
+      },
+      {
+        // The cap above can add a scrollbar, which widens the menu after popper measured it, so once the
+        // styles are written compare the real size with the measured one and position again if they differ
+        enabled: true,
+        fn: ({ instance, state }: { instance: Instance; state: State }) => {
+          if (!popperSizeChanged(state.elements.popper, state.rects.popper)) {
+            refitsSinceSettled = 0;
+          } else if (refitsSinceSettled < maxRefits) {
+            refitsSinceSettled += 1;
+            instance.update();
+          }
+        },
+        name: 'refitAfterResize',
+        phase: 'afterWrite' as ModifierPhases,
       },
     ],
   };
