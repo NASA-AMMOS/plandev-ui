@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -68,6 +68,27 @@ describe('WorkspaceRevisionsPanel', () => {
     vi.clearAllMocks();
   });
 
+  it('says which revision the saved copy matches, until unsaved editor changes make that stale', async () => {
+    const { getByLabelText } = renderPanel(b.name);
+    const section = getByLabelText('Create revision');
+    expect(section.textContent).toContain('The saved copy matches revision B');
+
+    activeDocument.updateContent('typed');
+    await waitFor(() => expect(section.textContent).toContain('Unsaved editor changes'));
+    expect(section.textContent).toContain('Save your changes before creating a revision.');
+  });
+
+  it('disables Create only when the saved copy matches the latest revision', () => {
+    const latest = renderPanel(c.name);
+    expect(latest.getByText('The saved copy matches the latest revision.')).toBeTruthy();
+    expect((latest.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
+    cleanup();
+
+    const older = renderPanel(b.name);
+    expect(older.getByLabelText('Create revision').textContent).toContain('matches revision B');
+    expect((older.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it.each([
     [c.name, false],
     [b.name, true],
@@ -83,5 +104,18 @@ describe('WorkspaceRevisionsPanel', () => {
     const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
     expect(!!options?.unrevisionedWarning).toBe(warns);
     cleanup();
+  });
+
+  it('validates the starting revision as numeric by default', async () => {
+    const { container, getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
+      props: { filePath: 'a.seq', hasCreateRevisionPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
+    });
+    const input = container.querySelector('#revision-start') as HTMLInputElement;
+    expect(input.value).toBe('1');
+    expect(queryByRole('alert')).toBeNull();
+
+    await fireEvent.input(input, { target: { value: 'b' } });
+    expect(getByRole('alert').textContent).toBe('Only numbers are allowed. No letters, spaces, or symbols.');
+    expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
