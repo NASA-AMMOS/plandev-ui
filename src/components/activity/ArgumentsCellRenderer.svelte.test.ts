@@ -8,6 +8,13 @@ const activityTypes: ActivityType[] = [
     computed_attributes_value_schema: { items: {}, type: 'struct' },
     name: 'PeelBanana',
     parameters: {
+      dimensions: {
+        order: 3,
+        schema: {
+          items: { height: { type: 'int' }, width: { type: 'int' } },
+          type: 'struct',
+        },
+      },
       peelDirection: {
         order: 1,
         schema: {
@@ -19,6 +26,7 @@ const activityTypes: ActivityType[] = [
         },
       },
       quantity: { order: 0, schema: { type: 'int' } },
+      toppings: { order: 2, schema: { items: { type: 'string' }, type: 'series' } },
     },
     required_parameters: ['quantity'],
   },
@@ -68,5 +76,57 @@ describe('Arguments Cell Renderer component', () => {
 
     expect(container.getElementsByClassName('argument-line--default')).toHaveLength(0);
     expect(getByText('peelDirection:').parentElement?.textContent).toContain('fromTip');
+  });
+
+  it('Should prefer a preset argument over the mission model default and not style it as a default', () => {
+    const { container, getByText } = render(ArgumentsCellRenderer, {
+      activityTypeName: 'PeelBanana',
+      activityTypes,
+      args: { quantity: 3 },
+      defaultArgs: { peelDirection: 'fromStem' },
+      presetArgs: { peelDirection: 'fromTip' },
+    });
+
+    expect(container.getElementsByClassName('argument-line')).toHaveLength(2);
+    expect(container.getElementsByClassName('argument-line--default')).toHaveLength(0);
+    expect(getByText('peelDirection:').parentElement?.textContent).toContain('fromTip');
+  });
+
+  it('Should prefer an explicitly set argument over the preset argument', () => {
+    const { container, getByText } = render(ArgumentsCellRenderer, {
+      activityTypeName: 'PeelBanana',
+      activityTypes,
+      args: { peelDirection: 'fromStem', quantity: 3 },
+      defaultArgs: { peelDirection: 'fromStem' },
+      presetArgs: { peelDirection: 'fromTip' },
+    });
+
+    expect(container.getElementsByClassName('argument-line--default')).toHaveLength(0);
+    expect(getByText('peelDirection:').parentElement?.textContent).toContain('fromStem');
+  });
+
+  it('Should render an argument with no value anywhere as blank instead of a placeholder', () => {
+    const { container, getByText } = render(ArgumentsCellRenderer, {
+      activityTypeName: 'PeelBanana',
+      activityTypes,
+      args: { dimensions: null, quantity: 3, toppings: null },
+    });
+
+    expect(container.getElementsByClassName('argument-line')).toHaveLength(3);
+    expect(container.getElementsByClassName('argument-line--default')).toHaveLength(0);
+    expect(getByText('toppings:').parentElement?.textContent?.trim()).toBe('toppings:');
+    expect(getByText('dimensions:').parentElement?.textContent?.trim()).toBe('dimensions:');
+  });
+
+  it('Should render arguments without a parameter schema as plain strings', () => {
+    const { container, getByText } = render(ArgumentsCellRenderer, {
+      activityTypeName: 'PeelBanana',
+      activityTypes,
+      args: { quantity: 3, unknownArg: 42 },
+    });
+
+    expect(container.getElementsByClassName('argument-line')).toHaveLength(2);
+    expect(container.getElementsByClassName('argument-line--default')).toHaveLength(0);
+    expect(getByText('unknownArg:').parentElement?.textContent).toContain('42');
   });
 });
