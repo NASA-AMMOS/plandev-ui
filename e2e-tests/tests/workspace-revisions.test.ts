@@ -89,7 +89,7 @@ test.describe('Workspace Revisions', () => {
 
   test.beforeAll(() => {
     ({ page } = setup);
-    panel = page.getByRole('region', { name: 'Working copy' });
+    panel = page.getByRole('region', { name: 'Create revision' });
     createRevisionButton = panel.getByRole('button', { name: 'Create revision' });
   });
 

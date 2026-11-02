@@ -13,7 +13,7 @@
   } from '@nasa-jpl/plandev-sequence-languages';
   import { EditorView } from 'codemirror';
   import { WorkspaceRightPanelTab } from '../../enums/workspace';
-  import type { Workspace, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import CommandDictionaryComponent from '../sequencing/CommandPanel/CommandDictionary.svelte';
@@ -33,12 +33,13 @@
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let filePath: string | null = null;
   export let hasEditPermission: boolean = false;
+  export let hasCreateRevisionPermission: boolean = false;
+  export let hasRestoreRevisionPermission: boolean = false;
   export let isRevisionsLoading: boolean = false;
   export let isSequenceFile: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let phoenixContext: PhoenixContext;
   export let revisionList: WorkspaceFileRevision[] = [];
-  export let workspace: Workspace | null = null;
   export let reloadWorkingCopy: () => Promise<void>;
 
   const emptyCommandDictionary: CommandDictionary = {
@@ -212,13 +213,13 @@
     <WorkspaceRevisionsPanel
       {doesWorkingCopyMatchLatestRevision}
       {filePath}
-      {hasEditPermission}
+      {hasCreateRevisionPermission}
+      {hasRestoreRevisionPermission}
       isReadOnly={!!fileMetadata?.readOnly}
       {isRevisionsLoading}
       {matchingRevisionName}
       {revisionList}
       {reloadWorkingCopy}
-      {workspace}
       on:createdFileRevision
     />
   {/if}

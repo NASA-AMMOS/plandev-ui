@@ -175,9 +175,11 @@
   let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let doesWorkingCopyMatchLatestRevision: boolean = false;
+  let hasCreateRevisionPermission: boolean = false;
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let hasRestoreRevisionPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
   let isFileReadOnly: boolean = false;
@@ -283,11 +285,19 @@
     hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate($user, ws);
     if ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]) {
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws, workspaceTreeMap[$activeDocumentPath]);
+      hasCreateRevisionPermission = featurePermissions.workspace.canCreate($user, ws);
+      hasRestoreRevisionPermission = featurePermissions.workspace.canUpdate(
+        $user,
+        ws,
+        workspaceTreeMap[$activeDocumentPath],
+      );
       availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
         workspaceTreeMap[$activeDocumentPath],
       ]);
     } else {
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws);
+      hasCreateRevisionPermission = false;
+      hasRestoreRevisionPermission = false;
       availableActionsForActiveFile = [];
     }
     hasRunActionPermission = featurePermissions.actionRun.canCreate($user, ws);
@@ -2013,13 +2023,14 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
+              {hasCreateRevisionPermission}
+              {hasRestoreRevisionPermission}
               {isRevisionsLoading}
               isSequenceFile={activeFileIsInputSequence}
               {matchingRevisionName}
               {phoenixContext}
               {commandInfoMapper}
               {revisionList}
-              workspace={$workspace}
               on:createdFileRevision={onCreatedFileRevision}
               on:updateUserMetadata={onUpdateUserMetadata}
               reloadWorkingCopy={onRevisionWorkingCopyChanged}

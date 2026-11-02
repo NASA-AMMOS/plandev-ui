@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { Button } from '@nasa-jpl/stellar-svelte';
-  import { LoaderCircle } from 'lucide-svelte';
+  import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
+  import { Download, EllipsisVertical, LoaderCircle } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
   import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
@@ -11,38 +11,37 @@
   import { getUserStore } from '../../stores/user';
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
-  import type { Workspace, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import effects from '../../utilities/effects';
   import { downloadBlob } from '../../utilities/generic';
   import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
-  import { featurePermissions } from '../../utilities/permissions';
   import { CompoundError } from '../../utilities/requests';
   import { getShortISOForDate } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import {
     WorkspaceApi,
     getDefaultRevisionName,
-    getDownloadOptionsForFile,
     getRevisionDisplayName,
     getRevisionNameRequirement,
+    getVersionedFileName,
+    separateFilenameFromExtension,
     separateFilenameFromPath,
     validateRevisionName,
   } from '../../utilities/workspaces';
-  import DownloadMenu from '../ui/DownloadMenu.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
+  import Tooltip from '../ui/Tooltip.svelte';
   import PanelHeader from './PanelHeader.svelte';
 
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let filePath: string | null = null;
-  /** Write permission. Not the same as read-only: a read-only file can still get a revision. */
-  export let hasEditPermission: boolean = false;
+  export let hasCreateRevisionPermission: boolean = false;
+  export let hasRestoreRevisionPermission: boolean = false;
   export let isReadOnly: boolean = false;
   export let isRevisionsLoading: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let revisionList: WorkspaceFileRevision[] = [];
-  export let workspace: Workspace | null = null;
 
   /** Reload the editor from the server after a restore changed (or failed to change) the working copy. */
   export let reloadWorkingCopy: () => Promise<void>;
@@ -53,11 +52,10 @@
   const user: UserStore = getUserStore();
 
   let baseEtag: string | null = null;
+  let baseFilename: string | null = null;
   let commitMessage: string = '';
   let createDisabled: boolean = false;
   let workingCopyStatus: string | null = null;
-  let hasCreatePermission: boolean = false;
-  let hasRestorePermission: boolean = false;
   let isCreating: boolean = false;
   let isRestoring: boolean = false;
   let latest: WorkspaceFileRevision | null = null;
@@ -69,10 +67,6 @@
   const defaultRevisionName = `${getDefaultRevisionName()}`;
   const revisionNameRequirement = getRevisionNameRequirement();
 
-  $: if (workspace) {
-    hasCreatePermission = featurePermissions.workspace.canCreate($user, workspace);
-    hasRestorePermission = featurePermissions.workspace.canUpdate($user, workspace);
-  }
   $: latest = revisionList[0] ?? null;
   $: revisionStart = !latest ? defaultRevisionName : null;
   $: revisionStartError = revisionStart ? validateRevisionName(revisionStart) : null;
@@ -81,13 +75,17 @@
 
   // Matching an older revision still allows a new one: returning to it is worth recording.
   $: workingCopyStatus = getWorkingCopyStatus(
-    hasEditPermission,
+    hasCreateRevisionPermission,
     $activeDocumentIsDirty,
     doesWorkingCopyMatchLatestRevision,
     matchingRevisionName,
   );
-  $: createDisabled = getCreateDisabled(hasEditPermission, $activeDocumentIsDirty, doesWorkingCopyMatchLatestRevision);
-  $: restoreDisabledReason = getRestoreDisabledReason(hasEditPermission, isReadOnly, $activeDocumentIsDirty);
+  $: createDisabled = getCreateDisabled(
+    hasCreateRevisionPermission,
+    $activeDocumentIsDirty,
+    doesWorkingCopyMatchLatestRevision,
+  );
+  $: restoreDisabledReason = getRestoreDisabledReason(hasRestoreRevisionPermission, isReadOnly, $activeDocumentIsDirty);
 
   // The saved copy moves on open, save and restore (baseEtag). User-metadata edits happen in the Metadata tab, and
   // switching back remounts this panel. readOnly is runtime state, not part of a revision, so it never reloads.
@@ -95,12 +93,12 @@
   $: baseEtag = $activeDocument.baseEtag;
 
   function getWorkingCopyStatus(
-    hasEditPermission: boolean,
+    hasPermission: boolean,
     isDirty: boolean,
     doesWorkingCopyMatchLatestRevision: boolean,
     matchingRevisionName: WorkspaceRevisionName | null,
   ): string | null {
-    if (!hasEditPermission) {
+    if (!hasPermission) {
       return "You don't have permission to create revisions.";
     }
     if (isDirty) {
@@ -200,6 +198,7 @@
   }
 
   async function onRestore(revision: WorkspaceFileRevision) {
+    console.log('onRestore :>> ', revision);
     if (!filePath || !revisionList || isRestoring) {
       return;
     }
@@ -283,8 +282,7 @@
             <div class="p-3 text-muted-foreground">Open a file to see its revisions.</div>
           {:else}
             <div class="flex flex-col gap-4 p-3">
-              <section class="flex flex-col gap-1" aria-label="Working copy">
-                <span class="font-medium uppercase tracking-wide text-muted-foreground">Working copy</span>
+              <section class="flex flex-col gap-1" aria-label="Create revision">
                 <label class="flex flex-col gap-1" for="revision-commit-message">
                   <span>Revision description <span class="text-muted-foreground">(optional)</span></span>
                   <textarea
@@ -305,7 +303,7 @@
                 <div
                   class="flex min-h-[26px] items-center gap-2"
                   use:permissionHandler={{
-                    hasPermission: hasCreatePermission,
+                    hasPermission: hasCreateRevisionPermission,
                     permissionError: 'You do not have permission to create a revision',
                   }}
                 >
@@ -353,24 +351,25 @@
                     {#each revisionList as revision, i (revision.name)}
                       {@const revisionDisplayName = getRevisionDisplayName(revision.name)}
                       <li class={i > 0 ? 'border-t border-border' : ''}>
-                        <div class="grid grid-cols-[auto_min-content]">
-                          <button
-                            class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 hover:bg-muted"
-                            title="Preview revision {revisionDisplayName}"
-                            on:click={() => onPreview(revision)}
-                          >
-                            <div
-                              class="grid h-full w-full grid-cols-[min-content_auto] items-start gap-1 overflow-hidden"
+                        <div
+                          class="grid grid-cols-[auto_min-content]"
+                          role="region"
+                          aria-label="Revision {revisionDisplayName}"
+                        >
+                          <Tooltip content="Preview revision {revisionDisplayName}">
+                            <button
+                              class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 text-left hover:bg-muted"
+                              aria-label="Preview revision {revisionDisplayName}"
+                              on:click={() => onPreview(revision)}
                             >
-                              <div class="w-6 text-left text-sm font-semibold">
-                                {revisionDisplayName}
-                              </div>
-                              <div class="flex flex-col gap-1 overflow-hidden">
-                                <div
-                                  class="min-h-4 overflow-hidden text-ellipsis text-nowrap text-left"
-                                  title={revision.message}
-                                >
-                                  {revision.message}
+                              <div class="grid h-full w-full grid-rows-[min-content_auto] gap-1 overflow-hidden">
+                                <div class="font-semibold">
+                                  Revision {revisionDisplayName}
+                                </div>
+                                <div class="min-h-4 overflow-hidden text-ellipsis text-nowrap">
+                                  <Tooltip content={revision.message}>
+                                    {revision.message}
+                                  </Tooltip>
                                 </div>
                                 <div class="text-left text-muted-foreground">
                                   <span>Created:</span>
@@ -378,36 +377,68 @@
                                   <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
                                 </div>
                               </div>
-                            </div>
-                          </button>
+                            </button>
+                          </Tooltip>
                           <div class="grid grid-rows-2 justify-items-end gap-1">
-                            <DownloadMenu
-                              align="end"
-                              variant="ghost"
-                              className="flex-none px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              label="Download revision {revision.name}"
-                              options={getDownloadOptionsForFile(baseFilename, true, revision.name)}
-                              on:download={e => onDownloadRevision(revision, e.detail.name)}
-                            />
-
-                            <div
-                              use:permissionHandler={{
-                                hasPermission: hasRestorePermission,
-                                permissionError: 'You do not have permission to restore this revision',
-                              }}
-                            >
-                              <Button
-                                class="text-muted-foreground"
-                                variant="ghost"
-                                size="icon"
-                                title={`Restore file to revision ${revisionDisplayName}`}
-                                aria-label={`Restore file to revision ${revisionDisplayName}`}
-                                disabled={isRestoring}
-                                on:click={() => onRestore(revision)}
+                            <DropdownMenu.Root>
+                              <Tooltip content="More options">
+                                <DropdownMenu.Trigger asChild let:builder>
+                                  <Button
+                                    class="text-muted-foreground hover:text-foreground"
+                                    variant="ghost"
+                                    size="icon"
+                                    builders={[builder]}
+                                    aria-label="More options"
+                                    on:click={e => e.stopPropagation()}
+                                  >
+                                    <EllipsisVertical size={20} />
+                                  </Button>
+                                </DropdownMenu.Trigger></Tooltip
                               >
-                                <RotateCcwClock size={10} />
-                              </Button>
-                            </div>
+                              <DropdownMenu.Content align="end">
+                                {@const { extension } = separateFilenameFromExtension(baseFilename)}
+                                {@const versionedFilename = getVersionedFileName(baseFilename, revision.name)}
+                                {@const { extension: versionedExtension } =
+                                  separateFilenameFromExtension(versionedFilename)}
+                                <DropdownMenu.Item
+                                  class="flex items-center gap-2"
+                                  size="sm"
+                                  aria-label={`Download (...${extension})`}
+                                  on:click={() => onDownloadRevision(revision, baseFilename)}
+                                >
+                                  <Download size={14} class="shrink-0" />
+                                  Download (...{extension})
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                  class="flex items-center gap-2"
+                                  size="sm"
+                                  aria-label={`Download (${versionedExtension})`}
+                                  on:click={() => onDownloadRevision(revision, versionedFilename)}
+                                >
+                                  <Download size={14} class="shrink-0" />
+                                  Download ({versionedExtension})
+                                </DropdownMenu.Item>
+                                <div
+                                  use:permissionHandler={{
+                                    hasPermission: hasRestoreRevisionPermission,
+                                    permissionError: 'You do not have permission to restore this revision',
+                                  }}
+                                >
+                                  <DropdownMenu.Item
+                                    class="flex items-center gap-2"
+                                    size="sm"
+                                    aria-label={`Restore file to revision ${revisionDisplayName}`}
+                                    on:click={() => {
+                                      console.log('Restore file to revision', revision);
+                                      onRestore(revision);
+                                    }}
+                                  >
+                                    <RotateCcwClock size={10} />
+                                    Restore file to revision {revisionDisplayName}
+                                  </DropdownMenu.Item>
+                                </div>
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Root>
                           </div>
                         </div>
                       </li>

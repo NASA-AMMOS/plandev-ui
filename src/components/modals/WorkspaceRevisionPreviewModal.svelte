@@ -10,6 +10,7 @@
   import { downloadBlob } from '../../utilities/generic';
   import {
     getDownloadOptionsForFile,
+    getRevisionDisplayName,
     getVersionedFileName,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -176,9 +177,8 @@
 </script>
 
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
-  <ModalHeader on:close={close}>Comparing {leftLabel} with {rightLabel}</ModalHeader>
+  <ModalHeader on:close={close}>Compare to Revision {getRevisionDisplayName(rightRevision.name)}</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
-    <div class="grid grid-cols-2"></div>
     <div class="st-typography-body flex-none text-muted-foreground">
       {#if !isLoading && !loadError}
         {#if changedLines > 0}
@@ -232,16 +232,19 @@
               />
             </div>
           </div>
-          <div class="inline-block text-nowrap text-xs text-muted-foreground" slot="mine-header-slot">
-            <DownloadMenu
-              align="start"
-              className="px-2"
-              size="icon"
-              disabled={rightState.loading || rightState.error}
-              label="Download {rightLabel}"
-              options={rightDownloadOptions}
-              on:download={e => onDownloadSide(rightState, e.detail.name)}
-            />
+          <div class="inline-block text-nowrap" slot="mine-header-slot">
+            <div class="grid grid-cols-[auto_min-content] items-center gap-2">
+              <span>Revision {getRevisionDisplayName(rightRevision.name)}</span>
+              <DownloadMenu
+                align="start"
+                className="px-2 text-muted-foreground"
+                size="icon"
+                disabled={rightState.loading || rightState.error}
+                label="Download {rightLabel}"
+                options={rightDownloadOptions}
+                on:download={e => onDownloadSide(rightState, e.detail.name)}
+              />
+            </div>
           </div>
         </WorkspaceDiffViewer>
       {/if}

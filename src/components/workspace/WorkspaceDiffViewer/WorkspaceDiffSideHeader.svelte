@@ -24,12 +24,12 @@
       </span>
       <slot name="header-slot" />
     </div>
-    <div>
+    <div class="flex flex-col gap-1">
       {#if message}
-        <div class="text-xs">{message}</div>
+        <div class="max-h-[3.5rem] overflow-y-auto">{message}</div>
       {/if}
       {#if editBy || editedAt}
-        <div class="flex w-full gap-1 text-nowrap text-xs text-muted-foreground">
+        <div class=" text-nowrap text-muted-foreground">
           {#if editBy && editedAt}
             <span
               >{getUserDisplayNameFromIdentity(editBy)} edited at {getShortISOForDate(new Date(editedAt || ''))}</span
