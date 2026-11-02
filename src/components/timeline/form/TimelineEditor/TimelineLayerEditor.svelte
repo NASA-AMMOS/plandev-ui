@@ -234,7 +234,7 @@
         </RadioButton>
       </RadioButtons>
     {/if}
-    {#if !isActivityLayer(layer) && !isExternalEventLayer(layer)}
+    {#if !isActivityLayer(layer)}
       <TimelineEditorLayerSettings
         {layer}
         on:input={event => dispatch('updateLayer', { property: event.detail.name, value: event.detail.value })}

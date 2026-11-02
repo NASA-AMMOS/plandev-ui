@@ -20,6 +20,8 @@
     DiscreteTreeNode,
     DiscreteTreeNodeDrawItem,
     DiscreteTreeNodeItem,
+    MarkerGlyph,
+    MarkerStyle,
     MouseDown,
     MouseOver,
     QuadtreeRect,
@@ -33,8 +35,11 @@
   import { isDeleteEvent } from '../../utilities/keyboardEvents';
   import { getActivityDirectiveStartTimeMs, getIntervalInMs, getIntervalUnixEpochTime } from '../../utilities/time';
   import {
+    DEFAULT_EXTERNAL_EVENT_OPACITY,
+    DEFAULT_MARKER_STYLE,
     directiveInView,
     externalEventInView,
+    getMarkerGlyphExtents,
     searchQuadtreeRect,
     spanInView,
     TimelineInteractionMode,
@@ -48,6 +53,8 @@
   export let externalEvents: ExternalEvent[] = [];
   export let activityDirectives: ActivityDirective[] = [];
   export let idToColorMaps: IdToColorMaps = { directives: {}, external_events: {}, spans: {} };
+  /** Per-event alpha, resolved from each external event layer's opacity. See ExternalEventLayer. */
+  export let externalEventOpacities: Record<ExternalEventId, number> = {};
   export let discreteRowPadding: number = 4;
   export let discreteSelectedColor: string = '#a9eaff';
   export let discreteSelectedTextColor: string = '#0a4c7e';
@@ -141,6 +148,16 @@
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
   $: rowHeight = discreteOptions.height;
+  $: directiveMarker = discreteOptions.directiveMarker ?? DEFAULT_MARKER_STYLE;
+  $: zeroDurationMarker = discreteOptions.zeroDurationMarker ?? DEFAULT_MARKER_STYLE;
+  $: directiveGlyph = getMarkerGlyphExtents(directiveMarker, rowHeight);
+  $: zeroDurationGlyph = getMarkerGlyphExtents(zeroDurationMarker, rowHeight);
+  /**
+   * How far right of a marker its label starts. Zero for 'line', which labelPaddingLeft already
+   * clears; the point styles are wide enough to sit under the text, so the label has to clear them.
+   */
+  $: directiveLabelOffset = directiveMarker === 'line' ? 0 : directiveGlyph.right;
+  $: zeroDurationLabelOffset = zeroDurationMarker === 'line' ? 0 : zeroDurationGlyph.right;
   $: planStartTimeMs = planStartTimeYmd ? new Date(planStartTimeYmd).getTime() : 0;
   $: timelineLocked = timelineLockStatus === TimelineLockStatus.Locked;
 
@@ -552,13 +569,13 @@
 
       const rows: Record<number, { items: DiscreteTreeNodeDrawItem[]; max: number }> = {};
       itemsToDraw.forEach(item => {
-        const { startX } = item;
+        const itemStartX = getItemStartX(item);
         const itemEndX = getItemEndX(item);
         let row = 0;
         let openRowSpaceFound = false;
         while (!openRowSpaceFound) {
           const maxXForRow = rows[row] ? rows[row].max : Number.MIN_SAFE_INTEGER;
-          let minX = startX;
+          let minX = itemStartX;
           let maxX = itemEndX;
           if (minX < maxXForRow) {
             row += 1;
@@ -573,11 +590,15 @@
         }
       });
 
+      // Subrows spread across the row's height rather than stacking at a fixed pitch, so a manually
+      // enlarged row uses the space. Only the first subrow's height is reserved; the rest goes to gaps.
       const extraSpace = Math.max(0, drawHeight - discreteOptions.height - discreteRowPadding * 2);
       const rowCount = Object.keys(rows).length;
+      // Guarded rather than letting a rowCount of 1 divide by zero
+      const rowSpacing = rowCount > 1 ? extraSpace / (rowCount - 1) : 0;
       Object.entries(rows).forEach(([_, entry], i) => {
         const { items } = entry;
-        let rowVerticalOffset = discreteRowPadding + i * (extraSpace / (rowCount - 1)) || 0;
+        let rowVerticalOffset = discreteRowPadding + i * rowSpacing;
         if (discreteOptions.height >= drawHeight) {
           rowVerticalOffset = 4;
         }
@@ -586,13 +607,16 @@
         }
       });
 
-      // Dispatch optimal row height in case it is needed.
-      // This is computed by multiplying the number of rows by the row height
-      // and adding 3px of spacing in between the rows.
+      // Height this row wants on auto-adjust: every subrow, a 3px gap between them, and the padding.
+      // The padding must be included -- the spacing above divides leftover height, so leaving it out
+      // pulls every gap closed rather than merely cropping the bottom.
       if (expanded && discreteOptions.height) {
         const optimalRowHeight = Math.min(
           maxCanvasHeight,
-          Math.max(24, rowCount * discreteOptions.height + (rowCount - 1) * 3),
+          Math.max(
+            ViewConstants.MIN_ROW_HEIGHT,
+            discreteRowPadding * 2 + rowCount * discreteOptions.height + (rowCount - 1) * 3,
+          ),
         );
         dispatch('updateRowHeight', { newHeight: optimalRowHeight });
       }
@@ -604,8 +628,10 @@
     const itemsToDraw: DiscreteTreeNodeDrawItem[] = [];
     const seenSpans: Record<number, boolean> = {};
 
-    // activities
-    if (showDirectives) {
+    // Gated on hasActivityLayer / hasExternalEventsLayer as compact mode is, so a removed layer stops
+    // drawing on a collapsed row. showDirectives/showSpans say which kinds to draw, not whether a
+    // layer exists to draw them from.
+    if (hasActivityLayer && showDirectives) {
       activityDirectives.forEach(directive => {
         if (!xScaleView) {
           return;
@@ -628,7 +654,7 @@
         }
       });
     }
-    if (showSpans) {
+    if (hasActivityLayer && showSpans) {
       spans.forEach(span => {
         if (seenSpans[span.span_id] || !xScaleView) {
           return;
@@ -643,7 +669,8 @@
     }
 
     // Aggregate External Event Drawables
-    externalEvents.forEach(externalEvent => {
+    const collapsedExternalEvents = hasExternalEventsLayer ? externalEvents : [];
+    collapsedExternalEvents.forEach(externalEvent => {
       if (externalEventInView(externalEvent, viewTimeRange)) {
         if (xScaleView !== null) {
           itemsToDraw.push({
@@ -671,39 +698,82 @@
     let labelEndX = 0;
     let boxEndX = 0;
     if (directive && showDirectives) {
-      boxEndX = 2;
+      // The packer gives a directive and its span one shared startX, so a zero-duration span always
+      // marks the same moment here and the directive always yields the glyph to it
+      // A directive and a zero-duration span mark the same moment and only the span's glyph is drawn
+      // there (see drawRow), so position against the glyph that survives rather than the one named
+      const yieldsToSpan = spanOwnsTheMarker(span);
+      const glyph = yieldsToSpan ? zeroDurationGlyph : directiveGlyph;
+      const labelOffset = yieldsToSpan ? zeroDurationLabelOffset : directiveLabelOffset;
+      boxEndX = startX + glyph.right;
       if (discreteOptions.labelVisibility !== 'off') {
         const anchored = directive.anchor_id !== null;
         const directiveLabelWidth = measureText(directive.name, textMetricsCache).width + labelPaddingLeft;
         const finalWidth = anchored
           ? anchorIconWidth + anchorIconMarginLeft + directiveLabelWidth
           : directiveLabelWidth;
-        labelEndX = Math.max(startX, minRectSize) + finalWidth;
+        labelEndX = Math.max(startX, minRectSize) + labelOffset + finalWidth;
       }
     }
     if (span && showSpans && xScaleView) {
-      const spanEndX = xScaleView(span.endMs);
-      boxEndX = Math.max(boxEndX, spanEndX);
-      if (discreteOptions.labelVisibility !== 'off') {
-        labelEndX = Math.max(
-          labelEndX,
-          Math.max(minRectSize, startX) + labelPaddingLeft + measureText(getLabelForSpan(span), textMetricsCache).width,
-        );
-      }
-    }
-    if (externalEvent && xScaleView) {
-      const spanEndX = xScaleView(externalEvent.start_ms + externalEvent.duration_ms);
+      const spanLabelOffset = isZeroDurationSpan(span) ? zeroDurationLabelOffset : 0;
+      const spanEndX = isZeroDurationSpan(span) ? startX + zeroDurationGlyph.right : xScaleView(span.endMs);
       boxEndX = Math.max(boxEndX, spanEndX);
       if (discreteOptions.labelVisibility !== 'off') {
         labelEndX = Math.max(
           labelEndX,
           Math.max(minRectSize, startX) +
+            spanLabelOffset +
+            labelPaddingLeft +
+            measureText(getLabelForSpan(span), textMetricsCache).width,
+        );
+      }
+    }
+    if (externalEvent && xScaleView) {
+      const eventLabelOffset = isZeroDurationExternalEvent(externalEvent) ? zeroDurationLabelOffset : 0;
+      const spanEndX = isZeroDurationExternalEvent(externalEvent)
+        ? startX + zeroDurationGlyph.right
+        : xScaleView(externalEvent.start_ms + externalEvent.duration_ms);
+      boxEndX = Math.max(boxEndX, spanEndX);
+      if (discreteOptions.labelVisibility !== 'off') {
+        labelEndX = Math.max(
+          labelEndX,
+          Math.max(minRectSize, startX) +
+            eventLabelOffset +
             labelPaddingLeft +
             measureText(getLabelForExternalEvent(externalEvent), textMetricsCache).width,
         );
       }
     }
     return Math.max(boxEndX, labelEndX);
+  }
+
+  /** Whether a span is the one drawing the marker at its item's start x, so the directive yields to it. */
+  function spanOwnsTheMarker(span: Span | undefined): boolean {
+    return !!span && showSpans && isZeroDurationSpan(span);
+  }
+
+  /**
+   * Left edge an item occupies: its start x, unless a centered marker overhangs it. The packer compares
+   * this against the previous item's end, so without it two markers a pixel apart share a subrow and
+   * overlap. Only the glyph actually drawn counts.
+   */
+  function getItemStartX(item: {
+    directive?: ActivityDirective;
+    externalEvent?: ExternalEvent;
+    span?: Span;
+    startX: number;
+  }) {
+    const { span, directive, externalEvent, startX } = item;
+    const spanMarks = spanOwnsTheMarker(span);
+    let overhang = 0;
+    if (directive && showDirectives && !spanMarks) {
+      overhang = directiveGlyph.left;
+    }
+    if (spanMarks || (externalEvent && isZeroDurationExternalEvent(externalEvent))) {
+      overhang = Math.max(overhang, zeroDurationGlyph.left);
+    }
+    return startX - overhang;
   }
 
   function drawRow(y: number, items: DiscreteTreeNodeItem[], idToColorMaps: IdToColorMaps) {
@@ -756,13 +826,23 @@
         const externalEventColor =
           idToColorMaps.external_events[getExternalEventRowId(externalEvent.pkey)] || discreteDefaultColor;
         const isSelected = selectedExternalEventId === getExternalEventRowId(externalEvent.pkey);
+        const isZeroDuration = isZeroDurationExternalEvent(externalEvent);
+        const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
         if (isSelected) {
           ctx.fillStyle = discreteSelectedColor;
         } else {
-          const color = getRGBAFromHex(externalEventColor, 0.5);
-          ctx.fillStyle = color;
+          // Full strength whatever the layer's opacity: translucency keeps overlapping bars readable,
+          // and a marker has no area to overlap
+          const opacity = isZeroDuration
+            ? 1
+            : (externalEventOpacities[getExternalEventRowId(externalEvent.pkey)] ?? DEFAULT_EXTERNAL_EVENT_OPACITY);
+          ctx.fillStyle = getRGBAFromHex(externalEventColor, opacity);
         }
-        ctx.fillRect(externalEventStartX, y, externalEventRectWidth, rowHeight);
+        if (isZeroDuration) {
+          drawMarker(externalEventStartX, y, zeroDurationMarker, zeroDurationGlyph);
+        } else {
+          ctx.fillRect(externalEventStartX, y, externalEventRectWidth, rowHeight);
+        }
 
         // Draw label if the label will fit
         let spanLabelWidth = 0;
@@ -773,27 +853,37 @@
           if (discreteOptions.labelVisibility === 'auto') {
             if (nextItem) {
               const nextX = nextItem.externalEventStartX ?? null;
-              if (typeof nextX === 'number' && externalEventStartX + spanLabelWidth >= nextX) {
+              if (typeof nextX === 'number' && externalEventStartX + labelOffset + spanLabelWidth >= nextX) {
                 shouldDrawLabel = false;
                 spanLabelWidth = 0;
               }
             }
           }
           if (shouldDrawLabel) {
-            const spanColor = discreteDefaultColor;
-            drawLabel(label, externalEventStartX, y, spanLabelWidth, spanColor, false, isSelected);
+            // The event's own color, as span and directive labels use theirs
+            drawLabel(
+              label,
+              externalEventStartX + labelOffset,
+              y,
+              spanLabelWidth,
+              externalEventColor,
+              false,
+              isSelected,
+            );
           }
         }
 
         // Add to quadtree
         visibleExternalEventsById[getExternalEventRowId(externalEvent.pkey)] = externalEvent;
-        quadtreeExternalEvents.add({
-          height: rowHeight,
-          id: getExternalEventRowId(externalEvent.pkey),
-          width: Math.max(spanLabelWidth, externalEventRectWidth),
-          x: externalEventStartX,
-          y,
-        });
+        quadtreeExternalEvents.add(
+          getItemHitBox(
+            getExternalEventRowId(externalEvent.pkey),
+            externalEventStartX,
+            y,
+            Math.max(spanLabelWidth + labelOffset, externalEventRectWidth),
+            isZeroDuration ? zeroDurationGlyph : null,
+          ),
+        );
       }
 
       // Draw span
@@ -804,6 +894,7 @@
         const spanColor = idToColorMaps.spans[span.span_id] || discreteDefaultColor;
         const isSelected =
           selectedSpanId === span.span_id || (directive && selectedActivityDirectiveId === directive.id);
+        const isZeroDuration = isZeroDurationSpan(span);
         if (isSelected) {
           if (unfinished) {
             ctx.fillStyle = activityUnfinishedSelectedColor;
@@ -813,10 +904,16 @@
         } else if (unfinished) {
           ctx.fillStyle = shadeColor(activityUnfinishedColor, 1.2);
         } else {
-          const color = getRGBAFromHex(spanColor, 0.5);
-          ctx.fillStyle = color;
+          // Bars are translucent so overlapping spans stay readable; a marker has no area to overlap
+          // and would just wash out, so it draws full strength.
+          ctx.fillStyle = isZeroDuration ? spanColor : getRGBAFromHex(spanColor, 0.5);
         }
-        ctx.fillRect(spanStartX, y, spanRectWidth, rowHeight);
+        const labelOffset = isZeroDuration ? zeroDurationLabelOffset : 0;
+        if (isZeroDuration) {
+          drawMarker(spanStartX, y, zeroDurationMarker, zeroDurationGlyph);
+        } else {
+          ctx.fillRect(spanStartX, y, spanRectWidth, rowHeight);
+        }
 
         // Draw label if no directive and the label will fit
         let spanLabelWidth = 0;
@@ -827,7 +924,7 @@
           if (discreteOptions.labelVisibility === 'auto') {
             if (nextItem) {
               const nextX = nextItem.spanStartX ?? nextItem.directiveStartX ?? null;
-              if (typeof nextX === 'number' && spanStartX + spanLabelWidth >= nextX) {
+              if (typeof nextX === 'number' && spanStartX + labelOffset + spanLabelWidth >= nextX) {
                 shouldDrawLabel = false;
                 spanLabelWidth = 0;
               }
@@ -835,19 +932,21 @@
           }
           if (shouldDrawLabel) {
             const spanColor = idToColorMaps.spans[span.span_id] || discreteDefaultColor;
-            drawLabel(label, spanStartX, y, spanLabelWidth, spanColor, unfinished, isSelected);
+            drawLabel(label, spanStartX + labelOffset, y, spanLabelWidth, spanColor, unfinished, isSelected);
           }
         }
 
         // Add to quadtree
         visibleSpansById[span.span_id] = span;
-        quadtreeSpans.add({
-          height: rowHeight,
-          id: span.span_id,
-          width: Math.max(spanLabelWidth, spanRectWidth),
-          x: spanStartX,
-          y,
-        });
+        quadtreeSpans.add(
+          getItemHitBox(
+            span.span_id,
+            spanStartX,
+            y,
+            Math.max(spanLabelWidth + labelOffset, spanRectWidth),
+            isZeroDuration ? zeroDurationGlyph : null,
+          ),
+        );
       }
 
       // Draw directive
@@ -862,7 +961,22 @@
         } else {
           ctx.fillStyle = color;
         }
-        ctx.fillRect(directiveStartX, y, 2, rowHeight);
+        // Under composition 'both' a directive and a zero-duration span mark the same moment, which
+        // would draw as a diamond with a tick through it. The span's marker wins; the directive keeps
+        // its label, anchor and hit box.
+        //
+        // Compared in pixels, not time: a directive moved since simulation is what this reports, so
+        // the tick returns as soon as the move is wide enough to see.
+        const spanAlreadyMarksThisMoment =
+          spanOwnsTheMarker(span) &&
+          typeof spanStartX === 'number' &&
+          Math.round(spanStartX) === Math.round(directiveStartX);
+        // Positioned against the glyph actually drawn here, which is the span's wherever it won
+        const markerGlyph = spanAlreadyMarksThisMoment ? zeroDurationGlyph : directiveGlyph;
+        const markerLabelOffset = spanAlreadyMarksThisMoment ? zeroDurationLabelOffset : directiveLabelOffset;
+        if (!spanAlreadyMarksThisMoment) {
+          drawMarker(directiveStartX, y, directiveMarker, directiveGlyph);
+        }
 
         // Determine if label has space to draw
         if (drawLabels) {
@@ -876,19 +990,27 @@
               : directiveLabelWidth;
             // TODO could consider both? That said an item could have a span at the start of a plan and a directive at the beginning...
             const nextX = nextItem?.spanStartX || nextItem?.directiveStartX || null;
-            if (typeof nextX === 'number' && directiveStartX + finalWidth >= nextX) {
+            if (typeof nextX === 'number' && directiveStartX + markerLabelOffset + finalWidth >= nextX) {
               shouldDrawLabel = false;
               directiveLabelWidth = 0;
             }
           }
           if (shouldDrawLabel) {
-            drawLabel(label, directiveStartX, y, directiveLabelWidth, directiveColor, false, isSelected);
+            drawLabel(
+              label,
+              directiveStartX + markerLabelOffset,
+              y,
+              directiveLabelWidth,
+              directiveColor,
+              false,
+              isSelected,
+            );
 
             // Draw anchor
             if (anchored) {
               const anchorOpacity = selectedActivityDirectiveId !== null || selectedSpanId !== null ? 0.4 : 1;
               drawAnchorIcon(
-                directiveStartX + directiveLabelWidth + anchorIconMarginLeft,
+                directiveStartX + markerLabelOffset + directiveLabelWidth + anchorIconMarginLeft,
                 y + rowHeight / 2 - anchorIconWidth / 2,
                 isSelected ? 1 : anchorOpacity,
               );
@@ -898,15 +1020,69 @@
 
         // Add to quadtree
         visibleActivityDirectivesById[directive.id] = directive;
-        quadtreeActivityDirectives.add({
-          height: rowHeight,
-          id: directive.id,
-          width: directiveLabelWidth + labelPaddingLeft,
-          x: directiveStartX,
-          y,
-        });
+        quadtreeActivityDirectives.add(
+          getItemHitBox(
+            directive.id,
+            directiveStartX,
+            y,
+            directiveLabelWidth + markerLabelOffset + labelPaddingLeft,
+            markerGlyph,
+          ),
+        );
       }
     });
+  }
+
+  /**
+   * Whether a span occupies a single moment rather than an interval, keyed off the data so shape does
+   * not flip as you zoom. `duration === null` means still simulating -- unknown, not zero -- and
+   * getIntervalInMs(null) returns 0, so durationMs alone cannot tell the two apart.
+   */
+  function isZeroDurationSpan(span: Span): boolean {
+    return span.duration !== null && span.durationMs === 0;
+  }
+
+  function isZeroDurationExternalEvent(externalEvent: ExternalEvent): boolean {
+    return externalEvent.duration_ms === 0;
+  }
+
+  /**
+   * Hit box for a drawn item. A centered marker starts left of the item's start x, or its left half is
+   * drawn but not clickable. `contentWidth` is the wider of bar and label, measured rightward from
+   * startX. Pass the item's glyph, or null for a bar.
+   */
+  function getItemHitBox(
+    id: Id,
+    startX: number,
+    y: number,
+    contentWidth: number,
+    glyph: MarkerGlyph | null,
+  ): QuadtreeRect {
+    const left = glyph ? glyph.left : 0;
+    const right = glyph ? Math.max(glyph.right, contentWidth) : contentWidth;
+    return { height: rowHeight, id, width: left + right, x: startX - left, y };
+  }
+
+  /** Draws a single-moment marker in the given style. ctx.fillStyle is set by the caller. */
+  function drawMarker(x: number, y: number, style: MarkerStyle, glyph: MarkerGlyph) {
+    if (style === 'line') {
+      // Centered on x like the point styles, so switching style never moves the mark
+      ctx.fillRect(x - glyph.left, y, glyph.size, rowHeight);
+      return;
+    }
+    const half = glyph.size / 2;
+    const centerY = y + rowHeight / 2;
+    ctx.beginPath();
+    if (style === 'dot') {
+      ctx.arc(x, centerY, half, 0, Math.PI * 2);
+    } else {
+      ctx.moveTo(x, centerY - half);
+      ctx.lineTo(x + half, centerY);
+      ctx.lineTo(x, centerY + half);
+      ctx.lineTo(x - half, centerY);
+      ctx.closePath();
+    }
+    ctx.fill();
   }
 
   function drawLabel(

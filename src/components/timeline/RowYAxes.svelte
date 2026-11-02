@@ -6,15 +6,21 @@
   import { select, type Selection } from 'd3-selection';
   import { createEventDispatcher, tick } from 'svelte';
   import type { Resource } from '../../types/simulation';
-  import type { Axis, Layer, LineLayer, XRangeLayer } from '../../types/timeline';
+  import type { ComputedAxis, Layer, LineLayer, XRangeLayer } from '../../types/timeline';
   import { convertUsToDurationString } from '../../utilities/time';
-  import { getOrdinalYScale, getResourceForLayer, getYScale } from '../../utilities/timeline';
+  import {
+    getLogTickValues,
+    getOrdinalYScale,
+    getResourceForLayer,
+    getYScale,
+    thinTicksByPixelSpacing,
+  } from '../../utilities/timeline';
 
   export let drawHeight: number = 0;
   export let drawWidth: number = 0;
   export let resources: Resource[];
   export let layers: Layer[] = [];
-  export let yAxes: Axis[] = [];
+  export let yAxes: ComputedAxis[] = [];
 
   const dispatch = createEventDispatcher<{
     updateYAxesWidth: number;
@@ -121,11 +127,17 @@
           typeof axis.scaleDomain[1] === 'number'
         ) {
           const domain = axis.scaleDomain;
-          const scale = getYScale(domain, drawHeight);
+          const scale = getYScale(domain, drawHeight, axis.scaleType, axis.logConstant);
+          // A log axis gets an explicit base ladder, because symlog's own ticks are evenly spaced round
+          // numbers that read as linear. Either way the result is thinned to what actually fits, since
+          // d3 only loosely honors a tick count and log ignores it almost entirely.
+          const candidateTicks =
+            axis.scaleType === 'log' ? getLogTickValues(domain as number[], axis.logBase) : scale.ticks(tickCount);
+          const tickValues = thinTicksByPixelSpacing(candidateTicks, value => scale(value));
           const axisLeft = d3AxisLeft(scale)
             .tickSizeInner(0)
             .tickSizeOuter(0)
-            .ticks(tickCount)
+            .tickValues(tickValues)
             .tickFormat(n => {
               if (allResourcesAreDuration) {
                 // Take the largest component of the duration string

@@ -416,6 +416,10 @@
                           },
                           "type": "object"
                         },
+                        "directiveMarker": {
+                          "description": "Marker shape for activity directives. Always applied: a directive marks a start time and has no duration of its own",
+                          "enum": ["line", "dot", "diamond"]
+                        },
                         "displayMode": {
                           "description": "Describes the display mode to use for rendering external events",
                           "enum": ["compact", "grouped"]
@@ -438,6 +442,10 @@
                         "labelVisibility": {
                           "description": "External event text label behavior",
                           "enum": ["on", "off", "auto"]
+                        },
+                        "zeroDurationMarker": {
+                          "description": "Marker shape for spans and external events whose duration is zero. Anything with a duration keeps its bar",
+                          "enum": ["line", "dot", "diamond"]
                         }
                       },
                       "type": "object"
@@ -460,6 +468,10 @@
                           },
                           "y": {
                             "description": "Y value the horizontal guide anchors to",
+                            "type": "number"
+                          },
+                          "y2": {
+                            "description": "Second Y value. When present the guide is drawn as a shaded band between y and y2 instead of a single line. Order does not matter",
                             "type": "number"
                           },
                           "yAxisId": {
@@ -514,26 +526,66 @@
                                 "const": "line",
                                 "description": "Layer that visualizes points and a line"
                               },
+                              "fillColor": {
+                                "$ref": "#/definitions/color"
+                              },
+                              "fillOpacity": {
+                                "description": "Opacity of the area fill",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
+                              },
                               "filter": {
                                 "$ref": "#/definitions/filterResource"
                               },
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
+                              "interpolation": {
+                                "description": "How the line between two sampled values is drawn. Only affects discretely-sampled resources, which are piecewise constant",
+                                "enum": ["step", "linear", "smooth"]
+                              },
                               "lineColor": {
                                 "$ref": "#/definitions/color"
                               },
+                              "lineStyle": {
+                                "description": "Stroke pattern of the line",
+                                "enum": ["solid", "dashed", "dotted"]
+                              },
                               "lineWidth": {
                                 "description": "Width of the line",
+                                "minimum": 0,
                                 "type": "number"
                               },
                               "name": {
                                 "description": "Name of the layer",
                                 "type": "string"
                               },
+                              "opacity": {
+                                "description": "Opacity of the line and its points",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
+                              },
+                              "pointColor": {
+                                "$ref": "#/definitions/color"
+                              },
                               "pointRadius": {
                                 "description": "Radius of the points",
+                                "minimum": 0,
                                 "type": "number"
+                              },
+                              "pointShape": {
+                                "description": "Shape of the points, drawn at equal visual area across shapes",
+                                "enum": ["circle", "square", "diamond", "triangle", "cross"]
+                              },
+                              "showFill": {
+                                "description": "Whether or not to fill the area between the line and the zero baseline",
+                                "type": "boolean"
+                              },
+                              "showPoints": {
+                                "description": "When to render points. 'auto' hides them once the line is decimated",
+                                "enum": ["auto", "always", "never"]
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
@@ -580,15 +632,43 @@
                               "id": {
                                 "$ref": "#/definitions/id"
                               },
+                              "labelVisibility": {
+                                "description": "Whether a range rectangle is labelled with its value",
+                                "enum": ["auto", "off"]
+                              },
                               "name": {
                                 "description": "Name of the layer",
                                 "type": "string"
                               },
                               "opacity": {
+                                "description": "Opacity of the range rectangles",
+                                "maximum": 1,
+                                "minimum": 0,
                                 "type": "number"
                               },
                               "showAsLinePlot": {
                                 "type": "boolean"
+                              },
+                              "valueAppearance": {
+                                "additionalProperties": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "color": {
+                                      "$ref": "#/definitions/color"
+                                    },
+                                    "hidden": {
+                                      "description": "Draw nothing for this value: no box, no label, no hover target",
+                                      "type": "boolean"
+                                    },
+                                    "label": {
+                                      "description": "Replaces the text drawn in this value's boxes. The value still decides color and box boundaries",
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "description": "Per-value overrides keyed by the resource value. Values absent from this map keep the color their colorScheme assigns.",
+                                "type": "object"
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
@@ -617,6 +697,12 @@
                               "name": {
                                 "description": "Name of the layer",
                                 "type": "string"
+                              },
+                              "opacity": {
+                                "description": "Opacity of drawn external events",
+                                "maximum": 1,
+                                "minimum": 0,
+                                "type": "number"
                               },
                               "yAxisId": {
                                 "$ref": "#/definitions/yAxisId"
@@ -651,6 +737,11 @@
                           "label": {
                             "$ref": "#/definitions/label"
                           },
+                          "logBase": {
+                            "description": "Base for log axis tick labels, an integer of 2 or more. Affects which values are labelled only -- tick positions are unchanged by the base",
+                            "minimum": 2,
+                            "type": "integer"
+                          },
                           "renderTickLines": {
                             "description": "If true render horizontal lines for each y axis tick, if false do not render them",
                             "type": "boolean"
@@ -661,6 +752,14 @@
                               "type": "number"
                             },
                             "type": "array"
+                          },
+                          "scaleType": {
+                            "description": "How the axis maps values to pixels. 'log' is backed by a symmetric log scale so that zero and negative values still have a position",
+                            "enum": ["linear", "log"]
+                          },
+                          "stack": {
+                            "description": "If true, sum this axis's line layers bottom-up in layer order so the topmost layer's line is the total. Layers whose resource is not numeric are left unstacked",
+                            "type": "boolean"
                           },
                           "tickCount": {
                             "description": "Number of ticks on the axis",
@@ -701,6 +800,10 @@
                     },
                     "timestamp": {
                       "description": "DOY timestamp (YYYY-DDDThh:mm:ss) of the vertical guide",
+                      "type": "string"
+                    },
+                    "timestamp2": {
+                      "description": "Second DOY timestamp. When present the guide is drawn as a shaded time region across every row instead of a single line. Order does not matter",
                       "type": "string"
                     }
                   },
