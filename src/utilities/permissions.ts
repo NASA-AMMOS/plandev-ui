@@ -92,6 +92,10 @@ function isUserCollaborator(
  * Whether the user belongs to a role the workspace has granted write access to.
  * Membership is evaluated against any of the user's roles, not just the active one;
  * the active role's permissions are still checked separately.
+ *
+ * The user's roles come from the session token, so this reflects role assignments as of login. The backend
+ * evaluates live membership and is authoritative: a role added since login becomes usable here after
+ * logging in again, and a role removed since login is still denied by the backend on write.
  */
 function isWorkspaceRoleGranted(user: User | null, workspace?: Workspace | null): boolean {
   if (user && workspace) {

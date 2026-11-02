@@ -1064,4 +1064,67 @@ test.describe.serial('Workspace', () => {
     // The permissionHandler directive adds 'permission-disabled' class when user lacks permission
     await expect(newFileMenuItemWrapper).toHaveClass(/permission-disabled/);
   });
+
+  test('Role-granted user can edit a workspace until the grant is revoked', async () => {
+    test.setTimeout(120000);
+
+    // A dedicated workspace, so that granting the broad 'user' role can't affect the shared one
+    const grantedName = generateRandomName();
+    await workspaces.goto();
+    const grantedId = await workspaces.createWorkspace(
+      grantedName,
+      parcels.parcelName,
+      workspaces.createWorkspaceLocation(),
+    );
+    const fileName = `${generateRandomName()}.seq`;
+    await api.createWorkspaceItem(parseInt(grantedId), fileName, '// Original');
+
+    try {
+      const owner = new Workspace(setup.page, grantedId, grantedName, workspace.baseURL);
+      const userBWorkspace = new Workspace(setupUnauthorized.page, grantedId, grantedName, workspace.baseURL);
+      await owner.goto();
+      const userB = new User(setupUnauthorized.page, 'userB');
+      await userB.gotoWithRetry('/plans');
+      await userB.switchRole('user');
+      await userBWorkspace.goto();
+      if ((await owner.workspaceSettingsButton.getAttribute('data-active')) !== 'true') {
+        await owner.workspaceSettingsButton.click();
+      }
+
+      // userB (active role 'user') is neither owner nor collaborator, so cannot edit yet
+      const newFileMenuItem = async () => {
+        await userBWorkspace.openWorkspaceContextMenu();
+        return userBWorkspace.workspaceHeaderMenu.locator('div[role="button"]').filter({ hasText: 'New File' });
+      };
+      await expect(await newFileMenuItem()).toHaveClass(/permission-disabled/);
+      await setupUnauthorized.page.keyboard.press('Escape');
+
+      // The owner grants the 'user' role, which userB is assigned. No reload is needed on userB's side.
+      await owner.workspaceRoleGrantInput.click();
+      await owner.workspaceRoleGrantInput.fill('user');
+      await setup.page.locator('#tags-input').getByRole('option', { exact: true, name: 'user' }).click();
+      await owner.waitForToast('Workspace Role Access Updated');
+
+      await expect(await newFileMenuItem()).not.toHaveClass(/permission-disabled/);
+      await setupUnauthorized.page.keyboard.press('Escape');
+
+      await userBWorkspace.searchForFileAndWait(fileName);
+      await userBWorkspace.clickFile(fileName);
+      await userBWorkspace.fillSequenceContent('// Edited by a role member');
+      await userBWorkspace.saveSequence();
+
+      // Revoking the grant takes effect in the UI and in the backend
+      await setup.page.getByRole('option', { exact: true, name: 'user' }).click();
+      await owner.waitForToast('Workspace Role Access Removed Successfully');
+
+      await expect(await newFileMenuItem()).toHaveClass(/permission-disabled/);
+      const userBApi = await createAuthenticatedApi('userB', 'userB');
+      await expect(
+        userBApi.createWorkspaceItem(parseInt(grantedId), `${generateRandomName()}.seq`, '// Denied', 'user'),
+      ).rejects.toThrow(/Forbidden/);
+    } finally {
+      await workspaces.goto();
+      await workspaces.deleteWorkspace(grantedName);
+    }
+  });
 });

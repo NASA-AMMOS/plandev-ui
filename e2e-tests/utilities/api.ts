@@ -157,8 +157,9 @@ export class AerieApi {
   /**
    * Create a file (with content) or folder (omit content) in a workspace via the Workspace Service,
    * bypassing the UI. The UI creation path is covered by dedicated tests; this is for fast seeding.
+   * Requests are made as `role`, which defaults to admin.
    */
-  async createWorkspaceItem(workspaceId: number, path: string, content?: string): Promise<void> {
+  async createWorkspaceItem(workspaceId: number, path: string, content?: string, role?: string): Promise<void> {
     const isFolder = content === undefined;
     const type = isFolder ? 'directory' : 'file';
 
@@ -169,7 +170,7 @@ export class AerieApi {
       body.append('file', new Blob([content]), fileName);
     }
 
-    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}`, 'PUT', body, { workspace: true });
+    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}`, 'PUT', body, { role, workspace: true });
   }
 
   async deleteActivityDirectives(planId: number, activityIds: number[]): Promise<void> {
@@ -240,12 +241,12 @@ export class AerieApi {
     path: string,
     method: string,
     body?: FormData | string,
-    { workspace = false }: { workspace?: boolean } = {},
+    { role = 'aerie_admin', workspace = false }: { role?: string; workspace?: boolean } = {},
   ): Promise<Response> {
     const user = this.requireUser();
     const headers: Record<string, string> = {
       Authorization: `Bearer ${user.token}`,
-      'x-hasura-role': 'aerie_admin',
+      'x-hasura-role': role,
       'x-hasura-user-id': user.id,
     };
     if (typeof body === 'string') {

@@ -330,7 +330,9 @@
                     />
                     <div class="st-typography-label pt-1 text-gray-500">
                       Members of these roles can edit workspace files, subject to their role permissions. Roles that
-                      cannot write files, such as viewer, gain no write access.
+                      cannot write files, such as viewer, gain no write access. Members cannot manage collaborators,
+                      role access, or workspace settings. Granting a broad role such as user gives every member of that
+                      role write access.
                     </div>
                   </Input>
                 </fieldset>
