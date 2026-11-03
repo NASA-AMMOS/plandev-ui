@@ -981,7 +981,7 @@ export const WorkspaceApi = {
       user,
       undefined,
       false,
-      {},
+      { 'Content-Type': 'application/json' },
       'versioning',
     );
     return parseRevisionName(data);

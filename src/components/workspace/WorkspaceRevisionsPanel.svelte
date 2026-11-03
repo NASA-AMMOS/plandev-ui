@@ -344,7 +344,7 @@
                   <div class="rounded border border-border bg-muted p-2" role="status">{notice}</div>
                 {/if}
               </section>
-              <div class="flex flex-col gap-1">
+              <section class="flex flex-col gap-1" aria-label="Revision History">
                 <span class="font-medium text-muted-foreground">Revision History</span>
                 {#if latest}
                   <ul class="flex flex-col overflow-hidden rounded border border-border" aria-label="Revisions">
@@ -447,7 +447,7 @@
                 {:else}
                   <div class="text-muted-foreground">No revisions yet.</div>
                 {/if}
-              </div>
+              </section>
             </div>
           {/if}
         </Sidebar.Menu>

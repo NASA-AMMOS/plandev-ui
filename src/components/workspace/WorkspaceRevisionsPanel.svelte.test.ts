@@ -15,7 +15,11 @@ vi.mock('svelte', async importOriginal => {
     untrack: vi.fn(fn => fn()), // used by SvelteKit's client, absent from Svelte 4
   };
 });
-vi.mock('$env/dynamic/public', () => ({ env: {} })); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => ({
+  env: {
+    PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION: 'ALPHABETIC',
+  },
+})); // https://github.com/sveltejs/kit/issues/8180
 
 vi.mock('../../utilities/modal', () => ({ showWorkspaceRevisionPreviewModal: vi.fn().mockResolvedValue({}) }));
 vi.mock('../../utilities/effects', () => ({

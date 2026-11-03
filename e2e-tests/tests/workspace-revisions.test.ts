@@ -77,24 +77,22 @@ test.afterAll(async () => {
 
 test.describe('Workspace Revisions', () => {
   let page: Page;
-  let panel: Locator;
+  let createRevisionPanel: Locator;
+  let revisionHistoryPanel: Locator;
   let createRevisionButton: Locator;
 
-  const sequenceName = `${generateRandomName()}.seq`;
-
-  // Revision names are displayed uppercase; the server may return them in either case.
-  const previewRevisionButton = (name: string) => page.getByTitle(`Preview revision ${name.toUpperCase()}`);
-  const restoreRevisionButton = (name: string) =>
-    page.getByRole('button', { name: `Restore file to revision ${name.toUpperCase()}` });
+  const previewRevisionButton = (name: string) => page.getByLabel(`Preview revision ${name.toUpperCase()}`);
 
   test.beforeAll(() => {
     ({ page } = setup);
-    panel = page.getByRole('region', { name: 'Create revision' });
-    createRevisionButton = panel.getByRole('button', { name: 'Create revision' });
+    createRevisionPanel = page.getByRole('region', { name: 'Create revision' });
+    revisionHistoryPanel = page.getByRole('region', { name: 'Revision History' });
+    createRevisionButton = createRevisionPanel.getByRole('button', { name: 'Create revision' });
   });
 
   test('Create a revision of a sequence', async () => {
-    await api.createWorkspaceItem(parseInt(workspace.workspaceId), sequenceName, '# version a');
+    const sequenceName = `${generateRandomName()}.seq`;
+    await api.createWorkspaceItem(parseInt(workspace.workspaceId), sequenceName, '# version 1');
 
     if (await workspace.workspaceFileGrid.isHidden()) {
       await workspace.workspaceFileBrowserButton.click();
@@ -104,62 +102,66 @@ test.describe('Workspace Revisions', () => {
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
-    if (!(await panel.isVisible())) {
+    if (!(await createRevisionPanel.isVisible())) {
       await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
     }
 
     await expect(page.getByText('No revisions yet.')).toBeVisible();
     await createRevisionButton.click();
-    await workspace.waitForToast('Created revision A');
-    await expect(previewRevisionButton('a')).toBeVisible();
-    await expect(panel).toContainText('The saved copy matches the latest revision.');
+    await workspace.waitForToast('Created revision 1');
+    await expect(previewRevisionButton('1')).toBeVisible();
+    await expect(createRevisionPanel).toContainText('The saved copy matches the latest revision.');
     await expect(createRevisionButton).toBeDisabled();
   });
 
   test('Preview the file revision diff against the current content, and restore file revisions', async () => {
     const modal = page.locator('#modal-container');
+    const sequenceName = `${generateRandomName()}.seq`;
 
-    await createFileIfNeeded(sequenceName, '# version a', api, workspace);
+    await createFileIfNeeded(sequenceName, '# version 1', api, workspace);
 
-    if (!(await panel.isVisible())) {
+    if (!(await createRevisionPanel.isVisible())) {
       await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
     }
     await createRevisionButton.click();
-    await workspace.waitForToast('Created revision A');
+    await workspace.waitForToast('Created revision 1');
 
-    await workspace.fillSequenceContent('# version b');
-    await expect(panel).toContainText('Save your changes before creating a revision.');
+    await workspace.fillSequenceContent('# version 2');
+    await expect(createRevisionPanel).toContainText('Save your changes before creating a revision.');
     await expect(createRevisionButton).toBeDisabled();
     await workspace.saveSequence();
-    await expect(panel).not.toContainText('The saved copy matches');
+    await expect(createRevisionPanel).not.toContainText('The saved copy matches');
     await expect(createRevisionButton).toBeEnabled();
     await createRevisionButton.click();
-    await workspace.waitForToast('Created revision B');
-    await expect(previewRevisionButton('b')).toBeVisible();
-    await expect(panel).toContainText('The saved copy matches the latest revision.');
+    await workspace.waitForToast('Created revision 2');
+    await expect(previewRevisionButton('2')).toBeVisible();
+    await expect(createRevisionPanel).toContainText('The saved copy matches the latest revision.');
     await expect(createRevisionButton).toBeDisabled();
 
-    await previewRevisionButton('a').click();
-    await expect(modal).toContainText(/Comparing .+ with .+/);
+    await previewRevisionButton('1').click();
+    await expect(modal).toContainText('Compare to Revision 1');
     await expect(modal).toContainText('Content contains: 1 changed line');
     await modal.getByRole('button', { exact: true, name: 'Close' }).click();
     await expect(modal).toBeHidden();
 
-    await restoreRevisionButton('a').click();
-    await expect(modal).toContainText(/Restore revision a\?/i);
-    await modal.getByRole('button', { exact: true, name: 'Restore' }).click();
-    await workspace.waitForToast('Restored revision A');
+    const revisionButton = await revisionHistoryPanel.getByRole('region', { name: 'Revision 1' });
+    await revisionButton.getByRole('button', { name: 'More options' }).click();
+    await page.getByRole('menuitem', { name: 'Restore file to revision 1' }).first().click();
+    await expect(modal).toContainText('Restore to 1?');
+    await modal.getByRole('button', { exact: true, name: 'Restore Revision 1' }).click();
+    await workspace.waitForToast('Restored revision 1');
 
-    await expect(workspace.sequenceEditorContent).toHaveText('# version a');
+    await expect(workspace.sequenceEditorContent).toHaveText('# version 1');
     await expect(workspace.saveSequenceButton).toBeDisabled();
-    await expect(previewRevisionButton('a')).toBeVisible();
-    await expect(previewRevisionButton('b')).toBeVisible();
-    await expect(panel).toContainText('The saved copy matches revision A');
+    await expect(previewRevisionButton('1')).toBeVisible();
+    await expect(previewRevisionButton('2')).toBeVisible();
+    await expect(createRevisionPanel).toContainText('The saved copy matches revision 1');
     await expect(createRevisionButton).toBeEnabled();
   });
 
   test('Create a revision with a specific starting revision name', async () => {
-    await api.createWorkspaceItem(parseInt(workspace.workspaceId), sequenceName, '# version a');
+    const sequenceName = `${generateRandomName()}.seq`;
+    await api.createWorkspaceItem(parseInt(workspace.workspaceId), sequenceName, '# version 1');
 
     if (await workspace.workspaceFileGrid.isHidden()) {
       await workspace.workspaceFileBrowserButton.click();
@@ -169,13 +171,13 @@ test.describe('Workspace Revisions', () => {
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
-    if (!(await panel.isVisible())) {
+    if (!(await createRevisionPanel.isVisible())) {
       await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
     }
 
-    await panel.getByRole('textbox', { name: 'Starting revision name' }).fill('C');
+    await createRevisionPanel.getByRole('textbox', { name: 'Starting revision name' }).fill('3');
     await createRevisionButton.click();
-    await workspace.waitForToast('Created revision C');
-    await expect(previewRevisionButton('c')).toBeVisible();
+    await workspace.waitForToast('Created revision 3');
+    await expect(previewRevisionButton('3')).toBeVisible();
   });
 });
