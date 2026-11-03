@@ -198,7 +198,6 @@
   }
 
   async function onRestore(revision: WorkspaceFileRevision) {
-    console.log('onRestore :>> ', revision);
     if (!filePath || !revisionList || isRestoring) {
       return;
     }
@@ -428,10 +427,7 @@
                                     class="flex items-center gap-2"
                                     size="sm"
                                     aria-label={`Restore file to revision ${revisionDisplayName}`}
-                                    on:click={() => {
-                                      console.log('Restore file to revision', revision);
-                                      onRestore(revision);
-                                    }}
+                                    on:click={() => onRestore(revision)}
                                   >
                                     <RotateCcwClock size={10} />
                                     Restore file to revision {revisionDisplayName}
