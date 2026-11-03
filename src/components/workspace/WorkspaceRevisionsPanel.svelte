@@ -371,7 +371,7 @@
                                   </Tooltip>
                                 </div>
                                 <div class="text-left text-muted-foreground">
-                                  <span>Created:</span>
+                                  <span>Created By:</span>
                                   <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
                                   <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
                                 </div>
