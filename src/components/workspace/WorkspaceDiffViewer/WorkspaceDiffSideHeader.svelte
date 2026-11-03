@@ -31,11 +31,10 @@
       {#if editBy || editedAt}
         <div class=" text-nowrap text-muted-foreground">
           {#if editBy && editedAt}
-            <span
-              >{getUserDisplayNameFromIdentity(editBy)} edited at {getShortISOForDate(new Date(editedAt || ''))}</span
-            >
-          {:else if editBy}
-            <span>Edited by: {getUserDisplayNameFromIdentity(editBy || '')}</span>
+            <span>Edited By: {getUserDisplayNameFromIdentity(editBy || '')}</span>
+            {#if editedAt}
+              <span>at {getShortISOForDate(new Date(editedAt || ''))}</span>
+            {/if}
           {/if}
         </div>
       {/if}

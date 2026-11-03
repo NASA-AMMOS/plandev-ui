@@ -7,7 +7,7 @@
 
   import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
   import { activeDocument, activeDocumentIsDirty } from '../../stores/activeDocument';
-  import { catchError } from '../../stores/console';
+  import { catchError, logMessage } from '../../stores/console';
   import { getUserStore } from '../../stores/user';
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
@@ -162,6 +162,7 @@
       }
       commitMessage = '';
       showSuccessToast(`Created revision ${getRevisionDisplayName(revision)}`);
+      logMessage('log', `Created revision ${revision} for workspace file "${filePath}"`);
     } catch (e) {
       // The revision exists but the list can't show it yet; a retry would create the next one.
       if (
@@ -169,6 +170,7 @@
         e.errors.some(({ type }) => (type as string) === 'WORKSPACE_REVISION_NOT_INDEXED')
       ) {
         notice = "Revision created, but it isn't available in the list yet.";
+        catchError('log', `Revision created but not available in list: ${revisionStart}`, e);
       } else {
         catchError('log', 'Failed to create revision', e as Error);
         showFailureToast('Failed to create revision');
@@ -365,13 +367,13 @@
                                 <div class="font-semibold">
                                   Revision {revisionDisplayName}
                                 </div>
-                                <div class="min-h-4 overflow-hidden text-ellipsis text-nowrap">
-                                  <Tooltip content={revision.message}>
+                                <Tooltip class="max-w-[300px]" content={revision.message} disabled={!revision.message}>
+                                  <div class="min-h-4 overflow-hidden text-ellipsis text-nowrap">
                                     {revision.message}
-                                  </Tooltip>
-                                </div>
+                                  </div>
+                                </Tooltip>
                                 <div class="text-left text-muted-foreground">
-                                  <span>Created:</span>
+                                  <span>Created By:</span>
                                   <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
                                   <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
                                 </div>
