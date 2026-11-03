@@ -53,10 +53,8 @@
   let disableCopyAndExport: boolean = true;
   let editorDiv: HTMLDivElement;
   let editorView: EditorView;
-  let isTextContentUpdated: boolean = false;
   let previousIsJSON: boolean | null = null;
   let previousTextFilePath: string = textFilePath;
-  let updatedTextContent: string = textFileContent;
 
   // Insert text content - use textFilePath as dependency to ensure editor updates when switching files
   // This handles the case where both old and new files have the same content (e.g., both empty)
@@ -84,8 +82,6 @@
       ]),
     });
   }
-  $: updatedTextContent = textFileContent;
-  $: isTextContentUpdated = updatedTextContent !== textFileContent;
 
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
@@ -167,7 +163,6 @@
   function textContentUpdateListener(viewUpdate: ViewUpdate): void {
     const updatedText = viewUpdate.state.doc.toString();
     disableCopyAndExport = updatedText === '';
-    updatedTextContent = updatedText;
     dispatch('textContentUpdated', { filePath: textFilePath, input: updatedText });
   }
 
@@ -201,7 +196,6 @@
   function onSave(): boolean {
     const currentText = editorView.state.doc.toString();
     if (currentText !== textFileContent) {
-      updatedTextContent = currentText;
       dispatch('save', currentText);
     }
     return true;
@@ -265,8 +259,8 @@
       )}
       onDownload={downloadInputFormat}
       showSaveButton={!(readOnly || previewOnly || isLoading)}
-      saveDisabled={!isTextContentUpdated}
-      saveHighlighted={isTextContentUpdated}
+      saveDisabled={!isDirty}
+      saveHighlighted={isDirty}
       {onSave}
       on:runAction={e => onRunAction(e.detail.action, e.detail.parameter)}
     />

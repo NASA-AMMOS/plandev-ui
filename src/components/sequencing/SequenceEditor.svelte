@@ -92,8 +92,6 @@
   let showOutputs: boolean = true;
   let previousShowOutputs: boolean = showOutputs;
   let toggleSeqJsonPreview: boolean = false;
-  let updatedSequenceDefinition: string = sequenceDefinition;
-  let isSequenceDefinitionUpdated: boolean = false;
   let commandInfoMapper: CommandInfoMapper;
   let inputEditorExtension: Extension = [];
   let outputEditorExtension: Extension = [];
@@ -207,9 +205,6 @@
     });
   }
 
-  $: updatedSequenceDefinition = sequenceDefinition;
-  $: isSequenceDefinitionUpdated = updatedSequenceDefinition !== sequenceDefinition;
-
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path
   $: if (sequenceFilePath !== previousSequenceFilePath) {
@@ -236,7 +231,6 @@
   function sequenceUpdateListener(viewUpdate: ViewUpdate): void {
     const sequence = viewUpdate.state.doc.toString();
     disableCopyAndExport = sequence === '';
-    updatedSequenceDefinition = sequence;
 
     dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
 
@@ -348,7 +342,6 @@
   function onSave(): boolean {
     const currentSequence = editorSequenceView.state.doc.toString();
     if (currentSequence !== sequenceDefinition) {
-      updatedSequenceDefinition = currentSequence;
       dispatch('save', currentSequence);
     }
     return true;
@@ -482,8 +475,8 @@
           )}
           onDownload={downloadInputFormat}
           showSaveButton={!(readOnly || previewOnly || isLoading)}
-          saveDisabled={!isSequenceDefinitionUpdated}
-          saveHighlighted={isSequenceDefinitionUpdated}
+          saveDisabled={!isDirty}
+          saveHighlighted={isDirty}
           {onSave}
           on:runAction={onRunAction}
         />

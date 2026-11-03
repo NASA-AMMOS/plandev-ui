@@ -1,23 +1,27 @@
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
-import { writable } from 'svelte/store';
+import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { activeDocument } from '../../stores/activeDocument';
 import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
 import effects from '../../utilities/effects';
 import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
-vi.mock('svelte', async importOriginal => {
-  const actual = await importOriginal<typeof import('svelte')>();
-  return {
-    ...actual,
-    getContext: vi.fn((key: string) => (key === 'user' ? writable(null) : actual.getContext(key))),
-    untrack: vi.fn(fn => fn()), // used by SvelteKit's client, absent from Svelte 4
-  };
-});
-vi.mock('$env/dynamic/public', () => ({ env: {} })); // https://github.com/sveltejs/kit/issues/8180
+vi.mock('$env/dynamic/public', () => ({
+  get env() {
+    return process.env;
+  },
+}));
 vi.mock('../../utilities/modal', () => ({ showWorkspaceRevisionPreviewModal: vi.fn().mockResolvedValue({}) }));
 vi.mock('../../utilities/effects', () => ({
   default: { restoreWorkspaceFileRevision: vi.fn().mockResolvedValue(null) },
+}));
+vi.mock('../../utilities/permissions', () => ({
+  featurePermissions: {
+    workspace: {
+      canCreate: vi.fn().mockReturnValue(true),
+      canUpdate: vi.fn().mockReturnValue(true),
+    },
+  },
 }));
 
 const revision = (name: string): WorkspaceFileRevision => ({
@@ -29,25 +33,55 @@ const revision = (name: string): WorkspaceFileRevision => ({
   name,
   pathAtRevision: 'a.seq',
 });
-const [a, b, c] = [revision('a'), revision('b'), revision('c')];
-const revisionList = [c, b, a];
 
-function renderPanel(matchingRevisionName: WorkspaceRevisionName | null) {
-  return render(WorkspaceRevisionsPanel, {
-    props: {
-      doesWorkingCopyMatchLatestRevision:
-        matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
-      filePath: 'a.seq',
-      hasEditPermission: true,
-      matchingRevisionName,
-      reloadWorkingCopy: vi.fn(),
-      revisionList,
+const configurations = [
+  {
+    convention: 'numeric',
+    display: { a: '1', b: '2', c: '3' },
+    envValue: undefined,
+    revs: { a: '1', b: '2', c: '3' },
+    validation: {
+      error: 'Only numbers are allowed. No letters, spaces, or symbols.',
+      invalidVal: 'b',
+      startVal: '1',
     },
-  });
-}
+  },
+  {
+    convention: 'alphabetic',
+    display: { a: 'A', b: 'B', c: 'C' },
+    envValue: 'ALPHABETIC',
+    revs: { a: 'a', b: 'b', c: 'c' },
+    validation: {
+      error: 'Only letters are allowed. No numbers, spaces, or symbols.',
+      invalidVal: '1',
+      startVal: 'A',
+    },
+  },
+];
 
-describe('WorkspaceRevisionsPanel', () => {
+describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming convention', config => {
+  const [a, b, c] = [revision(config.revs.a), revision(config.revs.b), revision(config.revs.c)];
+  const revisionList = [c, b, a];
+
+  function renderPanel(matchingRevisionName: WorkspaceRevisionName | null) {
+    return render(WorkspaceRevisionsPanel, {
+      props: {
+        doesWorkingCopyMatchLatestRevision:
+          matchingRevisionName != null && matchingRevisionName === revisionList[0]?.name,
+        filePath: 'a.seq',
+        hasCreateRevisionPermission: true,
+        hasRestoreRevisionPermission: true,
+        matchingRevisionName,
+        reloadWorkingCopy: vi.fn(),
+        revisionList,
+      },
+    });
+  }
+
   beforeEach(() => {
+    if (config.envValue) {
+      vi.stubEnv('PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION', config.envValue);
+    }
     activeDocument.startLoad('a.seq', 'a.seq', null);
     activeDocument.open('a.seq', 'saved', '"etag"');
   });
@@ -55,12 +89,26 @@ describe('WorkspaceRevisionsPanel', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it(`validates the starting revision as ${config.convention}`, async () => {
+    const { getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
+      props: { filePath: 'a.seq', hasCreateRevisionPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
+    });
+    const input: HTMLInputElement = getByRole('textbox', { name: 'Starting revision name' }) as HTMLInputElement;
+    expect(input.value).toBe(config.validation.startVal);
+    expect(queryByRole('alert')).toBeNull();
+
+    await fireEvent.input(input, { target: { value: config.validation.invalidVal } });
+    expect(getByRole('alert').textContent).toBe(config.validation.error);
+    expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('says which revision the saved copy matches, until unsaved editor changes make that stale', async () => {
     const { getByLabelText } = renderPanel(b.name);
-    const section = getByLabelText('Working copy');
-    expect(section.textContent).toContain('The saved copy matches revision B');
+    const section = getByLabelText('Create revision');
+    expect(section.textContent).toContain(`The saved copy matches revision ${config.display.b}`);
 
     activeDocument.updateContent('typed');
     await waitFor(() => expect(section.textContent).toContain('Unsaved editor changes'));
@@ -74,34 +122,26 @@ describe('WorkspaceRevisionsPanel', () => {
     cleanup();
 
     const older = renderPanel(b.name);
-    expect(older.getByLabelText('Working copy').textContent).toContain('matches revision B');
+    expect(older.getByLabelText('Create revision').textContent).toContain(`matches revision ${config.display.b}`);
     expect((older.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('warns about losing the saved copy only when it does not match the latest revision', async () => {
-    for (const [matchingRevisionName, warns] of [
-      [c.name, false],
-      [b.name, true],
-      [null, true],
-    ] as const) {
-      const { getByLabelText } = renderPanel(matchingRevisionName);
-      await fireEvent.click(getByLabelText('Restore file to revision A'));
-      const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
-      expect(!!options?.unrevisionedWarning).toBe(warns);
-      cleanup();
-    }
-  });
+  it.each([
+    ['latest', c.name, false],
+    ['older', b.name, true],
+    ['none', null, true],
+  ])('warns about losing the saved copy when matchingRevisionName is %s', async (_, matchingRevisionName, warns) => {
+    const { getByRole, getAllByRole } = renderPanel(matchingRevisionName);
+    const revisionButton = await getByRole('region', { name: `Revision ${config.display.a}` });
+    await fireEvent.click(within(revisionButton).getByRole('button', { name: 'More options' }));
 
-  it('validates the starting revision as numeric by default', async () => {
-    const { container, getByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
-      props: { filePath: 'a.seq', hasEditPermission: true, reloadWorkingCopy: vi.fn(), revisionList: [] },
-    });
-    const input = container.querySelector('#revision-start') as HTMLInputElement;
-    expect(input.value).toBe('1');
-    expect(queryByRole('alert')).toBeNull();
+    const restoreMenuItem = (
+      await getAllByRole('menuitem', { name: `Restore file to revision ${config.display.a}` })
+    ).at(0);
+    await fireEvent.click(restoreMenuItem!);
 
-    await fireEvent.input(input, { target: { value: 'b' } });
-    expect(getByRole('alert').textContent).toBe('Only numbers are allowed. No letters, spaces, or symbols.');
-    expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
+    const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
+    expect(!!options?.unrevisionedWarning).toBe(warns);
+    cleanup();
   });
 });

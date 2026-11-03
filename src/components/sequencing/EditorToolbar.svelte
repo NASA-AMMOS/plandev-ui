@@ -35,7 +35,6 @@
   export let showDownloadButton: boolean = false;
   export let downloadDisabled: boolean = false;
   export let downloadLabel: string = 'Download';
-  /** One entry per naming convention offered, e.g. plain filename and/or the revision-versioned filename. */
   export let downloadOptions: DownloadMenuOption[] = [];
   export let onDownload: ((name: string) => void) | undefined = undefined;
 

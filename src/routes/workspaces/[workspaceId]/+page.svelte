@@ -175,9 +175,11 @@
   let commandInfoMapper: CommandInfoMapper | null = null;
   let consolePaneApi: PaneAPI;
   let doesWorkingCopyMatchLatestRevision: boolean = false;
+  let hasCreateRevisionPermission: boolean = false;
   let hasEditFilePermission: boolean = false;
   let hasEditWorkspaceCollaboratorsPermission: boolean = false;
   let hasEditWorkspacePermission: boolean = false;
+  let hasRestoreRevisionPermission: boolean = false;
   let hasRunActionPermission: boolean = false;
   let isConsoleExpanded: boolean = false;
   let isFileReadOnly: boolean = false;
@@ -283,11 +285,19 @@
     hasEditWorkspaceCollaboratorsPermission = featurePermissions.workspaceCollaborators.canCreate($user, ws);
     if ($activeDocumentPath && workspaceTreeMap[$activeDocumentPath]) {
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws, workspaceTreeMap[$activeDocumentPath]);
+      hasCreateRevisionPermission = featurePermissions.workspace.canCreate($user, ws);
+      hasRestoreRevisionPermission = featurePermissions.workspace.canUpdate(
+        $user,
+        ws,
+        workspaceTreeMap[$activeDocumentPath],
+      );
       availableActionsForActiveFile = getAvailableActionsForNodes(allActionsForWorkspace, [
         workspaceTreeMap[$activeDocumentPath],
       ]);
     } else {
       hasEditFilePermission = featurePermissions.workspace.canUpdate($user, ws);
+      hasCreateRevisionPermission = false;
+      hasRestoreRevisionPermission = false;
       availableActionsForActiveFile = [];
     }
     hasRunActionPermission = featurePermissions.actionRun.canCreate($user, ws);
@@ -1035,31 +1045,6 @@
       workspaceName: $workspace?.name,
     });
   }
-
-  // /** Restores an arbitrary (not necessarily active) file's revision, from the "Compare revisions" context menu. */
-  // async function restoreArbitraryFileRevision(path: string, revision: WorkspaceFileRevision, workingCopyETag: string) {
-  //   if (!$workspace) {
-  //     return;
-  //   }
-  //   try {
-  //     await WorkspaceApi.restoreFileRevision($workspace.id, path, revision.name, workingCopyETag, $user);
-  //     showSuccessToast(`Restored revision ${revision.name}`);
-  //   } catch (e) {
-  //     if (e instanceof WorkspaceSaveConflictError) {
-  //       showFailureToast('The working copy changed since this list loaded; try again.');
-  //     } else {
-  //       catchError('log', 'Failed to restore revision', e as Error);
-  //       showFailureToast('Failed to restore revision');
-  //     }
-  //     return;
-  //   }
-  //   // Reload the editor only if the restored file happens to be the one currently open.
-  //   if (path === $activeDocumentPath) {
-  //     await onRevisionWorkingCopyChanged();
-  //   } else {
-  //     refreshWorkspaceContents();
-  //   }
-  // }
 
   async function onCompareRevisions({ detail: { treeNode, treeNodePath: path } }: CustomEvent<WorkspaceNodeEvent>) {
     if (!$workspace) {
@@ -2031,6 +2016,8 @@
               filePath={$activeDocumentPath}
               fileMetadata={activeFileMetadata}
               hasEditPermission={hasEditFilePermission}
+              {hasCreateRevisionPermission}
+              {hasRestoreRevisionPermission}
               {isRevisionsLoading}
               isSequenceFile={activeFileIsInputSequence}
               {matchingRevisionName}

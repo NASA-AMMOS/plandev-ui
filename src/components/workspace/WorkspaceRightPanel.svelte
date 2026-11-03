@@ -33,6 +33,8 @@
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let filePath: string | null = null;
   export let hasEditPermission: boolean = false;
+  export let hasCreateRevisionPermission: boolean = false;
+  export let hasRestoreRevisionPermission: boolean = false;
   export let isRevisionsLoading: boolean = false;
   export let isSequenceFile: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
@@ -211,7 +213,8 @@
     <WorkspaceRevisionsPanel
       {doesWorkingCopyMatchLatestRevision}
       {filePath}
-      {hasEditPermission}
+      {hasCreateRevisionPermission}
+      {hasRestoreRevisionPermission}
       isReadOnly={!!fileMetadata?.readOnly}
       {isRevisionsLoading}
       {matchingRevisionName}

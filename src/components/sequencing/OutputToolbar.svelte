@@ -14,7 +14,6 @@
   export let outputLanguages: OutputLanguage[] = [];
   export let outputDisabled: boolean = false;
   export let selectedOutputFormat: OutputLanguage | undefined;
-  /** One entry per naming convention offered, e.g. plain filename and/or the revision-versioned filename. */
   export let downloadOptions: DownloadMenuOption[] = [];
 
   const dispatch = createEventDispatcher<{

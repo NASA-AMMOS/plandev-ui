@@ -10,6 +10,7 @@
   import { downloadBlob } from '../../utilities/generic';
   import {
     getDownloadOptionsForFile,
+    getRevisionDisplayName,
     getVersionedFileName,
     separateFilenameFromPath,
     WorkspaceApi,
@@ -192,9 +193,8 @@
 </script>
 
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
-  <ModalHeader on:close={close}>Restore {filename} to {rightLabel}?</ModalHeader>
+  <ModalHeader on:close={close}>Restore to {getRevisionDisplayName(rightRevision.name)}?</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
-    <div class="grid grid-cols-2"></div>
     <div class="st-typography-body flex-none text-muted-foreground">
       {#if !isLoading && !loadError}
         {#if changedLines > 0}
@@ -248,16 +248,19 @@
               />
             </div>
           </div>
-          <div class="inline-block text-nowrap text-xs text-muted-foreground" slot="mine-header-slot">
-            <DownloadMenu
-              align="start"
-              className="px-2"
-              size="icon"
-              disabled={rightState.loading || rightState.error}
-              label="Download {rightLabel}"
-              options={rightDownloadOptions}
-              on:download={e => onDownloadSide(rightState, e.detail.name)}
-            />
+          <div class="inline-block text-nowrap" slot="mine-header-slot">
+            <div class="grid grid-cols-[auto_min-content] items-center gap-2">
+              <span>Revision {getRevisionDisplayName(rightRevision.name)}</span>
+              <DownloadMenu
+                align="start"
+                className="px-2 text-muted-foreground"
+                size="icon"
+                disabled={rightState.loading || rightState.error}
+                label="Download {rightLabel}"
+                options={rightDownloadOptions}
+                on:download={e => onDownloadSide(rightState, e.detail.name)}
+              />
+            </div>
           </div>
         </WorkspaceDiffViewer>
       {/if}
@@ -265,11 +268,10 @@
   </ModalContent>
   <div class="flex flex-none items-center justify-end gap-2 rounded-b border-t bg-muted px-4 py-3">
     {#if revisionToRestore}
-      <div class="mr-auto flex flex-col text-sm">
-        <span class="font-semibold">Restore revision {revisionToRestore.name}?</span>
+      <div class="mr-auto flex flex-col">
         <span class="text-muted-foreground">
-          The working copy will be replaced with revision {revisionToRestore.name}. Existing revisions will not be
-          changed.
+          The working copy will be replaced with revision {getRevisionDisplayName(revisionToRestore.name)}. Existing
+          revisions will not be changed.
         </span>
         {#if unrevisionedWarning}
           <span class="text-destructive">{unrevisionedWarning}</span>
@@ -285,7 +287,7 @@
           disabled={!!effectiveRestoreDisabledReason || isLoading || !!loadError}
           on:click={onRestore}
         >
-          Restore
+          Restore Revision {getRevisionDisplayName(revisionToRestore.name)}
         </Button>
       </div>
     {/if}

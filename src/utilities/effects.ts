@@ -319,6 +319,7 @@ import {
   doesFilenameMatchExtension,
   findNodeInDirectory,
   flattenWorkspaceTreeWithPaths,
+  getRevisionDisplayName,
   getWorkspaceFileFolderDisplay,
   incrementFilename,
   isBulkOperationSuccess,
@@ -6793,7 +6794,7 @@ const effects = {
         const { revision: revisionToRestore } = value;
         await WorkspaceApi.restoreFileRevision(workspaceId, filePath, revisionToRestore.name, workingCopyETag, user);
 
-        showSuccessToast(`Restored revision ${revisionToRestore.name}`);
+        showSuccessToast(`Restored revision ${getRevisionDisplayName(revisionToRestore.name)}`);
         logMessage('log', `Restored workspace file "${filePath}" to revision ${revisionToRestore.name}.`);
         return 'restored';
       }

@@ -12,7 +12,7 @@ export type UnifiedDiffSide = {
 
 type LineRange = { aEnd: number; aStart: number; bEnd: number; bStart: number };
 
-const noNewlineMarker = '\\ No newline at end of file';
+const noNewlineMarker = '\\\\ No newline at end of file';
 
 /** Lines as a patch sees them: a trailing newline terminates the last line rather than starting an empty one. */
 function patchLines(doc: Text): { endsWithNewline: boolean; lines: string[] } {
@@ -42,6 +42,10 @@ function hunkRange(start: number, size: number): string {
   return size === 1 ? `${line}` : `${line},${size}`;
 }
 
+function fileHeader(prefix: '---' | '+++', side: UnifiedDiffSide): string {
+  return side.label ? `${prefix} ${side.name}\t${side.label}` : `${prefix} ${side.name}`;
+}
+
 /**
  * Builds a unified diff (`diff -u` / `git diff` format) turning `a` into `b`.
  * @param chunks - Line-aligned chunks, e.g. `MergeView.chunks`, so the output matches what the viewer shows.
@@ -67,7 +71,7 @@ export function createUnifiedDiff(
   // Chunks whose surrounding context would touch or overlap share a hunk.
   const groups: LineRange[][] = [];
   for (const range of ranges) {
-    const group = groups[groups.length - 1];
+    const group = groups.at(-1);
     if (group && range.aStart - group[group.length - 1].aEnd <= context * 2) {
       group.push(range);
     } else {
@@ -75,7 +79,7 @@ export function createUnifiedDiff(
     }
   }
 
-  const output = [`--- ${a.name}${a.label ? `\t${a.label}` : ''}`, `+++ ${b.name}${b.label ? `\t${b.label}` : ''}`];
+  const output = [fileHeader('---', a), fileHeader('+++', b)];
 
   const isUnterminated = (patch: typeof aPatch, line: number | null) =>
     line !== null && !patch.endsWithNewline && line === patch.lines.length - 1;
@@ -89,7 +93,7 @@ export function createUnifiedDiff(
 
   for (const group of groups) {
     const first = group[0];
-    const last = group[group.length - 1];
+    const last = group.at(-1) ?? first;
     const leading = Math.min(context, first.aStart, first.bStart);
     const trailing = Math.min(context, aPatch.lines.length - last.aEnd, bPatch.lines.length - last.bEnd);
     const aFrom = first.aStart - leading;

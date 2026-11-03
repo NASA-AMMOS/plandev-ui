@@ -208,7 +208,7 @@
 </script>
 
 <Modal height="min(680px, 85vh)" width="min(1200px, 92vw)" on:close={close}>
-  <ModalHeader on:close={close}>Comparing {leftLabel} with {rightLabel}</ModalHeader>
+  <ModalHeader on:close={close}>Compare Files</ModalHeader>
   <ModalContent style="display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
     <div class="st-typography-body flex-none text-muted-foreground">
       {#if !isLoading && !loadError}

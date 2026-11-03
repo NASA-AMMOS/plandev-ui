@@ -8,7 +8,7 @@
   import { EditorView, lineNumbers } from '@codemirror/view';
   import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { basicSetup } from 'codemirror';
-  import { ArrowLeftRight } from 'lucide-svelte';
+  import { ArrowLeftRight, FileDiff } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { WorkspaceContentType } from '../../../enums/workspace';
   import type { DownloadMenuOption } from '../../../types/dropdown';
@@ -254,7 +254,9 @@
           label="Download diff"
           options={diffDownloadOptions}
           on:download={e => downloadDiff(e.detail.name)}
-        />
+        >
+          <FileDiff size={14} class="shrink-0" slot="icon" />
+        </DownloadMenu>
       </div>
     {/if}
     <WorkspaceDiffSideHeader

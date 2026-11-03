@@ -56,7 +56,7 @@ describe('createUnifiedDiff', () => {
 
   test('treats an empty document as having no lines', () => {
     expect(diff('', 'new')).toBe(
-      ['--- a/file.txt', '+++ b/file.txt', '@@ -0,0 +1 @@', '+new', '\\ No newline at end of file', ''].join('\n'),
+      ['--- a/file.txt', '+++ b/file.txt', '@@ -0,0 +1 @@', '+new', '\\\\ No newline at end of file', ''].join('\n'),
     );
     expect(diff('old\n', '')).toBe(['--- a/file.txt', '+++ b/file.txt', '@@ -1 +0,0 @@', '-old', ''].join('\n'));
   });
@@ -78,7 +78,7 @@ describe('createUnifiedDiff', () => {
         ' a',
         '-b',
         '+b',
-        '\\ No newline at end of file',
+        '\\\\ No newline at end of file',
         '',
       ].join('\n'),
     );
@@ -94,7 +94,7 @@ describe('createUnifiedDiff', () => {
         '+y',
         ' a',
         ' b',
-        '\\ No newline at end of file',
+        '\\\\ No newline at end of file',
         '',
       ].join('\n'),
     );

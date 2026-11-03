@@ -44,13 +44,13 @@ describe('WorkspaceRevisionRestoreModal', () => {
     });
 
     await new Promise(resolve => setTimeout(resolve, 20));
-    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((getByRole('button', { name: 'Restore Revision A' }) as HTMLButtonElement).disabled).toBe(true);
     expect(container.textContent).not.toContain('File metadata differs');
 
     finishMetadata();
     await waitFor(() => expect(container.textContent).toContain('File metadata differs'));
     expect(container.textContent).toContain('No content changes');
-    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((getByRole('button', { name: 'Restore Revision A' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('dispatches restore with the selected revision without performing the request itself', async () => {
@@ -74,8 +74,10 @@ describe('WorkspaceRevisionRestoreModal', () => {
     component.$on('close', onClose);
     component.$on('restore', onRestore);
 
-    await waitFor(() => expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(false));
-    await fireEvent.click(getByRole('button', { name: 'Restore' }));
+    await waitFor(() =>
+      expect((getByRole('button', { name: 'Restore Revision A' }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await fireEvent.click(getByRole('button', { name: 'Restore Revision A' }));
     expect(onRestore).toHaveBeenCalledTimes(1);
     expect(onRestore.mock.calls[0][0].detail).toEqual({ revision: a });
     expect(restoreFileRevision).not.toHaveBeenCalled();
@@ -101,9 +103,9 @@ describe('WorkspaceRevisionRestoreModal', () => {
     });
     component.$on('restore', onRestore);
 
-    await waitFor(() => expect(getByRole('button', { name: 'Restore' })).toBeTruthy());
-    expect((getByRole('button', { name: 'Restore' }) as HTMLButtonElement).disabled).toBe(true);
-    await fireEvent.click(getByRole('button', { name: 'Restore' }));
+    await waitFor(() => expect(getByRole('button', { name: 'Restore Revision A' })).toBeTruthy());
+    expect((getByRole('button', { name: 'Restore Revision A' }) as HTMLButtonElement).disabled).toBe(true);
+    await fireEvent.click(getByRole('button', { name: 'Restore Revision A' }));
     expect(onRestore).not.toHaveBeenCalled();
   });
 });
