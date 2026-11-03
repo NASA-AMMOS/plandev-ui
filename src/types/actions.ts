@@ -2,11 +2,7 @@ import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import type { ArgumentsMap, ParameterName } from './parameter';
 import type { WorkspaceFileRevision } from './workspace';
 
-/**
- * A workspace file chosen for a `file`/`sequence` (or list) action parameter; mirrors plandev-actions' `FileRef`.
- * No `revision` is the working copy, read when the action runs; otherwise the name of a pinned, immutable revision.
- */
-export type FileRef = { path: string; revision?: string };
+export type { FileRef } from '@nasa-jpl/plandev-actions';
 
 /** The fetched revisions of each selected file's path, or that they are loading or failed to load. */
 export type FileRevisionHistory = Record<string, WorkspaceFileRevision[] | 'error' | 'loading'>;

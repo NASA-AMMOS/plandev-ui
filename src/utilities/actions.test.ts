@@ -349,7 +349,7 @@ describe('file references', () => {
       'a latest revision ref when the working copy is not allowed',
       pinned,
       ['a.seq'],
-      { path: 'a.seq', revision: 'latest' },
+      { path: 'a.seq', revision: '@latest' },
     ],
   ])('getFileArgumentForPaths gives %s', (_, valueSchema, paths, expected) => {
     expect(getFileArgumentForPaths(valueSchema as ActionValueSchema, paths)).toEqual(expected);
@@ -360,12 +360,12 @@ describe('file references', () => {
     expect(getDefaultFileRef(schema({ allowWorkingCopy: true, withRevision: true }), 'a.seq')).toEqual({
       path: 'a.seq',
     });
-    expect(getDefaultFileRef(pinned, 'a.seq')).toEqual({ path: 'a.seq', revision: 'latest' });
+    expect(getDefaultFileRef(pinned, 'a.seq')).toEqual({ path: 'a.seq', revision: '@latest' });
   });
 
   test.each([
     [undefined, 'Working copy'],
-    ['latest', 'Latest revision'],
+    ['@latest', 'Latest revision'],
     ['c', 'Revision C'],
   ])('labels revision %s as %s', (revision, label) => {
     expect(getFileRefRevisionLabel({ path: 'a.seq', revision })).toBe(label);
@@ -412,11 +412,11 @@ describe('revision availability', () => {
   test.each([
     ['the working copy is always available', { path: 'empty.seq' }, undefined],
     ['the working copy is available while loading or failed', { path: 'failed.seq' }, undefined],
-    ['latest is available with any revision', { path: 'a.seq', revision: 'latest' }, undefined],
-    ['latest has a problem with no revisions', { path: 'empty.seq', revision: 'latest' }, 'empty'],
+    ['latest is available with any revision', { path: 'a.seq', revision: '@latest' }, undefined],
+    ['latest has a problem with no revisions', { path: 'empty.seq', revision: '@latest' }, 'empty'],
     ['a named revision that exists is available', { path: 'a.seq', revision: 'b' }, undefined],
     ['a named revision that is not there is missing', { path: 'a.seq', revision: 'c' }, 'missing'],
-    ['revisions still loading', { path: 'pending.seq', revision: 'latest' }, 'loading'],
+    ['revisions still loading', { path: 'pending.seq', revision: '@latest' }, 'loading'],
     ['revisions not requested yet', { path: 'other.seq', revision: 'a' }, 'loading'],
     ['revisions that failed to load', { path: 'failed.seq', revision: 'a' }, 'error'],
   ])('%s', (_, fileRef, problem) => {
@@ -426,7 +426,7 @@ describe('revision availability', () => {
   test('a parameter is unavailable if any selected revision is, and only if it takes revisions', () => {
     const files = [
       { path: 'a.seq', revision: 'a' },
-      { path: 'empty.seq', revision: 'latest' },
+      { path: 'empty.seq', revision: '@latest' },
     ];
     expect(hasUnavailableRevision(list(withRevision), files, history)).toBe(true);
     expect(hasUnavailableRevision(list(withRevision), files.slice(0, 1), history)).toBe(false);
@@ -440,7 +440,7 @@ describe('normalizeFileArguments', () => {
   const plain = schema({});
   const plainList = schema({ type: 'sequenceList' });
   const ref = { path: 'a.seq' };
-  const latest = { path: 'a.seq', revision: 'latest' };
+  const latest = { path: 'a.seq', revision: '@latest' };
   const pin = { path: 'a.seq', revision: 'c' };
 
   test.each([

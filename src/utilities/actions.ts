@@ -53,14 +53,12 @@ export function isActionValueSchemaFile(
 
 /** Whether a file/sequence parameter takes `FileRef`s (a path plus a revision) rather than paths. */
 export function isWithRevision(schema: object): boolean {
-  // ponytail: the installed plandev-actions predates `withRevision`; read it untyped until the UI depends on a release with it.
-  return (schema as { withRevision?: boolean }).withRevision === true;
+  return 'withRevision' in schema && schema.withRevision === true;
 }
 
 /** Whether a `withRevision` parameter may use the working copy (the default) or must pin a named revision. */
 export function allowsWorkingCopy(schema: object): boolean {
-  // ponytail: untyped like `withRevision`; the installed plandev-actions predates `allowWorkingCopy` too.
-  return (schema as { allowWorkingCopy?: boolean }).allowWorkingCopy !== false;
+  return !('allowWorkingCopy' in schema) || schema.allowWorkingCopy !== false;
 }
 
 /** Whether a parameter that must pin revisions has a selected file without one (the working copy is not allowed). */
@@ -101,7 +99,7 @@ export function hasUnavailableRevision(schema: object, value: unknown, history: 
 }
 
 /** The revision name that is resolved to the file's newest revision each time the action reads it. */
-export const LATEST_REVISION = 'latest';
+export const LATEST_REVISION = '@latest';
 
 /** A newly selected file's reference: the working copy, or the latest revision when the working copy isn't allowed. */
 export function getDefaultFileRef(schema: object, path: string): FileRef {
