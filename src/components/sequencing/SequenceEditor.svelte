@@ -522,6 +522,7 @@
                     ),
                     doesWorkingCopyMatchLatestRevision,
                     revisionList[0]?.name ?? null,
+                    isDirty,
                   )
                 : []}
               on:copyOutput={copyOutputFormatToClipboard}

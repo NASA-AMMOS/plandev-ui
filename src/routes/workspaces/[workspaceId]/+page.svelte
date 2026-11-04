@@ -896,25 +896,26 @@
     if (!confirm) {
       return false;
     }
-    // Prefetched (not resolved at download time) so the download dropdown's options are known up front.
-    await loadRevisions($activeDocumentPath);
 
     // Save the file before the operation
     const path = $activeDocumentPath!;
     const content = $activeDocument.currentContent;
     const ifMatch = $activeDocument.baseEtag ?? '*';
+
     try {
       const { etag } = await effects.saveWorkspaceFile($workspaceId, path, content, $user, ifMatch);
       activeDocument.markClean(content, etag);
-      return true;
     } catch (e) {
-      if (e instanceof WorkspaceSaveConflictError) {
-        // Proceed with the operation only if the conflict resolution actually saved.
-        return await resolveSaveConflict(e, path, content);
+      if (!(e instanceof WorkspaceSaveConflictError)) {
+        return false;
       }
-      // Any other failure was already toasted by the effect — just don't proceed.
-      return false;
+      if (!(await resolveSaveConflict(e, path, content))) {
+        return false;
+      }
     }
+
+    await loadRevisions(path);
+    return true;
   }
 
   async function onAddCollaborator(event: CustomEvent<WorkspaceCollaborator[]>) {
