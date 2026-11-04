@@ -3,7 +3,7 @@
 <script lang="ts">
   import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
   import { Download, EllipsisVertical, LoaderCircle } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
 
   import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
   import { activeDocument, activeDocumentIsDirty } from '../../stores/activeDocument';
@@ -63,6 +63,7 @@
   let restoreDisabledReason: string | null = null;
   let revisionStart: string | null = null;
   let revisionStartError: string | null = null;
+  let revisionMessageTextArea: HTMLTextAreaElement | null = null;
 
   const defaultRevisionName = `${getDefaultRevisionName()}`;
   const revisionNameRequirement = getRevisionNameRequirement();
@@ -91,6 +92,12 @@
   // switching back remounts this panel. readOnly is runtime state, not part of a revision, so it never reloads.
   // baseEtag is pulled out so keystrokes (which change $activeDocument) don't refetch.
   $: baseEtag = $activeDocument.baseEtag;
+
+  // Trigger autosize when commitMessage changes
+  $: {
+    void commitMessage;
+    resizeTextArea();
+  }
 
   function getWorkingCopyStatus(
     hasPermission: boolean,
@@ -253,18 +260,15 @@
   }
 
   /** Grows a textarea's height to fit its content as the user types. */
-  function autosize(node: HTMLTextAreaElement) {
-    function resize() {
-      node.style.height = 'auto';
-      node.style.height = `${node.scrollHeight}px`;
+  async function resizeTextArea() {
+    if (!revisionMessageTextArea) {
+      return;
     }
-    resize();
-    node.addEventListener('input', resize);
-    return {
-      destroy() {
-        node.removeEventListener('input', resize);
-      },
-    };
+    // Wait for Svelte to update the DOM with the new text content
+    await tick();
+
+    revisionMessageTextArea.style.height = 'auto';
+    revisionMessageTextArea.style.height = `${revisionMessageTextArea.scrollHeight}px`;
   }
 </script>
 
@@ -287,9 +291,9 @@
                 <label class="flex flex-col gap-1" for="revision-commit-message">
                   <span>Revision description <span class="text-muted-foreground">(optional)</span></span>
                   <textarea
-                    id="revision-commit-message"
+                    bind:this={revisionMessageTextArea}
                     bind:value={commitMessage}
-                    use:autosize
+                    id="revision-commit-message"
                     class="w-full resize-none overflow-hidden rounded border border-border bg-background p-2 text-xs"
                     placeholder="Describe this revision"
                     rows={1}
@@ -353,25 +357,35 @@
                       {@const revisionDisplayName = getRevisionDisplayName(revision.name)}
                       <li class={i > 0 ? 'border-t border-border' : ''}>
                         <div
-                          class="grid grid-cols-[auto_min-content]"
+                          class="grid grid-cols-[1fr_24px]"
                           role="region"
                           aria-label="Revision {revisionDisplayName}"
                         >
-                          <Tooltip content="Preview revision {revisionDisplayName}">
+                          <Tooltip
+                            wrapperClass="w-full overflow-hidden"
+                            content="Preview revision {revisionDisplayName}"
+                          >
                             <button
                               class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 text-left hover:bg-muted"
                               aria-label="Preview revision {revisionDisplayName}"
                               on:click={() => onPreview(revision)}
                             >
-                              <div class="grid h-full w-full grid-rows-[min-content_auto] gap-1 overflow-hidden">
+                              <div class="flex h-full w-full flex-col gap-1 overflow-hidden">
                                 <div class="font-semibold">
                                   Revision {revisionDisplayName}
                                 </div>
-                                <Tooltip class="max-w-[300px]" content={revision.message} disabled={!revision.message}>
-                                  <div class="min-h-4 overflow-hidden text-ellipsis text-nowrap">
-                                    {revision.message}
-                                  </div>
-                                </Tooltip>
+                                <div class="min-h-4 w-full">
+                                  <Tooltip
+                                    wrapperClass="w-full  overflow-hidden"
+                                    class="max-w-[300px]"
+                                    content={revision.message}
+                                    disabled={!revision.message}
+                                  >
+                                    <span class="w-full overflow-hidden text-ellipsis text-nowrap"
+                                      >{revision.message}</span
+                                    >
+                                  </Tooltip>
+                                </div>
                                 <div class="text-left text-muted-foreground">
                                   <span>Created By:</span>
                                   <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>

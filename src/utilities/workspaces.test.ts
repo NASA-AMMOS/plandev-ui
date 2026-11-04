@@ -325,6 +325,18 @@ describe('Workspace utility function tests', () => {
         },
       ]);
     });
+
+    test('disables the revisioned download, with a reason, when the working copy is dirty', () => {
+      expect(getDownloadOptionsForFile('bar.foo', true, 'b', true)).toEqual([
+        { label: 'Download (...foo)', name: 'bar.foo' },
+        {
+          disabled: true,
+          disabledReason: 'The working copy contains unrevisioned changes.',
+          label: 'Download with revision (...b.foo)',
+          name: 'bar.b.foo',
+        },
+      ]);
+    });
   });
 
   describe('incrementFilename', () => {
