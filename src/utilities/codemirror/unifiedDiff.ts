@@ -12,7 +12,7 @@ export type UnifiedDiffSide = {
 
 type LineRange = { aEnd: number; aStart: number; bEnd: number; bStart: number };
 
-const noNewlineMarker = '\\\\ No newline at end of file';
+const noNewlineMarker = String.raw`\\ No newline at end of file`;
 
 /** Lines as a patch sees them: a trailing newline terminates the last line rather than starting an empty one. */
 function patchLines(doc: Text): { endsWithNewline: boolean; lines: string[] } {
@@ -72,7 +72,7 @@ export function createUnifiedDiff(
   const groups: LineRange[][] = [];
   for (const range of ranges) {
     const group = groups.at(-1);
-    if (group && range.aStart - group[group.length - 1].aEnd <= context * 2) {
+    if (group && group.at(-1) && range.aStart - group.at(-1)!.aEnd <= context * 2) {
       group.push(range);
     } else {
       groups.push([range]);

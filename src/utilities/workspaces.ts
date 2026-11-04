@@ -917,7 +917,7 @@ export function getDownloadOptionsForFile(
 }
 
 export function getUserDisplayNameFromIdentity(identity: string): string {
-  const match: RegExpMatchArray | null = identity.match(/(?<username>.+)\s<[^>]*>/);
+  const match: RegExpExecArray | null = /(?<username>.+)\s<[^>]*>/.exec(identity);
 
   if (match?.groups?.username) {
     return match.groups.username;
@@ -958,7 +958,7 @@ export function parseRevisionName(revisionName: string): WorkspaceRevisionName {
 }
 
 export function validateRevisionName(revisionName: WorkspaceRevisionName): string | null {
-  const pattern = getRevisionNamingConvention() === 'NUMERIC' ? /^[0-9]*$/ : /^[A-Za-z]*$/;
+  const pattern = getRevisionNamingConvention() === 'NUMERIC' ? /^\d*$/ : /^[A-Za-z]*$/;
   if (!pattern.test(`${revisionName}`)) {
     return getRevisionNameRequirement();
   }
@@ -1079,8 +1079,9 @@ export const WorkspaceApi = {
     user: User | null,
   ): Promise<{ content: string; renderType: WorkspaceContentType }> {
     const hasRevision = revisionId !== null && revisionId !== '';
+    const revisionParameter = hasRevision ? `?revision=${revisionId}` : '';
     const { data, headers } = await reqWorkspaceWithEtag<string>(
-      `${joinPath([workspaceId, filePath])}${hasRevision ? `?revision=${revisionId}` : ''}`,
+      `${joinPath([workspaceId, filePath])}${revisionParameter}`,
       'GET',
       null,
       user,

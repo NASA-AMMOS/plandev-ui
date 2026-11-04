@@ -296,7 +296,7 @@
           {#if !filePath}
             <div class="p-3 text-muted-foreground">Open a file to see its revisions.</div>
           {:else}
-            <div class="flex flex-col gap-4 p-3">
+            <div class="flex flex-col gap-6 p-3">
               <section class="flex flex-col gap-1" aria-label="Create revision">
                 <label class="flex flex-col gap-1" for="revision-commit-message">
                   <span>Description <span class="text-muted-foreground">(optional)</span></span>
@@ -330,8 +330,8 @@
                     {isCreating ? 'Creating…' : 'Create Revision'}
                   </Button>
                   {#if !latest && revisionStart !== null}
-                    <div class="grid h-full grid-cols-[auto_1fr] items-center gap-2">
-                      <span>starting with revision</span>
+                    <div class="grid h-full grid-cols-[max-content_min-content] items-center gap-2">
+                      <label class="st-typography-body text-right" for="revision-start">Starting with revision</label>
                       <input
                         id="revision-start"
                         type="text"
@@ -347,20 +347,19 @@
                           : 'border-border'}"
                       />
                     </div>
+                  {:else if workingCopyStatus}
+                    <div class="text-muted-foreground">{workingCopyStatus}</div>
                   {/if}
                 </div>
                 {#if !latest && revisionStartError}
                   <div id="revision-start-error" class="text-destructive" role="alert">{revisionStartError}</div>
-                {/if}
-                {#if workingCopyStatus}
-                  <div class="text-muted-foreground">{workingCopyStatus}</div>
                 {/if}
                 {#if notice}
                   <div class="rounded border border-border bg-muted p-2" role="status">{notice}</div>
                 {/if}
               </section>
               <section class="flex flex-col gap-1" aria-label="Revision History">
-                <span class="font-medium text-muted-foreground">History</span>
+                <span class="font-medium">History</span>
                 {#if latest}
                   <ul class="flex flex-col overflow-hidden rounded border border-border" aria-label="Revisions">
                     {#each revisionList as revision, i (revision.name)}
