@@ -30,6 +30,7 @@
   import ActionRunsListView from '../../../components/sequencing/actions/ActionRunsListView.svelte';
   import SequenceEditor from '../../../components/sequencing/SequenceEditor.svelte';
   import TextEditor from '../../../components/ui/TextEditor.svelte';
+  import WorkspaceEditor from '../../../components/workspace/WorkspaceEditor.svelte';
   import WorkspaceLeftIconRail from '../../../components/workspace/WorkspaceLeftIconRail.svelte';
   import WorkspaceRightIconRail from '../../../components/workspace/WorkspaceRightIconRail.svelte';
   import WorkspaceRightPanel from '../../../components/workspace/WorkspaceRightPanel.svelte';
@@ -1891,70 +1892,35 @@
                   <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
                 </div>
               {/if}
-              {#if isTextOrEmpty && activeFileIsSequence}
-                <div class="flex h-full">
-                  <SequenceEditor
-                    bind:this={sequenceEditorRef}
-                    {phoenixContext}
-                    availableActions={availableActionsForActiveFile}
-                    fileMetadata={activeFileMetadata}
-                    includeActions={hasRunActionPermission}
-                    isDirty={$activeDocumentIsDirty}
-                    isLoading={$activeDocumentIsLoading}
-                    isInputFile={activeFileIsInputSequence}
-                    {doesWorkingCopyMatchLatestRevision}
-                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                    {matchingRevisionName}
-                    {preserveAdaptationLog}
-                    previewOnly={!hasEditFilePermission}
-                    readOnly={isFileReadOnly}
-                    {revisionList}
-                    sequenceAdaptation={$sequenceAdaptation}
-                    sequenceDefinition={$activeDocument.originalContent}
-                    sequenceName={$activeDocument.fileName ?? ''}
-                    sequenceFilePath={$activeDocumentPath ?? ''}
-                    sequenceOutput={selectedSequenceOutput}
-                    shouldListenForKeyboardSave={false}
-                    showCommandFormBuilder={false}
-                    userSequenceEditorColumns="1fr"
-                    userSequenceEditorColumnsWithFormBuilder="1fr"
-                    on:adaptationError={onAdaptationError}
-                    on:editorViewChange={e => (activeEditorView = e.detail)}
-                    on:lintChange={onLintChange}
-                    on:runAction={onRunActionOnActiveFile}
-                    on:save={onSaveWorkspaceFile}
-                    on:downloadInput={onDownloadInput}
-                    on:downloadOutput={onDownloadOutput}
-                    on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-                    on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-                  />
-                </div>
-              {:else if isTextOrEmpty}
-                <div class="flex h-full">
-                  <TextEditor
-                    bind:this={textEditorRef}
-                    availableActions={availableActionsForActiveFile}
-                    fileMetadata={activeFileMetadata}
-                    includeActions={true}
-                    isJSON={$activeDocument.type === WorkspaceContentType.Json}
-                    isLoading={$activeDocumentIsLoading}
-                    {doesWorkingCopyMatchLatestRevision}
-                    isDirty={$activeDocumentIsDirty}
-                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                    previewOnly={!hasEditFilePermission}
-                    readOnly={isFileReadOnly}
-                    {revisionList}
-                    shouldListenForKeyboardSave={false}
-                    textFileName={$activeDocument.fileName ?? ''}
-                    textFilePath={$activeDocumentPath ?? ''}
-                    textFileContent={$activeDocument.originalContent}
-                    on:lintChange={onLintChange}
-                    on:runAction={onRunActionOnActiveFile}
-                    on:save={onSaveWorkspaceFile}
-                    on:download={onDownloadInput}
-                    on:textContentUpdated={onWorkspaceInputFileUpdated}
-                  />
-                </div>
+              {#if isTextOrEmpty}
+                <WorkspaceEditor
+                  bind:sequenceEditorRef
+                  bind:textEditorRef
+                  availableActions={availableActionsForActiveFile}
+                  {doesWorkingCopyMatchLatestRevision}
+                  includeActions={hasRunActionPermission}
+                  isLoading={$activeDocumentIsLoading}
+                  {isTextOrEmpty}
+                  {matchingRevisionName}
+                  {phoenixContext}
+                  {preserveAdaptationLog}
+                  previewOnly={!hasEditFilePermission}
+                  readOnly={isFileReadOnly}
+                  {revisionList}
+                  sequenceOutput={selectedSequenceOutput}
+                  onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                  on:adaptationError={onAdaptationError}
+                  on:download={onDownloadInput}
+                  on:downloadInput={onDownloadInput}
+                  on:downloadOutput={onDownloadOutput}
+                  on:editorViewChange={e => (activeEditorView = e.detail)}
+                  on:lintChange={onLintChange}
+                  on:runAction={onRunActionOnActiveFile}
+                  on:save={onSaveWorkspaceFile}
+                  on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                  on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+                  on:textContentUpdated={onWorkspaceInputFileUpdated}
+                />
               {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
                 {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
                 {@const folderFiles =
