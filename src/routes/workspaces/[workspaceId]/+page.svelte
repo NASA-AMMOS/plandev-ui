@@ -1565,6 +1565,23 @@
     }
   }
 
+  async function onRunActionOnRevision(
+    event: CustomEvent<{ action: ActionDefinition; parameter: string; revision: WorkspaceFileRevision }>,
+  ) {
+    const { action, parameter, revision } = event.detail;
+    const schema = action.versions[0]?.parameter_schema[parameter];
+    if (!$workspace || !$activeDocumentPath || !schema) {
+      return;
+    }
+    // The revision name is a number under the numeric naming convention, but a FileRef's revision is a string
+    const fileRef = { path: $activeDocumentPath, revision: String(revision.name) };
+    handleActionRunResultFromEditor(
+      await effects.runAction(action, $workspace, workspaceFileList, $user, {
+        [parameter]: schema.type.endsWith('List') ? [fileRef] : fileRef,
+      }),
+    );
+  }
+
   async function onRunActionOnFileSelection(event: CustomEvent<WorkspaceNodeRunActionEvent>) {
     const {
       detail: { actionParameterPair, treeNodes },
@@ -1892,7 +1909,6 @@
                     availableActions={availableActionsForActiveFile}
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
-                    isDirty={$activeDocumentIsDirty}
                     isLoading={$activeDocumentIsLoading}
                     isInputFile={activeFileIsInputSequence}
                     {doesWorkingCopyMatchLatestRevision}
@@ -1932,7 +1948,6 @@
                     isJSON={$activeDocument.type === WorkspaceContentType.Json}
                     isLoading={$activeDocumentIsLoading}
                     {doesWorkingCopyMatchLatestRevision}
-                    isDirty={$activeDocumentIsDirty}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     previewOnly={!hasEditFilePermission}
                     readOnly={isFileReadOnly}
@@ -2010,6 +2025,7 @@
           >
             <WorkspaceRightPanel
               bind:activeTab={rightPanelActiveTab}
+              availableActions={availableActionsForActiveFile}
               bind:commandNodeName={rightPanelCommandNodeName}
               {doesWorkingCopyMatchLatestRevision}
               editorSequenceView={activeEditorView}
@@ -2018,6 +2034,7 @@
               hasEditPermission={hasEditFilePermission}
               {hasCreateRevisionPermission}
               {hasRestoreRevisionPermission}
+              {hasRunActionPermission}
               {isRevisionsLoading}
               isSequenceFile={activeFileIsInputSequence}
               {matchingRevisionName}
@@ -2025,6 +2042,7 @@
               {commandInfoMapper}
               {revisionList}
               on:createdFileRevision={onCreatedFileRevision}
+              on:runAction={onRunActionOnRevision}
               on:updateUserMetadata={onUpdateUserMetadata}
               reloadWorkingCopy={onRevisionWorkingCopyChanged}
             />

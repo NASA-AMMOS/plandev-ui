@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { Button, DropdownMenu } from '@nasa-jpl/stellar-svelte';
-  import { Download, EllipsisVertical, LoaderCircle } from 'lucide-svelte';
+  import { Clapperboard, Download, EllipsisVertical, LoaderCircle } from 'lucide-svelte';
   import { createEventDispatcher, tick } from 'svelte';
 
   import RotateCcwClock from '../../assets/rotate-ccw-clock.svg?component';
@@ -11,7 +11,8 @@
   import { getUserStore } from '../../stores/user';
   import { workspaceId } from '../../stores/workspaces';
   import type { UserStore } from '../../types/app';
-  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { ActionParameterPair, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import { isWithRevision } from '../../utilities/actions';
   import effects from '../../utilities/effects';
   import { downloadBlob } from '../../utilities/generic';
   import { showWorkspaceRevisionPreviewModal } from '../../utilities/modal';
@@ -29,14 +30,18 @@
     separateFilenameFromPath,
     validateRevisionName,
   } from '../../utilities/workspaces';
+  import ActionMenuItem from '../ui/ActionMenuItem.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import Tooltip from '../ui/Tooltip.svelte';
   import PanelHeader from './PanelHeader.svelte';
 
+  /** Actions that can run on the open file; only those whose primary parameter takes a revision are offered. */
+  export let availableActions: ActionParameterPair[] = [];
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let filePath: string | null = null;
   export let hasCreateRevisionPermission: boolean = false;
+  export let hasRunActionPermission: boolean = false;
   export let hasRestoreRevisionPermission: boolean = false;
   export let isReadOnly: boolean = false;
   export let isRevisionsLoading: boolean = false;
@@ -48,6 +53,7 @@
 
   const dispatch = createEventDispatcher<{
     createdFileRevision: null;
+    runAction: ActionParameterPair & { revision: WorkspaceFileRevision };
   }>();
   const user: UserStore = getUserStore();
 
@@ -61,6 +67,7 @@
   let latest: WorkspaceFileRevision | null = null;
   let notice: string | null = null;
   let restoreDisabledReason: string | null = null;
+  let revisionActions: ActionParameterPair[] = [];
   let revisionStart: string | null = null;
   let revisionStartError: string | null = null;
   let revisionMessageTextArea: HTMLTextAreaElement | null = null;
@@ -68,6 +75,9 @@
   const defaultRevisionName = `${getDefaultRevisionName()}`;
   const revisionNameRequirement = getRevisionNameRequirement();
 
+  $: revisionActions = availableActions.filter(({ action, parameter }) =>
+    isWithRevision(action.versions[0]?.parameter_schema[parameter] ?? {}),
+  );
   $: latest = revisionList[0] ?? null;
   $: revisionStart = !latest ? defaultRevisionName : null;
   $: revisionStartError = revisionStart ? validateRevisionName(revisionStart) : null;
@@ -445,9 +455,45 @@
                                     aria-label={`Restore file to revision ${revisionDisplayName}`}
                                     on:click={() => onRestore(revision)}
                                   >
-                                    <RotateCcwClock size={10} />
+                                    <RotateCcwClock />
                                     Restore file to revision {revisionDisplayName}
                                   </DropdownMenu.Item>
+                                </div>
+                                <div
+                                  use:permissionHandler={{
+                                    hasPermission: hasRunActionPermission,
+                                    permissionError: 'You do not have permission to run an action',
+                                  }}
+                                >
+                                  <DropdownMenu.Sub>
+                                    <DropdownMenu.SubTrigger
+                                      size="sm"
+                                      aria-label={`Run action on revision ${revisionDisplayName}`}
+                                      class="flex items-center gap-2"
+                                    >
+                                      <div class="flex min-h-4 min-w-4 items-center justify-center">
+                                        <Clapperboard size={14} />
+                                      </div>
+                                      Run action on revision {revisionDisplayName}
+                                    </DropdownMenu.SubTrigger>
+                                    <DropdownMenu.SubContent
+                                      class="max-h-[500px] w-min min-w-[240px] max-w-[300px] overflow-y-auto"
+                                    >
+                                      {#each revisionActions as { action, parameter }}
+                                        <DropdownMenu.Item
+                                          size="sm"
+                                          on:click={() => dispatch('runAction', { action, parameter, revision })}
+                                        >
+                                          <ActionMenuItem name={action.name} description={action.description} />
+                                        </DropdownMenu.Item>
+                                      {/each}
+                                      {#if revisionActions.length === 0}
+                                        <div class="whitespace-nowrap p-1 text-xs text-muted-foreground">
+                                          No revision-aware actions available
+                                        </div>
+                                      {/if}
+                                    </DropdownMenu.SubContent>
+                                  </DropdownMenu.Sub>
                                 </div>
                               </DropdownMenu.Content>
                             </DropdownMenu.Root>
