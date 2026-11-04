@@ -1899,7 +1899,6 @@
                     availableActions={availableActionsForActiveFile}
                     fileMetadata={activeFileMetadata}
                     includeActions={hasRunActionPermission}
-                    isDirty={$activeDocumentIsDirty}
                     isLoading={$activeDocumentIsLoading}
                     isInputFile={activeFileIsInputSequence}
                     {doesWorkingCopyMatchLatestRevision}
@@ -1939,7 +1938,6 @@
                     isJSON={$activeDocument.type === WorkspaceContentType.Json}
                     isLoading={$activeDocumentIsLoading}
                     {doesWorkingCopyMatchLatestRevision}
-                    isDirty={$activeDocumentIsDirty}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
                     previewOnly={!hasEditFilePermission}
                     readOnly={isFileReadOnly}
