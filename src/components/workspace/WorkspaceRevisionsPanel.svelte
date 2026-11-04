@@ -463,6 +463,7 @@
                           <Tooltip
                             wrapperClass="w-full overflow-hidden"
                             content="Preview revision {revisionDisplayName}"
+                            side="left"
                           >
                             <button
                               class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 text-left hover:bg-muted"
