@@ -376,10 +376,12 @@
                                 </div>
                                 <div class="min-h-4 w-full">
                                   <Tooltip
-                                    wrapperClass="w-full  overflow-hidden"
-                                    class="max-w-[300px]"
+                                    wrapperClass="w-full overflow-hidden"
+                                    wrapContent={true}
+                                    class="max-w-xs whitespace-normal break-words"
                                     content={revision.message}
                                     disabled={!revision.message}
+                                    side="left"
                                   >
                                     <span class="w-full overflow-hidden text-ellipsis text-nowrap"
                                       >{revision.message}</span

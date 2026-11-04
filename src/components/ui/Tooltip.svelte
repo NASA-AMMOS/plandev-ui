@@ -35,6 +35,7 @@
     group?: TooltipProps['group'];
     openDelay?: number;
     shortcut?: string;
+    wrapContent?: boolean;
     wrapperClass?: string;
   }
 
@@ -52,6 +53,8 @@
   export let closeDelay: number = 200;
   /** Class to add to wrapping span element */
   export let wrapperClass: string = '';
+  /** Whether to wrap the content */
+  export let wrapContent: boolean = false;
 
   let className: string = '';
   export { className as class };
@@ -95,7 +98,7 @@
     </Tooltip.Trigger>
     <Tooltip.Content {...$$restProps} class={cn('dark z-[10001]', className)}>
       <Tooltip.Arrow />
-      <span class="max-w-96 whitespace-nowrap text-xs">
+      <span class={cn('max-w-96 text-xs', wrapContent ? 'whitespace-normal' : 'whitespace-nowrap')}>
         {content}
         {#if shortcut}
           &nbsp;<kbd
