@@ -898,6 +898,7 @@ export function getDownloadOptionsForFile(
   name: string,
   doesWorkingCopyMatchLatestRevision: boolean,
   revisionName: WorkspaceRevisionName | null,
+  isDirty?: boolean,
 ): DownloadMenuOption[] {
   const { extension } = separateFilenameFromExtension(name);
   const options: DownloadMenuOption[] = [{ label: `Download (...${extension})`, name }];
@@ -905,10 +906,9 @@ export function getDownloadOptionsForFile(
     const versionedFilename = revisionName !== '' ? getVersionedFileName(name, revisionName) : name;
     const { extension: versionedExtension } = separateFilenameFromExtension(versionedFilename);
     options.push({
-      disabled: !doesWorkingCopyMatchLatestRevision,
-      disabledReason: doesWorkingCopyMatchLatestRevision
-        ? undefined
-        : 'The working copy contains unrevisioned changes.',
+      disabled: !doesWorkingCopyMatchLatestRevision || !!isDirty,
+      disabledReason:
+        doesWorkingCopyMatchLatestRevision && !isDirty ? undefined : 'The working copy contains unrevisioned changes.',
       label: `Download with revision (...${versionedExtension})`,
       name: versionedFilename,
     });

@@ -472,6 +472,7 @@
             sequenceName,
             doesWorkingCopyMatchLatestRevision,
             revisionList[0]?.name ?? null,
+            isDirty,
           )}
           onDownload={downloadInputFormat}
           showSaveButton={!(readOnly || previewOnly || isLoading)}
