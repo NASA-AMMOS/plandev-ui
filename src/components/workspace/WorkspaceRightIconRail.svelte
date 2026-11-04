@@ -39,7 +39,7 @@
     <Sidebar.MenuButton
       className="flex h-[48px] w-full items-center justify-center rounded-none shadow-none hover:bg-transparent"
       isActive={activeTab === WorkspaceRightPanelTab.REVISIONS && panelOpen}
-      tooltipContent="Revisions"
+      tooltipContent="File Revisions"
       on:click={() => togglePanel(WorkspaceRightPanelTab.REVISIONS)}
     >
       <History size={16} />

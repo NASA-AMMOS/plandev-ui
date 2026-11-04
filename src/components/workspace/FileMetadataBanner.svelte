@@ -33,7 +33,7 @@
       Unsaved Changes
     {:else if matchingRevisionName !== null && matchingRevisionName !== ''}
       {#if doesWorkingCopyMatchLatestRevision}
-        Latest Revision ({getRevisionDisplayName(matchingRevisionName)})
+        Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span> (Latest)
       {:else}
         Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span>
       {/if}

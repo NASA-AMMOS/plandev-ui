@@ -275,7 +275,7 @@
 <div class="grid h-full grid-rows-[min-content_auto]">
   <Sidebar.Header className="p-0">
     <PanelHeader>
-      <SectionTitle>Revisions</SectionTitle>
+      <SectionTitle>File Revisions</SectionTitle>
       {#if isRevisionsLoading}<LoaderCircle class="animate-spin text-muted-foreground" size={14} />{/if}
     </PanelHeader>
   </Sidebar.Header>
