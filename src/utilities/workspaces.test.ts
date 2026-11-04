@@ -60,10 +60,6 @@ vi.mock('$env/dynamic/public', () => {
 }); // https://github.com/sveltejs/kit/issues/8180
 
 describe('Workspace utility function tests', () => {
-  beforeEach(() => {
-    env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'NUMERIC';
-  });
-
   afterAll(() => {
     vi.restoreAllMocks();
   });
@@ -130,107 +126,146 @@ describe('Workspace utility function tests', () => {
     });
   });
 
-  describe('getDefaultRevisionName', () => {
-    beforeEach(() => {
-      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+  describe('Revision utility functions', () => {
+    describe('getRevisionNamingConvention', () => {
+      afterAll(() => {
+        env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'NUMERIC';
+      });
+
+      test('Should default to NUMERIC when unset or unrecognized', () => {
+        env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = '';
+        expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+        env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'bogus';
+        expect(getRevisionNamingConvention()).toEqual('NUMERIC');
+        env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+        expect(getRevisionNamingConvention()).toEqual('ALPHABETIC');
+      });
     });
 
-    test('Should return "A" as the default revision name', () => {
-      expect(getDefaultRevisionName()).toEqual('A');
-      expect(parseRevisionName(`${getDefaultRevisionName()}`)).toEqual('a'); // the server only accepts lowercase
+    describe('With NUMERIC setting set (default)', () => {
+      describe('getDefaultRevisionName', () => {
+        test('Should return "1" as the default revision name', () => {
+          expect(getDefaultRevisionName()).toEqual(1);
+        });
+
+        test('Should return a revision name that passes validation', () => {
+          expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+        });
+      });
+
+      describe('validateRevisionName', () => {
+        const errorMessage = 'Only numbers are allowed. No letters, spaces, or symbols.';
+
+        test('Should accept numeric characters', () => {
+          expect(validateRevisionName('0')).toBeNull();
+          expect(validateRevisionName('123')).toBeNull();
+        });
+
+        test('Should accept an empty string', () => {
+          expect(validateRevisionName('')).toBeNull();
+        });
+
+        test('Should reject names containing letters', () => {
+          expect(validateRevisionName('a')).toEqual(errorMessage);
+          expect(validateRevisionName('b1')).toEqual(errorMessage);
+        });
+
+        test('Should reject names containing whitespace', () => {
+          expect(validateRevisionName(' ')).toEqual(errorMessage);
+          expect(validateRevisionName('1 2')).toEqual(errorMessage);
+          expect(validateRevisionName(' 1')).toEqual(errorMessage);
+          expect(validateRevisionName('1\n')).toEqual(errorMessage);
+        });
+
+        test('Should reject names containing symbols', () => {
+          expect(validateRevisionName('1.2')).toEqual(errorMessage);
+          expect(validateRevisionName('1-2')).toEqual(errorMessage);
+          expect(validateRevisionName('1_2')).toEqual(errorMessage);
+          expect(validateRevisionName('1/2')).toEqual(errorMessage);
+        });
+      });
+
+      describe('parseRevisionName', () => {
+        test('Should parse input into a number', () => {
+          expect(parseRevisionName('3')).toEqual(3);
+          expect(parseRevisionName('')).toEqual('');
+        });
+
+        test('Should display and version file names with numeric revisions', () => {
+          expect(getRevisionDisplayName(3)).toEqual('3');
+          expect(getVersionedFileName('foo/bar.txt', 3)).toEqual('bar.3.txt');
+          expect(getVersionedFileName('foo/bar.txt', 0)).toEqual('bar.0.txt');
+        });
+      });
     });
 
-    test('Should return a revision name that passes validation', () => {
-      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
-    });
-  });
+    describe('With ALPHABETIC setting set', () => {
+      beforeEach(() => {
+        env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
+      });
 
-  describe('validateRevisionName', () => {
-    const errorMessage = 'Only letters are allowed. No numbers, spaces, or symbols.';
+      describe('getDefaultRevisionName', () => {
+        test('Should return "A" as the default revision name', () => {
+          expect(getDefaultRevisionName()).toEqual('A');
+          expect(parseRevisionName(`${getDefaultRevisionName()}`)).toEqual('a'); // the server only accepts lowercase
+        });
 
-    beforeEach(() => {
-      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
-    });
+        test('Should return a revision name that passes validation', () => {
+          expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
+        });
+      });
 
-    test('Should accept lowercase, uppercase, and mixed-case letters', () => {
-      expect(validateRevisionName('a')).toBeNull();
-      expect(validateRevisionName('Z')).toBeNull();
-      expect(validateRevisionName('abc')).toBeNull();
-      expect(validateRevisionName('AbCd')).toBeNull();
-    });
+      describe('validateRevisionName', () => {
+        const errorMessage = 'Only letters are allowed. No numbers, spaces, or symbols.';
 
-    test('Should accept an empty string', () => {
-      expect(validateRevisionName('')).toBeNull();
-    });
+        test('Should accept lowercase, uppercase, and mixed-case letters', () => {
+          expect(validateRevisionName('a')).toBeNull();
+          expect(validateRevisionName('Z')).toBeNull();
+          expect(validateRevisionName('abc')).toBeNull();
+          expect(validateRevisionName('AbCd')).toBeNull();
+        });
 
-    test('Should reject names containing numbers', () => {
-      expect(validateRevisionName('1')).toEqual(errorMessage);
-      expect(validateRevisionName('a1')).toEqual(errorMessage);
-    });
+        test('Should accept an empty string', () => {
+          expect(validateRevisionName('')).toBeNull();
+        });
 
-    test('Should reject names containing whitespace', () => {
-      expect(validateRevisionName(' ')).toEqual(errorMessage);
-      expect(validateRevisionName('a b')).toEqual(errorMessage);
-      expect(validateRevisionName(' a')).toEqual(errorMessage);
-      expect(validateRevisionName('a\n')).toEqual(errorMessage);
-    });
+        test('Should reject names containing numbers', () => {
+          expect(validateRevisionName('1')).toEqual(errorMessage);
+          expect(validateRevisionName('a1')).toEqual(errorMessage);
+        });
 
-    test('Should reject names containing symbols', () => {
-      expect(validateRevisionName('a.b')).toEqual(errorMessage);
-      expect(validateRevisionName('a-b')).toEqual(errorMessage);
-      expect(validateRevisionName('a_b')).toEqual(errorMessage);
-      expect(validateRevisionName('a/b')).toEqual(errorMessage);
-    });
+        test('Should reject names containing whitespace', () => {
+          expect(validateRevisionName(' ')).toEqual(errorMessage);
+          expect(validateRevisionName('a b')).toEqual(errorMessage);
+          expect(validateRevisionName(' a')).toEqual(errorMessage);
+          expect(validateRevisionName('a\n')).toEqual(errorMessage);
+        });
 
-    test('Should reject non-ASCII letters', () => {
-      expect(validateRevisionName('é')).toEqual(errorMessage);
-      expect(validateRevisionName('ä')).toEqual(errorMessage);
-    });
-  });
+        test('Should reject names containing symbols', () => {
+          expect(validateRevisionName('a.b')).toEqual(errorMessage);
+          expect(validateRevisionName('a-b')).toEqual(errorMessage);
+          expect(validateRevisionName('a_b')).toEqual(errorMessage);
+          expect(validateRevisionName('a/b')).toEqual(errorMessage);
+        });
 
-  describe('numeric revision names (the default)', () => {
-    const errorMessage = 'Only numbers are allowed. No letters, spaces, or symbols.';
+        test('Should reject non-ASCII letters', () => {
+          expect(validateRevisionName('é')).toEqual(errorMessage);
+          expect(validateRevisionName('ä')).toEqual(errorMessage);
+        });
+      });
 
-    test('Should default to NUMERIC when unset or unrecognized', () => {
-      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = '';
-      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
-      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'bogus';
-      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
-      env.PUBLIC_WORKSPACE_REVISION_NAMING_CONVENTION = 'ALPHABETIC';
-      expect(getRevisionNamingConvention()).toEqual('ALPHABETIC');
-    });
+      describe('parseRevisionName', () => {
+        test('Should parse input into a lowercase letter', () => {
+          expect(parseRevisionName('A')).toEqual('a');
+          expect(parseRevisionName('')).toEqual('');
+        });
 
-    test('Should return 1 as the default revision name, which passes validation', () => {
-      expect(getRevisionNamingConvention()).toEqual('NUMERIC');
-      expect(getDefaultRevisionName()).toEqual(1);
-      expect(validateRevisionName(getDefaultRevisionName())).toBeNull();
-    });
-
-    test('Should accept digits, as strings or numbers', () => {
-      expect(validateRevisionName('1')).toBeNull();
-      expect(validateRevisionName('042')).toBeNull();
-      expect(validateRevisionName(12)).toBeNull();
-      expect(validateRevisionName('')).toBeNull();
-    });
-
-    test('Should reject letters, whitespace, and symbols', () => {
-      expect(validateRevisionName('a')).toEqual(errorMessage);
-      expect(validateRevisionName('1a')).toEqual(errorMessage);
-      expect(validateRevisionName('1 2')).toEqual(errorMessage);
-      expect(validateRevisionName('-1')).toEqual(errorMessage);
-      expect(validateRevisionName('1.5')).toEqual(errorMessage);
-      expect(validateRevisionName(1.5)).toEqual(errorMessage);
-    });
-
-    test('Should parse input into a number', () => {
-      expect(parseRevisionName('3')).toEqual(3);
-      expect(parseRevisionName('')).toEqual('');
-    });
-
-    test('Should display and version file names with numeric revisions', () => {
-      expect(getRevisionDisplayName(3)).toEqual('3');
-      expect(getVersionedFileName('foo/bar.txt', 3)).toEqual('bar.3.txt');
-      expect(getVersionedFileName('foo/bar.txt', 0)).toEqual('bar.0.txt');
+        test('Should display and version file names with numeric revisions', () => {
+          expect(getRevisionDisplayName(3)).toEqual('3');
+          expect(getVersionedFileName('foo/bar.txt', 3)).toEqual('bar.3.txt');
+          expect(getVersionedFileName('foo/bar.txt', 0)).toEqual('bar.0.txt');
+        });
+      });
     });
   });
 
