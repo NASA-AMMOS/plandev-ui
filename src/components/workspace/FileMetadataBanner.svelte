@@ -28,9 +28,8 @@
     {/if}
   </div>
   <div>
-    <span class="font-medium">Working Copy:</span>
     {#if isDirty}
-      Unsaved Changes
+      <span class="font-medium">Unsaved Changes</span>
     {:else if matchingRevisionName !== null && matchingRevisionName !== ''}
       {#if doesWorkingCopyMatchLatestRevision}
         Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span> (Latest)
@@ -38,9 +37,9 @@
         Matches Revision <span class="font-medium">{getRevisionDisplayName(matchingRevisionName)}</span>
       {/if}
     {:else if !hasRevisions}
-      Unrevisioned
+      <span class="font-medium">Unrevisioned</span>
     {:else}
-      Modified
+      <span class="font-medium">Working Copy</span>
     {/if}
   </div>
   <div
