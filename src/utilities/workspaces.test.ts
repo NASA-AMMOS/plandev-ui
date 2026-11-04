@@ -137,6 +137,7 @@ describe('Workspace utility function tests', () => {
 
     test('Should return "A" as the default revision name', () => {
       expect(getDefaultRevisionName()).toEqual('A');
+      expect(parseRevisionName(`${getDefaultRevisionName()}`)).toEqual('a'); // the server only accepts lowercase
     });
 
     test('Should return a revision name that passes validation', () => {

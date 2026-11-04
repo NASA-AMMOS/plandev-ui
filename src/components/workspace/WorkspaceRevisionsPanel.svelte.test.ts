@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { activeDocument } from '../../stores/activeDocument';
+import type { ActionDefinition } from '../../types/actions';
 import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
 import effects from '../../utilities/effects';
 import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
@@ -143,5 +144,40 @@ describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming conv
     const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];
     expect(!!options?.unrevisionedWarning).toBe(warns);
     cleanup();
+  });
+
+  it('runs a revision-aware action on the chosen revision, offering only actions that take revisions', async () => {
+    const makeAction = (name: string, withRevision: boolean) =>
+      ({
+        description: '',
+        name,
+        versions: [{ parameter_schema: { file: { type: 'file', ...(withRevision ? { withRevision: true } : {}) } } }],
+      }) as unknown as ActionDefinition;
+    const aware = makeAction('Aware', true);
+    const unaware = makeAction('Unaware', false);
+    const { component, getByRole, findByRole, queryByRole } = render(WorkspaceRevisionsPanel, {
+      props: {
+        availableActions: [
+          { action: unaware, parameter: 'file' },
+          { action: aware, parameter: 'file' },
+        ],
+        filePath: 'a.seq',
+        hasRunActionPermission: true,
+        reloadWorkingCopy: vi.fn(),
+        revisionList,
+      },
+    });
+    const onRunAction = vi.fn();
+    component.$on('runAction', e => onRunAction(e.detail));
+
+    const region = getByRole('region', { name: `Revision ${config.display.b}` });
+    await fireEvent.click(within(region).getByRole('button', { name: 'More options' }));
+    await fireEvent.keyDown(await findByRole('menuitem', { name: `Run action on revision ${config.display.b}` }), {
+      key: 'ArrowRight',
+    });
+    await fireEvent.click(await findByRole('menuitem', { name: /Aware/ }));
+
+    expect(queryByRole('menuitem', { name: /Unaware/ })).toBeNull();
+    expect(onRunAction).toHaveBeenCalledWith({ action: aware, parameter: 'file', revision: b });
   });
 });

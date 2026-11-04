@@ -13,7 +13,7 @@
   } from '@nasa-jpl/plandev-sequence-languages';
   import { EditorView } from 'codemirror';
   import { WorkspaceRightPanelTab } from '../../enums/workspace';
-  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
+  import type { ActionParameterPair, WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { unquoteUnescape } from '../../utilities/sequence-editor/sequence-utils';
   import CommandDictionaryComponent from '../sequencing/CommandPanel/CommandDictionary.svelte';
@@ -26,6 +26,7 @@
   import WorkspaceRevisionsPanel from './WorkspaceRevisionsPanel.svelte';
 
   export let activeTab: WorkspaceRightPanelTab = WorkspaceRightPanelTab.METADATA;
+  export let availableActions: ActionParameterPair[] = [];
   export let commandInfoMapper: CommandInfoMapper | null = null;
   export let commandNodeName: string | null = null;
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
@@ -35,6 +36,7 @@
   export let hasEditPermission: boolean = false;
   export let hasCreateRevisionPermission: boolean = false;
   export let hasRestoreRevisionPermission: boolean = false;
+  export let hasRunActionPermission: boolean = false;
   export let isRevisionsLoading: boolean = false;
   export let isSequenceFile: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
@@ -211,16 +213,19 @@
     <WorkspaceMetadataPanel {filePath} {fileMetadata} {hasEditPermission} on:updateUserMetadata />
   {:else if activeTab === WorkspaceRightPanelTab.REVISIONS}
     <WorkspaceRevisionsPanel
+      {availableActions}
       {doesWorkingCopyMatchLatestRevision}
       {filePath}
       {hasCreateRevisionPermission}
       {hasRestoreRevisionPermission}
+      {hasRunActionPermission}
       isReadOnly={!!fileMetadata?.readOnly}
       {isRevisionsLoading}
       {matchingRevisionName}
       {revisionList}
       {reloadWorkingCopy}
       on:createdFileRevision
+      on:runAction
     />
   {/if}
 </div>

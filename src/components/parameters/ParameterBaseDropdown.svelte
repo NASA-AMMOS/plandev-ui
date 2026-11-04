@@ -1,6 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
+  import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { createEventDispatcher } from 'svelte';
   import type { DropdownOptions, SelectedDropdownOptionValue } from '../../types/dropdown';
   import type { FormParameter, ParameterType } from '../../types/parameter.js';
@@ -20,6 +21,8 @@
   export let level: number = 0;
   export let levelPadding: number = 20;
   export let parameterType: ParameterType = 'action';
+  export let placeholderText: string | undefined = undefined;
+  export let selectedOptionLabel: string = '';
   export let use: ActionArray = [];
 
   let columns: string = '';
@@ -37,9 +40,9 @@
 
   $: if (!disabled && isParameterWithOptions(formParameter.schema)) {
     dropdownOptions = formParameter.schema.options.map(option => ({ display: option.display, value: option.value }));
-    placeholder = allowMultiple
-      ? `Select list of ${formParameter.schema.label}s`
-      : `Select ${formParameter.schema.label}`;
+    placeholder =
+      placeholderText ??
+      (allowMultiple ? `Select list of ${formParameter.schema.label}s` : `Select ${formParameter.schema.label}`);
     searchPlaceholder = `Filter ${formParameter.schema.label}s`;
     selectedDropdownOptions = updateSelectedValueFromOptions(formParameter.value);
   }
@@ -85,15 +88,23 @@
       />
     </Input>
   {:else}
-    <SearchableDropdown
-      bind:selectedOptionValues={selectedDropdownOptions}
-      {allowMultiple}
-      showPlaceholderOption={false}
-      options={dropdownOptions}
-      {placeholder}
-      {searchPlaceholder}
-      on:change={onChange}
-    />
+    <div class="flex min-w-0 items-center gap-1">
+      <div class="min-w-0 flex-1">
+        <SearchableDropdown
+          bind:selectedOptionValues={selectedDropdownOptions}
+          {allowMultiple}
+          showPlaceholderOption={false}
+          options={dropdownOptions}
+          {placeholder}
+          {searchPlaceholder}
+          {selectedOptionLabel}
+          on:change={onChange}
+        >
+          <ChevronDownIcon slot="icon" />
+        </SearchableDropdown>
+      </div>
+      <slot name="trailing" />
+    </div>
   {/if}
   <div class="parameter-right items-center">
     <ParameterBaseRightAdornments

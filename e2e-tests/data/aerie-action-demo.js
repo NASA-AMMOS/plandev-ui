@@ -14,6 +14,7 @@ const parameterDefinitions = {
       { key: 'fetch', label: 'Fetch URL' },
       { key: 'adaptation', label: 'Translate File using Adaptation' },
       { key: 'files', label: 'List & Read Files' },
+      { key: 'file-refs', label: 'Read Files at Revisions' },
       { key: 'write', label: 'Write a File' },
       { key: 'report', label: 'Render a Report' },
       { key: 'error', label: 'Throw an Error' },
@@ -39,6 +40,22 @@ const parameterDefinitions = {
     type: 'sequence',
     description: 'A sequence file parameter (for testing file pickers)',
     primary: true,
+  },
+  fileAtRevision: {
+    type: 'file',
+    description: 'One file, read at a working copy or pinned revision you choose (used in "file-refs" mode)',
+    withRevision: true,
+  },
+  sequencesAtRevision: {
+    type: 'sequenceList',
+    description: 'Several sequences, each read at its own working copy or pinned revision (used in "file-refs" mode)',
+    withRevision: true,
+  },
+  pinnedFile: {
+    type: 'file',
+    description: 'One file that must be read at a named revision, never the working copy (used in "file-refs" mode)',
+    withRevision: true,
+    allowWorkingCopy: false,
   },
   required: {
     type: 'string',
@@ -80,7 +97,17 @@ const settingDefinitions = {
 };
 
 async function main(actionParameters, actionSettings, actionsAPI) {
-  const { logCount = 10, mode = 'noop', outputFile, outputContent, secret, sequence } = actionParameters;
+  const {
+    fileAtRevision,
+    logCount = 10,
+    mode = 'noop',
+    outputFile,
+    outputContent,
+    pinnedFile,
+    secret,
+    sequence,
+    sequencesAtRevision,
+  } = actionParameters;
   const { externalUrl = 'https://api.github.com', verbose = false } = actionSettings;
   const startTime = performance.now();
 
@@ -101,6 +128,9 @@ async function main(actionParameters, actionSettings, actionsAPI) {
       break;
     case 'files':
       result = await runFilesMode(actionsAPI, sequence, verbose);
+      break;
+    case 'file-refs':
+      result = await runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision, pinnedFile);
       break;
     case 'adaptation':
       result = await runAdaptationMode(actionsAPI, sequence);
@@ -253,6 +283,20 @@ async function runFilesMode(actionsAPI, sequence, verbose) {
     console.error(`Files mode failed: ${err.message}`);
     return { status: 'FAILED', data: { error: err.message } };
   }
+}
+
+// Reads each FileRef it is given (a working copy or a pinned revision) and returns it with the contents read, so the
+// result shows exactly what each selection resolved to.
+async function runFileRefsMode(actionsAPI, fileAtRevision, sequencesAtRevision = [], pinnedFile) {
+  const read = async ref => ({ content: await actionsAPI.readFile(ref), ref });
+  return {
+    status: 'SUCCESS',
+    data: {
+      fileAtRevision: fileAtRevision ? await read(fileAtRevision) : null,
+      pinnedFile: pinnedFile ? await read(pinnedFile) : null,
+      sequencesAtRevision: await Promise.all(sequencesAtRevision.map(read)),
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------

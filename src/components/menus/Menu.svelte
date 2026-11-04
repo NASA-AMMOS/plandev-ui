@@ -110,7 +110,9 @@
   });
 
   function onDocumentKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
+    // Checking `shown` keeps this function per-instance. Otherwise Svelte hoists a single shared copy, and any other
+    // menu mounting or hiding removes the listener that an open menu relies on to close on Escape.
+    if (event.key === 'Escape' && shown) {
       hideAllMenus();
     }
   }

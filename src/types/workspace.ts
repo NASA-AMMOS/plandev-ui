@@ -67,7 +67,7 @@ export type WorkspaceFileRevisionDetail = {
   versionMetadata: WorkspaceFileRevision;
 };
 
-/** A file's revisions, oldest first, plus which of them (if any) holds the saved copy. */
+/** A file's revisions, newest first, plus which of them (if any) holds the saved copy. */
 export type WorkspaceFileRevisionList = {
   matchingRevision: WorkspaceRevisionName | null;
   revisions: WorkspaceFileRevision[];

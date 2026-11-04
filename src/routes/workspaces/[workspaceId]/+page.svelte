@@ -106,7 +106,7 @@
     WorkspaceTreeNode,
     WorkspaceTreeNodeWithFullPath,
   } from '../../../types/workspace-tree-view';
-  import { getStatusForActionRun } from '../../../utilities/actions';
+  import { getFileArgumentForPaths, getStatusForActionRun } from '../../../utilities/actions';
   import { setClipboardContent } from '../../../utilities/clipboard';
   import effects from '../../../utilities/effects';
   import { ErrorTypes } from '../../../utilities/errors';
@@ -1549,12 +1549,10 @@
     const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
     if (primaryParameter in latestParamSchema) {
-      const paramDefinition = latestParamSchema[primaryParameter];
-      const paramValue =
-        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
-          ? [$activeDocumentPath]
-          : $activeDocumentPath;
-      parameters[primaryParameter] = paramValue;
+      parameters[primaryParameter] = getFileArgumentForPaths(
+        latestParamSchema[primaryParameter],
+        $activeDocumentPath ? [$activeDocumentPath] : [],
+      );
     } else {
       // no primary parameter - show modal anyway, just don't pre-fill parameter
       console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);
@@ -1565,6 +1563,23 @@
         await effects.runAction(action, $workspace, workspaceFileList, $user, parameters),
       );
     }
+  }
+
+  async function onRunActionOnRevision(
+    event: CustomEvent<{ action: ActionDefinition; parameter: string; revision: WorkspaceFileRevision }>,
+  ) {
+    const { action, parameter, revision } = event.detail;
+    const schema = action.versions[0]?.parameter_schema[parameter];
+    if (!$workspace || !$activeDocumentPath || !schema) {
+      return;
+    }
+    // The revision name is a number under the numeric naming convention, but a FileRef's revision is a string
+    const fileRef = { path: $activeDocumentPath, revision: String(revision.name) };
+    handleActionRunResultFromEditor(
+      await effects.runAction(action, $workspace, workspaceFileList, $user, {
+        [parameter]: schema.type.endsWith('List') ? [fileRef] : fileRef,
+      }),
+    );
   }
 
   async function onRunActionOnFileSelection(event: CustomEvent<WorkspaceNodeRunActionEvent>) {
@@ -1588,12 +1603,7 @@
     const latestParamSchema = action.versions[0]?.parameter_schema ?? {};
     // the event will tell us which of the action's parameter is the primary, to be pre-filled with the file's path
     if (primaryParameter in latestParamSchema) {
-      const paramDefinition = latestParamSchema[primaryParameter];
-      const paramValue =
-        paramDefinition.type === 'fileList' || paramDefinition.type === 'sequenceList'
-          ? treeNodePaths
-          : treeNodePaths[0];
-      parameters[primaryParameter] = paramValue;
+      parameters[primaryParameter] = getFileArgumentForPaths(latestParamSchema[primaryParameter], treeNodePaths);
     } else {
       // no primary parameter - show modal anyway, just don't pre-fill parameter
       console.warn(`Invalid parameter ${primaryParameter} in onRunActionOnActiveFile`);
@@ -2016,6 +2026,7 @@
           >
             <WorkspaceRightPanel
               bind:activeTab={rightPanelActiveTab}
+              availableActions={availableActionsForActiveFile}
               bind:commandNodeName={rightPanelCommandNodeName}
               {doesWorkingCopyMatchLatestRevision}
               editorSequenceView={activeEditorView}
@@ -2024,6 +2035,7 @@
               hasEditPermission={hasEditFilePermission}
               {hasCreateRevisionPermission}
               {hasRestoreRevisionPermission}
+              {hasRunActionPermission}
               {isRevisionsLoading}
               isSequenceFile={activeFileIsInputSequence}
               {matchingRevisionName}
@@ -2031,6 +2043,7 @@
               {commandInfoMapper}
               {revisionList}
               on:createdFileRevision={onCreatedFileRevision}
+              on:runAction={onRunActionOnRevision}
               on:updateUserMetadata={onUpdateUserMetadata}
               reloadWorkingCopy={onRevisionWorkingCopyChanged}
             />

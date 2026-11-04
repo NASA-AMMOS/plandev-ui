@@ -107,6 +107,20 @@ export class AerieApi {
     await this.gatewayRequest('/uploadExternalSourceEventTypes', 'POST', body);
   }
 
+  /** Revision the file's current saved state; returns the server-assigned revision name. */
+  async createFileRevision(workspaceId: number, path: string, message: string): Promise<string> {
+    const response = await this.gatewayRequest(
+      `/versioning/${workspaceId}/${path}`,
+      'POST',
+      JSON.stringify({ message }),
+      {
+        headers: { 'If-Match': '*' },
+        workspace: true,
+      },
+    );
+    return response.text();
+  }
+
   async createModel(model: ModelInsertInput): Promise<{ id: number }> {
     const data = await this.gqlQuery<{ createModel: { id: number } }>(gql.CREATE_MODEL, { model });
     return data.createModel;
@@ -158,7 +172,7 @@ export class AerieApi {
    * Create a file (with content) or folder (omit content) in a workspace via the Workspace Service,
    * bypassing the UI. The UI creation path is covered by dedicated tests; this is for fast seeding.
    */
-  async createWorkspaceItem(workspaceId: number, path: string, content?: string): Promise<void> {
+  async createWorkspaceItem(workspaceId: number, path: string, content?: string, overwrite = false): Promise<void> {
     const isFolder = content === undefined;
     const type = isFolder ? 'directory' : 'file';
 
@@ -169,7 +183,9 @@ export class AerieApi {
       body.append('file', new Blob([content]), fileName);
     }
 
-    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}`, 'PUT', body, { workspace: true });
+    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}&overwrite=${overwrite}`, 'PUT', body, {
+      workspace: true,
+    });
   }
 
   async deleteActivityDirectives(planId: number, activityIds: number[]): Promise<void> {
@@ -240,10 +256,11 @@ export class AerieApi {
     path: string,
     method: string,
     body?: FormData | string,
-    { workspace = false }: { workspace?: boolean } = {},
+    { headers: extraHeaders = {}, workspace = false }: { headers?: Record<string, string>; workspace?: boolean } = {},
   ): Promise<Response> {
     const user = this.requireUser();
     const headers: Record<string, string> = {
+      ...extraHeaders,
       Authorization: `Bearer ${user.token}`,
       'x-hasura-role': 'aerie_admin',
       'x-hasura-user-id': user.id,

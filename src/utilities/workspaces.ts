@@ -946,9 +946,15 @@ export function getDefaultRevisionName(): WorkspaceRevisionName {
   return getRevisionNamingConvention() === 'NUMERIC' ? 1 : 'A';
 }
 
-/** Converts user input to a revision name of the configured type. Empty input is returned unchanged. */
+/**
+ * Converts user input to a revision name of the configured type. Letter names are lowercased, the server's form (they
+ * are only displayed uppercase). Empty input is returned unchanged.
+ */
 export function parseRevisionName(revisionName: string): WorkspaceRevisionName {
-  return getRevisionNamingConvention() === 'NUMERIC' && revisionName !== '' ? Number(revisionName) : revisionName;
+  if (getRevisionNamingConvention() === 'NUMERIC') {
+    return revisionName !== '' ? Number(revisionName) : revisionName;
+  }
+  return revisionName.toLowerCase();
 }
 
 export function validateRevisionName(revisionName: WorkspaceRevisionName): string | null {

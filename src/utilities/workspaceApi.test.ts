@@ -38,7 +38,6 @@ describe('WorkspaceApi file revisions', () => {
 
   test('getFileRevisionList GETs /versioning/{workspaceId}/{path} and returns the parsed list', async () => {
     const list = {
-      fileId: 'f-1',
       latestRevision: revision,
       matchingRevision: null,
       revisions: [revision],
