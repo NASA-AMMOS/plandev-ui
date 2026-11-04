@@ -10,6 +10,7 @@
   import { debounce } from 'lodash-es';
   import { File } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { activeDocumentIsDirty } from '../../stores/activeDocument';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/console';
   import type { WorkspaceFileRevision } from '../../types/workspace';
@@ -28,7 +29,6 @@
   export let doesWorkingCopyMatchLatestRevision: boolean = false;
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let includeActions: boolean = false;
-  export let isDirty: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
   export let previewOnly: boolean = false;
@@ -51,6 +51,7 @@
 
   let compartmentReadonly: Compartment;
   let disableCopyAndExport: boolean = true;
+  let isDirty: boolean = false;
   let editorDiv: HTMLDivElement;
   let editorView: EditorView;
   let previousIsJSON: boolean | null = null;
@@ -82,6 +83,7 @@
       ]),
     });
   }
+  $: isDirty = $activeDocumentIsDirty;
 
   // Cancel pending debounced events when file path changes to prevent stale events
   // from being dispatched with the wrong file path

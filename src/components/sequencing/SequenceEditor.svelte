@@ -17,6 +17,7 @@
   import { debounce } from 'lodash-es';
   import { FileBracesCorner } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { activeDocumentIsDirty } from '../../stores/activeDocument';
   import { clearWorkspaceAdaptationMessages } from '../../stores/workspaceErrors';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/console';
@@ -47,7 +48,6 @@
   export let phoenixContext: PhoenixContext | undefined;
   export let includeActions: boolean = false;
   export let preserveAdaptationLog: boolean = false;
-  export let isDirty: boolean = false;
   export let isLoading: boolean = false;
   export let isInputFile: boolean = false;
   export let matchingRevisionName: WorkspaceRevisionName | null = null;
@@ -87,6 +87,7 @@
   let editorOutputView: EditorView;
   let editorSequenceDiv: HTMLDivElement;
   let editorSequenceView: EditorView;
+  let isDirty: boolean = false;
   let selectedNode: SyntaxNode | null;
   let selectedOutputFormat: OutputLanguage | undefined;
   let showOutputs: boolean = true;
@@ -100,6 +101,7 @@
   // Debounce only the expensive output format computation, not the state sync
   const debouncedOutputUpdate = debounce(updateOutputFormat, 250);
 
+  $: isDirty = $activeDocumentIsDirty;
   $: commandInfoMapper = sequenceAdaptation.input.commandInfoMapper;
 
   // Only use input extensions if the sequence file matches the input file extensions
