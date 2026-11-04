@@ -136,9 +136,7 @@ describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming conv
     const revisionButton = await getByRole('region', { name: `Revision ${config.display.a}` });
     await fireEvent.click(within(revisionButton).getByRole('button', { name: 'More options' }));
 
-    const restoreMenuItem = (
-      await getAllByRole('menuitem', { name: `Restore file to revision ${config.display.a}` })
-    ).at(0);
+    const restoreMenuItem = getAllByRole('menuitem', { name: `Restore file to revision ${config.display.a}` }).at(0);
     await fireEvent.click(restoreMenuItem!);
 
     const options = vi.mocked(effects.restoreWorkspaceFileRevision).mock.lastCall?.[4];

@@ -378,6 +378,8 @@ export interface WorkspaceResponseWithEtag<T> {
   status: number;
 }
 
+export type IfMatch = string | '*' | null;
+
 /**
  * Like {@link reqWorkspace}, but takes an explicit `ifMatch` (sent as the `If-Match` header when set) and
  * returns the response `ETag` + status, throwing a typed {@link WorkspaceSaveConflictError} on `412`. Used
@@ -400,7 +402,7 @@ export async function reqWorkspaceWithEtag<T = any>(
   url: string,
   method: Exclude<RequestMethod, 'GET'>,
   body: any | null,
-  ifMatch: string | '*' | null,
+  ifMatch: IfMatch,
   user: BaseUser | User | null,
   signal?: AbortSignal,
   asJson?: boolean,
@@ -423,7 +425,7 @@ export async function reqWorkspaceWithEtag<T = any>(
         root?: 'ws' | 'versioning',
       ]
     | [
-        ifMatch: string | '*' | null,
+        ifMatch: IfMatch,
         user: BaseUser | User | null,
         signal?: AbortSignal,
         asJson?: boolean,
@@ -438,7 +440,7 @@ export async function reqWorkspaceWithEtag<T = any>(
   const [ifMatch, user, signal, asJson = false, headerOverrides = {}, root = 'ws'] =
     method === 'GET'
       ? ([null, ...rest] as [
-          string | '*' | null,
+          IfMatch,
           BaseUser | User | null,
           AbortSignal | undefined,
           boolean | undefined,
@@ -446,7 +448,7 @@ export async function reqWorkspaceWithEtag<T = any>(
           'ws' | 'versioning' | undefined,
         ])
       : (rest as [
-          string | '*' | null,
+          IfMatch,
           BaseUser | User | null,
           AbortSignal | undefined,
           boolean | undefined,
