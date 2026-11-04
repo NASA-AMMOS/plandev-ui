@@ -164,6 +164,8 @@
   const resizableHandleClass =
     'w-[3px] hover:after:bg-neutral-300 hover:after:transition-all hover:after:delay-[400ms] data-[active]:after:bg-neutral-300 data-[active]:after:transition-all';
 
+  let foobar = '';
+
   let activeEditorView: EditorView | null = null;
   let activeFileIsInputSequence: boolean = false;
   let activeFileIsSequence: boolean = false;
@@ -317,6 +319,8 @@
   }
   $: commandInfoMapper = $sequenceAdaptation.input.commandInfoMapper;
   $: isFileReadOnly = activeFileMetadata?.readOnly ?? false;
+
+  $: console.log('foobar :>> ', foobar);
 
   // Auto-switch the right-panel tab only when the editor crosses between sequence mode and
   // non-sequence mode. Switching between two sequence files (or between blank and a sequence
@@ -1146,7 +1150,9 @@
     if (filePath !== ($activeDocumentPath ?? '')) {
       return;
     }
-
+    foobar = input;
+    console.log('+page.svelte onWorkspaceInputFileUpdated: ', filePath, input);
+    console.log('set foobar: ', foobar);
     activeDocument.updateContent(input);
   }
 
@@ -1790,389 +1796,405 @@
 
 <PageTitle title="Workspace: {$workspace?.name}" />
 
-<Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
-  <Resizable.Pane defaultSize={84}>
-    <div class="flex h-full" class:invisible={!panelsReady}>
-      <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
-      <WorkspaceLeftIconRail
-        bind:activeTab={leftPanelActiveTab}
-        bind:panelOpen={sidebarPanelOpen}
-        on:tabChange={onTabChange}
-      />
+<div>
+  <b>Debug: Outside PaneGroup</b>
+  <div>activeDocumentIsDirty: {$activeDocumentIsDirty}</div>
+  <div>activeDocument.currentContent: {$activeDocument.currentContent}</div>
+  <div>activeDocument.originalContent: {$activeDocument.originalContent}</div>
+  <div>isDirty:{$activeDocument.currentContent !== $activeDocument.originalContent}</div>
+  <div>foobar: {foobar}</div>
+  <Resizable.PaneGroup direction="vertical" autoSaveId="workspace-console">
+    <b>Debug: Inside PaneGroup</b>
+    <div>activeDocumentIsDirty: {$activeDocumentIsDirty}</div>
+    <div>activeDocument.currentContent: {$activeDocument.currentContent}</div>
+    <div>activeDocument.originalContent: {$activeDocument.originalContent}</div>
+    <div>isDirty:{$activeDocument.currentContent !== $activeDocument.originalContent}</div>
+    <div>foobar: {foobar}</div>
+    <Resizable.Pane defaultSize={84}>
+      <div class="flex h-full" class:invisible={!panelsReady}>
+        <!-- Left icon rail (fixed 45px, always visible, outside Resizable) -->
+        <WorkspaceLeftIconRail
+          bind:activeTab={leftPanelActiveTab}
+          bind:panelOpen={sidebarPanelOpen}
+          on:tabChange={onTabChange}
+        />
 
-      <!-- All resizable panel content -->
-      <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
-        <!-- Left sidebar content (collapses to 0, icon rail is outside) -->
-        <Resizable.Pane
-          defaultSize={PANEL_DEFAULT_SIZE}
-          minSize={PANEL_MIN_SIZE}
-          collapsible
-          collapsedSize={0}
-          onCollapse={() => (sidebarPanelOpen = false)}
-          onExpand={() => {
-            sidebarPanelOpen = true;
-            ensurePaneDefaultSize(leftPaneApi);
-          }}
-          bind:pane={leftPaneApi}
-        >
-          <WorkspaceSidebar
-            bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
-            bind:selectedFilePath
-            activeTab={leftPanelActiveTab}
-            actions={allActionsForWorkspace}
-            {workspaceTree}
-            {isWorkspaceLoading}
-            {hasEditWorkspacePermission}
-            {hasEditWorkspaceCollaboratorsPermission}
-            parcels={$parcels}
-            user={$user}
-            users={$users}
-            usersLoading={$initialUsersLoading}
-            workspace={$workspace}
-            workspaces={$workspaces}
-            on:addCollaborator={onAddCollaborator}
-            on:deleteCollaborator={onDeleteCollaborator}
-            on:download={onDownloadNodes}
-            on:compareRevisions={onCompareRevisions}
-            on:compareFiles={onCompareFiles}
-            on:deleteNodes={onDeleteNodes}
-            on:moveNodes={onMoveNodes}
-            on:renameNode={onRenameNode}
-            on:newFolder={onNewFolder}
-            on:newFile={onNewFile}
-            on:importFile={onImportFile}
-            on:copyFileLocation={onCopyFileLocation}
-            on:copyFullPath={onCopyFullPath}
-            on:moveNodesToWorkspace={onMoveNodesToWorkspace}
-            on:refreshWorkspace={refreshWorkspaceContents}
-            on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
-            on:runAction={onRunActionOnFileSelection}
-            on:runActionFromSidebar={onRunActionFromSidebar}
-            on:selectAction={onSelectAction}
-            on:selectAllRuns={onSelectAllRuns}
-            on:openInNewTab={onOpenInNewTab}
-          />
-        </Resizable.Pane>
-
-        <Resizable.Handle class={resizableHandleClass} />
-
-        <!-- Content area -->
-        <Resizable.Pane defaultSize={60} minSize={30} class="z-10">
-          {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
-            <ActionDetailView
-              actionDefinitionId={$selectedActionDefinitionId}
-              user={$user}
-              workspace={$workspace}
-              workspaceFiles={workspaceFileList}
-              on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
-              on:runAction={onRunActionFromDetailView}
-              on:viewRun={onViewActionRun}
-            />
-          {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
-            <ActionRunDetailView
-              actionRunId={$selectedActionRunId}
-              user={$user}
-              hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
-              on:back={onActionRunBack}
-              on:rerun={onRerunAction}
-              on:viewAction={e =>
-                switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
-            />
-          {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
-            <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
-          {:else}
-            {@const isTextOrEmpty =
-              $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
-            <div class="relative grid h-full grid-cols-1 grid-rows-1">
-              {#if showLoadingSpinner && isTextOrEmpty}
-                <div
-                  class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
-                >
-                  <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
-                </div>
-              {/if}
-              {#if isTextOrEmpty && activeFileIsSequence}
-                <div class="flex h-full">
-                  <SequenceEditor
-                    bind:this={sequenceEditorRef}
-                    {phoenixContext}
-                    availableActions={availableActionsForActiveFile}
-                    fileMetadata={activeFileMetadata}
-                    includeActions={hasRunActionPermission}
-                    isDirty={$activeDocumentIsDirty}
-                    isLoading={$activeDocumentIsLoading}
-                    isInputFile={activeFileIsInputSequence}
-                    {doesWorkingCopyMatchLatestRevision}
-                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                    {matchingRevisionName}
-                    {preserveAdaptationLog}
-                    previewOnly={!hasEditFilePermission}
-                    readOnly={isFileReadOnly}
-                    {revisionList}
-                    sequenceAdaptation={$sequenceAdaptation}
-                    sequenceDefinition={$activeDocument.originalContent}
-                    sequenceName={$activeDocument.fileName ?? ''}
-                    sequenceFilePath={$activeDocumentPath ?? ''}
-                    sequenceOutput={selectedSequenceOutput}
-                    shouldListenForKeyboardSave={false}
-                    showCommandFormBuilder={false}
-                    userSequenceEditorColumns="1fr"
-                    userSequenceEditorColumnsWithFormBuilder="1fr"
-                    on:adaptationError={onAdaptationError}
-                    on:editorViewChange={e => (activeEditorView = e.detail)}
-                    on:lintChange={onLintChange}
-                    on:runAction={onRunActionOnActiveFile}
-                    on:save={onSaveWorkspaceFile}
-                    on:downloadInput={onDownloadInput}
-                    on:downloadOutput={onDownloadOutput}
-                    on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
-                    on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
-                  />
-                </div>
-              {:else if isTextOrEmpty}
-                <div class="flex h-full">
-                  <TextEditor
-                    bind:this={textEditorRef}
-                    availableActions={availableActionsForActiveFile}
-                    fileMetadata={activeFileMetadata}
-                    includeActions={true}
-                    isJSON={$activeDocument.type === WorkspaceContentType.Json}
-                    isLoading={$activeDocumentIsLoading}
-                    {doesWorkingCopyMatchLatestRevision}
-                    isDirty={$activeDocumentIsDirty}
-                    onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
-                    previewOnly={!hasEditFilePermission}
-                    readOnly={isFileReadOnly}
-                    {revisionList}
-                    shouldListenForKeyboardSave={false}
-                    textFileName={$activeDocument.fileName ?? ''}
-                    textFilePath={$activeDocumentPath ?? ''}
-                    textFileContent={$activeDocument.originalContent}
-                    on:lintChange={onLintChange}
-                    on:runAction={onRunActionOnActiveFile}
-                    on:save={onSaveWorkspaceFile}
-                    on:download={onDownloadInput}
-                    on:textContentUpdated={onWorkspaceInputFileUpdated}
-                  />
-                </div>
-              {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
-                {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
-                {@const folderFiles =
-                  (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
-                {@const folderSubfolders =
-                  (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
-                <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-                  <Folder size={70} class="text-muted-foreground" />
-                  <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                    The selected folder
-                    <code class="font-bold">
-                      {$activeDocumentPath}
-                    </code>
-                    {#if folderFiles.length === 0 && folderSubfolders.length === 0}
-                      is empty.
-                    {:else}
-                      contains{folderFiles.length ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}` : ''}
-                      {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
-                      {folderSubfolders.length
-                        ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
-                        : ''}.
-                    {/if}
-                  </p>
-                  <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
-                </div>
-              {:else if !isTextOrEmpty}
-                <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
-                  <TriangleAlert size={70} class="text-muted-foreground" />
-                  <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
-                    The selected file
-                    <code class="font-bold">
-                      {$activeDocumentPath}
-                    </code>
-                    is not displayed in the editor because it is either binary or an unsupported extension.
-                  </p>
-                  <div>
-                    <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
-                  </div>
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </Resizable.Pane>
-
-        {#if $workspaceContentMode === WorkspaceContentMode.File}
-          <Resizable.Handle class={resizableHandleClass} />
-
-          <!-- Right panel content (collapses to 0, icon rail is outside) -->
+        <!-- All resizable panel content -->
+        <Resizable.PaneGroup direction="horizontal" autoSaveId="workspace-panels">
+          <!-- Left sidebar content (collapses to 0, icon rail is outside) -->
           <Resizable.Pane
             defaultSize={PANEL_DEFAULT_SIZE}
             minSize={PANEL_MIN_SIZE}
             collapsible
             collapsedSize={0}
-            onCollapse={() => (rightPanelOpen = false)}
+            onCollapse={() => (sidebarPanelOpen = false)}
             onExpand={() => {
-              rightPanelOpen = true;
-              ensurePaneDefaultSize(rightPaneApi);
+              sidebarPanelOpen = true;
+              ensurePaneDefaultSize(leftPaneApi);
             }}
-            bind:pane={rightPaneApi}
+            bind:pane={leftPaneApi}
           >
-            <WorkspaceRightPanel
-              bind:activeTab={rightPanelActiveTab}
-              bind:commandNodeName={rightPanelCommandNodeName}
-              {doesWorkingCopyMatchLatestRevision}
-              editorSequenceView={activeEditorView}
-              filePath={$activeDocumentPath}
-              fileMetadata={activeFileMetadata}
-              hasEditPermission={hasEditFilePermission}
-              {hasCreateRevisionPermission}
-              {hasRestoreRevisionPermission}
-              {isRevisionsLoading}
-              isSequenceFile={activeFileIsInputSequence}
-              {matchingRevisionName}
-              {phoenixContext}
-              {commandInfoMapper}
-              {revisionList}
-              on:createdFileRevision={onCreatedFileRevision}
-              on:updateUserMetadata={onUpdateUserMetadata}
-              reloadWorkingCopy={onRevisionWorkingCopyChanged}
+            <WorkspaceSidebar
+              bind:currentBreadcrumbPath={sidebarBreadcrumbPath}
+              bind:selectedFilePath
+              activeTab={leftPanelActiveTab}
+              actions={allActionsForWorkspace}
+              {workspaceTree}
+              {isWorkspaceLoading}
+              {hasEditWorkspacePermission}
+              {hasEditWorkspaceCollaboratorsPermission}
+              parcels={$parcels}
+              user={$user}
+              users={$users}
+              usersLoading={$initialUsersLoading}
+              workspace={$workspace}
+              workspaces={$workspaces}
+              on:addCollaborator={onAddCollaborator}
+              on:deleteCollaborator={onDeleteCollaborator}
+              on:download={onDownloadNodes}
+              on:compareRevisions={onCompareRevisions}
+              on:compareFiles={onCompareFiles}
+              on:deleteNodes={onDeleteNodes}
+              on:moveNodes={onMoveNodes}
+              on:renameNode={onRenameNode}
+              on:newFolder={onNewFolder}
+              on:newFile={onNewFile}
+              on:importFile={onImportFile}
+              on:copyFileLocation={onCopyFileLocation}
+              on:copyFullPath={onCopyFullPath}
+              on:moveNodesToWorkspace={onMoveNodesToWorkspace}
+              on:refreshWorkspace={refreshWorkspaceContents}
+              on:updateWorkspaceMetadata={onUpdateWorkspaceMetadata}
+              on:runAction={onRunActionOnFileSelection}
+              on:runActionFromSidebar={onRunActionFromSidebar}
+              on:selectAction={onSelectAction}
+              on:selectAllRuns={onSelectAllRuns}
+              on:openInNewTab={onOpenInNewTab}
             />
           </Resizable.Pane>
-        {/if}
-      </Resizable.PaneGroup>
 
-      <!-- Right icon rail (only visible in file mode) -->
-      {#if $workspaceContentMode === WorkspaceContentMode.File}
-        <WorkspaceRightIconRail
-          bind:activeTab={rightPanelActiveTab}
-          bind:panelOpen={rightPanelOpen}
-          commandNodeName={rightPanelCommandNodeName}
-          isSequenceFile={activeFileIsInputSequence}
-        />
-      {/if}
-    </div>
-  </Resizable.Pane>
+          <Resizable.Handle class={resizableHandleClass} />
 
-  <Resizable.Handle class={resizableHandleClass} />
-
-  <Resizable.Pane
-    defaultSize={!isConsoleExpanded ? 0 : 24}
-    minSize={16}
-    collapsible
-    collapsedSize={0}
-    onCollapse={() => (isConsoleExpanded = false)}
-    onExpand={() => (isConsoleExpanded = true)}
-    bind:pane={consolePaneApi}
-    class="h-full min-h-[36px]"
-  >
-    <div class="h-full min-h-6 overflow-hidden">
-      <Console
-        expanded={isConsoleExpanded}
-        selectedTab={selectedConsoleTab}
-        on:toggle={onConsoleToggle}
-        on:selectTab={onSelectConsoleTab}
-      >
-        <svelte:fragment slot="console-actions">
-          {#if isConsoleExpanded}
-            <Select.Root
-              multiple
-              typeahead={false}
-              selected={logLevels.map(l => ({ label: capitalize(l), value: l }))}
-              onSelectedChange={values => {
-                if (values) {
-                  logLevels = values.map(v => v.value);
-                }
-              }}
-            >
-              <Select.Trigger size="xs" class="w-[120px] flex-shrink-0">{logLevelLabel}</Select.Trigger>
-              <Select.Content size="xs">
-                <Select.Item size="xs" value="info" label="Info">Info</Select.Item>
-                <Select.Item size="xs" value="warn" label="Warning">Warning</Select.Item>
-                <Select.Item size="xs" value="error" label="Error">Error</Select.Item>
-              </Select.Content>
-            </Select.Root>
-          {/if}
-          {#if isConsoleExpanded && selectedConsoleTab === 'adaptation'}
-            <div class="mx-1.5 flex items-center gap-1.5 border-l border-r border-border px-2 text-xs">
-              <Checkbox
-                size="sm"
-                name="preserveAdaptationLog"
-                id="preserveAdaptationLog"
-                bind:checked={preserveAdaptationLog}
+          <!-- Content area -->
+          <Resizable.Pane defaultSize={60} minSize={30} class="z-10">
+            {#if $workspaceContentMode === WorkspaceContentMode.ActionDetail && $selectedActionDefinitionId !== null}
+              <ActionDetailView
+                actionDefinitionId={$selectedActionDefinitionId}
+                user={$user}
+                workspace={$workspace}
+                workspaceFiles={workspaceFileList}
+                on:close={() => switchToContentMode(WorkspaceContentMode.ActionRunsList)}
+                on:runAction={onRunActionFromDetailView}
+                on:viewRun={onViewActionRun}
               />
-              <label class="select-none whitespace-nowrap text-muted-foreground" for="preserveAdaptationLog">
-                Preserve logs
-              </label>
-            </div>
-          {/if}
-          {#if isConsoleExpanded && (selectedConsoleTab === 'logs' || selectedConsoleTab === 'adaptation')}
-            <Button variant="ghost" size="icon" on:click={onClearConsole}>
-              <ListX size={16} />
-            </Button>
-          {/if}
-        </svelte:fragment>
-
-        <svelte:fragment slot="console-tabs">
-          <div class="flex items-center overflow-x-hidden py-0.5">
-            <ConsoleTab value="actions" numberOfErrors={$workspaceActionErrors.length}>Actions</ConsoleTab>
-            <ConsoleTab value="adaptation" numberOfErrors={$workspaceAdaptationErrors.length}>Adaptation</ConsoleTab>
-            <ConsoleTab value="linting" numberOfErrors={$workspaceLintErrors.filter(e => e.level === 'error').length}>
-              Linting
-            </ConsoleTab>
-            <div
-              class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
-            />
-            <ConsoleTab value="logs" numberOfErrors={$errorLogs.length}>
-              Logs
-              <svelte:fragment slot="badge">
-                {#if $errorLogs.length}
-                  <span class="flex items-center gap-0.5 px-0.5">
-                    <TriangleAlert size={13} />
-                    {$errorLogs.length}
-                  </span>
+            {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunDetail && $selectedActionRunId !== null}
+              <ActionRunDetailView
+                actionRunId={$selectedActionRunId}
+                user={$user}
+                hasRunPermission={$workspace != null && featurePermissions.actionRun.canCreate($user, $workspace)}
+                on:back={onActionRunBack}
+                on:rerun={onRerunAction}
+                on:viewAction={e =>
+                  switchToContentMode(WorkspaceContentMode.ActionDetail, { actionId: e.detail.actionId })}
+              />
+            {:else if $workspaceContentMode === WorkspaceContentMode.ActionRunsList}
+              <ActionRunsListView user={$user} on:viewRun={onViewActionRun} />
+            {:else}
+              {@const isTextOrEmpty =
+                $activeDocumentPath === null || isTextFile(workspaceTreeMap[$activeDocumentPath]?.type)}
+              <div class="relative grid h-full grid-cols-1 grid-rows-1">
+                {#if showLoadingSpinner && isTextOrEmpty}
+                  <div
+                    class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/50"
+                  >
+                    <LoaderCircle size={32} class="animate-spin text-muted-foreground" />
+                  </div>
                 {/if}
-              </svelte:fragment>
-            </ConsoleTab>
-          </div>
-        </svelte:fragment>
+                {#if isTextOrEmpty && activeFileIsSequence}
+                  <div class="flex h-full">
+                    <SequenceEditor
+                      bind:this={sequenceEditorRef}
+                      {phoenixContext}
+                      availableActions={availableActionsForActiveFile}
+                      fileMetadata={activeFileMetadata}
+                      includeActions={hasRunActionPermission}
+                      isDirty={$activeDocumentIsDirty}
+                      isLoading={$activeDocumentIsLoading}
+                      isInputFile={activeFileIsInputSequence}
+                      {doesWorkingCopyMatchLatestRevision}
+                      onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                      {matchingRevisionName}
+                      {preserveAdaptationLog}
+                      previewOnly={!hasEditFilePermission}
+                      readOnly={isFileReadOnly}
+                      {revisionList}
+                      sequenceAdaptation={$sequenceAdaptation}
+                      sequenceDefinition={$activeDocument.originalContent}
+                      sequenceName={$activeDocument.fileName ?? ''}
+                      sequenceFilePath={$activeDocumentPath ?? ''}
+                      sequenceOutput={selectedSequenceOutput}
+                      shouldListenForKeyboardSave={false}
+                      showCommandFormBuilder={false}
+                      userSequenceEditorColumns="1fr"
+                      userSequenceEditorColumnsWithFormBuilder="1fr"
+                      on:adaptationError={onAdaptationError}
+                      on:editorViewChange={e => (activeEditorView = e.detail)}
+                      on:lintChange={onLintChange}
+                      on:runAction={onRunActionOnActiveFile}
+                      on:save={onSaveWorkspaceFile}
+                      on:downloadInput={onDownloadInput}
+                      on:downloadOutput={onDownloadOutput}
+                      on:sequenceInputUpdate={onWorkspaceInputFileUpdated}
+                      on:sequenceOutputUpdate={onWorkspaceOutputFileUpdated}
+                    />
+                  </div>
+                {:else if isTextOrEmpty}
+                  <div class="flex h-full">
+                    <TextEditor
+                      bind:this={textEditorRef}
+                      availableActions={availableActionsForActiveFile}
+                      fileMetadata={activeFileMetadata}
+                      includeActions={true}
+                      isJSON={$activeDocument.type === WorkspaceContentType.Json}
+                      isLoading={$activeDocumentIsLoading}
+                      {doesWorkingCopyMatchLatestRevision}
+                      isDirty={$activeDocumentIsDirty}
+                      onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                      previewOnly={!hasEditFilePermission}
+                      readOnly={isFileReadOnly}
+                      {revisionList}
+                      shouldListenForKeyboardSave={false}
+                      textFileName={$activeDocument.fileName ?? ''}
+                      textFilePath={$activeDocumentPath ?? ''}
+                      textFileContent={$activeDocument.originalContent}
+                      on:lintChange={onLintChange}
+                      on:runAction={onRunActionOnActiveFile}
+                      on:save={onSaveWorkspaceFile}
+                      on:download={onDownloadInput}
+                      on:textContentUpdated={onWorkspaceInputFileUpdated}
+                    />
+                  </div>
+                {:else if $activeDocument.type === WorkspaceContentType.Directory && $activeDocumentPath}
+                  {@const folderNode = workspaceTreeMap[$activeDocumentPath]}
+                  {@const folderFiles =
+                    (folderNode?.contents || []).filter(node => node.type !== WorkspaceContentType.Directory) ?? []}
+                  {@const folderSubfolders =
+                    (folderNode?.contents || []).filter(node => node.type === WorkspaceContentType.Directory) ?? []}
+                  <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                    <Folder size={70} class="text-muted-foreground" />
+                    <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                      The selected folder
+                      <code class="font-bold">
+                        {$activeDocumentPath}
+                      </code>
+                      {#if folderFiles.length === 0 && folderSubfolders.length === 0}
+                        is empty.
+                      {:else}
+                        contains{folderFiles.length
+                          ? ` ${folderFiles.length} file${pluralize(folderFiles.length)}`
+                          : ''}
+                        {`${folderFiles.length && folderSubfolders.length ? ' and' : ''}`}
+                        {folderSubfolders.length
+                          ? ` ${folderSubfolders.length} subfolder${pluralize(folderSubfolders.length)}`
+                          : ''}.
+                      {/if}
+                    </p>
+                    <Button variant="secondary" on:click={() => onOpenFolder($activeDocumentPath)}>Open Folder</Button>
+                  </div>
+                {:else if !isTextOrEmpty}
+                  <div class="flex w-full flex-col items-center justify-center gap-8 pt-6">
+                    <TriangleAlert size={70} class="text-muted-foreground" />
+                    <p class="st-typography-body max-w-prose text-center text-sm text-muted-foreground">
+                      The selected file
+                      <code class="font-bold">
+                        {$activeDocumentPath}
+                      </code>
+                      is not displayed in the editor because it is either binary or an unsupported extension.
+                    </p>
+                    <div>
+                      <Button variant="secondary" on:click={() => onDownloadFile($activeDocumentPath)}>Download</Button>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </Resizable.Pane>
 
-        <ConsoleLogs
-          value="actions"
-          showTimestamp
-          showType={false}
-          logs={$workspaceActionRunMessages}
-          autoScroll
-          emptyStateMessage="No action runs"
+          {#if $workspaceContentMode === WorkspaceContentMode.File}
+            <Resizable.Handle class={resizableHandleClass} />
+
+            <!-- Right panel content (collapses to 0, icon rail is outside) -->
+            <Resizable.Pane
+              defaultSize={PANEL_DEFAULT_SIZE}
+              minSize={PANEL_MIN_SIZE}
+              collapsible
+              collapsedSize={0}
+              onCollapse={() => (rightPanelOpen = false)}
+              onExpand={() => {
+                rightPanelOpen = true;
+                ensurePaneDefaultSize(rightPaneApi);
+              }}
+              bind:pane={rightPaneApi}
+            >
+              <WorkspaceRightPanel
+                bind:activeTab={rightPanelActiveTab}
+                bind:commandNodeName={rightPanelCommandNodeName}
+                {doesWorkingCopyMatchLatestRevision}
+                editorSequenceView={activeEditorView}
+                filePath={$activeDocumentPath}
+                fileMetadata={activeFileMetadata}
+                hasEditPermission={hasEditFilePermission}
+                {hasCreateRevisionPermission}
+                {hasRestoreRevisionPermission}
+                {isRevisionsLoading}
+                isSequenceFile={activeFileIsInputSequence}
+                {matchingRevisionName}
+                {phoenixContext}
+                {commandInfoMapper}
+                {revisionList}
+                on:createdFileRevision={onCreatedFileRevision}
+                on:updateUserMetadata={onUpdateUserMetadata}
+                reloadWorkingCopy={onRevisionWorkingCopyChanged}
+              />
+            </Resizable.Pane>
+          {/if}
+        </Resizable.PaneGroup>
+
+        <!-- Right icon rail (only visible in file mode) -->
+        {#if $workspaceContentMode === WorkspaceContentMode.File}
+          <WorkspaceRightIconRail
+            bind:activeTab={rightPanelActiveTab}
+            bind:panelOpen={rightPanelOpen}
+            commandNodeName={rightPanelCommandNodeName}
+            isSequenceFile={activeFileIsInputSequence}
+          />
+        {/if}
+      </div>
+    </Resizable.Pane>
+
+    <Resizable.Handle class={resizableHandleClass} />
+
+    <Resizable.Pane
+      defaultSize={!isConsoleExpanded ? 0 : 24}
+      minSize={16}
+      collapsible
+      collapsedSize={0}
+      onCollapse={() => (isConsoleExpanded = false)}
+      onExpand={() => (isConsoleExpanded = true)}
+      bind:pane={consolePaneApi}
+      class="h-full min-h-[36px]"
+    >
+      <div class="h-full min-h-6 overflow-hidden">
+        <Console
+          expanded={isConsoleExpanded}
+          selectedTab={selectedConsoleTab}
+          on:toggle={onConsoleToggle}
+          on:selectTab={onSelectConsoleTab}
         >
-          <WorkspaceLogMessage slot="message" let:log {log} on:viewRun={onViewActionRun} />
-        </ConsoleLogs>
-        <ConsoleLogs
-          value="adaptation"
-          showTimestamp
-          showType={false}
-          logs={$workspaceAdaptationMessages}
-          {logLevels}
-          autoScroll
-          emptyStateMessage="No adaptation errors"
-        />
-        <ConsoleLogs
-          value="linting"
-          showTimestamp={false}
-          showType={false}
-          logs={$workspaceLintErrors}
-          {logLevels}
-          emptyStateMessage="No linting errors"
-        >
-          <WorkspaceLogMessage slot="message" let:log {log} on:gotoLine={onGotoLine} />
-        </ConsoleLogs>
-        <ConsoleLogs
-          value="logs"
-          logs={$allLogs}
-          {logLevels}
-          emptyStateMessage="No logs"
-          noMatchingResultsMessage="No matching logs"
-          autoScroll
-          showType={false}
-        />
-      </Console>
-    </div>
-  </Resizable.Pane>
-</Resizable.PaneGroup>
+          <svelte:fragment slot="console-actions">
+            {#if isConsoleExpanded}
+              <Select.Root
+                multiple
+                typeahead={false}
+                selected={logLevels.map(l => ({ label: capitalize(l), value: l }))}
+                onSelectedChange={values => {
+                  if (values) {
+                    logLevels = values.map(v => v.value);
+                  }
+                }}
+              >
+                <Select.Trigger size="xs" class="w-[120px] flex-shrink-0">{logLevelLabel}</Select.Trigger>
+                <Select.Content size="xs">
+                  <Select.Item size="xs" value="info" label="Info">Info</Select.Item>
+                  <Select.Item size="xs" value="warn" label="Warning">Warning</Select.Item>
+                  <Select.Item size="xs" value="error" label="Error">Error</Select.Item>
+                </Select.Content>
+              </Select.Root>
+            {/if}
+            {#if isConsoleExpanded && selectedConsoleTab === 'adaptation'}
+              <div class="mx-1.5 flex items-center gap-1.5 border-l border-r border-border px-2 text-xs">
+                <Checkbox
+                  size="sm"
+                  name="preserveAdaptationLog"
+                  id="preserveAdaptationLog"
+                  bind:checked={preserveAdaptationLog}
+                />
+                <label class="select-none whitespace-nowrap text-muted-foreground" for="preserveAdaptationLog">
+                  Preserve logs
+                </label>
+              </div>
+            {/if}
+            {#if isConsoleExpanded && (selectedConsoleTab === 'logs' || selectedConsoleTab === 'adaptation')}
+              <Button variant="ghost" size="icon" on:click={onClearConsole}>
+                <ListX size={16} />
+              </Button>
+            {/if}
+          </svelte:fragment>
+
+          <svelte:fragment slot="console-tabs">
+            <div class="flex items-center overflow-x-hidden py-0.5">
+              <ConsoleTab value="actions" numberOfErrors={$workspaceActionErrors.length}>Actions</ConsoleTab>
+              <ConsoleTab value="adaptation" numberOfErrors={$workspaceAdaptationErrors.length}>Adaptation</ConsoleTab>
+              <ConsoleTab value="linting" numberOfErrors={$workspaceLintErrors.filter(e => e.level === 'error').length}>
+                Linting
+              </ConsoleTab>
+              <div
+                class="pointer-events-none mx-2 flex h-4 w-0 items-center justify-center border-r border-black border-opacity-20 px-0"
+              />
+              <ConsoleTab value="logs" numberOfErrors={$errorLogs.length}>
+                Logs
+                <svelte:fragment slot="badge">
+                  {#if $errorLogs.length}
+                    <span class="flex items-center gap-0.5 px-0.5">
+                      <TriangleAlert size={13} />
+                      {$errorLogs.length}
+                    </span>
+                  {/if}
+                </svelte:fragment>
+              </ConsoleTab>
+            </div>
+          </svelte:fragment>
+
+          <ConsoleLogs
+            value="actions"
+            showTimestamp
+            showType={false}
+            logs={$workspaceActionRunMessages}
+            autoScroll
+            emptyStateMessage="No action runs"
+          >
+            <WorkspaceLogMessage slot="message" let:log {log} on:viewRun={onViewActionRun} />
+          </ConsoleLogs>
+          <ConsoleLogs
+            value="adaptation"
+            showTimestamp
+            showType={false}
+            logs={$workspaceAdaptationMessages}
+            {logLevels}
+            autoScroll
+            emptyStateMessage="No adaptation errors"
+          />
+          <ConsoleLogs
+            value="linting"
+            showTimestamp={false}
+            showType={false}
+            logs={$workspaceLintErrors}
+            {logLevels}
+            emptyStateMessage="No linting errors"
+          >
+            <WorkspaceLogMessage slot="message" let:log {log} on:gotoLine={onGotoLine} />
+          </ConsoleLogs>
+          <ConsoleLogs
+            value="logs"
+            logs={$allLogs}
+            {logLevels}
+            emptyStateMessage="No logs"
+            noMatchingResultsMessage="No matching logs"
+            autoScroll
+            showType={false}
+          />
+        </Console>
+      </div>
+    </Resizable.Pane>
+  </Resizable.PaneGroup>
+</div>

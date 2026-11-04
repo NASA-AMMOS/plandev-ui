@@ -234,7 +234,16 @@
 
     dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
 
-    debouncedOutputUpdate(sequence);
+    // debouncedOutputUpdate(sequence);
+  }
+
+  function onTest(event: Event): void {
+    const sequence = (event.target as HTMLTextAreaElement).value;
+    disableCopyAndExport = sequence === '';
+
+    dispatch('sequenceInputUpdate', { filePath: sequenceFilePath, input: sequence });
+
+    // debouncedOutputUpdate(sequence);
   }
 
   function updateOutputFormat(sequence: string): void {
@@ -495,6 +504,7 @@
             {onReadOnlyChange}
           />
         {/if}
+        <textarea class="m-1 outline" placeholder="Type here" value={sequenceDefinition} on:input={onTest}></textarea>
         <div class="p-2" bind:this={editorSequenceDiv} />
       </svelte:fragment>
     </Panel>

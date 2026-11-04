@@ -102,7 +102,7 @@ describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming conv
 
     await fireEvent.input(input, { target: { value: config.validation.invalidVal } });
     expect(getByRole('alert').textContent).toBe(config.validation.error);
-    expect((getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((getByRole('button', { name: 'Create Revision' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('says which revision the saved copy matches, until unsaved editor changes make that stale', async () => {
@@ -118,12 +118,12 @@ describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming conv
   it('disables Create only when the saved copy matches the latest revision', () => {
     const latest = renderPanel(c.name);
     expect(latest.getByText('The saved copy matches the latest revision.')).toBeTruthy();
-    expect((latest.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((latest.getByRole('button', { name: 'Create Revision' }) as HTMLButtonElement).disabled).toBe(true);
     cleanup();
 
     const older = renderPanel(b.name);
     expect(older.getByLabelText('Create revision').textContent).toContain(`matches revision ${config.display.b}`);
-    expect((older.getByRole('button', { name: 'Create revision' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((older.getByRole('button', { name: 'Create Revision' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it.each([

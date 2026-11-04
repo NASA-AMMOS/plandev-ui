@@ -165,6 +165,7 @@ function createActiveDocumentStore(): ActiveDocumentStore {
     subscribe,
 
     updateContent(content: string): void {
+      console.log('activeDocument store: set currentContent :>> ', content);
       update(state => ({
         ...state,
         currentContent: content,
