@@ -289,7 +289,7 @@
             <div class="flex flex-col gap-4 p-3">
               <section class="flex flex-col gap-1" aria-label="Create revision">
                 <label class="flex flex-col gap-1" for="revision-commit-message">
-                  <span>Revision description <span class="text-muted-foreground">(optional)</span></span>
+                  <span>Description <span class="text-muted-foreground">(optional)</span></span>
                   <textarea
                     bind:this={revisionMessageTextArea}
                     bind:value={commitMessage}
@@ -317,7 +317,7 @@
                     disabled={createDisabled || isCreating || (!latest && !!revisionStartError)}
                     on:click={onCreate}
                   >
-                    {isCreating ? 'Creating…' : 'Create revision'}
+                    {isCreating ? 'Creating…' : 'Create Revision'}
                   </Button>
                   {#if !latest && revisionStart !== null}
                     <div class="grid h-full grid-cols-[auto_1fr] items-center gap-2">
@@ -350,53 +350,14 @@
                 {/if}
               </section>
               <section class="flex flex-col gap-1" aria-label="Revision History">
-                <span class="font-medium text-muted-foreground">Revision History</span>
+                <span class="font-medium text-muted-foreground">History</span>
                 {#if latest}
                   <ul class="flex flex-col overflow-hidden rounded border border-border" aria-label="Revisions">
                     {#each revisionList as revision, i (revision.name)}
                       {@const revisionDisplayName = getRevisionDisplayName(revision.name)}
                       <li class={i > 0 ? 'border-t border-border' : ''}>
-                        <div
-                          class="grid grid-cols-[1fr_24px]"
-                          role="region"
-                          aria-label="Revision {revisionDisplayName}"
-                        >
-                          <Tooltip
-                            wrapperClass="w-full overflow-hidden"
-                            content="Preview revision {revisionDisplayName}"
-                          >
-                            <button
-                              class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 text-left hover:bg-muted"
-                              aria-label="Preview revision {revisionDisplayName}"
-                              on:click={() => onPreview(revision)}
-                            >
-                              <div class="flex h-full w-full flex-col gap-1 overflow-hidden">
-                                <div class="font-semibold">
-                                  Revision {revisionDisplayName}
-                                </div>
-                                <div class="min-h-4 w-full">
-                                  <Tooltip
-                                    wrapperClass="w-full overflow-hidden"
-                                    wrapContent={true}
-                                    class="max-w-xs whitespace-normal break-words"
-                                    content={revision.message}
-                                    disabled={!revision.message}
-                                    side="left"
-                                  >
-                                    <span class="w-full overflow-hidden text-ellipsis text-nowrap"
-                                      >{revision.message}</span
-                                    >
-                                  </Tooltip>
-                                </div>
-                                <div class="text-left text-muted-foreground">
-                                  <span>Created By:</span>
-                                  <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
-                                  <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
-                                </div>
-                              </div>
-                            </button>
-                          </Tooltip>
-                          <div class="grid grid-rows-2 justify-items-end gap-1">
+                        <div class="relative w-full" role="region" aria-label="Revision {revisionDisplayName}">
+                          <div class="absolute right-0 top-0">
                             <DropdownMenu.Root>
                               <Tooltip content="More options">
                                 <DropdownMenu.Trigger asChild let:builder>
@@ -454,6 +415,43 @@
                               </DropdownMenu.Content>
                             </DropdownMenu.Root>
                           </div>
+                          <Tooltip
+                            wrapperClass="w-full overflow-hidden"
+                            content="Preview revision {revisionDisplayName}"
+                          >
+                            <button
+                              class="h-full w-full items-baseline overflow-hidden px-2 py-1.5 text-left hover:bg-muted"
+                              aria-label="Preview revision {revisionDisplayName}"
+                              on:click={() => onPreview(revision)}
+                            >
+                              <div class="h-full w-full flex-col gap-1 overflow-hidden">
+                                <div class="w-full pb-1">
+                                  <div class="font-semibold">
+                                    Revision {revisionDisplayName}
+                                  </div>
+                                </div>
+                                <div class="min-h-4 w-full">
+                                  <Tooltip
+                                    wrapperClass="w-full overflow-hidden"
+                                    wrapContent={true}
+                                    class="max-w-xs whitespace-normal break-words"
+                                    content={revision.message}
+                                    disabled={!revision.message}
+                                    side="left"
+                                  >
+                                    <span class="w-full overflow-hidden text-ellipsis text-nowrap"
+                                      >{revision.message}</span
+                                    >
+                                  </Tooltip>
+                                </div>
+                                <div class="text-left text-muted-foreground">
+                                  <span>Created By:</span>
+                                  <span class="truncate">{revision.createdBy ?? 'Unknown'}</span>
+                                  <span>at {getShortISOForDate(new Date(revision.createdAt))}</span>
+                                </div>
+                              </div>
+                            </button>
+                          </Tooltip>
                         </div>
                       </li>
                     {/each}
