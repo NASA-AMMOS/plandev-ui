@@ -1939,6 +1939,7 @@
                     isLoading={$activeDocumentIsLoading}
                     {doesWorkingCopyMatchLatestRevision}
                     onReadOnlyChange={readOnly => onReadOnlyChange(readOnly)}
+                    {matchingRevisionName}
                     previewOnly={!hasEditFilePermission}
                     readOnly={isFileReadOnly}
                     {revisionList}

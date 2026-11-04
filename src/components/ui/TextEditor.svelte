@@ -13,7 +13,7 @@
   import { activeDocumentIsDirty } from '../../stores/activeDocument';
   import type { ActionDefinition } from '../../types/actions';
   import type { LintDiagnostic } from '../../types/console';
-  import type { WorkspaceFileRevision } from '../../types/workspace';
+  import type { WorkspaceFileRevision, WorkspaceRevisionName } from '../../types/workspace';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getLintDiagnostics } from '../../utilities/codemirror/lint';
   import { readOnlyChangeGuard } from '../../utilities/codemirror/readOnly';
@@ -31,6 +31,7 @@
   export let includeActions: boolean = false;
   export let isJSON: boolean = false;
   export let isLoading: boolean = false;
+  export let matchingRevisionName: WorkspaceRevisionName | null = null;
   export let previewOnly: boolean = false;
   export let readOnly: boolean = false;
   export let revisionList: WorkspaceFileRevision[] = [];
@@ -202,8 +203,8 @@
     }
     return true;
   }
-
-  function onRunAction(action: ActionDefinition, parameter: string) {
+  function onRunAction(event: CustomEvent<{ action: ActionDefinition; parameter: string }>) {
+    const { action, parameter } = event.detail;
     dispatch('runAction', { action, parameter });
   }
 
@@ -265,7 +266,7 @@
       saveDisabled={!isDirty}
       saveHighlighted={isDirty}
       {onSave}
-      on:runAction={e => onRunAction(e.detail.action, e.detail.parameter)}
+      on:runAction={onRunAction}
     />
   </svelte:fragment>
 
@@ -277,6 +278,7 @@
         hasEditPermission={!previewOnly}
         hasRevisions={revisionList.length > 0}
         {isDirty}
+        {matchingRevisionName}
         {onReadOnlyChange}
       />
     {/if}

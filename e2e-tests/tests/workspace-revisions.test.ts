@@ -102,9 +102,7 @@ test.describe('Workspace Revisions', () => {
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
-    if (!(await createRevisionPanel.isVisible())) {
-      await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
-    }
+    await workspace.openRevisionPanel();
 
     await expect(page.getByText('No revisions yet.')).toBeVisible();
     await createRevisionButton.click();
@@ -120,9 +118,8 @@ test.describe('Workspace Revisions', () => {
 
     await createFileIfNeeded(sequenceName, '# version 1', api, workspace);
 
-    if (!(await createRevisionPanel.isVisible())) {
-      await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
-    }
+    await workspace.openRevisionPanel();
+
     await createRevisionButton.click();
     await workspace.waitForToast('Created revision 1');
 
@@ -171,9 +168,7 @@ test.describe('Workspace Revisions', () => {
     await workspace.searchForFileAndWait(sequenceName);
     await workspace.clickFile(sequenceName);
 
-    if (!(await createRevisionPanel.isVisible())) {
-      await page.getByRole('button', { exact: true, name: 'Revisions' }).click();
-    }
+    await workspace.openRevisionPanel();
 
     await createRevisionPanel.getByRole('textbox', { name: 'Starting revision name' }).fill('3');
     await createRevisionButton.click();
