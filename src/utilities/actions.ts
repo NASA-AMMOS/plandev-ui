@@ -356,61 +356,47 @@ export function parseActionLogLines(logString: string): ParsedActionLog[] {
 }
 
 /**
- * Formats action run parameters as a truncated summary string.
- * Prioritizes parameters with `primary: true`, then by `order`.
+ * Formats action run parameters as display strings, `primary: true` parameters first, then alphabetically.
  */
-export function truncateRunParameters(
+export function formatRunParameters(
   parameters: ArgumentsMap,
   parameterSchema: Record<string, ActionValueSchema> | undefined,
-  maxLength: number = 60,
-): string {
+): { key: string; value: string }[] {
   if (!parameters || !parameterSchema) {
-    return '';
+    return [];
   }
 
-  const entries = Object.entries(parameters);
-  if (entries.length === 0) {
-    return '';
-  }
-
-  // Sort: primary params first, then by schema order (or alphabetically as fallback)
-  const sorted = entries.sort(([keyA], [keyB]) => {
-    const schemaA = parameterSchema[keyA];
-    const schemaB = parameterSchema[keyB];
-    const primaryA = schemaA && 'primary' in schemaA && schemaA.primary ? 0 : 1;
-    const primaryB = schemaB && 'primary' in schemaB && schemaB.primary ? 0 : 1;
-    if (primaryA !== primaryB) {
-      return primaryA - primaryB;
-    }
-    return keyA.localeCompare(keyB);
-  });
-
-  let result = '';
-  for (const [key, value] of sorted) {
-    const formatFileRefs = (refs: FileRef[]) => refs.map(ref => `'${formatFileRef(ref)}'`);
-    let formatted: string;
-    if (isFileRef(value)) {
-      formatted = formatFileRefs([value])[0];
-    } else if (Array.isArray(value) && value.length > 0 && value.every(isFileRef)) {
-      formatted = `[${formatFileRefs(value).join(', ')}]`;
-    } else {
-      formatted = typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
-    }
-    const pair = `${key}: ${formatted}`;
-    if (result.length === 0) {
-      result = pair;
-    } else {
-      const next = `${result}, ${pair}`;
-      if (next.length > maxLength) {
-        break;
+  return Object.entries(parameters)
+    .sort(([keyA], [keyB]) => {
+      const schemaA = parameterSchema[keyA];
+      const schemaB = parameterSchema[keyB];
+      const primaryA = schemaA && 'primary' in schemaA && schemaA.primary ? 0 : 1;
+      const primaryB = schemaB && 'primary' in schemaB && schemaB.primary ? 0 : 1;
+      if (primaryA !== primaryB) {
+        return primaryA - primaryB;
       }
-      result = next;
-    }
-  }
+      return keyA.localeCompare(keyB);
+    })
+    .map(([key, value]) => {
+      const formatFileRefs = (refs: FileRef[]) => refs.map(ref => `'${formatFileRef(ref)}'`);
+      let formatted: string;
+      if (isFileRef(value)) {
+        formatted = formatFileRefs([value])[0];
+      } else if (Array.isArray(value) && value.length > 0 && value.every(isFileRef)) {
+        formatted = `[${formatFileRefs(value).join(', ')}]`;
+      } else {
+        formatted = typeof value === 'string' ? `'${value}'` : (JSON.stringify(value) ?? String(value));
+      }
+      return { key, value: formatted };
+    });
+}
 
-  if (result.length > maxLength) {
-    result = result.substring(0, maxLength - 3) + '...';
-  }
-
-  return result;
+/** Formats action run parameters as one `key: value, ...` string, e.g. for filtering the runs grid. */
+export function summarizeRunParameters(
+  parameters: ArgumentsMap,
+  parameterSchema: Record<string, ActionValueSchema> | undefined,
+): string {
+  return formatRunParameters(parameters, parameterSchema)
+    .map(({ key, value }) => `${key}: ${value}`)
+    .join(', ');
 }

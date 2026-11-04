@@ -19,7 +19,7 @@ import {
   getRunnableVersions,
   getStatusForActionRun,
   parseActionLogLines,
-  truncateRunParameters,
+  summarizeRunParameters,
   valueSchemaRecordToParametersMap,
 } from './actions';
 
@@ -223,15 +223,15 @@ describe('getStatusForActionRun', () => {
   });
 });
 
-describe('truncateRunParameters', () => {
+describe('summarizeRunParameters', () => {
   test('returns empty string with no parameters', () => {
-    expect(truncateRunParameters({}, {})).toBe('');
+    expect(summarizeRunParameters({}, {})).toBe('');
   });
 
   test('formats a single parameter', () => {
     const params = { name: 'test' };
     const schema: Record<string, ActionValueSchema> = { name: { type: 'string' } };
-    expect(truncateRunParameters(params, schema)).toBe("name: 'test'");
+    expect(summarizeRunParameters(params, schema)).toBe("name: 'test'");
   });
 
   test('formats multiple parameters', () => {
@@ -240,15 +240,7 @@ describe('truncateRunParameters', () => {
       count: { type: 'int' },
       name: { type: 'string' },
     };
-    expect(truncateRunParameters(params, schema)).toBe("count: 5, name: 'test'");
-  });
-
-  test('truncates when exceeding maxLength', () => {
-    const params = { longKey: 'a very long value that should cause truncation' };
-    const schema: Record<string, ActionValueSchema> = { longKey: { type: 'string' } };
-    const result = truncateRunParameters(params, schema, 20);
-    expect(result.length).toBeLessThanOrEqual(20);
-    expect(result).toContain('...');
+    expect(summarizeRunParameters(params, schema)).toBe("count: 5, name: 'test'");
   });
 
   test('prioritizes primary parameters', () => {
@@ -257,7 +249,7 @@ describe('truncateRunParameters', () => {
       other: { type: 'string' },
       primary: { primary: true, type: 'string' } as ActionValueSchema,
     };
-    const result = truncateRunParameters(params, schema);
+    const result = summarizeRunParameters(params, schema);
     expect(result).toMatch(/^primary:/);
   });
 });
@@ -393,8 +385,13 @@ describe('file references', () => {
     expect(isMissingRevision(pinned, [])).toBe(false);
   });
 
-  test('truncateRunParameters formats refs as path and revision rather than JSON', () => {
-    expect(truncateRunParameters({ a: { path: 'x.seq', revision: 'b' }, b: [{ path: 'y.seq' }] }, {}, 200)).toBe(
+  test('summarizeRunParameters includes every parameter, so the runs filter can match any of them', () => {
+    const params = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [`p${i}`, 'v'.repeat(30)]));
+    expect(summarizeRunParameters(params, {})).toContain('p29');
+  });
+
+  test('summarizeRunParameters formats refs as path and revision rather than JSON', () => {
+    expect(summarizeRunParameters({ a: { path: 'x.seq', revision: 'b' }, b: [{ path: 'y.seq' }] }, {})).toBe(
       "a: 'x.seq · Revision B', b: ['y.seq · Working copy']",
     );
   });

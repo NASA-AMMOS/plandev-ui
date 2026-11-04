@@ -20,7 +20,7 @@
     hasUnavailableRevision,
     isMissingRevision,
     openActionRun,
-    truncateRunParameters,
+    summarizeRunParameters,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
@@ -39,6 +39,7 @@
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import SectionCard from '../../ui/SectionCard.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+  import ActionRunParametersCell from './ActionRunParametersCell.svelte';
 
   export let actionDefinitionId: number;
   export let user: User | null;
@@ -280,7 +281,8 @@
     const div = document.createElement('div');
     div.style.display = 'flex';
     div.style.alignItems = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the badge lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     if (params.data) {
       const status = getStatusForActionRun(params.data);
       new StatusBadge({ props: { status }, target: div });
@@ -289,10 +291,15 @@
   }
 
   function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    const div = document.createElement('div');
     if (!params.data || !actionDefinition) {
-      return '';
+      return div;
     }
-    return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
+    new ActionRunParametersCell({
+      props: { parameterSchema: actionDefinition.versions[0]?.parameter_schema, parameters: params.data.parameters },
+      target: div,
+    });
+    return div;
   }
 
   function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
@@ -307,7 +314,8 @@
     div.style.display = 'flex';
     div.style.alignItems = 'center';
     div.style.justifyContent = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the button lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     const btn = document.createElement('button');
     btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
     btn.title = 'Cancel Action Run';
@@ -382,9 +390,11 @@
       width: 100,
     },
     {
+      autoHeight: true,
       cellRenderer: paramsCellRenderer,
       field: 'parameters',
       filter: 'text',
+      flex: 1,
       headerName: 'Parameters',
       minWidth: 120,
       resizable: true,
@@ -393,7 +403,7 @@
         if (!params.data || !actionDefinition) {
           return '';
         }
-        return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
+        return summarizeRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
       },
     },
     {
@@ -610,6 +620,7 @@
               </div>
             {:else}
               <SingleActionDataGrid
+                autoSizeColumnsToFit={false}
                 columnDefs={runsColumnDefs}
                 {filterExpression}
                 items={actionRuns}
