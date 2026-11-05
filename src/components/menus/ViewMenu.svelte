@@ -39,14 +39,16 @@
     uploadView: void;
   }>();
 
+  let isDefaultView: boolean = false;
+  let bottomPanelIsOn: boolean = false;
   let leftPanelIsOn: boolean = false;
   let leftSplitPanelIsOn: boolean = false;
-  let bottomPanelIsOn: boolean = false;
   let rightPanelIsOn: boolean = false;
   let rightSplitPanelIsOn: boolean = false;
   let saveViewDisabled: boolean = true;
 
-  $: saveViewDisabled = $view?.name === '' || !hasUpdatePermission || !$viewIsModified;
+  $: isDefaultView = $view?.id === -1;
+  $: saveViewDisabled = isDefaultView || $view?.name === '' || !hasUpdatePermission || !$viewIsModified;
   $: if ($view?.definition.plan.grid) {
     leftPanelIsOn = !$view.definition.plan.grid.leftHidden && !$view.definition.plan.grid.leftSplit;
     leftSplitPanelIsOn = !$view.definition.plan.grid.leftHidden && $view.definition.plan.grid.leftSplit;
@@ -161,7 +163,7 @@
       >
         Save as
       </MenuItem>
-      {#if $view?.name && $view.name !== defaultViewName}
+      {#if $view?.name && !isDefaultView}
         <MenuItem disabled={!$viewIsModified} on:click={resetView}>Reset to last saved</MenuItem>
       {/if}
       <MenuItem on:click={resetViewToDefault}>Reset to default</MenuItem>
@@ -189,7 +191,7 @@
         Download view
       </MenuItem>
       <MenuItem on:click={() => showSavedViewsModal(user)}>Browse saved views</MenuItem>
-      {#if $view?.name && $view.name !== defaultViewName}
+      {#if $view?.name && !isDefaultView}
         <hr />
         <MenuItem
           on:click={editView}

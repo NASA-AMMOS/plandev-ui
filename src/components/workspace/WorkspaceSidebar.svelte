@@ -168,6 +168,8 @@
                     on:renameNode
                     on:newFile
                     on:download
+                    on:compareRevisions
+                    on:compareFiles
                     on:newFolder
                     on:openInNewTab
                     on:importFile

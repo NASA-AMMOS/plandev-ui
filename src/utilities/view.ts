@@ -384,7 +384,7 @@ export function generateDefaultView(
       },
       version: viewSchemaVersion,
     },
-    id: 0,
+    id: -1, // Sentinel value for checking default view identity, never persisted to db
     name: 'Default View',
     owner: 'system',
     updated_at: now,

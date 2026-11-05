@@ -13,8 +13,14 @@
   import { debounce } from 'lodash-es';
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
-  import { activityDirectivesMap, selectActivity, selectedActivityDirectiveId } from '../../stores/activities';
-  import { activityErrorRollupsMap } from '../../stores/console';
+  import {
+    activityArgumentDefaultsMap,
+    activityDirectivesMap,
+    isActivityStatusUnavailable,
+    selectActivity,
+    selectedActivityDirectiveId,
+  } from '../../stores/activities';
+  import { activityStatusRollupsMap } from '../../stores/console';
   import { maxTimeRange, plan, planModelActivityTypes, planReadOnly, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { spansMap, spanUtilityMaps } from '../../stores/simulation';
@@ -118,6 +124,8 @@
             activityTypeName: params.data.type,
             activityTypes: $planModelActivityTypes,
             args: params.data.arguments,
+            presetArgs: params.data.applied_preset?.preset_applied?.arguments ?? {},
+            defaultArgs: $activityArgumentDefaultsMap[params.data.type] ?? {},
           },
         });
         return div;
@@ -266,6 +274,10 @@
       sortable: true,
     },
   };
+  // Mission model defaults can load after the table renders, so re-render the arguments cells when they change
+  $: if ($activityArgumentDefaultsMap) {
+    dataGrid?.refreshCells({ columns: ['arguments'], force: true });
+  }
   $: derivedColumnDefs = Object.values(defaultColumnDefinitions).map((defaultColumnDef: ColDef) => {
     const columnDef = activityDirectivesTable?.columnDefs.find(
       (columnDef: ColDef) => columnDef.field === defaultColumnDef.field,
@@ -461,8 +473,9 @@
       bind:selectedActivityDirectiveId={$selectedActivityDirectiveId}
       activityDirectives={$activityDirectivesMap ? Object.values($activityDirectivesMap) : null}
       activityTypes={$planModelActivityTypes}
-      activityDirectiveErrorRollupsMap={$activityErrorRollupsMap}
+      activityDirectiveErrorRollupsMap={$activityStatusRollupsMap}
       {filterExpression}
+      isActivityStatusUnavailable={$isActivityStatusUnavailable}
       columnDefs={derivedColumnDefs ?? []}
       columnStates={activityDirectivesTable?.columnStates}
       plan={$plan}

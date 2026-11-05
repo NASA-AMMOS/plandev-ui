@@ -1,7 +1,6 @@
 import type { ActivityDeletionAction } from '../utilities/activities';
 import type { ActivityMetadata } from './activity-metadata';
 import type { PartialWith, UserId } from './app';
-import type { ActivityDirectiveValidationFailures } from './console';
 import type { ArgumentsMap, ParametersMap } from './parameter';
 import type { PlanSchema } from './plan';
 import type { ValueSchema } from './schema';
@@ -108,17 +107,6 @@ export type AnchorValidationStatus = {
   reason_invalid: string;
 };
 
-export interface ActivityDirectiveValidationStatus {
-  directive_id: number;
-  plan_id: number;
-  status: 'complete' | 'pending';
-  validations: ActivityDirectiveValidationSuccess | ActivityDirectiveValidationFailures;
-}
-
-export interface ActivityDirectiveValidationSuccess {
-  success: true;
-}
-
 export type PlanSnapshotActivity = Omit<ActivityDirective, 'anchor_validations' | 'applied_preset' | 'plan_id'> & {
   snapshot_id: number;
 };
@@ -136,8 +124,8 @@ export type ActivityDirectiveSearchResult = Omit<
   'applied_preset' | 'last_modified_arguments_at' | 'source_scheduling_goal_invocation_id' | 'tags'
 > & {
   applied_preset: { preset_applied: Pick<ActivityPreset, 'name'> } | null;
-  plan: Pick<PlanSchema, 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
-    model: { id: number; name: string } | null;
+  plan: Pick<PlanSchema, 'model' | 'model_id' | 'name' | 'owner' | 'start_time' | 'tags'> & {
+    model: { id: number; is_executable: boolean; name: string } | null;
   };
   source_scheduling_goal: { id: number; name: string } | null;
   tags: { tag: TagsInsertInput }[];

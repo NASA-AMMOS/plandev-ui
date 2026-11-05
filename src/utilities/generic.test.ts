@@ -8,6 +8,7 @@ import {
   attemptStringConversion,
   clamp,
   classNames,
+  compareWithRankings,
   extractQuotes,
   filterEmpty,
   filterNullish,
@@ -155,6 +156,33 @@ describe('Generic utility function tests', () => {
 
       expect(await parseJSONStream(readable as unknown as ReadableStream)).toBeTypeOf('object');
     });
+
+    function streamOf(text: string): ReadableStream {
+      return new ReadableStream({
+        start(controller) {
+          if (text) {
+            controller.enqueue(text);
+          }
+          controller.close();
+        },
+      });
+    }
+
+    test('Should parse a complete JSON object', async () => {
+      expect(await parseJSONStream(streamOf('{"a": 1, "b": [true]}'))).toEqual({ a: 1, b: [true] });
+    });
+
+    test('Should reject a truncated JSON stream', async () => {
+      await expect(parseJSONStream(streamOf('{"version": "3", "name": "broken", '))).rejects.toThrow();
+    });
+
+    test('Should reject an empty stream', async () => {
+      await expect(parseJSONStream(streamOf(''))).rejects.toThrow('JSON stream is empty');
+    });
+
+    test('Should reject invalid JSON', async () => {
+      await expect(parseJSONStream(streamOf('{"a": x}'))).rejects.toThrow();
+    });
   });
 
   describe('lowercase', () => {
@@ -177,6 +205,53 @@ describe('Generic utility function tests', () => {
         quotes: ['A', 'B', 'C'],
         text: '{{QUOTE}} {{QUOTE}} {{QUOTE}}',
       });
+    });
+  });
+
+  describe('compareWithRankings', () => {
+    test('sorts an array according to explicit rankings', () => {
+      const rankings = ['draft', 'in progress', 'completed', '-', ''];
+      const values = ['completed', '', '-', 'draft', 'in progress'];
+
+      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
+
+      expect(values).toEqual(['draft', 'in progress', 'completed', '-', '']);
+    });
+
+    test('uses the ranking for a value when one exists', () => {
+      const rankings = ['42', '7'];
+      const values = [7, 42];
+
+      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
+
+      expect(values).toEqual([42, 7]);
+    });
+
+    test('uses the default rank for values that are not explicitly ranked', () => {
+      const rankings = ['unknown', 'ready'];
+      const values = ['ready', null, 'unknown'];
+
+      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
+
+      expect(values).toEqual([null, 'unknown', 'ready']);
+    });
+
+    test('compares numbers numerically when they have the same rank', () => {
+      const rankings: string[] = [];
+      const values = [10, 2, 100];
+
+      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
+
+      expect(values).toEqual([2, 10, 100]);
+    });
+
+    test('compares non-numbers using numeric-aware locale ordering when they have the same rank', () => {
+      const rankings: string[] = [];
+      const values = ['item10', 'item2', 'item1'];
+
+      values.sort((valueA, valueB) => compareWithRankings(valueA, valueB, rankings));
+
+      expect(values).toEqual(['item1', 'item2', 'item10']);
     });
   });
 });

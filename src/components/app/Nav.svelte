@@ -1,13 +1,13 @@
 <script lang="ts">
   import { Select } from '@nasa-jpl/stellar-svelte';
-  import { getContext } from 'svelte';
-  import type { Writable } from 'svelte/store';
-  import type { User, UserRole } from '../../types/app';
+  import { getUserStore } from '../../stores/user';
+  import type { UserRole, UserStore } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
+  import { getRoleDisplayName } from '../../utilities/roles';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import AppMenu from '../menus/AppMenu.svelte';
 
-  const user: Writable<User | null> = getContext('user');
+  const user: UserStore = getUserStore();
 
   let userRoles: UserRole[] = [];
 
@@ -39,7 +39,7 @@
     <slot name="right" />
     {#if userRoles.length > 1}
       <Select.Root
-        selected={{ label: $user?.activeRole ?? '', value: $user?.activeRole ?? '' }}
+        selected={{ label: getRoleDisplayName($user?.activeRole), value: $user?.activeRole ?? '' }}
         onSelectedChange={v => v && changeRole(v.value)}
         loop={false}
       >
@@ -49,7 +49,9 @@
         <Select.Content>
           <Select.Label size="xs">Select Role</Select.Label>
           {#each userRoles as userRole}
-            <Select.Item size="xs" value={userRole} label={userRole}>{userRole}</Select.Item>
+            <Select.Item size="xs" value={userRole} label={getRoleDisplayName(userRole)}>
+              {getRoleDisplayName(userRole)}
+            </Select.Item>
           {/each}
         </Select.Content>
         <Select.Input name="user-menu" aria-label="Select Role hidden input" />

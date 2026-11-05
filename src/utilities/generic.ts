@@ -64,6 +64,49 @@ export function stringCompare(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+type SortableValue = number | string | null | undefined;
+/**
+ * Returns the sort rank for a value, using its stringified value first and
+ * falling back to its type when no value-specific rank is defined.
+ * Values without a matching rank default to rank zero.
+ */
+function getSortRank(value: SortableValue, rankMappings: Record<string, number>): number {
+  return rankMappings[`${value}`] ?? rankMappings[typeof value] ?? 0;
+}
+
+/**
+ * Compares two values according to a caller-provided ranking, then applies a
+ * numeric or locale-aware string comparison when both values have the same rank.
+ *
+ * The ranking array is ordered from lowest to highest priority. Values not
+ * present in the ranking use rank zero and are compared by their underlying
+ * value when they share a rank.
+ *
+ * @param valueA The first value to compare.
+ * @param valueB The second value to compare.
+ * @param valueRankings Values ordered from lowest to highest priority.
+ * @returns A negative number when `valueA` sorts first, a positive number when
+ * `valueB` sorts first, or zero when the values are equivalent.
+ */
+export function compareWithRankings(valueA: SortableValue, valueB: SortableValue, valueRankings: string[]): number {
+  const rankMappings: Record<string, number> = {};
+  valueRankings.forEach((value, index) => {
+    rankMappings[value] = index;
+  });
+  const priorityA = getSortRank(valueA, rankMappings);
+  const priorityB = getSortRank(valueB, rankMappings);
+
+  // Keep empty and placeholder values at the bottom in either direction.
+  if (priorityA !== priorityB) {
+    return priorityA - priorityB;
+  }
+
+  if (typeof valueA === 'number' && typeof valueB === 'number') {
+    return valueA - valueB;
+  }
+  return `${valueA}`.localeCompare(`${valueB}`, undefined, { numeric: true });
+}
+
 /**
  * Clamp a number between min and max.
  */
@@ -313,12 +356,20 @@ export async function parseJSONStream<R>(jsonStream: ReadableStream): Promise<R>
       finalJSON = parent as R;
     };
     jsonParser.onEnd = () => {
-      resolve(finalJSON as R);
+      if (finalJSON === undefined) {
+        reject(new Error('JSON stream is empty'));
+      } else {
+        resolve(finalJSON as R);
+      }
     };
 
     try {
       for await (const result of streamAsyncIterable(jsonStream)) {
         jsonParser.write(result);
+      }
+      // A truncated or empty stream never ends on its own; ending it throws if the JSON is incomplete.
+      if (!jsonParser.isEnded) {
+        jsonParser.end();
       }
     } catch (e) {
       reject(e);

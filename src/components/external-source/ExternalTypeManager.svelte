@@ -54,6 +54,7 @@
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
   import Panel from '../ui/Panel.svelte';
   import SectionTitle from '../ui/SectionTitle.svelte';
+  import ExternalSourceDetails from './ExternalSourceDetails.svelte';
 
   export let user: User | null;
 
@@ -264,7 +265,7 @@
       headerName: 'Associated External Sources',
       sortable: true,
       valueFormatter: params => {
-        return params?.value.size;
+        return params?.value.length;
       },
       width: 250,
     },
@@ -628,44 +629,8 @@
         </div>
       {:else if selectedDerivationGroup !== undefined}
         {#if selectedDerivationGroupSources.length > 0}
-          {#each selectedDerivationGroupSources as source}
-            <!-- Collapsible details -->
-            <Collapse title={source.key} tooltipContent={source.key} defaultExpanded={false}>
-              <svelte:fragment slot="right">
-                <p class="st-typography-body derived-event-count">
-                  {selectedDerivationGroup.sources.get(source.key)?.event_counts} events
-                </p>
-              </svelte:fragment>
-              <div class="st-typography-body">
-                <div class="st-typography-bold">Key:</div>
-                {source.key}
-              </div>
-
-              <div class="st-typography-body">
-                <div class="st-typography-bold">Source Type:</div>
-                {source.source_type_name}
-              </div>
-
-              <div class="st-typography-body">
-                <div class="st-typography-bold">Start Time:</div>
-                {source.start_time}
-              </div>
-
-              <div class="st-typography-body">
-                <div class="st-typography-bold">End Time:</div>
-                {source.end_time}
-              </div>
-
-              <div class="st-typography-body">
-                <div class="st-typography-bold">Valid At:</div>
-                {source.valid_at}
-              </div>
-
-              <div class="st-typography-body">
-                <div class="st-typography-bold">Created At:</div>
-                {source.created_at}
-              </div>
-            </Collapse>
+          {#each selectedDerivationGroupSources as source (source.key)}
+            <ExternalSourceDetails {source} {user} />
           {/each}
         {:else}
           <p class="st-typography-body">No sources in this group.</p>
@@ -691,7 +656,7 @@
 
               <Collapse defaultExpanded={false} title="Sources" tooltipContent="View Contained External Sources">
                 {#each associatedDerivationGroup.sources as source}
-                  <i class="st-typography-body">{source[0]}</i>
+                  <i class="st-typography-body">{source}</i>
                 {/each}
               </Collapse>
             </Collapse>

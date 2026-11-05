@@ -7,14 +7,15 @@
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import type { ActivityDirective, ActivityDirectiveId, ActivityType } from '../../types/activity';
   import type { User } from '../../types/app';
+  import type { ActivityStatusCounts, ActivityStatusRollup } from '../../types/console';
   import type { DataGridColumnDef } from '../../types/data-grid';
-  import type { ActivityErrorCounts, ActivityErrorRollup } from '../../types/console';
   import type { Plan } from '../../types/plan';
   import type { SpansMap, SpanUtilityMaps } from '../../types/simulation';
   import { copyActivityDirectivesToClipboard } from '../../utilities/activities';
   import effects from '../../utilities/effects';
+  import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import ActivityErrorsRollup from '../ui/ActivityErrorsRollup.svelte';
+  import ActivityStatusesRollup from '../ui/ActivityStatusesRollup.svelte';
   import BulkActionDataGrid from '../ui/DataGrid/BulkActionDataGrid.svelte';
   import type DataGrid from '../ui/DataGrid/DataGrid.svelte';
   import DataGridActions from '../ui/DataGrid/DataGridActions.svelte';
@@ -22,11 +23,13 @@
 
   export let activityDirectives: ActivityDirective[] | null = null;
   export let activityTypes: ActivityType[] | null = null;
-  export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityErrorRollup> | undefined = undefined;
+  export let activityDirectiveErrorRollupsMap: Record<ActivityDirectiveId, ActivityStatusRollup> | undefined =
+    undefined;
   export let showBulkShiftMenu: boolean = true;
   export let columnDefs: ColDef[];
   export let columnStates: ColumnState[] = [];
   export let dataGrid: DataGrid<ActivityDirective> | undefined = undefined;
+  export let isActivityStatusUnavailable: boolean = false;
   export let plan: Plan | null;
   export let spansMap: SpansMap | null = null;
   export let spanUtilityMaps: SpanUtilityMaps | null = null;
@@ -36,12 +39,11 @@
   export let user: User | null;
   export let filterExpression: string = '';
 
-  let showPackLeftMenu: boolean = true;
-  let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
-  let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackLeftMenu = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackRightMenu = bulkSelectedActivityDirectiveIds.length > 1;
-  $: showPackOffsetMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityStatusCounts };
+  type CellRendererParams = {
+    deleteActivityDirective: (activity: ActivityDirective) => void;
+  };
+  type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
 
   const pluralItemDisplayText: string = 'Activity Directives';
   const singleItemDisplayText: string = 'Activity Directive';
@@ -51,12 +53,6 @@
     scrollTimelineToTime: number;
   }>();
 
-  type ActivityDirectiveWithErrorCounts = ActivityDirective & { errorCounts?: ActivityErrorCounts };
-  type CellRendererParams = {
-    deleteActivityDirective: (activity: ActivityDirective) => void;
-  };
-  type ActivityCellRendererParams = ICellRendererParams<ActivityDirective> & CellRendererParams;
-
   let activityActionColumnDef: DataGridColumnDef | null = null;
   let activityErrorColumnDef: DataGridColumnDef | null = null;
   let activityDirectivesWithErrorCounts: ActivityDirectiveWithErrorCounts[] = [];
@@ -65,6 +61,21 @@
   let hasDeletePermission: boolean = false;
   let isDeletingDirective: boolean = false;
   let permissionErrorText: string | null = null;
+  let showPackLeftMenu: boolean = true;
+  let showPackRightMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  let showPackOffsetMenu: boolean = bulkSelectedActivityDirectiveIds.length > 1;
+  let readonlyPermission: { hasPermission: boolean; permissionError?: string } = {
+    hasPermission: false,
+    permissionError: PlanStatusMessages.READ_ONLY,
+  };
+
+  $: readonlyPermission = {
+    hasPermission: !planReadOnly,
+    permissionError: planReadOnly ? PlanStatusMessages.READ_ONLY : undefined,
+  };
+  $: showPackLeftMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackRightMenu = bulkSelectedActivityDirectiveIds.length > 1;
+  $: showPackOffsetMenu = bulkSelectedActivityDirectiveIds.length > 1;
 
   $: hasDeletePermission =
     plan !== null ? featurePermissions.activityDirective.canDelete(user, plan) && !planReadOnly : false;
@@ -74,7 +85,7 @@
 
   $: activityDirectivesWithErrorCounts = (activityDirectives || []).map(activityDirective => ({
     ...activityDirective,
-    errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.errorCounts,
+    errorCounts: activityDirectiveErrorRollupsMap?.[activityDirective.id]?.statusCounts,
   }));
 
   $: {
@@ -128,9 +139,10 @@
         const issuesDiv = document.createElement('div');
         issuesDiv.className = 'issues-cell';
 
-        new ActivityErrorsRollup({
+        new ActivityStatusesRollup({
           props: {
             counts: params.value,
+            isStatusUnavailable: isActivityStatusUnavailable,
             mode: 'iconsOnly',
             selectable: false,
           },
@@ -297,31 +309,39 @@
 
   <svelte:fragment slot="context-menu-bottom">
     {#if showBulkShiftMenu}
-      <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
-        Shift {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div use:permissionHandler={readonlyPermission}>
+        <ContextMenu.Item size="sm" on:click={bulkShiftItems}>
+          Shift {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackLeftMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
-        Pack Left {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div use:permissionHandler={readonlyPermission}>
+        <ContextMenu.Item size="sm" on:click={bulkPackLeftItems}>
+          Pack Left {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackRightMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
-        Pack Right {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
-      </ContextMenu.Item>
+      <div use:permissionHandler={readonlyPermission}>
+        <ContextMenu.Item size="sm" on:click={bulkPackRightItems}>
+          Pack Right {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText}
+        </ContextMenu.Item>
+      </div>
     {/if}
 
     {#if showPackOffsetMenu}
-      <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
-        Pack {bulkSelectedActivityDirectiveIds.length}
-        {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
-      </ContextMenu.Item>
+      <div use:permissionHandler={readonlyPermission}>
+        <ContextMenu.Item size="sm" on:click={bulkPackItemsWithOffset}>
+          Pack {bulkSelectedActivityDirectiveIds.length}
+          {bulkSelectedActivityDirectiveIds.length > 1 ? pluralItemDisplayText : singleItemDisplayText} with Offset
+        </ContextMenu.Item>
+      </div>
     {/if}
   </svelte:fragment>
 </BulkActionDataGrid>

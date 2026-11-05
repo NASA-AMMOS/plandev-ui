@@ -10,6 +10,7 @@
   import {
     activityDirectivesMap,
     activityMetadataDefinitions,
+    isActivityStatusUnavailable,
     selectActivity,
     selectedActivityDirective,
     selectedActivityDirectiveId,
@@ -18,6 +19,7 @@
   import {
     activityEditingLocked,
     plan,
+    planIsNonExecutable,
     planModelActivityTypes,
     planModelId,
     planReadOnly,
@@ -83,6 +85,12 @@
     }
   } else {
     spanDirectiveId = null;
+  }
+
+  $: {
+    if ($planIsNonExecutable) {
+      setActivityEditingLocked(true);
+    }
   }
 
   function onSelectSpan(event: CustomEvent<SpanId | null>) {
@@ -167,7 +175,12 @@
             }}
             use:tooltip={{
               content: `${$activityEditingLocked ? 'Unlock' : 'Lock'} activity editing`,
+              disabled: $planIsNonExecutable,
               placement: 'bottom',
+            }}
+            use:permissionHandler={{
+              hasPermission: !$planIsNonExecutable,
+              permissionError: PlanStatusMessages.READ_ONLY,
             }}
           >
             {#if $activityEditingLocked}
@@ -224,6 +237,7 @@
         activityDirective={$selectedActivityDirective}
         activityMetadataDefinitions={$activityMetadataDefinitions}
         activityTypes={$planModelActivityTypes}
+        isActivityStatusUnavailable={$isActivityStatusUnavailable}
         tags={$tags}
         editable={!$activityEditingLocked && !previewRevision}
         modelId={$planModelId}

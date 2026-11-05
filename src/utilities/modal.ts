@@ -43,6 +43,9 @@ import UnsavedChangesModal from '../components/modals/UnsavedChangesModal.svelte
 import UpdatePlanMissionModelModal from '../components/modals/UpdatePlanMissionModelModal.svelte';
 import UploadViewModal from '../components/modals/UploadViewModal.svelte';
 import WorkspaceBulkOperationConflictModal from '../components/modals/WorkspaceBulkOperationConflictModal.svelte';
+import WorkspaceFileComparisonModal from '../components/modals/WorkspaceFileComparisonModal.svelte';
+import WorkspaceRevisionPreviewModal from '../components/modals/WorkspaceRevisionPreviewModal.svelte';
+import WorkspaceRevisionRestoreModal from '../components/modals/WorkspaceRevisionRestoreModal.svelte';
 import WorkspaceSaveConflictModal from '../components/modals/WorkspaceSaveConflictModal.svelte';
 import NewSequenceTemplateModal from '../components/sequence-templates/NewSequenceTemplateModal.svelte';
 import type { WorkspaceContentType } from '../enums/workspace';
@@ -58,7 +61,7 @@ import type { PlanSnapshot } from '../types/plan-snapshot';
 import type { Tag } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
 import type { ViewDefinition } from '../types/view';
-import type { Workspace } from '../types/workspace';
+import type { Workspace, WorkspaceFileRevision } from '../types/workspace';
 import type { WorkspaceTreeNode, WorkspaceTreeNodeWithFullPath } from '../types/workspace-tree-view';
 import type { WorkspaceSaveConflictReason } from './requests';
 
@@ -1810,6 +1813,113 @@ export async function showWorkspaceSaveConflictModal(props: {
         );
         conflictModal.$on('recreate', () => finish({ action: 'recreate' }));
         conflictModal.$on('discard', () => finish({ action: 'discard' }));
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Previews a file revision against the current content.
+ */
+export async function showWorkspaceRevisionPreviewModal(props: {
+  currentContent: string;
+  filePath: string;
+  revision: WorkspaceFileRevision;
+  type: WorkspaceContentType | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const previewModal = new WorkspaceRevisionPreviewModal({ props, target });
+        target.resolve = resolve;
+
+        previewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          previewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Previews a file revision against the current content, or lets the user pick any two of
+ * {revisions, working copy} to compare. A confirmed Restore resolves with whichever revision ends up
+ * on the non-working-copy side.
+ */
+export async function showWorkspaceRevisionRestorePreviewModal(props: {
+  currentContent: string;
+  filePath: string;
+  restoreDisabledReason: string | null;
+  revision: WorkspaceFileRevision;
+  type: WorkspaceContentType | null;
+  unrevisionedWarning: string | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue<{ revision: WorkspaceFileRevision }>> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const previewModal = new WorkspaceRevisionRestoreModal({ props, target });
+        target.resolve = resolve;
+
+        previewModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          previewModal.$destroy();
+        });
+
+        previewModal.$on('restore', (e: CustomEvent<{ revision: WorkspaceFileRevision }>) => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: true, value: e.detail });
+          previewModal.$destroy();
+        });
+      }
+    } else {
+      resolve({ confirm: false });
+    }
+  });
+}
+
+/**
+ * Compares two different files, each with its own working-copy/revision picker. No restore: unlike
+ * {@link showWorkspaceRevisionPreviewModal}, there's no single working copy both sides could feed into.
+ */
+export async function showWorkspaceFileComparisonModal(props: {
+  leftFilePath: string;
+  rightFilePath: string;
+  type: WorkspaceContentType | null;
+  user: User | null;
+  workspaceId: number;
+}): Promise<ModalElementValue> {
+  return new Promise(resolve => {
+    if (browser) {
+      const target: ModalElement | null = document.querySelector('#svelte-modal');
+
+      if (target) {
+        const comparisonModal = new WorkspaceFileComparisonModal({ props, target });
+        target.resolve = resolve;
+
+        comparisonModal.$on('close', () => {
+          target.replaceChildren();
+          target.resolve = null;
+          resolve({ confirm: false });
+          comparisonModal.$destroy();
+        });
       }
     } else {
       resolve({ confirm: false });

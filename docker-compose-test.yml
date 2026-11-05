@@ -2,7 +2,6 @@
 # It assumes the main PlanDev repository has been cloned into this repo as a sub-directory called 'plandev'.
 # See .github/workflows/test.yml for how this file is utilized.
 
-version: '3.7'
 services:
   plandev_action:
     container_name: plandev_action
@@ -16,8 +15,9 @@ services:
       LOG_LEVEL: debug
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
       PORT: 27186
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       ACTION_COOKIE_NAMES: '${ACTION_COOKIE_NAMES}'
       ACTION_CORS_ALLOWED_ORIGIN: '${ACTION_CORS_ALLOWED_ORIGIN}'
       ACTION_DB_USER: '${SEQUENCING_USERNAME}'
@@ -43,8 +43,9 @@ services:
       LOG_LEVEL: debug
       NODE_TLS_REJECT_UNAUTHORIZED: '0'
       PORT: 9000
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       GATEWAY_DB_USER: '${GATEWAY_USERNAME}'
       GATEWAY_DB_PASSWORD: '${GATEWAY_PASSWORD}'
     image: 'ghcr.io/nasa-ammos/plandev-gateway:${GATEWAY_IMAGE_TAG:-develop}'
@@ -60,8 +61,9 @@ services:
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_URL: http://hasura:8080/v1/graphql
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       MERLIN_DB_USER: '${MERLIN_USERNAME}'
       MERLIN_DB_PASSWORD: '${MERLIN_PASSWORD}'
       MERLIN_LOCAL_STORE: /usr/src/app/merlin_file_store
@@ -83,8 +85,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       MERLIN_DB_USER: '${MERLIN_USERNAME}'
       MERLIN_DB_PASSWORD: '${MERLIN_PASSWORD}'
       MERLIN_WORKER_LOCAL_STORE: /usr/src/app/merlin_file_store
@@ -109,8 +112,9 @@ services:
     environment:
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       SCHEDULER_DB_USER: '${SCHEDULER_USERNAME}'
       SCHEDULER_DB_PASSWORD: '${SCHEDULER_PASSWORD}'
       SCHEDULER_PORT: 27185
@@ -134,8 +138,9 @@ services:
       MERLIN_LOCAL_STORE: /usr/src/app/merlin_file_store
       SCHEDULER_OUTPUT_MODE: UpdateInputPlanWithNewActivities
       SCHEDULER_RULES_JAR: /usr/src/app/merlin_file_store/scheduler_rules.jar
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       SCHEDULER_DB_USER: '${SCHEDULER_USERNAME}'
       SCHEDULER_DB_PASSWORD: '${SCHEDULER_PASSWORD}'
       JAVA_OPTS: >
@@ -158,8 +163,9 @@ services:
       LOG_FILE: console
       LOG_LEVEL: debug
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       SEQUENCING_DB_USER: '${SEQUENCING_USERNAME}'
       SEQUENCING_DB_PASSWORD: '${SEQUENCING_PASSWORD}'
       SEQUENCING_LOCAL_STORE: /usr/src/app/sequencing_file_store
@@ -176,10 +182,10 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AERIE_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie?options=-c%20search_path%3Dutil_functions%2Chasura%2Cpermissions%2Ctags%2Cmerlin%2Cscheduler%2Csequencing%2Cpublic'
-      AERIE_MERLIN_URL: 'http://plandev_merlin:27183'
-      AERIE_SCHEDULER_URL: 'http://plandev_scheduler:27185'
-      AERIE_SEQUENCING_URL: 'http://plandev_sequencing:27184'
+      PLANDEV_DATABASE_URL: 'postgres://${PLANDEV_USERNAME}:${PLANDEV_PASSWORD}@postgres:5432/${PLANDEV_DATABASE_NAME}?options=-c%20search_path%3Dutil_functions%2Chasura%2Cpermissions%2Ctags%2Cmerlin%2Cscheduler%2Csequencing%2Cactions%2Cui%2Cpublic'
+      PLANDEV_MERLIN_URL: 'http://plandev_merlin:27183'
+      PLANDEV_SCHEDULER_URL: 'http://plandev_scheduler:27185'
+      PLANDEV_SEQUENCING_URL: 'http://plandev_sequencing:27184'
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_DEV_MODE: 'true'
       HASURA_GRAPHQL_ENABLE_CONSOLE: 'true'
@@ -187,7 +193,7 @@ services:
       HASURA_GRAPHQL_INFER_FUNCTION_PERMISSIONS: false
       HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
       HASURA_GRAPHQL_LOG_LEVEL: info
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: 'postgres://${AERIE_USERNAME}:${AERIE_PASSWORD}@postgres:5432/aerie_hasura'
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: 'postgres://${PLANDEV_USERNAME}:${PLANDEV_PASSWORD}@postgres:5432/${PLANDEV_METADATA_DATABASE_NAME}'
       HASURA_GRAPHQL_METADATA_DIR: /hasura-metadata
       # Default is 30s; give migrations more room when Postgres is slow to accept connections.
       HASURA_GRAPHQL_MIGRATIONS_SERVER_TIMEOUT: '60'
@@ -200,8 +206,10 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
       POSTGRES_USER: '${POSTGRES_USER}'
-      AERIE_USERNAME: '${AERIE_USERNAME}'
-      AERIE_PASSWORD: '${AERIE_PASSWORD}'
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_METADATA_DB: '${PLANDEV_METADATA_DATABASE_NAME}'
+      PLANDEV_USERNAME: '${PLANDEV_USERNAME}'
+      PLANDEV_PASSWORD: '${PLANDEV_PASSWORD}'
       GATEWAY_DB_USER: '${GATEWAY_USERNAME}'
       GATEWAY_DB_PASSWORD: '${GATEWAY_PASSWORD}'
       MERLIN_DB_USER: '${MERLIN_USERNAME}'
@@ -231,8 +239,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AERIE_DB_HOST: postgres
-      AERIE_DB_PORT: 5432
+      PLANDEV_DB: '${PLANDEV_DATABASE_NAME}'
+      PLANDEV_DB_HOST: postgres
+      PLANDEV_DB_PORT: 5432
       HASURA_GRAPHQL_ADMIN_SECRET: '${HASURA_GRAPHQL_ADMIN_SECRET}'
       HASURA_GRAPHQL_JWT_SECRET: '${HASURA_GRAPHQL_JWT_SECRET}'
       MERLIN_GRAPHQL_URL: http://hasura:8080/v1/graphql
@@ -252,5 +261,6 @@ services:
       - workspace_file_store:/usr/src/ws
 volumes:
   plandev_file_store:
+    name: '${PLANDEV_FILE_STORE_NAME}'
   postgres_data:
   workspace_file_store:

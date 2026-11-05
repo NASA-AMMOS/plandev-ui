@@ -5,6 +5,7 @@
   import ChevronDownIcon from '@nasa-jpl/stellar/icons/chevron_down.svg?component';
   import { capitalize } from 'lodash-es';
   import { CirclePlus, Filter, GripVertical } from 'lucide-svelte';
+  import { PlanStatusMessages } from '../enums/planStatusMessages';
   import { directiveBuilderIsVisible, updateDirectiveBuilder } from '../stores/directiveBuilder';
   import { view, viewAddFilterToRow } from '../stores/views';
   import type {
@@ -40,6 +41,7 @@
   export let filterName: string = 'Filter';
   export let getFilterValueFromItem: (item: TimelineItemType) => string | number;
   export let loading: boolean = false;
+  export let planReadOnly: boolean = false;
   export let hasCreatePermission: boolean = true;
 
   let activeItemIndex: number = -1;
@@ -184,11 +186,15 @@
           {/if}
           {#each filterOptions as option}
             <Input layout="inline" class="timeline-item-list-filter-option">
-              <label class="st-typography-body timeline-item-list-filter-option-label" for={option.value.toString()}>
+              <label
+                class="st-typography-body timeline-item-list-filter-option-label"
+                for={option.value.toString()}
+                title={option.label}
+              >
                 {#if option.color}
                   <div class="color" style:background={option.color} />
                 {/if}
-                {option.label}
+                <span class="timeline-item-list-filter-option-text">{option.label}</span>
               </label>
               <input
                 checked={!!selectedFilters[option.value]}
@@ -319,10 +325,16 @@
             </div>
             {#if typeName === 'activity'}
               <div
-                use:tooltip={{ content: 'Add New Directive', placement: 'top' }}
                 use:permissionHandler={{
-                  hasPermission: hasCreatePermission,
-                  permissionError: 'You do not have permission to create activities.',
+                  hasPermission: hasCreatePermission && !planReadOnly,
+                  permissionError: planReadOnly
+                    ? PlanStatusMessages.READ_ONLY
+                    : 'You do not have permission to create activities.',
+                }}
+                use:tooltip={{
+                  content: 'Add New Directive',
+                  disabled: !hasCreatePermission || planReadOnly,
+                  placement: 'top',
                 }}
                 class="flex items-center"
               >
@@ -419,6 +431,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-width: 240px;
     padding: 8px;
     position: relative;
   }
@@ -439,7 +452,14 @@
     align-items: center;
     display: flex;
     flex: 1;
+    min-width: 0;
     user-select: none;
+  }
+
+  .timeline-item-list-filter-option-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .controls {

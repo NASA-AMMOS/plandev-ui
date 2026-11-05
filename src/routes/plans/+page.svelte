@@ -4,55 +4,67 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
+  import { Alert, Button, cn, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
-  import { FileUp, Import, Pencil, X } from 'lucide-svelte';
+  import { FileUp, Import, LoaderCircle, LockKeyhole, Pencil, TriangleAlert, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Collapse from '../../components/Collapse.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
-  import Input from '../../components/form/Input.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
-  import PlanTimeBounds from '../../components/plan/PlanTimeBounds.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
+  import CssGridGutter from '../../components/ui/CssGridGutter.svelte';
   import DataGridActions from '../../components/ui/DataGrid/DataGridActions.svelte';
   import { tagsCellRenderer, tagsFilterValueGetter } from '../../components/ui/DataGrid/DataGridTags';
   import SingleActionDataGrid from '../../components/ui/DataGrid/SingleActionDataGrid.svelte';
   import IconCellRenderer from '../../components/ui/IconCellRenderer.svelte';
   import Panel from '../../components/ui/Panel.svelte';
+  import PlanName from '../../components/ui/PlanName.svelte';
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
+  import { PlanImportStatus, PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import { models } from '../../stores/model';
+  import { executableModels, models } from '../../stores/model';
   import { createPlanError, creatingPlan, resetPlanStores } from '../../stores/plan';
-  import { plans } from '../../stores/plans';
+  import { planImportRequests, planImportRequestsMap, plans } from '../../stores/plans';
   import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
   import { getUserStore } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
+  import type { FieldStore } from '../../types/form';
   import type { ModelSlim } from '../../types/model';
   import type { DeprecatedPlanTransfer, Plan, PlanSlim, PlanTransfer } from '../../types/plan';
   import type { PlanTagsInsertInput, Tag, TagsChangeEvent } from '../../types/tags';
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
-  import { parseJSONStream } from '../../utilities/generic';
+  import { compareWithRankings, parseJSONStream } from '../../utilities/generic';
+  import { showChangePlanBoundsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
-  import { computeDurationString, exportPlan, isDeprecatedPlanTransfer } from '../../utilities/plan';
+  import {
+    assertPlanTransferFields,
+    computeDurationString,
+    exportPlan,
+    getPlanImportStatusMessage,
+    isDeprecatedPlanTransfer,
+  } from '../../utilities/plan';
   import {
     convertDoyToYmd,
+    convertUsToDurationString,
     formatDate,
     getDoyTime,
     getDoyTimeFromInterval,
+    getIntervalInMs,
     getShortISOForDate,
   } from '../../utilities/time';
+  import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import { tooltip } from '../../utilities/tooltip';
   import { removeQueryParam } from '../../utilities/url';
   import { min, required, unique } from '../../utilities/validators';
@@ -68,6 +80,8 @@
   type PlanCellRendererParams = ICellRendererParams<Plan> & CellRendererParams;
 
   const plansLoading = plans.loading;
+  const MIN_PANEL_WIDTH = 300;
+  const MIN_TABLE_WIDTH = 500;
 
   /* eslint-disable sort-keys */
   const baseColumnDefs: DataGridColumnDef[] = [
@@ -82,14 +96,112 @@
       suppressSizeToFit: true,
       width: 75,
     },
-    { field: 'name', filter: 'text', headerName: 'Name', resizable: true, sortable: true },
     {
+      cellRenderer: (params: ICellRendererParams<Plan>) => {
+        const div = document.createElement('div');
+        const plan = params.data;
+        const importStatus = $planImportRequestsMap[plan?.id ?? -1]?.status ?? null;
+        new PlanName({
+          props: {
+            name: plan?.name || '',
+            isReadOnly: plan?.is_read_only,
+            importStatus,
+            importError: 'Import failed: select plan for details',
+          },
+          target: div,
+        });
+        return div;
+      },
+      field: 'name',
+      filter: 'text',
+      headerName: 'Name',
+      resizable: true,
+      sortable: true,
+      width: 240,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'number'] : ['number', '-', '']);
+      },
       field: 'model_id',
       filter: 'number',
       headerName: 'Model ID',
       resizable: true,
       sortable: true,
       suppressAutoSize: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        let value: string | number = '';
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            value = associatedModel.is_executable ? associatedModel.id : '-';
+          }
+        }
+
+        return value;
+      },
+      width: 95,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
+      },
+      field: 'model_name',
+      filter: 'text',
+      headerName: 'Model Name',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            return associatedModel.is_executable ? associatedModel.name : '-';
+          }
+        }
+        return '';
+      },
+      width: 120,
+    },
+    {
+      comparator: (
+        valueA: number | string | null | undefined,
+        valueB: number | string | null | undefined,
+        _nodeA,
+        _nodeB,
+        isDescending: boolean,
+      ) => {
+        return compareWithRankings(valueA, valueB, isDescending ? ['', '-', 'string'] : ['string', '-', '']);
+      },
+      field: 'model_version',
+      filter: 'text',
+      headerName: 'Model Version',
+      resizable: true,
+      sortable: true,
+      valueGetter: (params: ValueGetterParams<Plan>) => {
+        if (params.data?.model_id !== undefined) {
+          const associatedModel = $models.find(model => model.id === params.data?.model_id);
+          if (associatedModel) {
+            if (associatedModel.is_executable) {
+              return associatedModel.version;
+            } else {
+              return '-';
+            }
+          }
+        }
+        return '';
+      },
       width: 130,
     },
     {
@@ -116,7 +228,7 @@
 
         return div;
       },
-      width: 150,
+      width: 105,
     },
     {
       field: 'end_time',
@@ -145,7 +257,7 @@
 
         return div;
       },
-      width: 140,
+      width: 105,
     },
     {
       field: 'created_at',
@@ -158,7 +270,7 @@
           return getShortISOForDate(new Date(params.data?.created_at));
         }
       },
-      width: 200,
+      width: 120,
     },
     {
       field: 'updated_at',
@@ -171,8 +283,16 @@
           return getShortISOForDate(new Date(params.data?.updated_at));
         }
       },
+      width: 110,
     },
-    { field: 'updated_by', filter: 'text', headerName: 'Updated By', resizable: true, sortable: true, width: 150 },
+    {
+      field: 'updated_by',
+      filter: 'text',
+      headerName: 'Updated By',
+      resizable: true,
+      sortable: true,
+      width: 110,
+    },
     {
       autoHeight: true,
       cellRenderer: tagsCellRenderer,
@@ -180,9 +300,57 @@
       filter: 'text',
       filterValueGetter: tagsFilterValueGetter,
       headerName: 'Tags',
+      width: 110,
       resizable: true,
       sortable: false,
-      width: 220,
+    },
+    {
+      cellClass: 'action-cell-container',
+      cellRenderer: (params: PlanCellRendererParams) => {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'actions-cell';
+        const importRequest = $planImportRequestsMap[params.data?.id ?? -1];
+        const importIncomplete = !!importRequest && importRequest.status !== PlanImportStatus.COMPLETE;
+        new DataGridActions({
+          props: {
+            deleteCallback: params.deletePlan,
+            deleteTooltip: {
+              content: 'Delete Plan',
+              placement: 'bottom',
+            },
+            downloadCallback: params.exportPlan,
+            downloadTooltip: {
+              content: importIncomplete ? 'Import is incomplete – export is unavailable' : 'Export Plan',
+              placement: 'bottom',
+            },
+            isDownloadCancellable: true,
+            isDownloadDisabled: importIncomplete,
+            useExportIcon: true,
+            hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
+            rowData: params.data,
+            viewCallback: data => $user && params.viewPlan(data),
+            viewTooltip: {
+              content: 'Open Plan',
+              placement: 'bottom',
+            },
+          },
+          target: actionsDiv,
+        });
+
+        return actionsDiv;
+      },
+      cellRendererParams: {
+        deletePlan,
+        exportPlan: onExportPlan,
+        viewPlan,
+      } as CellRendererParams,
+      field: 'actions',
+      headerName: '',
+      resizable: false,
+      sortable: false,
+      suppressAutoSize: true,
+      suppressSizeToFit: true,
+      width: 80,
     },
   ];
   const permissionError: string = 'You do not have permission to create a plan';
@@ -192,18 +360,29 @@
   let canChangePlanModel: boolean = false;
   let canUpdatePlan: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
+  let createButtonEnabled: boolean = false;
   let createPlanButtonText: string = 'Create';
+  // This array should only be mutated to avoid extra re-renders. It is not needed for rendering as $planImportRequests will
+  // be used to track the status of the import requests and retrigger a render
+  let currentImportRequests: { planName: string; requestId: number }[] = [];
   let durationString: string = 'None';
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
+  let isPlanUploadReadOnly: boolean = false;
+  let isLoadingPlanFile: boolean = false;
+  let isSelectedPlanReadOnly: boolean = false;
   let orderedModels: ModelSlim[] = [];
   let nameInputField: InputStellar;
   let planExporting: boolean = false;
+  let plansTable: SingleActionDataGrid<PlanSlim>;
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
   let selectedPlan: PlanSlim | undefined;
   let selectedPlanId: number | null = null;
   let selectedPlanModelName: string | null = null;
+  let panelColumns = '300px 3px 1fr';
+  let startTimeField: FieldStore<string>;
+  let endTimeField: FieldStore<string>;
   let modelIdField = field<number>(-1, [min(1, 'Field is required')]);
   let nameField = field<string>('', [
     required,
@@ -239,8 +418,41 @@
   }
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
+
+  $: selectedPlanImportRequest =
+    selectedPlan && $planImportRequestsMap[selectedPlan.id]?.status !== PlanImportStatus.COMPLETE
+      ? ($planImportRequestsMap[selectedPlan.id] ?? null)
+      : null;
+  $: isSelectedPlanReadOnly = selectedPlan !== undefined && (selectedPlan.is_read_only || !!selectedPlanImportRequest);
+  $: isSelectedPlanImporting =
+    selectedPlanImportRequest !== null && selectedPlanImportRequest.status !== PlanImportStatus.FAILED;
+
+  $: {
+    const finishRequestsIds: number[] = [];
+    currentImportRequests.forEach(({ planName, requestId }) => {
+      const request = $planImportRequests.find(request => request.id === requestId);
+      if (request?.status === PlanImportStatus.FAILED) {
+        finishRequestsIds.push(requestId);
+        showFailureToast(`Plan import failed for "${planName}": ${request.reason?.message ?? 'Unknown error'}`);
+      } else if (request === undefined) {
+        // Treat the request as completed if it's not found because "complete" requests are filtered out in the query
+        finishRequestsIds.push(requestId);
+        showSuccessToast(`Plan import completed for "${planName}"`);
+      }
+    });
+
+    // Remove finished requests so we're not tracking them unnecessarily
+    finishRequestsIds.forEach(requestId => {
+      const index = currentImportRequests.findIndex(request => request.requestId === requestId);
+      if (index !== -1) {
+        // Mutate the array in place to prevent retriggering this reactive statement
+        currentImportRequests.splice(index, 1);
+      }
+    });
+  }
+
   // sort in descending ID order
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => {
+  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => {
     if (idA < idB) {
       return 1;
     }
@@ -249,97 +461,39 @@
     }
     return 0;
   });
-  $: {
-    canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
-    columnDefs = [
-      ...baseColumnDefs.slice(0, 3),
-      {
-        field: 'model_name',
-        filter: 'text',
-        headerName: 'Model Name',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            return $models.find(model => model.id === params.data?.model_id)?.name;
-          }
-        },
-        width: 150,
-      },
-      {
-        field: 'model_version',
-        filter: 'text',
-        headerName: 'Model Version',
-        resizable: true,
-        sortable: true,
-        valueGetter: (params: ValueGetterParams<Plan>) => {
-          if (params.data?.model_id !== undefined) {
-            return $models.find(model => model.id === params.data?.model_id)?.version;
-          }
-        },
-        width: 150,
-      },
-      ...baseColumnDefs.slice(3),
-      {
-        cellClass: 'action-cell-container',
-        cellRenderer: (params: PlanCellRendererParams) => {
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'actions-cell';
-          new DataGridActions({
-            props: {
-              deleteCallback: params.deletePlan,
-              deleteTooltip: {
-                content: 'Delete Plan',
-                placement: 'bottom',
-              },
-              downloadCallback: params.exportPlan,
-              downloadTooltip: {
-                content: 'Export Plan',
-                placement: 'bottom',
-              },
-              isDownloadCancellable: true,
-              useExportIcon: true,
-              hasDeletePermission: params.data && $user ? featurePermissions.plan.canDelete($user, params.data) : false,
-              rowData: params.data,
-              viewCallback: data => $user && params.viewPlan(data),
-              viewTooltip: {
-                content: 'Open Plan',
-                placement: 'bottom',
-              },
-            },
-            target: actionsDiv,
-          });
 
-          return actionsDiv;
-        },
-        cellRendererParams: {
-          deletePlan,
-          exportPlan: onExportPlan,
-          viewPlan,
-        } as CellRendererParams,
-        field: 'actions',
-        headerName: '',
-        resizable: false,
-        sortable: false,
-        suppressAutoSize: true,
-        suppressSizeToFit: true,
-        width: 80,
-      },
-    ];
+  $: canCreate = $user ? featurePermissions.plan.canCreate($user) : false;
+
+  $: {
+    void $planImportRequestsMap;
+    plansTable?.dataGrid?.refreshCells({ columns: ['name', 'actions'], force: true });
   }
+  $: {
+    void $models;
+    plansTable?.dataGrid?.refreshCells({ columns: ['model_id', 'model_name', 'model_version'], force: true });
+  }
+
+  $: {
+    void $user;
+    void featurePermissions;
+    plansTable?.dataGrid?.refreshCells({ columns: ['actions'], force: true });
+  }
+
   $: createButtonEnabled =
     !$plansLoading &&
     $endTimeField.dirtyAndValid &&
-    $modelIdField.dirtyAndValid &&
+    (isPlanUploadReadOnly || (!isPlanUploadReadOnly && $modelIdField.dirtyAndValid)) &&
     $nameField.dirtyAndValid &&
     $startTimeField.dirtyAndValid &&
     !planUploadFilesError &&
-    !$creatingPlan;
+    !$creatingPlan &&
+    !isLoadingPlanFile;
   $: if ($creatingPlan) {
     createPlanButtonText = planUploadFiles ? 'Creating from .json...' : 'Creating...';
   } else {
     createPlanButtonText = planUploadFiles ? 'Create from .json' : 'Create';
   }
+
   $: filteredPlans = $plans.filter(plan => {
     const filterTextLowerCase = filterText.toLowerCase();
     return (
@@ -377,6 +531,14 @@
     resetPlanStores();
   });
 
+  function fitPanelToWindow() {
+    const width = Math.min(
+      parseFloat(panelColumns),
+      Math.max(MIN_PANEL_WIDTH, window.innerWidth - MIN_TABLE_WIDTH - 3),
+    );
+    panelColumns = `${width}px 3px 1fr`;
+  }
+
   async function createPlan() {
     const startTimeDate = $plugins.time.primary.parse($startTimeField.value);
     const endTimeDate = $plugins.time.primary.parse($endTimeField.value);
@@ -386,24 +548,31 @@
     let startTime = getDoyTime(startTimeDate);
     let endTime = getDoyTime(endTimeDate);
     if (planUploadFiles && planUploadFiles.length) {
-      const { error } = await effects.importPlan(
-        $nameField.value,
-        $modelIdField.value,
-        startTime,
-        endTime,
-        $simTemplateField.value,
-        planTags.map(({ id }) => id),
-        planUploadFiles,
-        $user,
-      );
-      if (error) {
-        planUploadFilesError = error.message;
-      } else {
+      try {
+        const { plan_import_request_id } = await effects.importPlan(
+          $nameField.value,
+          isPlanUploadReadOnly ? null : $modelIdField.value,
+          startTime,
+          endTime,
+          $simTemplateField.value,
+          planTags.map(({ id }) => id),
+          planUploadFiles,
+          $user,
+        );
+
+        // Keep track of ongoing requests. Mutate the array to avoid triggering unnecessary re-renders
+        currentImportRequests.push({
+          planName: $nameField.value,
+          requestId: plan_import_request_id,
+        });
+
         planUploadFileInput.value = '';
         planUploadFiles = undefined;
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
+      } catch (error) {
+        planUploadFilesError = (error as Error).message;
       }
     } else {
       const newPlan: PlanSlim | null = await effects.createPlan(
@@ -445,7 +614,10 @@
   }
 
   async function onExportPlan(plan: PlanSlim): Promise<void> {
-    if (!planExporting) {
+    if (
+      !planExporting &&
+      (!$planImportRequestsMap[plan.id] || $planImportRequestsMap[plan.id].status === PlanImportStatus.COMPLETE)
+    ) {
       planExporting = true;
       await exportPlan(plan, $user);
       planExporting = false;
@@ -495,8 +667,15 @@
     }
   }
 
+  function changeSelectedPlanTimeRange() {
+    if (selectedPlan && !isSelectedPlanReadOnly) {
+      showChangePlanBoundsModal(selectedPlan, $user);
+    }
+  }
+
   function hideImportPlan() {
     isPlanImportMode = false;
+    isPlanUploadReadOnly = false;
     planUploadFileInput.value = '';
     planUploadFiles = undefined;
     planUploadFilesError = null;
@@ -539,6 +718,7 @@
       } catch (e) {
         throw new Error('Plan file is not valid JSON');
       }
+      assertPlanTransferFields(planJSON);
 
       nameField.validateAndSet(planJSON.name);
       const importedPlanTags = (planJSON.tags ?? []).reduce(
@@ -593,10 +773,17 @@
         await endTimeField.validateAndSet(
           getDoyTime(new Date(`${convertDoyToYmd(planJSON.end_time.replace(/\+00:00/, ''))}`), true),
         );
+        isPlanUploadReadOnly = false;
       } else {
         const { duration } = planJSON;
 
         await endTimeField.validateAndSet(getDoyTimeFromInterval(startTime, duration));
+
+        // An embedded model makes the imported plan read only.
+        isPlanUploadReadOnly = !!planJSON.model || !!planJSON.results;
+        if (isPlanUploadReadOnly) {
+          modelIdField.reset(-1);
+        }
       }
 
       updateDurationString();
@@ -605,12 +792,14 @@
     }
   }
 
-  function onPlanFileChange(event: Event) {
+  async function onPlanFileChange(event: Event) {
     const files = (event.target as HTMLInputElement).files;
     if (files !== null && files.length) {
       const file = files[0];
       if (/\.json$/.test(file.name)) {
-        parsePlanFileStream(file.stream());
+        isLoadingPlanFile = true;
+        await parsePlanFileStream(file.stream());
+        isLoadingPlanFile = false;
       } else {
         planUploadFilesError = 'Plan file is not a .json file';
       }
@@ -637,24 +826,37 @@
 
 <PageTitle title="Plans" />
 
+<svelte:window on:resize={fitPanelToWindow} />
+
 <CssGrid rows="var(--nav-header-height) calc(100vh - var(--nav-header-height))">
   <Nav>
     <span slot="title">Plans</span>
   </Nav>
 
-  <CssGrid columns="20% auto">
-    <Panel borderRight padBody={false}>
+  <CssGrid
+    class="plans-split h-full min-w-0"
+    bind:columns={panelColumns}
+    columnMinSizes={{ 0: MIN_PANEL_WIDTH, 2: MIN_TABLE_WIDTH }}
+  >
+    <Panel padBody={false}>
       <svelte:fragment slot="header">
         {#if selectedPlan}
           <SectionTitle>Selected plan</SectionTitle>
           <div class="flex gap-1">
             <div
               use:tooltip={{
-                content: 'Export Selected Plan',
+                content: selectedPlanImportRequest
+                  ? 'Import is incomplete – export is unavailable'
+                  : 'Export Selected Plan',
                 placement: 'top',
               }}
             >
-              <Button variant="outline" disabled={planExporting} class="flex gap-1" on:click={onExportSelectedPlan}>
+              <Button
+                variant="outline"
+                disabled={planExporting || !!selectedPlanImportRequest}
+                class="flex gap-1"
+                on:click={onExportSelectedPlan}
+              >
                 <FileUp size={16} /> Export{#if planExporting}ing...{/if}
               </Button>
             </div>
@@ -688,32 +890,91 @@
 
       <svelte:fragment slot="body">
         {#if selectedPlan}
-          <div class="plan-metadata">
+          {#if selectedPlanImportRequest?.status === PlanImportStatus.FAILED}
+            <Alert.Root variant="destructive" class="mx-4 mt-2 w-auto min-w-0">
+              <TriangleAlert class="h-4 w-4 stroke-destructive" />
+              <Alert.Title>Plan import failed</Alert.Title>
+              <details class="mt-1 min-w-0 text-xs">
+                <summary class="cursor-pointer">Details</summary>
+                <div class="mt-1 min-w-0 whitespace-normal break-words">
+                  {selectedPlanImportRequest.reason?.message || 'Unknown error'}
+                </div>
+              </details>
+            </Alert.Root>
+          {:else if isSelectedPlanImporting}
+            <div use:tooltip={{ content: 'Data is incomplete and editing is unavailable during import.' }}>
+              <Alert.Root class="mx-4 mt-2 w-auto min-w-0">
+                <LoaderCircle class="h-4 w-4 animate-spin stroke-muted-foreground" />
+                <Alert.Description class="!translate-y-0 font-medium text-muted-foreground">
+                  {getPlanImportStatusMessage(selectedPlanImportRequest?.status ?? null) ?? 'Importing…'}
+                </Alert.Description>
+              </Alert.Root>
+            </div>
+          {/if}
+          {#if !selectedPlanImportRequest && selectedPlan.is_read_only}
+            <Alert.Root class="mx-4 mt-2 w-auto min-w-0">
+              <LockKeyhole class="opacity-75" size={16} />
+              <Alert.Description class="!translate-y-0 font-medium text-muted-foreground">
+                Plan is read-only.
+              </Alert.Description>
+            </Alert.Root>
+          {/if}
+          <div class="plan-metadata min-w-0">
             <fieldset>
-              <div>
-                <Input layout="inline">
-                  <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="name">Model</Label>
-                  <div class="flex gap-1">
-                    <div use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
+              <div class="flex flex-col gap-0.5">
+                <Label size="sm" for="selected-plan-name">Name</Label>
+                <InputStellar
+                  id="selected-plan-name"
+                  sizeVariant="xs"
+                  readonly
+                  class="selected-plan-field w-full"
+                  value={selectedPlan.name}
+                />
+              </div>
+              <div class="flex flex-col gap-0.5 pt-2">
+                <Label size="sm" for="selected-plan-model">Model</Label>
+                {#if selectedPlan.is_read_only}
+                  <div>
+                    <InputStellar
+                      id="selected-plan-model"
+                      sizeVariant="xs"
+                      readonly
+                      class="selected-plan-field w-full"
+                      value="Model-free plan"
+                    />
+                  </div>
+                {:else}
+                  <div class="flex min-w-0 gap-1">
+                    <div class="min-w-0 flex-1" use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
                       <InputStellar
+                        id="selected-plan-model"
                         sizeVariant="xs"
                         readonly
-                        class={cn('w-full', !selectedPlanModelName ? 'border-destructive' : '')}
-                        name="name"
+                        class={cn(
+                          'selected-plan-field w-full',
+                          canChangePlanModel && !selectedPlanImportRequest ? 'selected-plan-field-editable' : '',
+                          !selectedPlanModelName ? 'border-destructive' : '',
+                        )}
                         value={selectedPlanModelName ?? 'Model not found'}
                       />
                     </div>
                     <div
-                      use:tooltip={{ content: canChangePlanModel ? 'Change Mission Model' : '', placement: 'top' }}
+                      use:tooltip={{
+                        content: canChangePlanModel && !selectedPlanImportRequest ? 'Change Mission Model' : '',
+                        placement: 'top',
+                      }}
                       use:permissionHandler={{
-                        hasPermission: canChangePlanModel,
-                        permissionError: 'You do not have permission to change mission model',
+                        hasPermission: canChangePlanModel && !selectedPlanImportRequest,
+                        permissionError: selectedPlanImportRequest
+                          ? PlanStatusMessages.READ_ONLY
+                          : 'You do not have permission to change mission model',
                       }}
                     >
                       <Button
                         class="shrink-0"
                         variant="outline"
                         size="icon"
+                        disabled={!!selectedPlanImportRequest}
                         on:click={openChangePlanMissionModelModal}
                         aria-label="Change mission model"
                       >
@@ -721,33 +982,88 @@
                       </Button>
                     </div>
                   </div>
-                </Input>
+                {/if}
               </div>
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="id">Name</Label>
-                <InputStellar sizeVariant="xs" disabled class="w-full" name="id" value={selectedPlan.name} />
-              </Input>
-              <PlanTimeBounds
-                plan={selectedPlan}
-                user={$user}
-                hasUpdatePermission={canUpdatePlan}
-                permissionError="You do not have permission to edit this plan."
-              />
-              <Input layout="inline">
-                <Label size="sm" class="overflow-hidden text-ellipsis whitespace-nowrap" for="tags">Tags</Label>
+              <div class="flex flex-col gap-0.5 pt-2">
+                <Label size="sm" for="selected-plan-start">Start Time - {$plugins.time.primary.formatString}</Label>
+                <div class="flex min-w-0 gap-1">
+                  <input
+                    id="selected-plan-start"
+                    class={cn(
+                      'st-input selected-plan-field min-w-0 flex-1',
+                      canUpdatePlan && !isSelectedPlanReadOnly ? 'selected-plan-field-editable' : '',
+                    )}
+                    readonly
+                    value={formatDate(new Date(selectedPlan.start_time), $plugins.time.primary.format)}
+                  />
+                  {#if !selectedPlan.is_read_only}
+                    <div
+                      use:permissionHandler={{
+                        hasPermission: canUpdatePlan && !isSelectedPlanReadOnly,
+                        permissionError: isSelectedPlanReadOnly
+                          ? PlanStatusMessages.READ_ONLY
+                          : 'You do not have permission to edit this plan.',
+                      }}
+                      use:tooltip={{
+                        content: canUpdatePlan && !isSelectedPlanReadOnly ? 'Change plan time range' : '',
+                        placement: 'top',
+                      }}
+                    >
+                      <Button
+                        aria-label="Change plan time range"
+                        size="icon"
+                        variant="outline"
+                        disabled={isSelectedPlanReadOnly}
+                        on:click={changeSelectedPlanTimeRange}><Pencil size={16} /></Button
+                      >
+                    </div>
+                  {/if}
+                </div>
+              </div>
+              <div class="flex flex-col gap-0.5 pt-2">
+                <Label size="sm" for="selected-plan-end">End Time - {$plugins.time.primary.formatString}</Label>
+                <input
+                  id="selected-plan-end"
+                  class={cn(
+                    'st-input selected-plan-field w-full',
+                    canUpdatePlan && !isSelectedPlanReadOnly ? 'selected-plan-field-editable' : '',
+                  )}
+                  readonly
+                  value={formatDate(
+                    new Date(convertDoyToYmd(selectedPlan.end_time_doy) ?? selectedPlan.end_time_doy),
+                    $plugins.time.primary.format,
+                  )}
+                />
+              </div>
+              <div class="flex flex-col gap-0.5 pt-2">
+                <Label size="sm" for="selected-plan-duration">Duration</Label>
+                <input
+                  id="selected-plan-duration"
+                  class="st-input selected-plan-field w-full"
+                  readonly
+                  value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000) || 'None'}
+                />
+              </div>
+              <div class="flex flex-col gap-0.5 pt-2">
+                <Label size="sm" for="tags">Tags</Label>
                 <TagsInput
+                  className="selected-plan-tags w-full"
                   disabled
                   options={$tags}
                   selected={selectedPlan.tags.map(({ tag }) => tag)}
                   on:change={onTagsInputChange}
                 />
-              </Input>
+              </div>
             </fieldset>
           </div>
-          <fieldset>
-            <Button on:click={showSelectedPlan}>Open plan</Button>
+          <fieldset class="my-4 pt-2">
+            <Button on:click={showSelectedPlan}>Open Plan</Button>
           </fieldset>
         {:else}
+          {@const canModify = canCreate && !isPlanUploadReadOnly}
+          {@const canModifyTooltip = isPlanUploadReadOnly
+            ? 'You cannot change time bounds for a plan that is read only.'
+            : permissionError}
           <form on:submit|preventDefault={createPlan}>
             <AlertError class="m-2" error={$createPlanError} />
 
@@ -780,11 +1096,14 @@
                 }}
                 on:change={onPlanFileChange}
               />
+              {#if isLoadingPlanFile}
+                <div class="pt-1 text-xs">Loading plan file...</div>
+              {/if}
               {#if planUploadFilesError}
                 <Collapse
                   ariaTitle="Plan import error"
                   defaultExpanded={false}
-                  className="text-destructive [&_*]:!text-destructive "
+                  className="text-destructive [&_*]:!text-destructive break-words"
                 >
                   <div slot="title">Plan import failed</div>
                   {planUploadFilesError}
@@ -792,56 +1111,63 @@
               {/if}
             </fieldset>
 
-            <Field field={modelIdField}>
-              <Label size="sm" for="model" class="pb-0.5">Model</Label>
-              <div
-                use:permissionHandler={{
-                  hasPermission: canCreate,
-                  permissionError,
-                }}
-              >
-                <Select.Root
-                  selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
-                  disabled={!canCreate}
-                >
-                  <Select.Trigger
-                    value={selectedModel?.id}
-                    size="xs"
-                    aria-label="Select Model"
-                    aria-labelledby={null}
-                    id="model"
-                  >
-                    <Select.Value placeholder="Select a model" />
-                  </Select.Trigger>
-                  <Select.Content
-                    class="min-w-[240px] overflow-auto p-0"
-                    sameWidth={false}
-                    align="start"
-                    datatype="number"
-                    fitViewport
-                  >
-                    {#if orderedModels.length === 0}
-                      <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
-                    {:else}
-                      {#each orderedModels as model (model.id)}
-                        <Select.Item
-                          size="xs"
-                          value={model.id}
-                          label={getDisplayNameForModel(model)}
-                          class="flex gap-1"
-                        >
-                          {model.name}
-                          <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
-                        </Select.Item>
-                      {/each}
-                    {/if}
-                  </Select.Content>
-                  <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
-                </Select.Root>
+            {#if isPlanUploadReadOnly}
+              <div class="px-[16px] pt-[8px]">
+                <Label size="sm" class="pb-0.5">Model</Label>
+                <div class="text-xs text-muted-foreground">Model provided by read-only plan</div>
               </div>
-            </Field>
+            {:else}
+              <Field field={modelIdField}>
+                <Label size="sm" for="model" class="pb-0.5">Model</Label>
+                <div
+                  use:permissionHandler={{
+                    hasPermission: canCreate,
+                    permissionError,
+                  }}
+                >
+                  <Select.Root
+                    selected={{ label: getDisplayNameForModel(selectedModel), value: selectedModel?.id ?? '' }}
+                    disabled={!canCreate}
+                  >
+                    <Select.Trigger
+                      value={selectedModel?.id}
+                      size="xs"
+                      aria-label="Select Model"
+                      aria-labelledby={null}
+                      id="model"
+                    >
+                      <Select.Value placeholder="Select a model" />
+                    </Select.Trigger>
+                    <Select.Content
+                      class="min-w-[240px] overflow-auto p-0"
+                      sameWidth={false}
+                      align="start"
+                      datatype="number"
+                      fitViewport
+                    >
+                      {#if orderedModels.length === 0}
+                        <div class="select-none px-1 py-1 text-xs text-muted-foreground">No models available</div>
+                      {:else}
+                        {#each orderedModels as model (model.id)}
+                          <Select.Item
+                            size="xs"
+                            value={model.id}
+                            label={getDisplayNameForModel(model)}
+                            class="flex gap-1"
+                          >
+                            {model.name}
+                            <div class="whitespace-nowrap text-muted-foreground">(Version: {model.version})</div>
+                          </Select.Item>
+                        {/each}
+                      {/if}
+                    </Select.Content>
+                    <Select.Input type="number" name="model" aria-label="Select Model hidden input" />
+                  </Select.Root>
+                </div>
+              </Field>
+            {/if}
 
-            {#if selectedModel}
+            {#if selectedModel && !isPlanUploadReadOnly}
               <div class="px-4 pt-1">
                 <ModelStatusRollup mode="rollup" model={selectedModel} showCompleteStatus />
               </div>
@@ -869,7 +1195,7 @@
 
             <fieldset>
               <DatePickerField
-                disabled={!canCreate}
+                disabled={!canModify}
                 layout="stacked"
                 useFallback={!$plugins.time.enableDatePicker}
                 field={startTimeField}
@@ -880,8 +1206,8 @@
                   [
                     permissionHandler,
                     {
-                      hasPermission: canCreate,
-                      permissionError,
+                      hasPermission: canModify,
+                      permissionError: canModifyTooltip,
                     },
                   ],
                 ]}
@@ -889,7 +1215,7 @@
             </fieldset>
             <fieldset>
               <DatePickerField
-                disabled={!canCreate}
+                disabled={!canModify}
                 useFallback={!$plugins.time.enableDatePicker}
                 field={endTimeField}
                 label={`End Time - ${$plugins.time.primary.formatString}`}
@@ -899,8 +1225,8 @@
                   [
                     permissionHandler,
                     {
-                      hasPermission: canCreate,
-                      permissionError,
+                      hasPermission: canModify,
+                      permissionError: canModifyTooltip,
                     },
                   ],
                 ]}
@@ -997,6 +1323,7 @@
       </svelte:fragment>
     </Panel>
 
+    <CssGridGutter track={1} type="column" />
     <Panel>
       <svelte:fragment slot="header">
         <div class="flex items-center gap-2">
@@ -1014,9 +1341,11 @@
 
       <svelte:fragment slot="body">
         <SingleActionDataGrid
+          bind:this={plansTable}
           showLoadingSkeleton
           loading={$plansLoading}
           {columnDefs}
+          columnsToForceRefreshOnDataUpdate={['name']}
           hasDeletePermission={featurePermissions.plan.canDelete}
           itemDisplayText="Plan"
           noRowsOverlayText="No Plans Found"
@@ -1031,3 +1360,41 @@
     </Panel>
   </CssGrid>
 </CssGrid>
+
+<style>
+  .plan-metadata :global(input.selected-plan-field) {
+    background-color: var(--st-white);
+    border: var(--st-input-border);
+    color: var(--st-input-color);
+    opacity: 1;
+  }
+
+  .plan-metadata :global(input.selected-plan-field-editable) {
+    background-color: var(--st-input-background-color);
+  }
+
+  .plan-metadata :global(input.selected-plan-field.border-destructive) {
+    border-color: hsl(var(--destructive));
+  }
+
+  .plan-metadata :global(.selected-plan-tags) {
+    background-color: var(--st-white);
+    border: var(--st-input-border);
+    opacity: 1;
+  }
+
+  .plan-metadata :global(.permission-disabled button) {
+    opacity: 0.5 !important;
+  }
+
+  :global(.plans-split > .css-grid-gutter.column) {
+    position: relative;
+    z-index: 1;
+  }
+
+  :global(.plans-split > .css-grid-gutter.column::before) {
+    content: '';
+    inset: 0 -4px;
+    position: absolute;
+  }
+</style>

@@ -80,7 +80,7 @@ export type DerivationGroup = {
   name: string;
   owner: UserId;
   source_type_name: string;
-  sources: Map<string, { event_counts: number }>;
+  sources: string[];
 };
 
 export type ExternalSourceInsertInput = {
@@ -94,3 +94,11 @@ export type DerivationGroupInsertInput = Pick<DerivationGroup, 'name' | 'source_
 
 // Used to track whether a newly added source has been acknowledged or not for a given plan
 export type DerivationGroupUpdateAckEntry = { derivation_group: string; last_acknowledged_at: string };
+
+export type ExternalSourceExternalEventCountResponse = {
+  external_events_aggregate: {
+    aggregate: {
+      count: number;
+    };
+  };
+};

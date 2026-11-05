@@ -20,6 +20,8 @@ export const model = gqlSubscribable<Model | null>(gql.SUB_MODEL, { id: modelId 
 
 export const models = gqlSubscribable<ModelSlim[]>(gql.SUB_MODELS, {}, []);
 
+export const executableModels = derived(models, $models => $models.filter(model => model.is_executable));
+
 /* Helper Functions. */
 
 export function resetModelStores() {

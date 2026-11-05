@@ -1,3 +1,4 @@
+import { PlanImportStatus } from '../enums/planStatusMessages';
 import type { ActivityDirective, ActivityDirectiveDB } from '../types/activity';
 import type { User } from '../types/app';
 import type { ArgumentsMap, DefaultEffectiveArgumentsMap } from '../types/parameter';
@@ -18,6 +19,21 @@ import {
   getIntervalFromDoyRange,
   switchISOTimezoneRepresentation,
 } from './time';
+
+export function getPlanImportStatusMessage(status: PlanImportStatus | null): string | null {
+  switch (status) {
+    case PlanImportStatus.IMPORTING_PLAN:
+      return 'Importing activities';
+    case PlanImportStatus.EXTRACTING_MODEL:
+      return 'Extracting model from plan';
+    case PlanImportStatus.IMPORTING_DATASET:
+      return 'Importing datasets';
+    case PlanImportStatus.FAILED:
+      return 'Import failed';
+    default:
+      return null;
+  }
+}
 
 /**
  * Computes a human-readable duration string from start and end times.
@@ -132,7 +148,7 @@ export async function getPlanForTransfer(
     simulation_arguments: qualifiedSimulationArguments,
     start_time: switchISOTimezoneRepresentation(convertDoyToYmd(plan.start_time_doy) as string),
     tags: plan.tags.map(({ tag: { color, name } }) => ({ tag: { color, name } })),
-    version: '2',
+    version: '3',
   };
 }
 
@@ -149,6 +165,21 @@ export function isDeprecatedPlanTransfer(
   planTransfer: PlanTransfer | DeprecatedPlanTransfer,
 ): planTransfer is DeprecatedPlanTransfer {
   return (planTransfer as DeprecatedPlanTransfer).end_time != null;
+}
+
+/**
+ * Throws if a parsed plan file lacks the fields the import form reads from it. Full validation happens on import.
+ */
+export function assertPlanTransferFields(planJSON: unknown): asserts planJSON is PlanTransfer | DeprecatedPlanTransfer {
+  if (typeof planJSON !== 'object' || planJSON === null || Array.isArray(planJSON)) {
+    throw new Error('Plan file must contain a JSON object');
+  }
+  const fields = planJSON as Record<string, unknown>;
+  const required = ['name', 'start_time', fields.end_time != null ? 'end_time' : 'duration'];
+  const missing = required.filter(field => typeof fields[field] !== 'string');
+  if (missing.length) {
+    throw new Error(`Plan file is missing ${missing.join(', ')}`);
+  }
 }
 
 export function getActivePlanMergeRequests(requests: PlanMergeRequestSchema[]): PlanMergeRequestSchema[] {

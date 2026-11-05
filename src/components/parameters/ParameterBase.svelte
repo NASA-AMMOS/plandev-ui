@@ -2,7 +2,9 @@
 
 <script lang="ts">
   import type { FormParameter, ParameterType } from '../../types/parameter';
+  import { isWithRevision } from '../../utilities/actions';
   import type { ActionArray } from '../../utilities/useActions';
+  import ActionFileParameter from './ActionFileParameter.svelte';
   import ParameterBaseBoolean from './ParameterBaseBoolean.svelte';
   import ParameterBaseDropdown from './ParameterBaseDropdown.svelte';
   import ParameterBaseDuration from './ParameterBaseDuration.svelte';
@@ -115,6 +117,19 @@
   />
 {:else if formParameter.schema.type === 'variant'}
   <ParameterBaseVariant
+    {disabled}
+    {hideRightAdornments}
+    {labelColumnWidth}
+    {level}
+    {levelPadding}
+    {formParameter}
+    {parameterType}
+    {use}
+    on:change
+    on:reset
+  />
+{:else if (formParameter.schema.type === 'options-single' || formParameter.schema.type === 'options-multiple') && isWithRevision(formParameter.schema)}
+  <ActionFileParameter
     {disabled}
     {hideRightAdornments}
     {labelColumnWidth}

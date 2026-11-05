@@ -31,10 +31,10 @@ setup.skip(jarDataExists, 'cached JAR data exists');
 setup('upload test JAR and save shared test data', async () => {
   const api = new AerieApi();
   await api.login('test', 'test');
-  const jarId = await api.uploadFile('e2e-tests/data/banananation-develop.jar');
+  const definitionFileId = await api.uploadFile('e2e-tests/data/banananation-develop.jar');
 
   const sharedData: SharedTestData = {
-    jarId,
+    definitionFileId,
   };
 
   // Ensure the directory exists

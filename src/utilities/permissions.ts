@@ -35,11 +35,9 @@ import type { View, ViewSlim } from '../types/view';
 import type { Workspace } from '../types/workspace';
 import type { WorkspaceTreeNode } from '../types/workspace-tree-view';
 import gql from './gql';
+import { ADMIN_ROLE, VIEWER_ROLE } from './roles';
 import { showFailureToast } from './toast';
 import type { WorkspaceApi } from './workspaces';
-
-export const ADMIN_ROLE = 'aerie_admin';
-export const VIEWER_ROLE = 'viewer';
 
 export const INVALID_JWT = 'invalid-jwt';
 export const EXPIRED_JWT = 'JWTExpired';
@@ -779,8 +777,9 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
     return isUserAdmin(user) || getPermission([Queries.SEQUENCE_TO_SIMULATED_ACTIVITY], user);
   },
   GET_EXTERNAL_EVENTS: () => true,
-  GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: () => true,
+  GET_EXTERNAL_EVENT_TYPE_BY_SOURCE: user => queryPermissions.SUB_DERIVATION_GROUPS(user),
   GET_EXTERNAL_PROFILE_SEGMENTS_SINCE: () => true,
+  GET_EXTERNAL_SOURCE_EXTERNAL_EVENT_COUNT: () => true,
   GET_MODELS: () => true,
   GET_PARCEL: () => true,
   GET_PARSED_CHANNEL_DICTIONARY: () => true,
@@ -982,6 +981,8 @@ const queryPermissions: Record<GQLKeys, (user: User | null, ...args: any[]) => b
   SUB_PLAN_DATASET: () => true,
   SUB_PLAN_DERIVATION_GROUP: () => true,
   SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP: () => true,
+  SUB_PLAN_IMPORT_REQUEST: () => true,
+  SUB_PLAN_IMPORT_REQUESTS: () => true,
   SUB_PLAN_LOCKED: () => true,
   SUB_PLAN_MERGE_CONFLICTING_ACTIVITIES: () => true,
   SUB_PLAN_MERGE_REQUESTS_INCOMING: () => true,
@@ -1328,6 +1329,9 @@ const gatewayPermissions = {
 
 type WorkspaceKeys = keyof typeof WorkspaceApi;
 const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: any[]) => boolean> = {
+  createFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
+  },
   createFolder: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
@@ -1355,6 +1359,15 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
   getFileMetadata: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
   },
+  getFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
+  getFileRevisionContent: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
+  getFileRevisionList: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['read_file_directory'], user, workspace);
+  },
   getWorkspaceContents: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['list_workspace_contents'], user, workspace);
   },
@@ -1377,6 +1390,9 @@ const workspacePermissions: Record<WorkspaceKeys, (user: User | null, ...args: a
       (getRoleWorkspacePermission(['read_file_directory'], user, workspaceSource) &&
         getRoleWorkspacePermission(['write_file_directory'], user, workspaceTarget))
     );
+  },
+  restoreFileRevision: (user: User | null, workspace: Workspace): boolean => {
+    return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);
   },
   saveFile: (user: User | null, workspace: Workspace): boolean => {
     return isUserAdmin(user) || getRoleWorkspacePermission(['write_file_directory'], user, workspace);

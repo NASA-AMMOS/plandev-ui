@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { adjectives, names, uniqueNamesGenerator } from 'unique-names-generator';
+import { getRoleDisplayName } from '../../src/utilities/roles.js';
 import { AppNav } from './AppNav.js';
 
 export async function performLogin(page: Page, baseURL?: string, username: string = 'test') {
@@ -71,10 +72,12 @@ export class User {
   }
 
   async switchRole(role: string = 'aerie_admin') {
+    // The dropdown shows display aliases (e.g. aerie_admin renders as "admin").
+    const roleLabel = getRoleDisplayName(role);
     await this.page.getByRole('navigation').getByRole('combobox').click();
-    await this.page.getByRole('listbox').getByRole('option', { name: role }).click();
+    await this.page.getByRole('listbox').getByRole('option', { exact: true, name: roleLabel }).click();
     // Wait for success toast confirming the role change completed
     await expect(this.page.getByText('Changed Role Successfully')).toBeVisible();
-    await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveText(role);
+    await expect(this.page.getByRole('navigation').getByRole('combobox')).toHaveText(roleLabel);
   }
 }

@@ -21,6 +21,7 @@ export class Workspace {
   outputPanelCollapseButton!: Locator;
   pageLoadingLocatorWithData!: Locator;
   readOnlyCheckbox!: Locator;
+  revisionTabButton!: Locator;
   rightPanelCollapseButton!: Locator;
   saveSequenceButton!: Locator;
   searchInput!: Locator;
@@ -125,13 +126,20 @@ export class Workspace {
     await this.openFileContextMenu(fileName);
 
     // Wait for menu item to be ready before clicking
-    const downloadMenuItem = this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download File' });
+    const downloadMenuItem = this.workspaceFileContextMenu.getByRole('menuitem', { name: 'Download' });
     await downloadMenuItem.waitFor({ state: 'visible' });
+    await downloadMenuItem.hover();
+
+    const downloadFileButton = this.workspaceFileContextMenu.getByRole('menuitem', {
+      exact: true,
+      name: 'Download File',
+    });
+    await downloadFileButton.waitFor({ state: 'visible' });
 
     // Use Promise.all to coordinate the download event with the click action
     const [download] = await Promise.all([
       this.page.waitForEvent('download', { timeout: 30000 }),
-      downloadMenuItem.click(),
+      downloadFileButton.click(),
     ]);
 
     const stream = await download.createReadStream();
@@ -262,6 +270,20 @@ export class Workspace {
     }
   }
 
+  /**
+   * Open the right-side revision panel by clicking the revision tab icon.
+   * If the panel is already open on the revision tab, this is a no-op — clicking again
+   * would toggle the panel closed.
+   */
+  async openRevisionPanel(): Promise<void> {
+    // The icon rail button sets data-active="true" iff metadata tab is active AND panel is open.
+    const isAlreadyOpen = (await this.revisionTabButton.getAttribute('data-active')) === 'true';
+    if (!isAlreadyOpen) {
+      await this.revisionTabButton.click();
+    }
+    await this.page.getByText('File Revisions', { exact: true }).waitFor({ state: 'visible', timeout: 5000 });
+  }
+
   async openWorkspaceContextMenu(): Promise<void> {
     await this.workspaceContextMenuButton.click();
     await this.workspaceHeaderMenu.waitFor({ state: 'attached' });
@@ -318,6 +340,7 @@ export class Workspace {
     this.outputPanelCollapseButton = page.getByRole('button', { name: /Collapse Editor|Expand Editor/ });
     this.pageLoadingLocatorWithData = page.getByText('Loading workspace').first();
     this.readOnlyCheckbox = page.locator('#read-only');
+    this.revisionTabButton = page.getByRole('button', { exact: true, name: 'File Revisions' });
     this.rightPanelCollapseButton = page.getByRole('button', { name: /Collapse panel|Expand panel/ }).last();
     this.saveSequenceButton = page.getByRole('button', { name: 'Save' });
     this.searchInput = page.getByPlaceholder('Search files and folders');

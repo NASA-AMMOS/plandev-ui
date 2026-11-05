@@ -3,8 +3,9 @@ import type {
   ActivityDirectiveUnknownTypeFailure,
   ActivityDirectiveValidationFailures,
   ActivityDirectiveValidationNoticesFailure,
-  ActivityErrorRollup,
-  ActivityValidationErrors,
+  ActivityDirectiveValidationUnavailable,
+  ActivityStatusRollup,
+  ActivityValidationStatuses,
   AnchorValidationError,
   ConsoleEntry,
   LogMessage,
@@ -123,27 +124,27 @@ function isSubstantive(msg: string | undefined): msg is string {
 }
 
 export function isInstantiationError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveInstantiationFailure {
   return (validation as ActivityDirectiveInstantiationFailure).type === ErrorTypes.INSTANTIATION_ERRORS;
 }
 
 export function isUnknownTypeError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveUnknownTypeFailure {
   return (validation as ActivityDirectiveUnknownTypeFailure).type === ErrorTypes.NO_SUCH_ACTIVITY_TYPE;
 }
 
 export function isValidationNoticesError(
-  validation: ActivityDirectiveValidationFailures | AnchorValidationError,
+  validation: ActivityDirectiveValidationFailures | ActivityDirectiveValidationUnavailable | AnchorValidationError,
 ): validation is ActivityDirectiveValidationNoticesFailure {
   return (validation as ActivityDirectiveValidationNoticesFailure).type === ErrorTypes.VALIDATION_NOTICES;
 }
 
-export function generateActivityValidationErrorRollups(
-  activityValidationErrors: ActivityValidationErrors[],
-): ActivityErrorRollup[] {
-  return activityValidationErrors.map(({ activityId, errors, status, type }) => {
+export function generateActivityValidationStatusRollups(
+  activityValidationStatuses: ActivityValidationStatuses[],
+): ActivityStatusRollup[] {
+  return activityValidationStatuses.map(({ activityId, statuses, status, type }) => {
     let extraLocations: string[] = [];
     let invalidAnchorLocations: string[] = [];
     let invalidParameterLocations: string[] = [];
@@ -152,27 +153,29 @@ export function generateActivityValidationErrorRollups(
     let wrongTypeLocations: string[] = [];
 
     if (status === 'complete') {
-      errors.forEach(error => {
-        if (isInstantiationError(error)) {
+      statuses.forEach(validation => {
+        if (isInstantiationError(validation)) {
           invalidParameterLocations = [
             ...new Set([
               ...invalidParameterLocations,
-              ...error.errors.unconstructableArguments.map(({ name }) => name),
+              ...validation.errors.unconstructableArguments.map(({ name }) => name),
             ]),
           ];
-          extraLocations = [...new Set([...extraLocations, ...error.errors.extraneousArguments])];
-          missingLocations = [...new Set([...missingLocations, ...error.errors.missingArguments])];
-        } else if (isUnknownTypeError(error)) {
-          wrongTypeLocations = [...new Set([...wrongTypeLocations, error.errors.noSuchActivityError.activity_type])];
-        } else if (isValidationNoticesError(error)) {
+          extraLocations = [...new Set([...extraLocations, ...validation.errors.extraneousArguments])];
+          missingLocations = [...new Set([...missingLocations, ...validation.errors.missingArguments])];
+        } else if (isUnknownTypeError(validation)) {
+          wrongTypeLocations = [
+            ...new Set([...wrongTypeLocations, validation.errors.noSuchActivityError.activity_type]),
+          ];
+        } else if (isValidationNoticesError(validation)) {
           invalidParameterLocations = [
             ...new Set([
               ...invalidParameterLocations,
-              ...([] as string[]).concat(...error.errors.validationNotices.map(({ subjects }) => subjects)),
+              ...([] as string[]).concat(...validation.errors.validationNotices.map(({ subjects }) => subjects)),
             ]),
           ];
         } else {
-          const { message } = error;
+          const { message } = validation;
           if (/end-time\sanchor/i.test(message)) {
             invalidAnchorLocations = [...new Set([...invalidAnchorLocations, message])];
           } else if (/plan\sstart/i.test(message)) {
@@ -185,7 +188,9 @@ export function generateActivityValidationErrorRollups(
     const location = [...new Set([...extraLocations, ...missingLocations, ...invalidParameterLocations])];
 
     return {
-      errorCounts: {
+      id: activityId,
+      location,
+      statusCounts: {
         extra: extraLocations.length,
         invalidAnchor: invalidAnchorLocations.length,
         invalidParameter: invalidParameterLocations.length,
@@ -194,8 +199,6 @@ export function generateActivityValidationErrorRollups(
         pending: status === 'pending' ? 1 : 0,
         wrongType: wrongTypeLocations.length,
       },
-      id: activityId,
-      location,
       type,
     };
   });

@@ -63,9 +63,9 @@ Before you can run plandev-ui you must install and configure the following produ
   Fill out the `.env` file with the following default environment variables:
 
   ```sh
-  AERIE_PASSWORD=aerie
-  AERIE_USERNAME=aerie
-  HASURA_GRAPHQL_ADMIN_SECRET=aerie
+  PLANDEV_PASSWORD=plandev
+  PLANDEV_USERNAME=plandev
+  HASURA_GRAPHQL_ADMIN_SECRET=plandev
   HASURA_GRAPHQL_JWT_SECRET='{ "type": "HS256", "key": "oursupersecretsupersecurekey1234567890" }'
   POSTGRES_PASSWORD=postgres
   POSTGRES_USER=postgres
@@ -73,7 +73,7 @@ Before you can run plandev-ui you must install and configure the following produ
 
   Next build PlanDev, and start the services via Docker:
 
-  Via VSCode tasks: (refer to to the [development section](#development))
+  Via VSCode tasks: (refer to the [development section](#development))
 
   - Run the `Build PlanDev` task to build PlanDev
   - Run the `PlanDev Containers` task, to bring up all the containers

@@ -106,6 +106,7 @@
   let hasCreatePermission: boolean = false;
   let hasEditSpecPermission: boolean = false;
   let selectedGoals: Record<string, boolean> = {};
+  let updatingGoals: boolean = false;
 
   $: filteredGoals = $schedulingGoals
     // TODO: remove this after db merge as it becomes redundant
@@ -207,6 +208,9 @@
   }
 
   async function onUpdateGoals(selectedGoals: Record<number, boolean>) {
+    if (updatingGoals) {
+      return;
+    }
     if ($plan && $schedulingPlanSpecification) {
       const goalPlanSpecUpdates: {
         goalPlanSpecIdsToDelete: number[];
@@ -259,12 +263,14 @@
           goalPlanSpecsToAdd: [],
         },
       );
+      updatingGoals = true;
       await effects.updateSchedulingGoalPlanSpecifications(
         $plan,
         goalPlanSpecUpdates.goalPlanSpecsToAdd,
         goalPlanSpecUpdates.goalPlanSpecIdsToDelete,
         user,
       );
+      updatingGoals = false;
       dispatch('close');
     }
   }
@@ -308,6 +314,7 @@
     <button class="st-button secondary" on:click={() => dispatch('close')}> Cancel </button>
     <button
       class="st-button"
+      disabled={updatingGoals}
       on:click={() => onUpdateGoals(selectedGoals)}
       use:permissionHandler={{
         hasPermission: hasEditSpecPermission && !$planReadOnly,

@@ -31,7 +31,7 @@
     setConstraintVisibility,
   } from '../../stores/constraints';
   import { field } from '../../stores/form';
-  import { plan, planModelId, planReadOnly, viewTimeRange } from '../../stores/plan';
+  import { plan, planIsLocked, planModelId, viewTimeRange } from '../../stores/plan';
   import { plugins } from '../../stores/plugins';
   import { simulationStatus } from '../../stores/simulation';
   import type { User } from '../../types/app';
@@ -91,9 +91,9 @@
     } else {
       endTime = '';
     }
-    hasSpecEditPermission = featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) && !$planReadOnly;
+    hasSpecEditPermission = featurePermissions.constraintsPlanSpec.canUpdate(user, $plan) && !$planIsLocked;
 
-    editPermissionError = $planReadOnly
+    editPermissionError = $planIsLocked
       ? PlanStatusMessages.READ_ONLY
       : 'You do not have permission to edit constraints for this plan.';
     deletePermissionError = hasSpecEditPermission
@@ -399,9 +399,9 @@
             permissionHandler,
             {
               hasPermission: $plan
-                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planIsLocked
                 : false,
-              permissionError: $planReadOnly
+              permissionError: $planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run constraint checks',
             },
@@ -421,9 +421,9 @@
             permissionHandler,
             {
               hasPermission: $plan
-                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planReadOnly
+                ? featurePermissions.constraintRuns.canCreate(user, $plan, $plan.model) && !$planIsLocked
                 : false,
-              permissionError: $planReadOnly
+              permissionError: $planIsLocked
                 ? PlanStatusMessages.READ_ONLY
                 : 'You do not have permission to run constraint checks',
             },
@@ -450,8 +450,8 @@
           name="manage-constraints"
           class="st-button secondary"
           use:permissionHandler={{
-            hasPermission: $plan ? featurePermissions.constraints.canCreate(user) && !$planReadOnly : false,
-            permissionError: $planReadOnly
+            hasPermission: $plan ? featurePermissions.constraints.canCreate(user) && !$planIsLocked : false,
+            permissionError: $planIsLocked
               ? PlanStatusMessages.READ_ONLY
               : 'You do not have permission to update constraints',
           }}

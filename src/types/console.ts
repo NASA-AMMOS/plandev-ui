@@ -31,11 +31,30 @@ export interface AnchorValidationError extends ConsoleEntry {
 }
 
 export type ActivityValidationStatus = 'complete' | 'pending';
-
-export interface ActivityValidationErrors {
-  activityId: number;
-  errors: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
+export interface ActivityDirectiveValidationStatus {
+  directive_id: number;
+  plan_id: number;
   status: ActivityValidationStatus;
+  validations: ActivityDirectiveValidationSuccess | ActivityDirectiveValidationFailures;
+}
+
+export interface BaseActivityDirectiveValidationSuccess {
+  success: true;
+}
+
+export interface ActivityDirectiveValidationUnavailable extends BaseActivityDirectiveValidationSuccess {
+  message: string;
+  type: 'UNAVAILABLE';
+}
+
+export type ActivityDirectiveValidationSuccess =
+  | BaseActivityDirectiveValidationSuccess
+  | ActivityDirectiveValidationUnavailable;
+
+export interface ActivityValidationStatuses {
+  activityId: number;
+  status: ActivityValidationStatus;
+  statuses: (ActivityDirectiveValidationFailures | AnchorValidationError)[];
   type: string;
 }
 
@@ -62,10 +81,7 @@ export interface ActivityDirectiveValidationNoticesError {
   }[];
 }
 
-export interface ActivityDirectiveValidationFailureStatus {
-  directive_id: number;
-  plan_id: number;
-  status: ActivityValidationStatus;
+export interface ActivityDirectiveValidationFailureStatus extends ActivityDirectiveValidationStatus {
   validations: ActivityDirectiveValidationFailures;
 }
 
@@ -98,7 +114,7 @@ export interface ActivityDirectiveValidationNoticesFailure extends ActivityDirec
   type: ErrorTypes.VALIDATION_NOTICES;
 }
 
-export interface ActivityErrorCounts {
+export interface ActivityStatusCounts {
   all?: number;
   extra: number;
   invalidAnchor: number;
@@ -109,12 +125,12 @@ export interface ActivityErrorCounts {
   wrongType: number;
 }
 
-export type ActivityErrorCategories = keyof ActivityErrorCounts;
+export type ActivityStatusCategories = keyof ActivityStatusCounts;
 
-export interface ActivityErrorRollup {
-  errorCounts: ActivityErrorCounts;
+export interface ActivityStatusRollup {
   id: number;
   location: string[];
+  statusCounts: ActivityStatusCounts;
   type: string;
 }
 

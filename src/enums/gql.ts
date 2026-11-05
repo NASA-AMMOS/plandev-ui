@@ -174,6 +174,7 @@ export enum Queries {
   PLAN = 'plan_by_pk',
   PLANS = 'plan',
   PLAN_DATASETS = 'plan_dataset',
+  PLAN_IMPORT_REQUEST = 'plan_import_request',
   PLAN_SNAPSHOTS = 'plan_snapshot',
   PLAN_SNAPSHOT_ACTIVITIES = 'plan_snapshot_activities',
   PROFILES = 'profile',

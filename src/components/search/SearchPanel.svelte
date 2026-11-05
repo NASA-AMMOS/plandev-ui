@@ -6,7 +6,7 @@
   import { page } from '$app/stores';
   import { Button, Input as InputStellar, Label } from '@nasa-jpl/stellar-svelte';
   import { ChevronDown, CircleQuestionMark } from 'lucide-svelte';
-  import { models } from '../../stores/model';
+  import { executableModels, models } from '../../stores/model';
   import { schedulingGoalResponses } from '../../stores/scheduling';
   import {
     hasSearched,
@@ -98,7 +98,7 @@
 
   $: selectedModel = selectedModelId !== undefined ? $models.find(m => m.id === selectedModelId) : undefined;
 
-  $: orderedModels = [...$models].sort(({ id: idA }, { id: idB }) => idB - idA);
+  $: orderedModels = [...$executableModels].sort(({ id: idA }, { id: idB }) => idB - idA);
 
   $: {
     modelOptions = orderedModels.map(m => ({ display: getDisplayNameForModel(m), value: m.id }));
