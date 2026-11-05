@@ -17,11 +17,14 @@
     getLatestRunnableVersion,
     getStatusForActionRun,
     getUserSequenceValueSchemaOptions,
+    hasUnavailableRevision,
+    isMissingRevision,
     openActionRun,
-    truncateRunParameters,
+    summarizeRunParameters,
     valueSchemaRecordToParametersMap,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
+  import { provideFileRevisionHistory } from '../../../utilities/fileRevisionHistory';
   import { isEmpty } from '../../../utilities/generic';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
   import { showConfirmModal } from '../../../utilities/modal';
@@ -36,6 +39,7 @@
   import MonacoEditor from '../../ui/MonacoEditor.svelte';
   import SectionCard from '../../ui/SectionCard.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+  import ActionRunParametersCell from './ActionRunParametersCell.svelte';
 
   export let actionDefinitionId: number;
   export let user: User | null;
@@ -47,6 +51,7 @@
     runAction: ActionDefinition;
     viewRun: { runId: number };
   }>();
+  const revisionHistory = provideFileRevisionHistory();
 
   let actionDefinition: ActionDefinition | null = null;
   let actionRuns: ActionRunSlim[] = [];
@@ -117,7 +122,12 @@
   );
 
   $: hasEmptyRequiredSetting = requiredSettings.some(name => isEmpty(argumentsMap[name]));
-  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting;
+  $: hasMissingRevision = Object.entries(settingsSchema).some(
+    ([settingName, schema]) =>
+      isMissingRevision(schema, argumentsMap[settingName]) ||
+      hasUnavailableRevision(schema, argumentsMap[settingName], $revisionHistory),
+  );
+  $: saveButtonDisabled = !name || saving || hasEmptyRequiredSetting || hasMissingRevision;
 
   $: hasUpdatePermission = actionDefinition
     ? featurePermissions.actionDefinition.canUpdate(user, actionDefinition)
@@ -229,24 +239,7 @@
   function onChangeFormParameters(event: CustomEvent<FormParameter>) {
     const { detail: formParameter } = event;
     touchedSettingNames = new Set([...touchedSettingNames, formParameter.name]);
-    if (formParameter.schema.type === 'options-single') {
-      const files = workspaceFiles.find(sequence => sequence.fullPath === formParameter.value);
-      formParameter.value = files?.fullPath ?? null;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else if (formParameter.schema.type === 'options-multiple') {
-      const values: string[] = formParameter.value;
-      const fileNames: string[] = [];
-      values.forEach(value => {
-        const seq = workspaceFiles.find(sequence => sequence.fullPath === value);
-        if (seq !== undefined && seq.fullPath !== undefined) {
-          fileNames.push(seq.fullPath);
-        }
-      });
-      formParameter.value = fileNames;
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    } else {
-      argumentsMap = getArguments(argumentsMap, formParameter);
-    }
+    argumentsMap = getArguments(argumentsMap, formParameter);
     checkDirty();
   }
 
@@ -288,7 +281,8 @@
     const div = document.createElement('div');
     div.style.display = 'flex';
     div.style.alignItems = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the badge lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     if (params.data) {
       const status = getStatusForActionRun(params.data);
       new StatusBadge({ props: { status }, target: div });
@@ -297,10 +291,15 @@
   }
 
   function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    const div = document.createElement('div');
     if (!params.data || !actionDefinition) {
-      return '';
+      return div;
     }
-    return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
+    new ActionRunParametersCell({
+      props: { parameterSchema: actionDefinition.versions[0]?.parameter_schema, parameters: params.data.parameters },
+      target: div,
+    });
+    return div;
   }
 
   function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
@@ -315,7 +314,8 @@
     div.style.display = 'flex';
     div.style.alignItems = 'center';
     div.style.justifyContent = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the button lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     const btn = document.createElement('button');
     btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
     btn.title = 'Cancel Action Run';
@@ -390,9 +390,11 @@
       width: 100,
     },
     {
+      autoHeight: true,
       cellRenderer: paramsCellRenderer,
       field: 'parameters',
       filter: 'text',
+      flex: 1,
       headerName: 'Parameters',
       minWidth: 120,
       resizable: true,
@@ -401,7 +403,7 @@
         if (!params.data || !actionDefinition) {
           return '';
         }
-        return truncateRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
+        return summarizeRunParameters(params.data.parameters, actionDefinition.versions[0]?.parameter_schema);
       },
     },
     {
@@ -503,7 +505,11 @@
                   permissionError: 'You do not have permission to update an action',
                 }}
                 use:tooltip={{
-                  content: hasEmptyRequiredSetting ? 'Please fill in all required settings' : undefined,
+                  content: hasEmptyRequiredSetting
+                    ? 'Please fill in all required settings'
+                    : hasMissingRevision
+                      ? 'Please select an available revision for each file setting'
+                      : undefined,
                 }}
               >
                 <Button class="h-6 text-xs" disabled={saveButtonDisabled || !isDirty} on:click={save}>
@@ -614,6 +620,7 @@
               </div>
             {:else}
               <SingleActionDataGrid
+                autoSizeColumnsToFit={false}
                 columnDefs={runsColumnDefs}
                 {filterExpression}
                 items={actionRuns}

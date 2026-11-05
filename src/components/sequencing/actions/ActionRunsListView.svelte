@@ -12,7 +12,7 @@
     getActionDefinitionForRun,
     getStatusForActionRun,
     openActionRun,
-    truncateRunParameters,
+    summarizeRunParameters,
   } from '../../../utilities/actions';
   import effects from '../../../utilities/effects';
   import { isMetaOrCtrlPressed } from '../../../utilities/keyboardEvents';
@@ -21,6 +21,7 @@
   import SingleActionDataGrid from '../../ui/DataGrid/SingleActionDataGrid.svelte';
   import SectionTitle from '../../ui/SectionTitle.svelte';
   import StatusBadge from '../../ui/StatusBadge.svelte';
+  import ActionRunParametersCell from './ActionRunParametersCell.svelte';
 
   const actionRunsError = actionRuns.error;
   const actionRunsLoading = actionRuns.loading;
@@ -99,9 +100,11 @@
       width: 100,
     },
     {
+      autoHeight: true,
       cellRenderer: paramsCellRenderer,
       field: 'parameters',
       filter: 'text',
+      flex: 1,
       headerName: 'Parameters',
       minWidth: 120,
       resizable: true,
@@ -111,7 +114,7 @@
           return '';
         }
         const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-        return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
+        return summarizeRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
       },
     },
     {
@@ -135,7 +138,8 @@
     const div = document.createElement('div');
     div.style.display = 'flex';
     div.style.alignItems = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the badge lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     if (params.data) {
       const status = getStatusForActionRun(params.data);
       new StatusBadge({ props: { status }, target: div });
@@ -152,11 +156,16 @@
   }
 
   function paramsCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
+    const div = document.createElement('div');
     if (!params.data) {
-      return '';
+      return div;
     }
     const def = getActionDefinitionForRun(params.data, $actionDefinitionsByWorkspace, $workspaceId);
-    return truncateRunParameters(params.data.parameters, def?.versions[0]?.parameter_schema);
+    new ActionRunParametersCell({
+      props: { parameterSchema: def?.versions[0]?.parameter_schema, parameters: params.data.parameters },
+      target: div,
+    });
+    return div;
   }
 
   function cancelCellRenderer(params: ICellRendererParams<ActionRunSlim>) {
@@ -171,7 +180,8 @@
     div.style.display = 'flex';
     div.style.alignItems = 'center';
     div.style.justifyContent = 'center';
-    div.style.height = '100%';
+    // The grid's default row height, so the button lines up with the first line of a tall (wrapped) row
+    div.style.height = '32px';
     const btn = document.createElement('button');
     btn.className = 'flex items-center justify-center rounded p-0.5 hover:bg-accent';
     btn.title = 'Cancel Action Run';
@@ -223,6 +233,7 @@
       on:retry={() => actionRuns.restartSocket()}
     >
       <SingleActionDataGrid
+        autoSizeColumnsToFit={false}
         {columnDefs}
         {filterExpression}
         items={workspaceActionRuns}

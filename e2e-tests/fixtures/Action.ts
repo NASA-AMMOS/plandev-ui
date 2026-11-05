@@ -80,11 +80,12 @@ export class Action {
 
   async runAction(options?: {
     actionTimeout?: number;
+    beforeRun?: (runModal: Locator) => Promise<void>;
     expectedStatus?: 'Complete' | 'Failed';
     mode?: string;
     stringParameters?: Record<string, string>;
   }): Promise<void> {
-    const { actionTimeout = 30000, expectedStatus, mode, stringParameters } = options ?? {};
+    const { actionTimeout = 30000, beforeRun, expectedStatus, mode, stringParameters } = options ?? {};
 
     // Click "Run Action" button in the detail view header
     await this.page.getByRole('button', { name: 'Run Action' }).click();
@@ -105,6 +106,9 @@ export class Action {
         await input.dispatchEvent('change');
       }
     }
+
+    // Let the caller fill in anything else, e.g. file parameters
+    await beforeRun?.(runModal);
 
     // Click the Run button in the modal footer
     await runModal.getByRole('button', { exact: true, name: 'Run' }).click();

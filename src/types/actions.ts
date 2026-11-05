@@ -1,5 +1,11 @@
 import type { ActionValueSchema } from '@nasa-jpl/plandev-actions';
 import type { ArgumentsMap, ParameterName } from './parameter';
+import type { WorkspaceFileRevision } from './workspace';
+
+export type { FileRef } from '@nasa-jpl/plandev-actions';
+
+/** The fetched revisions of each selected file's path, or that they are loading or failed to load. */
+export type FileRevisionHistory = Record<string, WorkspaceFileRevision[] | 'error' | 'loading'>;
 
 export type ActionParameter = { order: number; schema: ActionValueSchema; unit?: string };
 export type ActionParametersMap = Record<ParameterName, ActionParameter>;

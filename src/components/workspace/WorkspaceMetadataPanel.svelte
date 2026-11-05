@@ -10,6 +10,7 @@
   import { createEventDispatcher, onDestroy } from 'svelte';
   import type { WorkspaceFileMetadata } from '../../types/workspace-tree-view';
   import { getShortISOForDate } from '../../utilities/time';
+  import { getUserDisplayNameFromIdentity } from '../../utilities/workspaces';
   import SectionTitle from '../ui/SectionTitle.svelte';
   import * as Sidebar from '../ui/Sidebar/index.js';
   import PanelHeader from './PanelHeader.svelte';
@@ -22,8 +23,9 @@
   export let fileMetadata: WorkspaceFileMetadata | null = null;
   export let hasEditPermission: boolean = false;
 
-  let editorView: EditorView | null = null;
   let compartmentReadonly: Compartment = new Compartment();
+  let editorReadOnly: boolean = false;
+  let editorView: EditorView | null = null;
   let hasJsonError: boolean = false;
   let isEditing: boolean = false;
   let lastSavedContent: string = '';
@@ -190,7 +192,7 @@
               {#if fileMetadata.lastEditedBy}
                 <div class="flex flex-col gap-0.5">
                   <span class="font-medium text-muted-foreground">Last edited by</span>
-                  <span>{fileMetadata.lastEditedBy}</span>
+                  <span>{getUserDisplayNameFromIdentity(fileMetadata.lastEditedBy)}</span>
                 </div>
               {/if}
               {#if fileMetadata.lastEditedAt}
