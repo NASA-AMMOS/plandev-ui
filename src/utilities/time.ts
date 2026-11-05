@@ -893,11 +893,11 @@ export function getTimeAgo(
 }
 
 /**
- * Returns a date formatted in ISO string without milliseconds and timezone identifier
- * @example getShortISOForDate(new Date("2023-05-23T00:30:09.597Z")) -> '2023-05-23T00:30:09'
+ * Returns a date formatted as a UTC ISO string without milliseconds
+ * @example getShortISOForDate(new Date("2023-05-23T00:30:09.597Z")) -> '2023-05-23T00:30:09Z'
  */
 export function getShortISOForDate(date: Date) {
-  return date.toISOString().slice(0, 19);
+  return `${date.toISOString().slice(0, 19)}Z`;
 }
 
 export function getShortTimeZoneName() {

@@ -14,6 +14,7 @@
   import { get } from 'svelte/store';
   import { InvalidDate } from '../../constants/time';
   import {
+    activityArgumentDefaultsMap,
     activityDirectivesMap,
     isActivityStatusUnavailable,
     selectActivity,
@@ -123,6 +124,8 @@
             activityTypeName: params.data.type,
             activityTypes: $planModelActivityTypes,
             args: params.data.arguments,
+            presetArgs: params.data.applied_preset?.preset_applied?.arguments ?? {},
+            defaultArgs: $activityArgumentDefaultsMap[params.data.type] ?? {},
           },
         });
         return div;
@@ -271,6 +274,10 @@
       sortable: true,
     },
   };
+  // Mission model defaults can load after the table renders, so re-render the arguments cells when they change
+  $: if ($activityArgumentDefaultsMap) {
+    dataGrid?.refreshCells({ columns: ['arguments'], force: true });
+  }
   $: derivedColumnDefs = Object.values(defaultColumnDefinitions).map((defaultColumnDef: ColDef) => {
     const columnDef = activityDirectivesTable?.columnDefs.find(
       (columnDef: ColDef) => columnDef.field === defaultColumnDef.field,

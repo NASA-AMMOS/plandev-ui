@@ -1,14 +1,20 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import { ContextMenu } from '@nasa-jpl/stellar-svelte';
+  import { cn, ContextMenu } from '@nasa-jpl/stellar-svelte';
   import { createEventDispatcher } from 'svelte';
   import { WorkspaceContentType } from '../../enums/workspace';
+  import { getUserStore } from '../../stores/user';
+  import { workspaceId } from '../../stores/workspaces';
+  import type { UserStore } from '../../types/app';
+  import type { DownloadMenuOption } from '../../types/dropdown';
   import type { ActionParameterPair } from '../../types/workspace';
   import type { WorkspaceTreeNodeWithFullPath } from '../../types/workspace-tree-view';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { pluralize } from '../../utilities/text';
+  import { getDownloadOptionsForFile, WorkspaceApi } from '../../utilities/workspaces';
   import ActionMenuItem from '../ui/ActionMenuItem.svelte';
+  import Tooltip from '../ui/Tooltip.svelte';
 
   export let actionsForSelection: ActionParameterPair[] = [];
   export let hasEditPermission: boolean = false;
@@ -19,10 +25,12 @@
 
   const dispatch = createEventDispatcher<{
     actionsMenuFocused: boolean;
+    compareFiles: WorkspaceTreeNodeWithFullPath[];
+    compareRevisions: WorkspaceTreeNodeWithFullPath;
     copyFileLocation: void;
     copyFullPath: void;
     delete: WorkspaceTreeNodeWithFullPath[];
-    download: void;
+    download: { withRevision: boolean };
     hide: void;
     importFile: void;
     move: WorkspaceTreeNodeWithFullPath[];
@@ -38,14 +46,29 @@
   const editPermissionError = 'You do not have permission to edit this workspace';
   const deletePermissionError = 'You do not have permission to delete files in this workspace';
   const readOnlyError = 'Some read-only files selected. You cannot modify read-only files.';
+  const user: UserStore = getUserStore();
 
   let areMultipleFilesSelected: boolean = false;
   let actionPhrase: string = '';
+  let canDownloadWithRevision: boolean = false;
   let deleteError: string = deletePermissionError;
+  let downloadOptions: DownloadMenuOption[] = [];
   let editError: string = editPermissionError;
   let selectedFolderCount: number = 0;
   let selectedFileCount: number = 0;
   let fileCountPhrase: string = '';
+
+  /** A single, non-directory selection can offer a plain or revision-versioned download name. */
+  $: canDownloadWithRevision =
+    selectedWorkspaceNodes.length === 1 && selectedWorkspaceNodes[0].type !== WorkspaceContentType.Directory;
+  $: if (selectedWorkspaceNodes.length > 1) {
+    downloadOptions = [
+      { label: 'Download files', name: '' },
+      { label: 'Download files with revision in filename (when possible)', name: '' },
+    ];
+  } else {
+    loadDownloadOptionsForFile();
+  }
 
   $: {
     selectedFolderCount = 0;
@@ -71,6 +94,31 @@
     // Set appropriate error message
     deleteError = hasReadOnlyNodes ? readOnlyError : deletePermissionError;
     editError = hasReadOnlyNodes ? readOnlyError : editPermissionError;
+  }
+
+  async function loadDownloadOptionsForFile() {
+    if (!canDownloadWithRevision) {
+      return;
+    }
+
+    const { matchingRevision, revisions } = await WorkspaceApi.getFileRevisionList(
+      $workspaceId,
+      selectedWorkspaceNodes[0].fullPath,
+      $user,
+    );
+
+    const latestRevision = revisions[0];
+    downloadOptions = getDownloadOptionsForFile(
+      selectedWorkspaceNodes[0].name ?? '',
+      matchingRevision === latestRevision?.name,
+      latestRevision?.name ?? null,
+    );
+  }
+
+  function onDownloadOptionClick(option: DownloadMenuOption, withRevision: boolean) {
+    if (!option.disabled) {
+      dispatch('download', { withRevision });
+    }
   }
 </script>
 
@@ -136,11 +184,53 @@
     </ContextMenu.Item>
   </div>
 </ContextMenu.Group>
+{#if selectedFolderCount === 0 && selectedWorkspaceNodes.length >= 1}
+  <ContextMenu.Separator />
+  {#if selectedWorkspaceNodes.length === 1}
+    <ContextMenu.Item
+      size="sm"
+      on:click={() => dispatch('compareRevisions', selectedWorkspaceNodes[0])}
+      aria-label="Compare revisions for file"
+    >
+      Compare revisions for file
+    </ContextMenu.Item>
+  {:else}
+    <ContextMenu.Item
+      size="sm"
+      disabled={selectedWorkspaceNodes.length !== 2}
+      on:click={() => dispatch('compareFiles', selectedWorkspaceNodes)}
+      aria-label="Compare selected files"
+    >
+      Compare selected files
+    </ContextMenu.Item>
+  {/if}
+{/if}
 <ContextMenu.Separator />
 <div>
-  <ContextMenu.Item size="sm" on:click={() => dispatch('download')} aria-label="Download File">
-    Download
-  </ContextMenu.Item>
+  <ContextMenu.Sub>
+    <ContextMenu.SubTrigger size="sm">Download</ContextMenu.SubTrigger>
+    <ContextMenu.SubContent>
+      {#each downloadOptions as option, i (option.label)}
+        <Tooltip
+          content={option.disabledReason ?? ''}
+          disabled={!option.disabled || !option.disabledReason}
+          wrapperClass="w-full"
+        >
+          <ContextMenu.Item
+            size="sm"
+            class={cn(
+              'whitespace-nowrap',
+              option.disabled ? 'cursor-not-allowed text-muted-foreground opacity-50' : '',
+            )}
+            on:click={() => onDownloadOptionClick(option, i === 1)}
+            aria-label={i === 0 ? 'Download File' : 'Download File with revision'}
+          >
+            {option.label}
+          </ContextMenu.Item>
+        </Tooltip>
+      {/each}
+    </ContextMenu.SubContent>
+  </ContextMenu.Sub>
   {#if selectedWorkspaceNodes.length === 1}
     <ContextMenu.Item size="sm" on:click={() => dispatch('copyFullPath')} aria-label="Copy Full Path">
       Copy Full Path

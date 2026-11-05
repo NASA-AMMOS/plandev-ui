@@ -15,3 +15,10 @@ export enum WorkspaceContentType {
   Unknown = 'UNKNOWN',
   Workspace = 'WORKSPACE', // not a real value from the service
 }
+
+export enum WorkspaceRightPanelTab {
+  COMMAND = 'command',
+  DICTIONARY = 'dictionary',
+  METADATA = 'metadata',
+  REVISIONS = 'revisions',
+}

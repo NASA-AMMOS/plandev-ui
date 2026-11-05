@@ -1,4 +1,4 @@
-FROM node:22.23.2-alpine3.24
+FROM node:22.23.4-alpine3.24
 
 # npm is not required by the running service - remove to reduce vulnerable dependencies
 RUN rm -rf /usr/local/lib/node_modules/npm \

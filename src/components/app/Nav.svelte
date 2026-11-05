@@ -1,14 +1,13 @@
 <script lang="ts">
   import { Select } from '@nasa-jpl/stellar-svelte';
-  import { getContext } from 'svelte';
-  import type { Writable } from 'svelte/store';
-  import type { User, UserRole } from '../../types/app';
+  import { getUserStore } from '../../stores/user';
+  import type { UserRole, UserStore } from '../../types/app';
   import { changeUserRole } from '../../utilities/permissions';
   import { getRoleDisplayName } from '../../utilities/roles';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
   import AppMenu from '../menus/AppMenu.svelte';
 
-  const user: Writable<User | null> = getContext('user');
+  const user: UserStore = getUserStore();
 
   let userRoles: UserRole[] = [];
 
