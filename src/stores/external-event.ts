@@ -10,22 +10,26 @@ import type {
 } from '../types/external-event';
 import { getExternalEventWholeRowId } from '../utilities/externalEvents';
 import gql from '../utilities/gql';
-import { convertUTCToMs, getIntervalInMs } from '../utilities/time';
+import { convertUTCToMs, getIntervalInMs, getUnixEpochTime } from '../utilities/time';
 import { selectedPlanDerivationGroupNames, sourcesUsingExternalEventTypes } from './external-source';
 import { plan } from './plan';
 import { gqlSubscribable } from './subscribable';
 import { viewUpdateGrid } from './views';
 
-const planStartDoy = derived(plan, $plan => $plan?.start_time_doy ?? '1970-001T00:00:00Z');
-const planEndDoy = derived(plan, $plan => $plan?.end_time_doy ?? '2100-001T00:00:00Z');
+const planStart = derived(plan, $plan =>
+  new Date(getUnixEpochTime($plan?.start_time_doy ?? '1970-001T00:00:00')).toISOString(),
+);
+const planEnd = derived(plan, $plan =>
+  new Date(getUnixEpochTime($plan?.end_time_doy ?? '2100-001T00:00:00')).toISOString(),
+);
 
 /* Subscriptions. */
 export const selectedExternalEventsRaw = gqlSubscribable<{ external_event: ExternalEventDB }[] | undefined>(
   gql.SUB_PLAN_EXTERNAL_EVENTS_DERIVATION_GROUP,
   {
     derivation_group_names: selectedPlanDerivationGroupNames,
-    plan_end: planEndDoy,
-    plan_start: planStartDoy,
+    plan_end: planEnd,
+    plan_start: planStart,
   },
   [],
 );
@@ -66,7 +70,6 @@ export const selectedExternalEvents: Readable<ExternalEvent[]> = derived(
           attributes: externalEvent.attributes,
           duration: externalEvent.duration,
           duration_ms: getIntervalInMs(externalEvent.duration),
-          end_time: externalEvent.end_time,
           pkey: {
             derivation_group_name: externalEvent.derivation_group_name,
             event_type_name: externalEvent.event_type_name,

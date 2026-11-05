@@ -352,7 +352,6 @@ function generateExternalEvent(properties: Partial<ExternalEvent>): ExternalEven
     attributes: {},
     duration: '',
     duration_ms: 0,
-    end_time: '',
     pkey: {
       derivation_group_name: 'test_derivation_group',
       event_type_name: 'test_event_type',
@@ -1248,7 +1247,6 @@ test('generateDiscreteTree', () => {
                     attributes: {},
                     duration: '',
                     duration_ms: 0,
-                    end_time: '',
                     pkey: {
                       derivation_group_name: 'test_derivation_group',
                       event_type_name: 'test_event_type',
@@ -1274,7 +1272,6 @@ test('generateDiscreteTree', () => {
                 attributes: {},
                 duration: '',
                 duration_ms: 0,
-                end_time: '',
                 pkey: {
                   derivation_group_name: 'test_derivation_group',
                   event_type_name: 'test_event_type',
@@ -1300,7 +1297,6 @@ test('generateDiscreteTree', () => {
             attributes: {},
             duration: '',
             duration_ms: 0,
-            end_time: '',
             pkey: {
               derivation_group_name: 'test_derivation_group',
               event_type_name: 'test_event_type',

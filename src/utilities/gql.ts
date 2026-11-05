@@ -2765,7 +2765,8 @@ const gql = {
     ){
       events: ${Queries.DERIVED_EVENTS}(where: {
         derivation_group_name: {_in: $derivation_group_names},
-        start_time: {_gte: $plan_start, _lte: $plan_end}
+        start_time: {_lte: $plan_end},
+        end_time: {_gte: $plan_start}
       }) {
         external_event {
           attributes
