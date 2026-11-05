@@ -174,7 +174,6 @@ export class AerieApi {
    */
   async createWorkspaceItem(workspaceId: number, path: string, content?: string, overwrite = false): Promise<void> {
     const isFolder = content === undefined;
-    const type = isFolder ? 'directory' : 'file';
 
     let body: FormData | undefined;
     if (!isFolder) {
