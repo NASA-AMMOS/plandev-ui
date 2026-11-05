@@ -403,7 +403,7 @@
                                   on:click={() => onDownloadRevision(revision, versionedFilename)}
                                 >
                                   <Download size={14} class="shrink-0" />
-                                  Download ({versionedExtension})
+                                  Download with revision (...{versionedExtension})
                                 </DropdownMenu.Item>
                                 <div
                                   use:permissionHandler={{
