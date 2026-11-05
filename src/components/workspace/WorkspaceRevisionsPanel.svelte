@@ -399,7 +399,7 @@
                                 <DropdownMenu.Item
                                   class="flex items-center gap-2"
                                   size="sm"
-                                  aria-label={`Download (${versionedExtension})`}
+                                  aria-label={`Download with revision (...${versionedExtension})`}
                                   on:click={() => onDownloadRevision(revision, versionedFilename)}
                                 >
                                   <Download size={14} class="shrink-0" />
