@@ -133,7 +133,7 @@ describe.each(configurations)('WorkspaceRevisionsPanel - $convention naming conv
     ['none', null, true],
   ])('warns about losing the saved copy when matchingRevisionName is %s', async (_, matchingRevisionName, warns) => {
     const { getByRole, getAllByRole } = renderPanel(matchingRevisionName);
-    const revisionButton = await getByRole('region', { name: `Revision ${config.display.a}` });
+    const revisionButton = getByRole('region', { name: `Revision ${config.display.a}` });
     await fireEvent.click(within(revisionButton).getByRole('button', { name: 'More options' }));
 
     const restoreMenuItem = getAllByRole('menuitem', { name: `Restore file to revision ${config.display.a}` }).at(0);

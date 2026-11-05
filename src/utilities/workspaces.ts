@@ -917,7 +917,7 @@ export function getDownloadOptionsForFile(
 }
 
 export function getUserDisplayNameFromIdentity(identity: string): string {
-  const match: RegExpExecArray | null = /(?<username>.+)\s<[^>]*>/.exec(identity);
+  const match: RegExpExecArray | null = /(?<username>[^<]*?[^\s])\s*</.exec(identity);
 
   if (match?.groups?.username) {
     return match.groups.username;
