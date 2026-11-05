@@ -183,7 +183,8 @@ export class AerieApi {
       body.append('file', new Blob([content]), fileName);
     }
 
-    await this.gatewayRequest(`/ws/${workspaceId}/${path}?type=${type}&overwrite=${overwrite}`, 'PUT', body, {
+    const query = isFolder ? 'type=directory' : `type=file&overwrite=${overwrite}`;
+    await this.gatewayRequest(`/ws/${workspaceId}/${path}?${query}`, 'PUT', body, {
       workspace: true,
     });
   }

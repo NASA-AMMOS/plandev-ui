@@ -167,8 +167,9 @@ test.describe.serial('Actions', () => {
     const results = page.getByTestId('action-run-results');
     const path = 'revisions-a.seq';
 
-    // Revision A keeps the original contents while the working copy moves on
-    await api.createFileRevision(Number(workspaceId), path, 'baseline');
+    // Revision 1 keeps the original contents while the working copy moves on
+    const revision = await api.createFileRevision(Number(workspaceId), path, 'baseline');
+    const revisionLabel = `Revision ${revision.toUpperCase()}`;
     await api.createWorkspaceItem(Number(workspaceId), path, '// edited', true);
 
     await action.selectActionInSidebar();
@@ -176,7 +177,7 @@ test.describe.serial('Actions', () => {
       beforeRun: async modal => {
         await selectFile(modal, 'fileAtRevision', path);
         await expect(revisionPicker(modal, path)).toHaveText('Working copy');
-        await pickRevision(parameterRow(modal, 'fileAtRevision'), path, 'Revision A');
+        await pickRevision(parameterRow(modal, 'fileAtRevision'), path, revisionLabel);
         await parameterRow(modal, 'sequencesAtRevision').getByRole('combobox', { name: 'Select files' }).click();
         await page.getByRole('menuitem', { name: path }).click();
         await page.keyboard.press('Escape');
@@ -189,17 +190,17 @@ test.describe.serial('Actions', () => {
     // Each reference read what it named, and the action received a bare path for the working copy
     await expect(results).toContainText('// original');
     await expect(results).toContainText('// edited');
-    await expect(page.getByText(`"fileAtRevision":{"path":"${path}","revision":"a"}`)).toBeVisible();
+    await expect(page.getByText(`"fileAtRevision":{"path":"${path}","revision":"${revision}"}`)).toBeVisible();
     await expect(page.getByText(`"sequencesAtRevision":[{"path":"${path}"}]`)).toBeVisible();
     await page.getByRole('tab', { name: 'Parameters' }).click();
     await expect(page.getByRole('textbox', { exact: true, name: 'fileAtRevision' })).toHaveValue(
-      `${path} · Revision A`,
+      `${path} · ${revisionLabel}`,
     );
 
     // Re-running restores both selections
     await page.getByRole('button', { name: 'Re-run' }).click();
     const modal = page.locator('#modal-container');
-    await expect(revisionPicker(parameterRow(modal, 'fileAtRevision'), path)).toHaveText('Revision A');
+    await expect(revisionPicker(parameterRow(modal, 'fileAtRevision'), path)).toHaveText(revisionLabel);
     await expect(revisionPicker(parameterRow(modal, 'sequencesAtRevision'), path)).toHaveText('Working copy');
     await modal.getByRole('button', { name: 'Cancel' }).click();
   });
