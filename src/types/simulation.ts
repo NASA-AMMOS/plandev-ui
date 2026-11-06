@@ -27,9 +27,15 @@ export type Profile = {
   };
 };
 
+export type RealDynamics = {
+  initial: number;
+  rate: number;
+};
+
 export type ProfileSegment = {
   dataset_id: number;
-  dynamics: any;
+  // RealDynamics for real profiles, any SerializedValue (including null) for discrete profiles.
+  dynamics: unknown;
   is_gap: boolean;
   profile_id: number;
   start_offset: string;
