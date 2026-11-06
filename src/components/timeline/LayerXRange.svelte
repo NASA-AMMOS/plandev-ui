@@ -26,7 +26,13 @@
     XRangePoint,
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
-  import { searchQuadtreeRect } from '../../utilities/timeline';
+  import {
+    coalesceXRangeRuns,
+    isSortedByX,
+    lowerBoundXRangeRunEnd,
+    searchQuadtreeRect,
+    type XRangeRun,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let colorScheme: XRangeLayerColorScheme = 'schemeAccent';
@@ -58,6 +64,8 @@
   let maxXWidth: number;
   let mounted: boolean = false;
   let points: XRangePoint[] = [];
+  let pointsSorted = true;
+  let runs: XRangeRun[] = [];
   let drawPointsRequest: number;
   let quadtree: Quadtree<QuadtreeRect>;
   let visiblePointsById: Record<number, XRangePoint> = {};
@@ -75,6 +83,8 @@
     mounted &&
     opacity !== undefined &&
     points &&
+    pointsSorted !== undefined &&
+    runs &&
     xScaleView
   ) {
     draw();
@@ -83,6 +93,8 @@
   $: onMousemove(mousemove);
   $: onMouseout(mouseout);
   $: points = resourcesToXRangePoints(resources);
+  $: pointsSorted = isSortedByX(points);
+  $: runs = coalesceXRangeRuns(points);
 
   onMount(() => {
     if (canvas) {
@@ -111,11 +123,11 @@
       visiblePointsById = {};
 
       maxXWidth = Number.MIN_SAFE_INTEGER;
-      drawPoints(points, 0);
+      drawRuns(runs, 0);
     }
   }
 
-  function drawPoints(points: XRangePoint[], pointsStartIndex = 0) {
+  function drawRuns(runs: XRangeRun[], runStartIndex = 0) {
     if (!xScaleView) {
       return;
     }
@@ -125,31 +137,26 @@
 
     const [viewStart, viewEnd] = xScaleView.domain().map(x => x.getTime());
 
-    for (let i = pointsStartIndex; i < points.length; ++i) {
+    let scanFrom = runStartIndex;
+    if (pointsSorted && runStartIndex === 0) {
+      scanFrom = lowerBoundXRangeRunEnd(runs, viewStart);
+    }
+
+    for (let i = scanFrom; i < runs.length; ++i) {
       if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
-        drawPointsRequest = window.requestAnimationFrame(() => drawPoints(points, i));
+        drawPointsRequest = window.requestAnimationFrame(() => drawRuns(runs, i));
         return;
       }
 
-      const point = points[i];
-      if (point.is_gap || point.is_null) {
+      const { endMs, point } = runs[i];
+      const startMs = point.x;
+      if (startMs > viewEnd) {
+        if (pointsSorted) {
+          break;
+        }
         continue;
       }
-
-      // Scan to the next point with a different label than the current point.
-      let j = i + 1;
-      let nextPoint = points[j];
-      while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
-        j = j + 1;
-        nextPoint = points[j];
-      }
-      i = j - 1; // Minus since the loop auto increments i at the end of the block.
-
-      const startMs = point.x;
-      const endMs = nextPoint ? nextPoint.x : points[i].x;
-
-      // Do not draw if box is out of view
-      if (startMs > viewEnd || endMs < viewStart) {
+      if (endMs < viewStart) {
         continue;
       }
 

@@ -3,8 +3,9 @@ import { Status } from '../enums/status';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
+import { appendAll } from '../utilities/generic';
 import { pickEffectiveDuration } from '../utilities/profile';
-import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
+import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { getSimulationExtent, getSimulationStatus } from '../utilities/simulation';
 import { pluralize } from '../utilities/text';
 import { catchError, logMessage } from './console';
@@ -50,6 +51,8 @@ export function createProfileSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
+  // Sampling work tracks the segment delta; segments remain available for offset/type rebuilds.
+  const sampler = createProfileSampler(planStartTimeYmd);
   let header: ProfileHeader | null = null;
   let sinceOffset = INITIAL_SINCE;
   // Settled on a final state. Set when we receive a profile, OR when the sim
@@ -57,7 +60,7 @@ export function createProfileSubscription(
   // more ticks will fire to retry, so we stop showing loading.
   let resolved = false;
   let lastError = '';
-  // Drives whether sampleProfiles closes the last segment at header.duration
+  // Drives whether the sampler closes the last segment at header.duration
   // (terminal sim) or the last-seen offset (streaming, so header.duration
   // would project past actual data).
   let streamingActive = false;
@@ -95,12 +98,23 @@ export function createProfileSubscription(
       return;
     }
     let resource: Resource | null = null;
-    if (header && resolved) {
+    // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
+    // time rather than emitting NaN x values.
+    if (header && resolved && planStartTimeYmd) {
       const lastOffset = accumulator.length > 0 ? accumulator[accumulator.length - 1].start_offset : null;
       const duration = pickEffectiveDuration(header.duration, lastOffset, streamingActive);
-      resource = sampleProfiles([{ ...header, duration, profile_segments: accumulator }], planStartTimeYmd)[0] ?? null;
+      resource = sampler.sample({
+        duration,
+        name: header.name,
+        profileType: header.type,
+        segments: accumulator,
+      });
     }
-    setState({ error: lastError, loading: !resolved && !lastError, resource });
+    setState({
+      error: lastError,
+      loading: !resolved && !lastError,
+      resource,
+    });
   }
 
   async function refetch() {
@@ -119,10 +133,17 @@ export function createProfileSubscription(
       }
       if (profile) {
         if (profile.profile_segments.length > 0) {
-          accumulator.push(...profile.profile_segments);
+          appendAll(accumulator, profile.profile_segments);
           sinceOffset = profile.profile_segments[profile.profile_segments.length - 1].start_offset;
         }
-        header = profile;
+        // Keep only this fetched batch's header; the accumulator owns the complete profile.
+        header = {
+          dataset_id: profile.dataset_id,
+          duration: profile.duration,
+          id: profile.id,
+          name: profile.name,
+          type: profile.type,
+        };
         resolved = true;
         lastError = '';
       } else if (!streamingActive) {
