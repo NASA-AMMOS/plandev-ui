@@ -6,9 +6,15 @@
 
   export let hint: string = '';
   export let hintPosition: 'center' | 'bottom' = 'center';
+  // Keeps children clickable mid-drag. For a DropTarget wrapping its own drag targets.
+  export let disablePointerBlock: boolean = false;
 
   let isDropTarget: boolean = false;
   let isDragging: boolean = false;
+  // Whether consumers got a 'dragstart'. dataTransfer.types is cleared by the time 'dragend'
+  // fires, so the check below can disagree between the two ends of one drag, and a consumer that
+  // got a start without an end stays stuck in its dragging state.
+  let dispatchedDragStart: boolean = false;
 
   const dispatch = createEventDispatcher<{
     dragend: DragEvent;
@@ -16,11 +22,48 @@
     drop: { items?: TimelineItemType[]; metadata?: TimelineItemMetadata; type?: string };
   }>();
 
-  function onDragEnter() {
+  /** Row and section reordering, which marks its drags with a MIME type of its own. */
+  function isPragmaticDragAndDrop(e: DragEvent): boolean {
+    if (!e.dataTransfer) {
+      return false;
+    }
+    const types = Array.from(e.dataTransfer.types);
+    return types.includes('application/vnd.pdnd');
+  }
+
+  /**
+   * Ends a drag from any of the events that can terminate one, always pairing a dispatched
+   * 'dragstart' with a 'dragend'. Resetting local state without dispatching left consumers such
+   * as RowDividerDropTarget stuck visible and covering the row resize handles, so a row could
+   * only be resized once.
+   */
+  function endDrag(e: Event) {
+    // One of these is bound per row header, so on a busy timeline every mouseup anywhere in the
+    // app reaches every instance. Leave immediately unless this one has a drag to end.
+    if (!isDragging && !isDropTarget && !dispatchedDragStart) {
+      return;
+    }
+
+    isDragging = false;
+    isDropTarget = false;
+
+    if (dispatchedDragStart) {
+      dispatchedDragStart = false;
+      dispatch('dragend', e as DragEvent);
+    }
+  }
+
+  function onDragEnter(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = true;
   }
 
   function onDragLeave(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = false;
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'copy';
@@ -28,6 +71,9 @@
   }
 
   function onDragOver(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = true;
     if (e.dataTransfer?.effectAllowed === 'copyLink') {
       e.dataTransfer.dropEffect = 'link';
@@ -35,6 +81,9 @@
   }
 
   function onDrop(e: DragEvent) {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDropTarget = false;
 
     if (e.dataTransfer !== null) {
@@ -47,13 +96,16 @@
 
 <svelte:window
   on:dragstart={e => {
+    if (isPragmaticDragAndDrop(e)) {
+      return;
+    }
     isDragging = true;
+    dispatchedDragStart = true;
     dispatch('dragstart', e);
   }}
-  on:dragend={e => {
-    isDragging = false;
-    dispatch('dragend', e);
-  }}
+  on:dragend={e => endDrag(e)}
+  on:drop={e => endDrag(e)}
+  on:mouseup={e => endDrag(e)}
 />
 
 <div
@@ -65,7 +117,7 @@
   on:dragover|preventDefault={onDragOver}
   on:drop|preventDefault={onDrop}
 >
-  <div class="content-wrapper" class:disable-pointer={isDragging}>
+  <div class="content-wrapper" class:disable-pointer={isDragging && !disablePointerBlock}>
     <slot />
     {#if isDropTarget && hint}
       <div class="hint" style:margin-top={hintPosition === 'bottom' ? '16px' : ''}>

@@ -1,6 +1,7 @@
 import { keyBy } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import {
+  ViewDefaultSectionColor,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
@@ -17,6 +18,7 @@ import {
   applyActivityLayerFilter,
   createHorizontalGuide,
   createRow,
+  createSection,
   createTimeline,
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
@@ -26,9 +28,13 @@ import {
   createYAxis,
   directiveInView,
   duplicateRow,
+  duplicateSection,
   externalEventInView,
   generateDiscreteTreeUtil,
+  getContrastRatio,
+  getContrastingTextColor,
   getMatchingTypesForActivityLayerFilter,
+  getNextSectionID,
   getResourceForLayer,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
@@ -41,7 +47,9 @@ import {
   isXRangeLayer,
   matchesDynamicFilter,
   paginateNodes,
+  resolveSectionDropEdge,
   spanInView,
+  toTimelineDropEdge,
 } from './timeline';
 
 const testActivityTypes: ActivityType[] = [
@@ -1656,4 +1664,200 @@ test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
   // @ts-expect-error forcing the case where an invalid operator is specified
   expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
+});
+
+describe('Timeline sections', () => {
+  /** Root order: row r0, section [r1, r2], row r3. */
+  function buildSectionedTimeline() {
+    const timeline = createTimeline([]);
+    const r0 = createRow([timeline]);
+    timeline.rows.push(r0);
+    const r1 = createRow([timeline]);
+    timeline.rows.push(r1);
+    const r2 = createRow([timeline]);
+    timeline.rows.push(r2);
+    const r3 = createRow([timeline]);
+    timeline.rows.push(r3);
+
+    const section = createSection([timeline], { rowIds: [r1.id, r2.id] });
+    timeline.sections.push(section);
+
+    timeline.items = [
+      { id: r0.id, type: 'row' },
+      { id: section.id, type: 'section' },
+      { id: r3.id, type: 'row' },
+    ];
+
+    return { r0, r1, r2, r3, section, timeline };
+  }
+
+  test('getNextSectionID returns max + 1 across all timelines', () => {
+    const a = createTimeline([]);
+    const b = createTimeline([a]);
+    expect(getNextSectionID([a, b])).toBe(0);
+
+    a.sections.push(createSection([a], { id: 0 }));
+    b.sections.push(createSection([a, b], { id: 5 }));
+    expect(getNextSectionID([a, b])).toBe(6);
+  });
+
+  test('createSection returns sensible defaults and a unique id', () => {
+    const timeline = createTimeline([]);
+    const section = createSection([timeline]);
+    expect(section).toMatchObject({
+      collapsed: false,
+      color: ViewDefaultSectionColor,
+      id: 0,
+      name: 'Section',
+      rowIds: [],
+    });
+
+    timeline.sections.push(section);
+    const next = createSection([timeline]);
+    expect(next.id).toBe(1);
+  });
+
+  test('createSection defaults to a real color so every section renders the same way', () => {
+    expect(createSection([createTimeline([])]).color).toBe(ViewDefaultSectionColor);
+  });
+
+  test('getContrastingTextColor picks the foreground that actually scores higher', () => {
+    // Dark bands take light text, light bands take dark text.
+    expect(getContrastingTextColor('#000000')).toBe('#ffffff');
+    expect(getContrastingTextColor('#ffffff')).toBe('#1b1d1f');
+
+    // The presets are pale, so they all resolve to dark text.
+    expect(getContrastingTextColor('#fcdd8f')).toBe('#1b1d1f');
+    expect(getContrastingTextColor('#A3A3A3')).toBe('#1b1d1f');
+
+    // Mid-tone blue is the case a naive lightness threshold gets wrong.
+    expect(getContrastingTextColor('#0000ff')).toBe('#ffffff');
+  });
+
+  test('getContrastingTextColor clears WCAG AA for every built-in preset', () => {
+    ViewDiscreteLayerColorPresets.forEach(color => {
+      expect(getContrastRatio(color, getContrastingTextColor(color))).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
+  test('getContrastingTextColor returns the best available foreground even when neither hits AA', () => {
+    // #ff0000 scores 4.23 against near-black and 4.00 against white, so nothing reaches AA. A
+    // band in such a color cannot carry AA text at all; the helper returns the better of the two.
+    const best = getContrastRatio('#ff0000', getContrastingTextColor('#ff0000'));
+    expect(best).toBeCloseTo(4.23, 1);
+    expect(best).toBeGreaterThanOrEqual(getContrastRatio('#ff0000', '#ffffff'));
+    expect(best).toBeGreaterThanOrEqual(3);
+  });
+
+  test('getContrastingTextColor tolerates short hex and a missing hash', () => {
+    expect(getContrastingTextColor('#000')).toBe('#ffffff');
+    expect(getContrastingTextColor('fff')).toBe('#1b1d1f');
+  });
+
+  test('getContrastRatio spans 1 to 21', () => {
+    expect(getContrastRatio('#ffffff', '#000000')).toBeCloseTo(21, 1);
+    expect(getContrastRatio('#7a7a7a', '#7a7a7a')).toBeCloseTo(1, 5);
+  });
+
+  test('duplicateSection copies the section, its rows, and its styling', () => {
+    const { r1, r2, section, timeline } = buildSectionedTimeline();
+    section.color = '#ff0000';
+    section.collapsed = true;
+
+    const result = duplicateSection(section, timeline, [timeline]);
+
+    expect(result).not.toBeNull();
+    expect(result?.section.name).toBe('Section (copy)');
+    expect(result?.section.color).toBe('#ff0000');
+    expect(result?.section.collapsed).toBe(true);
+    expect(result?.section.id).not.toBe(section.id);
+
+    // Both rows are copied, and the copy owns the new row ids rather than the originals.
+    expect(result?.rows).toHaveLength(2);
+    expect(result?.section.rowIds).toEqual(result?.rows.map(r => r.id));
+    expect(result?.section.rowIds).not.toContain(r1.id);
+    expect(result?.section.rowIds).not.toContain(r2.id);
+  });
+
+  test('duplicateSection gives every copied row a distinct id', () => {
+    const { section, timeline } = buildSectionedTimeline();
+    const result = duplicateSection(section, timeline, [timeline]);
+    const ids = result?.rows.map(r => r.id) ?? [];
+
+    // Regression guard: duplicating rows one at a time against the same timeline list
+    // hands out the same id twice unless each copy is fed back into the working list.
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(undefined);
+  });
+
+  test('duplicateSection returns null when the timeline is not in the list', () => {
+    const { section, timeline } = buildSectionedTimeline();
+    expect(duplicateSection(section, timeline, [])).toBeNull();
+  });
+
+  test('duplicateSection copies an empty section', () => {
+    const timeline = createTimeline([]);
+    const section = createSection([timeline], { name: 'Empty' });
+    timeline.sections.push(section);
+
+    const result = duplicateSection(section, timeline, [timeline]);
+
+    expect(result?.rows).toEqual([]);
+    expect(result?.section.rowIds).toEqual([]);
+    expect(result?.section.name).toBe('Empty (copy)');
+  });
+});
+
+describe('resolveSectionDropEdge', () => {
+  // A section header as the geometry helper sees it.
+  const header = { bottom: 128, height: 28, top: 100 };
+
+  test('a dragged section splits the header in half', () => {
+    expect(resolveSectionDropEdge(header, 101, 'section')).toBe('top');
+    expect(resolveSectionDropEdge(header, 113, 'section')).toBe('top');
+    expect(resolveSectionDropEdge(header, 115, 'section')).toBe('bottom');
+    expect(resolveSectionDropEdge(header, 127, 'section')).toBe('bottom');
+  });
+
+  test('a dragged row reorders only from the top band', () => {
+    // 28px header -> an 8px band (28/3 clamped to the 8px maximum).
+    expect(resolveSectionDropEdge(header, 100, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(header, 107, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(header, 108, 'row')).toBeNull();
+    expect(resolveSectionDropEdge(header, 120, 'row')).toBeNull();
+  });
+
+  test('a dragged row has no bottom band', () => {
+    // Regression guard: a bottom band drew a line under the header, pointing at the slot before
+    // the section's first row, then inserted the row after the whole section.
+    expect(resolveSectionDropEdge(header, header.bottom - 1, 'row')).toBeNull();
+    expect(resolveSectionDropEdge(header, header.bottom, 'row')).toBeNull();
+  });
+
+  test('the band is clamped so it stays usable at any header height', () => {
+    // Too short for a proportional band: it floors at 4px rather than vanishing.
+    const short = { bottom: 109, height: 9, top: 100 };
+    expect(resolveSectionDropEdge(short, 103, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(short, 105, 'row')).toBeNull();
+
+    // Tall enough that a third would swallow most of the header: it caps at 8px.
+    const tall = { bottom: 200, height: 100, top: 100 };
+    expect(resolveSectionDropEdge(tall, 107, 'row')).toBe('top');
+    expect(resolveSectionDropEdge(tall, 109, 'row')).toBeNull();
+  });
+});
+
+describe('toTimelineDropEdge', () => {
+  test('passes through the two edges a timeline understands', () => {
+    expect(toTimelineDropEdge('top')).toBe('top');
+    expect(toTimelineDropEdge('bottom')).toBe('bottom');
+  });
+
+  test('rejects everything else', () => {
+    // The hitbox helper is typed for all four sides even when only two are requested.
+    expect(toTimelineDropEdge('left')).toBeNull();
+    expect(toTimelineDropEdge('right')).toBeNull();
+    expect(toTimelineDropEdge(null)).toBeNull();
+    expect(toTimelineDropEdge(undefined)).toBeNull();
+  });
 });

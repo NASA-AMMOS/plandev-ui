@@ -237,7 +237,7 @@ import type {
   TagsSetInput,
 } from '../types/tags';
 import type { ActivityTransformDirection } from '../types/time';
-import type { ActivityLayerFilter, Layer, Row, Timeline } from '../types/timeline';
+import type { ActivityLayerFilter, Layer, Row, Timeline, TimelineSection } from '../types/timeline';
 import type { View, ViewDefinition, ViewInsertInput, ViewSlim, ViewUpdateInput } from '../types/view';
 import type { Workspace, WorkspaceCollaborator, WorkspaceFileRevision } from '../types/workspace';
 import type {
@@ -304,7 +304,15 @@ import {
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
 } from './time';
-import { createRow, duplicateRow } from './timeline';
+import { createRow, duplicateRow, duplicateSection } from './timeline';
+import {
+  addSection,
+  flattenSection,
+  insertItem,
+  placeBeside,
+  removeItem,
+  type TimelineHierarchy,
+} from './timelineHierarchy';
 import { showFailureToast, showSuccessToast } from './toast';
 import { getSearchParameterNumber, setQueryParam } from './url';
 import {
@@ -335,6 +343,53 @@ import {
 
 function throwPermissionError(attemptedAction: string): never {
   throw Error(`You do not have permission to: ${attemptedAction}.`);
+}
+
+/**
+ * Adds a row directly after an existing one, updating `rows` and the section hierarchy together
+ * so the new row lands in the same section as its neighbor. Returns false if the row it should
+ * follow is not in the timeline.
+ */
+function addTimelineRowAfter(timeline: Timeline, afterRow: Row, newRow: Row): boolean {
+  const rows = timeline.rows ?? [];
+  const rowIndex = rows.findIndex(r => r.id === afterRow.id);
+  if (rowIndex < 0) {
+    return false;
+  }
+
+  const newRows = [...rows.slice(0, rowIndex + 1), newRow, ...rows.slice(rowIndex + 1)];
+
+  viewStore.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(t => {
+              if (t && t.id === timeline.id) {
+                const hierarchy = { items: t.items || [], sections: t.sections || [] };
+                return {
+                  ...t,
+                  ...insertItem(
+                    hierarchy,
+                    { id: newRow.id, type: 'row' },
+                    placeBeside(hierarchy, { id: afterRow.id, type: 'row' }, 'bottom'),
+                  ),
+                  rows: newRows,
+                };
+              }
+              return t;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
+
+  return true;
 }
 
 async function bulkMoveWorkspaceItems(
@@ -3806,7 +3861,30 @@ const effects = {
     );
     if (confirm) {
       const filteredRows = rows.filter(r => r.id !== row.id);
-      viewUpdateTimeline('rows', filteredRows, timelineId);
+      viewStore.update(currentView => {
+        if (currentView !== null) {
+          return {
+            ...currentView,
+            definition: {
+              ...currentView.definition,
+              plan: {
+                ...currentView.definition.plan,
+                timelines: currentView.definition.plan.timelines.map(timeline => {
+                  if (timeline && timeline.id === timelineId) {
+                    return {
+                      ...timeline,
+                      ...removeItem(timeline, { id: row.id, type: 'row' }),
+                      rows: filteredRows,
+                    };
+                  }
+                  return timeline;
+                }),
+              },
+            },
+          };
+        }
+        return currentView;
+      });
     }
   },
 
@@ -3818,7 +3896,70 @@ const effects = {
       true,
     );
     if (confirm) {
-      viewUpdateTimeline('rows', [], timelineId);
+      viewStore.update(currentView => {
+        if (currentView !== null) {
+          return {
+            ...currentView,
+            definition: {
+              ...currentView.definition,
+              plan: {
+                ...currentView.definition.plan,
+                timelines: currentView.definition.plan.timelines.map(timeline => {
+                  if (timeline && timeline.id === timelineId) {
+                    return {
+                      ...timeline,
+                      ...timeline.rows.reduce<TimelineHierarchy>(
+                        (hierarchy, row) => removeItem(hierarchy, { id: row.id, type: 'row' }),
+                        timeline,
+                      ),
+                      rows: [],
+                    };
+                  }
+                  return timeline;
+                }),
+              },
+            },
+          };
+        }
+        return currentView;
+      });
+    }
+  },
+
+  async deleteTimelineSections(timelineId: number | null) {
+    const { confirm } = await showConfirmModal(
+      'Delete',
+      `Are you sure you want to delete all timeline sections? Their rows will be kept.`,
+      'Delete Sections',
+      true,
+    );
+    if (confirm) {
+      viewStore.update(currentView => {
+        if (currentView !== null) {
+          return {
+            ...currentView,
+            definition: {
+              ...currentView.definition,
+              plan: {
+                ...currentView.definition.plan,
+                timelines: currentView.definition.plan.timelines.map(timeline => {
+                  if (timeline && timeline.id === timelineId) {
+                    return {
+                      ...timeline,
+                      ...timeline.sections.reduce<TimelineHierarchy>(
+                        (hierarchy, section) => flattenSection(hierarchy, section.id),
+                        timeline,
+                      ),
+                    };
+                  }
+                  return timeline;
+                }),
+              },
+            },
+          };
+        }
+        return currentView;
+      });
     }
   },
 
@@ -4023,17 +4164,54 @@ const effects = {
 
   duplicateTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = duplicateRow(row, timelines, timeline.id);
-    if (newRow) {
-      // Add row after the existing row
-      const newRows = timeline.rows ?? [];
-      const rowIndex = newRows.findIndex(r => r.id === row.id);
-      if (rowIndex > -1) {
-        newRows.splice(rowIndex + 1, 0, newRow);
-        viewUpdateTimeline('rows', [...newRows], timeline.id);
-        return newRow;
-      }
+    if (newRow && addTimelineRowAfter(timeline, row, newRow)) {
+      return newRow;
     }
     return null;
+  },
+
+  duplicateTimelineSection(
+    section: TimelineSection,
+    timeline: Timeline,
+    timelines: Timeline[],
+  ): TimelineSection | null {
+    const duplicated = duplicateSection(section, timeline, timelines);
+    if (!duplicated) {
+      return null;
+    }
+
+    viewStore.update(currentView => {
+      if (currentView !== null) {
+        return {
+          ...currentView,
+          definition: {
+            ...currentView.definition,
+            plan: {
+              ...currentView.definition.plan,
+              timelines: currentView.definition.plan.timelines.map(t => {
+                if (t && t.id === timeline.id) {
+                  const hierarchy = { items: t.items || [], sections: t.sections || [] };
+                  return {
+                    ...t,
+                    // The copy goes directly after the section it came from.
+                    ...addSection(
+                      hierarchy,
+                      duplicated.section,
+                      placeBeside(hierarchy, { id: section.id, type: 'section' }, 'bottom'),
+                    ),
+                    rows: [...t.rows, ...duplicated.rows],
+                  };
+                }
+                return t;
+              }),
+            },
+          },
+        };
+      }
+      return currentView;
+    });
+
+    return duplicated.section;
   },
 
   async editView(view: View, user: User | null): Promise<boolean> {
@@ -6078,12 +6256,7 @@ const effects = {
 
   insertTimelineRow(row: Row, timeline: Timeline, timelines: Timeline[]): Row | null {
     const newRow = createRow(timelines);
-    // Add row after the existing row
-    const newRows = timeline.rows ?? [];
-    const rowIndex = newRows.findIndex(r => r.id === row.id);
-    if (rowIndex > -1) {
-      newRows.splice(rowIndex + 1, 0, newRow);
-      viewUpdateTimeline('rows', [...newRows], timeline.id);
+    if (addTimelineRowAfter(timeline, row, newRow)) {
       return newRow;
     }
     return null;

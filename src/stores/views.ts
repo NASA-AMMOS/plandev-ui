@@ -10,7 +10,9 @@ import type {
   Row,
   Timeline,
   TimelineItemMetadata,
+  TimelineItemRef,
   TimelineItemType,
+  TimelineSection,
 } from '../types/timeline';
 import type { View, ViewGrid, ViewSlim, ViewTable, ViewToggleEvent } from '../types/view';
 import { getTarget } from '../utilities/generic';
@@ -19,6 +21,7 @@ import {
   TimelineInteractionMode,
   TimelineLockStatus,
   createRow,
+  createSection,
   createTimelineActivityLayer,
   createTimelineExternalEventLayer,
   createTimelineLineLayer,
@@ -30,6 +33,14 @@ import {
   isLineLayer,
   isXRangeLayer,
 } from '../utilities/timeline';
+import {
+  addSection,
+  flattenSection,
+  insertItem,
+  placeBeside,
+  removeItem,
+  type TimelineHierarchy,
+} from '../utilities/timelineHierarchy';
 import { createColumnSizes, createRowSizes, parseColumnSizes } from '../utilities/view';
 import { gqlSubscribable } from './subscribable';
 
@@ -46,6 +57,8 @@ export const originalView: Writable<View | null> = writable(null);
 export const selectedLayerId: Writable<number | null> = writable(null);
 
 export const selectedRowId: Writable<number | null> = writable(null);
+
+export const selectedSectionId: Writable<number | null> = writable(null);
 
 export const selectedTimelineId: Writable<number | null> = writable(0);
 
@@ -107,6 +120,20 @@ export const selectedLayer = derived([selectedRow, selectedLayerId], ([$selected
   return null;
 });
 
+export const selectedSection = derived(
+  [selectedTimeline, selectedSectionId],
+  ([$selectedTimeline, $selectedSectionId]) => {
+    if ($selectedTimeline !== null && $selectedSectionId !== null) {
+      for (const section of $selectedTimeline.sections || []) {
+        if (section.id === $selectedSectionId) {
+          return section;
+        }
+      }
+    }
+    return null;
+  },
+);
+
 /* Helper Functions. */
 
 export function applyViewUpdate(updatedView: Partial<View>) {
@@ -158,6 +185,12 @@ export function viewSetSelectedRow(rowId?: number | null): void {
   }
 
   selectedRowId.set(rowId ?? null);
+
+  // Section editing and row editing are mutually exclusive in the editor panel.
+  if (rowId !== null && rowId !== undefined) {
+    selectedSectionId.set(null);
+  }
+
   const currentRow = get(selectedRow);
 
   if (currentRow) {
@@ -487,6 +520,31 @@ export function viewUpdateRow(
   }
 }
 
+/** A timeline's hierarchy, tolerating a legacy view that predates `items` and `sections`. */
+function toHierarchy(timeline: Timeline): TimelineHierarchy {
+  return { items: timeline.items || [], sections: timeline.sections || [] };
+}
+
+/** Replaces one timeline with the result of `update`. A missing timeline leaves the view as is. */
+function updateTimeline(timelineId: number | null | undefined, update: (timeline: Timeline) => Timeline): void {
+  view.update(currentView =>
+    currentView === null
+      ? currentView
+      : {
+          ...currentView,
+          definition: {
+            ...currentView.definition,
+            plan: {
+              ...currentView.definition.plan,
+              timelines: currentView.definition.plan.timelines.map(timeline =>
+                timeline && timeline.id === timelineId ? update(timeline) : timeline,
+              ),
+            },
+          },
+        },
+  );
+}
+
 export function viewUpdateTimeline(prop: string, value: any, timelineId?: number | null) {
   timelineId = timelineId ?? get<number | null>(selectedTimelineId);
 
@@ -562,6 +620,153 @@ export function viewUpdateYAxis(prop: string, value: any) {
     }
     return currentView;
   });
+}
+
+/* Section Functions */
+
+export function viewSetSelectedSection(sectionId?: number | null): void {
+  selectedSectionId.set(sectionId ?? null);
+
+  // Section editing and row editing are mutually exclusive in the editor panel.
+  if (sectionId !== null && sectionId !== undefined) {
+    selectedRowId.set(null);
+  }
+}
+
+/**
+ * Adds a section to a timeline. `insertAfter` places it directly below that item, so adding a
+ * section from a row's context menu lands it where the user clicked rather than at the end.
+ */
+export function viewAddSection(
+  timelineId?: number | null,
+  name?: string,
+  insertAfter?: TimelineItemRef | null,
+): TimelineSection | undefined {
+  const selectedTimelineIdValue = timelineId ?? get(selectedTimelineId);
+  const timelines = get(view)?.definition.plan.timelines || [];
+
+  if (!timelines.some(t => t.id === selectedTimelineIdValue)) {
+    return undefined;
+  }
+
+  const section = createSection(timelines, name ? { name } : undefined);
+  updateTimeline(selectedTimelineIdValue, timeline => {
+    const hierarchy = toHierarchy(timeline);
+    return {
+      ...timeline,
+      ...addSection(hierarchy, section, insertAfter ? placeBeside(hierarchy, insertAfter, 'bottom') : undefined),
+    };
+  });
+
+  return section;
+}
+
+export function viewUpdateSection(
+  prop: keyof TimelineSection,
+  value: any,
+  sectionId?: number | null,
+  timelineId?: number | null,
+): void {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+  sectionId = sectionId ?? get<number | null>(selectedSectionId);
+
+  view.update(currentView => {
+    if (currentView !== null) {
+      return {
+        ...currentView,
+        definition: {
+          ...currentView.definition,
+          plan: {
+            ...currentView.definition.plan,
+            timelines: currentView.definition.plan.timelines.map(timeline => {
+              if (timeline && timeline.id === timelineId) {
+                return {
+                  ...timeline,
+                  sections: (timeline.sections || []).map(section => {
+                    if (section.id === sectionId) {
+                      return {
+                        ...section,
+                        [prop]: value,
+                      };
+                    }
+                    return section;
+                  }),
+                };
+              }
+              return timeline;
+            }),
+          },
+        },
+      };
+    }
+    return currentView;
+  });
+}
+
+/**
+ * Opens or folds a whole timeline: every row's `expanded` and every section's `collapsed`, in one
+ * store update so a long timeline renders once rather than once per item.
+ */
+export function viewSetAllExpanded(expanded: boolean, timelineId?: number | null): void {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+
+  view.update(currentView => {
+    if (currentView === null) {
+      return currentView;
+    }
+
+    return {
+      ...currentView,
+      definition: {
+        ...currentView.definition,
+        plan: {
+          ...currentView.definition.plan,
+          timelines: currentView.definition.plan.timelines.map(timeline =>
+            timeline && timeline.id === timelineId
+              ? {
+                  ...timeline,
+                  rows: timeline.rows.map(row => ({ ...row, expanded })),
+                  sections: (timeline.sections || []).map(section => ({ ...section, collapsed: !expanded })),
+                }
+              : timeline,
+          ),
+        },
+      },
+    };
+  });
+}
+
+export function viewDeleteSection(sectionId: number, moveRowsToRoot: boolean = true, timelineId?: number | null): void {
+  timelineId = timelineId ?? get<number | null>(selectedTimelineId);
+
+  updateTimeline(timelineId, timeline => {
+    const hierarchy = toHierarchy(timeline);
+    if (moveRowsToRoot) {
+      return { ...timeline, ...flattenSection(hierarchy, sectionId) };
+    }
+    const doomed = new Set(timeline.sections?.find(s => s.id === sectionId)?.rowIds);
+    return {
+      ...timeline,
+      ...removeItem(hierarchy, { id: sectionId, type: 'section' }),
+      rows: timeline.rows.filter(row => !doomed.has(row.id)),
+    };
+  });
+
+  if (get(selectedSectionId) === sectionId) {
+    selectedSectionId.set(null);
+  }
+}
+
+export function viewReorderTimelineItems(
+  items: TimelineItemRef[],
+  timelineId?: number | null,
+  sections?: TimelineSection[],
+): void {
+  updateTimeline(timelineId ?? get<number | null>(selectedTimelineId), timeline => ({
+    ...timeline,
+    items,
+    ...(sections !== undefined && { sections }),
+  }));
 }
 
 export function getUpdatedActivityLayerFilter(
@@ -679,21 +884,37 @@ export function getUpdatedLayerWithFilters(
   }
 }
 
-export function viewAddTimelineRow(timelineId?: number | null, openEditor: boolean = false) {
-  const timelines = get(view)?.definition.plan.timelines || [];
+export function viewAddTimelineRow(
+  timelineId?: number | null,
+  openEditor: boolean = false,
+  targetSectionId?: number | null,
+) {
   const selectedTimelineIdValue = timelineId ?? get(selectedTimelineId);
-  const timeline = timelines.find(t => t.id === selectedTimelineIdValue);
-  if (timeline) {
-    const row = createRow(timelines);
-    viewUpdateTimeline('rows', [...timeline.rows, row], timelineId);
+  const timelines = get(view)?.definition.plan.timelines || [];
 
-    if (openEditor) {
-      viewSetSelectedRow(row.id);
-
-      // Open the timeline editor panel on the right.
-      viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
-    }
+  if (!timelines.some(t => t.id === selectedTimelineIdValue)) {
+    return undefined;
   }
+
+  const createdRow = createRow(timelines);
+  updateTimeline(selectedTimelineIdValue, timeline => {
+    // A row has to be placed somewhere or it exists in `rows` and renders nowhere, so the root is
+    // the fallback whenever the named section is not there to receive it.
+    const container = timeline.sections?.some(s => s.id === targetSectionId) ? (targetSectionId ?? null) : null;
+    return {
+      ...timeline,
+      ...insertItem(toHierarchy(timeline), { id: createdRow.id, type: 'row' }, { container }),
+      rows: [...timeline.rows, createdRow],
+    };
+  });
+
+  if (openEditor) {
+    viewSetSelectedRow(createdRow.id);
+
+    viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
+  }
+
+  return createdRow;
 }
 
 export function viewAddFilterToRow(
@@ -793,10 +1014,24 @@ export function viewAddFilterItemsToRow(
     }
   }
 
-  viewUpdateTimeline('rows', newRows, timelines[0].id);
+  if (row) {
+    viewUpdateTimeline('rows', newRows, timelines[0].id);
+  } else {
+    // A brand new row has to be placed in the same update, next to the row it was inserted
+    // after (or first), or it exists in the store and renders nowhere.
+    const timeline = timelines[0];
+    const afterRow = newRows[newRows.indexOf(returnRow as Row) - 1];
+    const hierarchy = toHierarchy(timeline);
+    const newItem: TimelineItemRef = { id: targetRow.id, type: 'row' };
+    const destination = afterRow
+      ? placeBeside(hierarchy, { id: afterRow.id, type: 'row' }, 'bottom')
+      : { container: null, index: 0 };
+
+    updateTimeline(timeline.id, t => ({ ...t, ...insertItem(hierarchy, newItem, destination), rows: newRows }));
+  }
+
   viewSetSelectedRow(targetRow.id);
 
-  // Open the timeline editor panel on the right.
   viewTogglePanel({ state: true, type: 'right', update: { rightComponentTop: 'TimelineEditorPanel' } });
 
   return returnRow;

@@ -693,10 +693,24 @@
       const { offsetX } = e;
       overlaySvgSelection.selectAll('.activity-drag-guide').remove();
       if (e.dataTransfer !== null) {
+        // Row and section reordering, not an activity drop.
+        const types = Array.from(e.dataTransfer.types);
+        if (types.includes('application/vnd.pdnd')) {
+          return;
+        }
         const unixEpochTime = xScaleView.invert(offsetX).getTime();
         const start_time = getDoyTime(new Date(unixEpochTime));
         const data = e.dataTransfer.getData('text');
-        const json = JSON.parse(data || '');
+        if (!data) {
+          return;
+        }
+        // A drag started outside the app carries arbitrary text, not our JSON payload.
+        let json;
+        try {
+          json = JSON.parse(data);
+        } catch {
+          return;
+        }
         const type = json.type ?? '';
         const items = (json.items as TimelineItemType[]) ?? '';
         const metadata = (json.metadata as TimelineItemMetadata) ?? {};

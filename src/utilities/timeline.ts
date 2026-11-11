@@ -16,6 +16,7 @@ import {
 import { groupBy, isArray } from 'lodash-es';
 import {
   ViewDefaultDiscreteOptions,
+  ViewDefaultSectionColor,
   ViewDiscreteLayerColorPresets,
   ViewLineLayerColorPresets,
   ViewXRangeLayerSchemePresets,
@@ -46,6 +47,9 @@ import type {
   Row,
   TimeRange,
   Timeline,
+  TimelineDropEdge,
+  TimelineItemRef,
+  TimelineSection,
   VerticalGuide,
   XRangeLayer,
   XRangeLayerColorScheme,
@@ -576,9 +580,11 @@ export function createTimeline(timelines: Timeline[], args: Partial<Timeline> = 
 
   return {
     id,
+    items: [],
     marginLeft: 0,
     marginRight: 0,
     rows: [],
+    sections: [],
     verticalGuides: [],
     ...args,
   };
@@ -854,6 +860,48 @@ export function duplicateRow(row: Row, timelines: Timeline[], timelineId: number
   });
 
   return newRow;
+}
+
+/**
+ * Copies a section and every row it contains, keeping its color and collapsed state. Adding the
+ * result to the view is the caller's job. Returns null if the section's timeline is not found.
+ */
+export function duplicateSection(
+  section: TimelineSection,
+  timeline: Timeline,
+  timelines: Timeline[],
+): { rows: Row[]; section: TimelineSection } | null {
+  // Each new row lands in a working copy as it is created, so the next one sees it and gets an
+  // id that does not collide.
+  const workingTimelines = structuredClone(timelines);
+  const workingTimeline = workingTimelines.find(t => t.id === timeline.id);
+  if (!workingTimeline) {
+    return null;
+  }
+
+  const newSection = createSection(workingTimelines, {
+    collapsed: section.collapsed,
+    color: section.color,
+    name: `${section.name} (copy)`,
+    rowIds: [],
+  });
+  workingTimeline.sections.push(newSection);
+
+  const newRows: Row[] = [];
+  section.rowIds.forEach(rowId => {
+    const row = timeline.rows.find(r => r.id === rowId);
+    if (!row) {
+      return;
+    }
+    const newRow = duplicateRow(row, workingTimelines, timeline.id);
+    if (newRow) {
+      workingTimeline.rows.push(newRow);
+      newRows.push(newRow);
+      newSection.rowIds.push(newRow.id);
+    }
+  });
+
+  return { rows: newRows, section: newSection };
 }
 
 /**
@@ -1818,4 +1866,111 @@ export function matchesDynamicFilter(
     default:
       return false;
   }
+}
+
+/**
+ * Returns the next section ID based on all sections in all timelines
+ */
+export function getNextSectionID(timelines: Timeline[]): number {
+  let maxID = -1;
+  timelines.forEach(timeline => {
+    (timeline.sections || []).forEach(section => {
+      if (section.id > maxID) {
+        maxID = section.id;
+      }
+    });
+  });
+  return maxID + 1;
+}
+
+/**
+ * Returns a new timeline section
+ */
+export function createSection(timelines: Timeline[], args: Partial<TimelineSection> = {}): TimelineSection {
+  const id = getNextSectionID(timelines);
+
+  return {
+    collapsed: false,
+    color: ViewDefaultSectionColor,
+    id,
+    name: 'Section',
+    rowIds: [],
+    ...args,
+  };
+}
+
+/**
+ * Text color for a section band: whichever of the app's light or dark foregrounds scores the
+ * higher WCAG contrast against it. A user-picked color can land anywhere on the lightness range,
+ * so a threshold guess is not good enough.
+ */
+export function getContrastingTextColor(backgroundColor: string): string {
+  const light = '#ffffff';
+  const dark = '#1b1d1f';
+  return getContrastRatio(backgroundColor, dark) >= getContrastRatio(backgroundColor, light) ? dark : light;
+}
+
+/**
+ * WCAG 2.x contrast ratio between two sRGB hex colors, from 1 (identical) to 21 (black on white).
+ */
+export function getContrastRatio(colorA: string, colorB: string): number {
+  const a = getRelativeLuminance(colorA);
+  const b = getRelativeLuminance(colorB);
+  const lighter = Math.max(a, b);
+  const darker = Math.min(a, b);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * WCAG relative luminance of an sRGB hex color. Accepts 3 or 6 digit hex, with or without '#'.
+ * An unparseable color returns 1 (treated as white) so callers fall back to dark text.
+ */
+function getRelativeLuminance(hex: string): number {
+  const normalized = hex.replace('#', '');
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map(c => c + c)
+          .join('')
+      : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    return 1;
+  }
+
+  const channels = [0, 2, 4].map(i => {
+    const value = parseInt(full.substring(i, i + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+/**
+ * Narrows a drag-and-drop library edge to the two a timeline understands. The hitbox helper is
+ * typed for all four sides even when only top and bottom are requested.
+ */
+export function toTimelineDropEdge(edge: string | null | undefined): TimelineDropEdge | null {
+  return edge === 'top' || edge === 'bottom' ? edge : null;
+}
+
+/**
+ * Resolves a pointer position over a section header into either a reorder edge or a drop INTO the
+ * section (null). Sections can only be reordered, never nested.
+ *
+ * A row gets one reorder band, the top one, so the slot above a leading section stays reachable;
+ * anywhere else drops it into the section. A bottom band pointed at the slot before the section's
+ * first row but inserted after the whole section, which usually looked like nothing happened.
+ */
+export function resolveSectionDropEdge(
+  rect: { bottom: number; height: number; top: number },
+  clientY: number,
+  sourceItemType: TimelineItemRef['type'],
+): TimelineDropEdge | null {
+  if (sourceItemType === 'section') {
+    return clientY < rect.top + rect.height / 2 ? 'top' : 'bottom';
+  }
+  const band = Math.max(4, Math.min(8, rect.height / 3));
+  return clientY < rect.top + band ? 'top' : null;
 }

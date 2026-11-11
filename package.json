@@ -39,6 +39,8 @@
     "version": "node ./scripts/version.js"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.7",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
     "@codemirror/autocomplete": "^6.16.0",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/language": "^6.10.1",
@@ -89,7 +91,6 @@
     "postgres-interval": "^4.0.0",
     "split-grid": "^1.0.11",
     "svelte": "^4.0.0",
-    "svelte-dnd-action": "^0.9.22",
     "svelte-popperjs": "^1.3.2",
     "svelte-preprocess": "^5.0.3",
     "tippy.js": "^6.3.7",
