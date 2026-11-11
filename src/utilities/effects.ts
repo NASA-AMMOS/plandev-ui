@@ -304,14 +304,15 @@ import {
   getIntervalInMs,
   getUnixEpochTimeFromInterval,
 } from './time';
+import { createRow, duplicateRow, duplicateSection } from './timeline';
 import {
-  createRow,
-  duplicateRow,
-  duplicateSection,
-  insertRowAfterInTimelineHierarchy,
-  removeRowFromTimelineHierarchy,
-  ungroupAllTimelineSections,
-} from './timeline';
+  addSection,
+  flattenSection,
+  insertItem,
+  placeBeside,
+  removeItem,
+  type TimelineHierarchy,
+} from './timelineHierarchy';
 import { showFailureToast, showSuccessToast } from './toast';
 import { getSearchParameterNumber, setQueryParam } from './url';
 import {
@@ -368,9 +369,14 @@ function addTimelineRowAfter(timeline: Timeline, afterRow: Row, newRow: Row): bo
             ...currentView.definition.plan,
             timelines: currentView.definition.plan.timelines.map(t => {
               if (t && t.id === timeline.id) {
+                const hierarchy = { items: t.items || [], sections: t.sections || [] };
                 return {
                   ...t,
-                  ...insertRowAfterInTimelineHierarchy(t, afterRow.id, newRow.id),
+                  ...insertItem(
+                    hierarchy,
+                    { id: newRow.id, type: 'row' },
+                    placeBeside(hierarchy, { id: afterRow.id, type: 'row' }, 'bottom'),
+                  ),
                   rows: newRows,
                 };
               }
@@ -3867,7 +3873,7 @@ const effects = {
                   if (timeline && timeline.id === timelineId) {
                     return {
                       ...timeline,
-                      ...removeRowFromTimelineHierarchy(timeline, row.id),
+                      ...removeItem(timeline, { id: row.id, type: 'row' }),
                       rows: filteredRows,
                     };
                   }
@@ -3902,9 +3908,11 @@ const effects = {
                   if (timeline && timeline.id === timelineId) {
                     return {
                       ...timeline,
-                      items: (timeline.items || []).filter(item => item.type !== 'row'),
+                      ...timeline.rows.reduce<TimelineHierarchy>(
+                        (hierarchy, row) => removeItem(hierarchy, { id: row.id, type: 'row' }),
+                        timeline,
+                      ),
                       rows: [],
-                      sections: (timeline.sections || []).map(section => ({ ...section, rowIds: [] })),
                     };
                   }
                   return timeline;
@@ -3936,7 +3944,13 @@ const effects = {
                 ...currentView.definition.plan,
                 timelines: currentView.definition.plan.timelines.map(timeline => {
                   if (timeline && timeline.id === timelineId) {
-                    return { ...timeline, ...ungroupAllTimelineSections(timeline) };
+                    return {
+                      ...timeline,
+                      ...timeline.sections.reduce<TimelineHierarchy>(
+                        (hierarchy, section) => flattenSection(hierarchy, section.id),
+                        timeline,
+                      ),
+                    };
                   }
                   return timeline;
                 }),
@@ -4176,19 +4190,16 @@ const effects = {
               ...currentView.definition.plan,
               timelines: currentView.definition.plan.timelines.map(t => {
                 if (t && t.id === timeline.id) {
-                  const items = [...(t.items || [])];
-                  const sectionIndex = items.findIndex(item => item.type === 'section' && item.id === section.id);
-                  // Place the copy directly after the section it came from.
-                  items.splice(sectionIndex > -1 ? sectionIndex + 1 : items.length, 0, {
-                    id: duplicated.section.id,
-                    type: 'section',
-                  });
-
+                  const hierarchy = { items: t.items || [], sections: t.sections || [] };
                   return {
                     ...t,
-                    items,
+                    // The copy goes directly after the section it came from.
+                    ...addSection(
+                      hierarchy,
+                      duplicated.section,
+                      placeBeside(hierarchy, { id: section.id, type: 'section' }, 'bottom'),
+                    ),
                     rows: [...t.rows, ...duplicated.rows],
-                    sections: [...(t.sections || []), duplicated.section],
                   };
                 }
                 return t;

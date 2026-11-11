@@ -1,11 +1,7 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import {
-    attachClosestEdge,
-    extractClosestEdge,
-    type Edge,
-  } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+  import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
   import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
   import {
     draggable,
@@ -85,7 +81,6 @@
   import { getTarget } from '../../../utilities/generic';
   import { getDoyTime } from '../../../utilities/time';
   import {
-    applyTimelineItemDrop,
     createHorizontalGuide,
     createTimelineActivityLayer,
     createTimelineExternalEventLayer,
@@ -95,14 +90,13 @@
     createYAxis,
     getContrastingTextColor,
     getNextLayerID,
-    getRenderableTimelineItems,
     isActivityLayer,
     isExternalEventLayer,
     isLineLayer,
     isXRangeLayer,
-    toTimelineDropEdge,
   } from '../../../utilities/timeline';
-  import { createTimelineDragActions, type TimelineDragData } from '../../../utilities/timelineDragDrop';
+  import { createTimelineDragActions } from '../../../utilities/timelineDragDrop';
+  import { getRenderableTimelineItems } from '../../../utilities/timelineHierarchy';
   import { tooltip } from '../../../utilities/tooltip';
   import ColorPicker from '../../form/ColorPicker.svelte';
   import ColorPresetsPicker from '../../form/ColorPresetsPicker.svelte';
@@ -334,30 +328,6 @@
     effects.deleteTimelineSections($selectedTimelineId);
   }
 
-  function handleDrop(
-    sourceData: TimelineDragData,
-    targetItemId: number,
-    targetItemType: TimelineDragData['itemType'],
-    targetSectionId: number | null,
-    edge: Edge | null,
-  ) {
-    if (!selectedTimeline) {
-      return;
-    }
-
-    const next = applyTimelineItemDrop(hierarchy, {
-      edge: toTimelineDropEdge(edge),
-      source: sourceData,
-      target: { itemId: targetItemId, itemType: targetItemType, sectionId: targetSectionId },
-    });
-
-    if (next === null) {
-      return;
-    }
-
-    viewReorderTimelineItems(next.items, $selectedTimelineId, next.sections);
-  }
-
   /**
    * A press starts a drag only on an item's inert surface: its name, its grip, its blank space.
    * The whole item is the draggable, so without this a press inside one of the inputs or buttons
@@ -379,7 +349,11 @@
     removeDropIndicator,
     toAction,
     updateDropIndicator,
-  } = createTimelineDragActions({ isDragSurface, onDrop: handleDrop });
+  } = createTimelineDragActions({
+    getHierarchy: () => hierarchy,
+    isDragSurface,
+    onChange: next => viewReorderTimelineItems(next.items, $selectedTimelineId, next.sections),
+  });
 
   onMount(() => {
     monitorCleanup = monitorForElements({

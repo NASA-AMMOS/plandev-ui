@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { ViewDefaultSectionColor } from '../constants/view';
 import type { Timeline } from '../types/timeline';
 import type { View } from '../types/view';
+import { validateTimelineHierarchy } from '../utilities/timelineHierarchy';
 import {
   selectedTimelineId,
   view,
@@ -61,34 +62,12 @@ function currentTimeline(): Timeline {
  */
 function expectConsistentHierarchy(): void {
   const timeline = currentTimeline();
-  const placements = new Map<number, string[]>();
-
-  timeline.rows.forEach(row => placements.set(row.id, []));
-  timeline.items.forEach(item => {
-    if (item.type === 'row') {
-      expect(placements.has(item.id), `items references row ${item.id}, which does not exist`).toBe(true);
-      placements.get(item.id)?.push('root');
-    } else {
-      expect(
-        timeline.sections.some(section => section.id === item.id),
-        `items references section ${item.id}, which does not exist`,
-      ).toBe(true);
-    }
-  });
-  timeline.sections.forEach(section => {
-    section.rowIds.forEach(rowId => {
-      expect(placements.has(rowId), `section ${section.id} references row ${rowId}, which does not exist`).toBe(true);
-      placements.get(rowId)?.push(`section ${section.id}`);
-    });
-    expect(
-      timeline.items.some(item => item.type === 'section' && item.id === section.id),
-      `section ${section.id} is missing from items`,
-    ).toBe(true);
-  });
-
-  placements.forEach((places, rowId) => {
-    expect(places, `row ${rowId} should appear exactly once`).toHaveLength(1);
-  });
+  expect(
+    validateTimelineHierarchy(
+      timeline,
+      timeline.rows.map(row => row.id),
+    ),
+  ).toEqual([]);
 }
 
 describe('view section stores', () => {

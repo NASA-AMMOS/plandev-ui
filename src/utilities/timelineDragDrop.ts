@@ -5,22 +5,15 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import type { TimelineItemRef } from '../types/timeline';
-import { resolveSectionDropEdge } from './timeline';
+import type { TimelineDropEdge } from '../types/timeline';
+import { resolveSectionDropEdge, toTimelineDropEdge } from './timeline';
+import { applyTimelineItemDrop, type TimelineHierarchy } from './timelineHierarchy';
 
-/** Payload every timeline row/section draggable carries. `sourceSectionId` null means root level. */
+/** Payload every timeline row/section draggable carries: which item it is, nothing about where. */
 export type TimelineDragData = {
   itemId: number;
   itemType: TimelineItemRef['type'];
-  sourceSectionId: number | null;
 };
-
-export type TimelineDropHandler = (
-  sourceData: TimelineDragData,
-  targetItemId: number,
-  targetItemType: TimelineItemRef['type'],
-  targetSectionId: number | null,
-  edge: Edge | null,
-) => void;
 
 /** Params shared by the row/section draggable and drop target actions. */
 export type TimelineItemParams = {
@@ -45,12 +38,29 @@ export const TIMELINE_DRAG_CLASSES = [
  * identical, and was duplicated between the two components before this.
  */
 export function createTimelineDragActions(options: {
+  /** The hierarchy a drop is applied to. */
+  getHierarchy: () => TimelineHierarchy;
   /** Whether a press at this element should begin a drag, rather than reach the control under it. */
   isDragSurface: (element: Element | null) => boolean;
-  /** Applies the resulting hierarchy. Called once per drop, by whichever target handled it. */
-  onDrop: TimelineDropHandler;
+  /** Receives the hierarchy a drop produced. Called once per drop that changes anything. */
+  onChange: (next: TimelineHierarchy) => void;
 }) {
-  const { isDragSurface, onDrop } = options;
+  const { getHierarchy, isDragSurface, onChange } = options;
+
+  /**
+   * Every target reports a drop the same way: dragged item, item it landed on, edge. Where that
+   * leads in the hierarchy is the hierarchy module's decision, not this file's.
+   */
+  function onDrop(sourceData: TimelineDragData, target: TimelineItemRef, edge: TimelineDropEdge | null) {
+    const next = applyTimelineItemDrop(getHierarchy(), {
+      edge,
+      source: { id: sourceData.itemId, type: sourceData.itemType },
+      target,
+    });
+    if (next !== null) {
+      onChange(next);
+    }
+  }
 
   // Every action registers its teardown here so the component can release them all on destroy. A
   // Set rather than an array so an action's own destroy() can drop just its entry; as an array it
@@ -106,7 +116,6 @@ export function createTimelineDragActions(options: {
         ({
           itemId: params.itemId,
           itemType: params.itemType,
-          sourceSectionId: params.sectionId,
         }) as TimelineDragData,
       onDragStart: () => node.classList.add('dragging'),
       onDrop: () => node.classList.remove('dragging'),
@@ -152,10 +161,8 @@ export function createTimelineDragActions(options: {
         removeDropIndicator(node);
         onDrop(
           source.data as TimelineDragData,
-          params.itemId,
-          params.itemType,
-          params.sectionId,
-          extractClosestEdge(self.data),
+          { id: params.itemId, type: params.itemType },
+          toTimelineDropEdge(extractClosestEdge(self.data)),
         );
       },
     });
@@ -210,7 +217,7 @@ export function createTimelineDragActions(options: {
         const sourceData = source.data as TimelineDragData;
         const edge = sectionDropEdge(self.element, location.current.input.clientY, sourceData);
         clearFeedback();
-        onDrop(sourceData, params.sectionId, 'section', null, edge);
+        onDrop(sourceData, { id: params.sectionId, type: 'section' }, edge);
       },
     });
 
@@ -231,7 +238,7 @@ export function createTimelineDragActions(options: {
       onDragLeave: () => node.classList.remove('section-accepting-row'),
       onDrop: ({ source }) => {
         node.classList.remove('section-accepting-row');
-        onDrop(source.data as TimelineDragData, params.sectionId, 'section', null, null);
+        onDrop(source.data as TimelineDragData, { id: params.sectionId, type: 'section' }, null);
       },
     });
 

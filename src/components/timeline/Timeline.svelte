@@ -1,7 +1,6 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
   import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
   import type { ScaleTime } from 'd3-scale';
   import { zoomIdentity, type D3ZoomEvent, type ZoomTransform } from 'd3-zoom';
@@ -52,17 +51,9 @@
   } from '../../types/timeline';
   import { clamp } from '../../utilities/generic';
   import { formatDate } from '../../utilities/time';
-  import {
-    MAX_CANVAS_SIZE,
-    TimelineInteractionMode,
-    TimelineLockStatus,
-    applyTimelineItemDrop,
-    getRenderableTimelineItems,
-    getXScale,
-    moveTimelineItemInHierarchy,
-    toTimelineDropEdge,
-  } from '../../utilities/timeline';
-  import { createTimelineDragActions, type TimelineDragData } from '../../utilities/timelineDragDrop';
+  import { MAX_CANVAS_SIZE, TimelineInteractionMode, TimelineLockStatus, getXScale } from '../../utilities/timeline';
+  import { createTimelineDragActions } from '../../utilities/timelineDragDrop';
+  import { getRenderableTimelineItems, shiftItem } from '../../utilities/timelineHierarchy';
   import TimelineRowItem, { type TimelineRowSharedProps } from './TimelineRowItem.svelte';
   import RowHeaderDragHandleWidth from './RowHeaderDragHandleWidth.svelte';
   import TimelineContextMenu from './TimelineContextMenu.svelte';
@@ -449,13 +440,11 @@
       return;
     }
 
-    const next = moveTimelineItemInHierarchy(hierarchy, type, id, direction);
+    const next = shiftItem(hierarchy, { id, type }, direction);
 
-    if (next === null) {
-      return;
+    if (next !== null) {
+      viewReorderTimelineItems(next.items, timeline.id, next.sections);
     }
-
-    viewReorderTimelineItems(next.items, timeline.id, next.sections);
   }
 
   function onMoveRow(event: CustomEvent<{ direction: 'up' | 'down'; row: Row }>) {
@@ -470,30 +459,6 @@
       detail: { direction, section },
     } = event;
     moveTimelineItem('section', section.id, direction);
-  }
-
-  function handleTimelineItemDrop(
-    sourceData: TimelineDragData,
-    targetItemId: number,
-    targetItemType: TimelineItemRef['type'],
-    targetSectionId: number | null,
-    edge: Edge | null,
-  ) {
-    if (!timeline) {
-      return;
-    }
-
-    const next = applyTimelineItemDrop(hierarchy, {
-      edge: toTimelineDropEdge(edge),
-      source: sourceData,
-      target: { itemId: targetItemId, itemType: targetItemType, sectionId: targetSectionId },
-    });
-
-    if (next === null) {
-      return;
-    }
-
-    viewReorderTimelineItems(next.items, timeline.id, next.sections);
   }
 
   /** Rows and sections alike drag only from their handle or their title. */
@@ -525,8 +490,9 @@
     makeEmptySectionDropTarget,
     makeSectionDropTarget,
   } = createTimelineDragActions({
+    getHierarchy: () => hierarchy,
     isDragSurface: isRowDragHandle,
-    onDrop: handleTimelineItemDrop,
+    onChange: next => timeline && viewReorderTimelineItems(next.items, timeline.id, next.sections),
   });
 
   async function setRowsMaxHeight(
