@@ -8,6 +8,7 @@ import type { Plan } from '../types/plan';
 import type { SequenceTemplate } from '../types/sequence-template';
 import type { ActivityLayerFilter } from '../types/timeline';
 import effects, { replacePaths } from './effects';
+import gql from './gql';
 import * as Modals from './modal';
 import * as Requests from './requests';
 
@@ -32,6 +33,46 @@ describe('Handle modal and requests in effects', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     catchErrorSpy.mockReset();
+  });
+
+  describe('plan description', () => {
+    it.each(['First line\nSecond line', ''])('persists a new plan description: %j', async description => {
+      const request = vi.spyOn(Requests, 'reqHasura').mockResolvedValue({
+        createPlan: { description, id: 42 },
+      });
+      vi.spyOn(effects, 'initialSimulationUpdate').mockResolvedValue(true);
+
+      const result = await effects.createPlan(
+        '2024-002T00:00:00',
+        1,
+        'Test plan',
+        '2024-001T00:00:00',
+        null,
+        mockUser,
+        description,
+      );
+
+      expect(request).toHaveBeenCalledWith(
+        gql.CREATE_PLAN,
+        { plan: expect.objectContaining({ description }) },
+        mockUser,
+      );
+      expect(result?.description).toBe(description);
+    });
+
+    it('can clear an existing description', async () => {
+      const request = vi.spyOn(Requests, 'reqHasura').mockResolvedValue({ updatePlan: { id: 42 } });
+      const plan = {
+        collaborators: [],
+        description: 'Existing description',
+        id: 42,
+        name: 'Test plan',
+        owner: mockUser.id,
+      } as unknown as Plan;
+
+      expect(await effects.updatePlan(plan, { description: '' }, mockUser)).toBe(true);
+      expect(request).toHaveBeenCalledWith(gql.UPDATE_PLAN, { plan: { description: '' }, plan_id: 42 }, mockUser);
+    });
   });
 
   describe('applyPresetToActivity', () => {

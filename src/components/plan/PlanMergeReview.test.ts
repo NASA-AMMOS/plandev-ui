@@ -96,6 +96,7 @@ const mockInitialPlan: Plan = {
   collaborators: [{ collaborator: 'tester 2' }],
   constraint_specification: [],
   created_at: '2023-02-16T00:00:00',
+  description: '',
   duration: '168:00:00',
   end_time_doy: '2023-054T00:00:00',
   id: 1,

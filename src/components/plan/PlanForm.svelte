@@ -72,6 +72,7 @@
       'Plan name already exists',
     ),
   ]);
+  let planDescription: string = '';
   let planExporting: boolean = false;
 
   $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
@@ -109,6 +110,7 @@
   }
   $: if (plan) {
     planNameField.validateAndSet(plan?.name ?? '');
+    planDescription = plan.description ?? '';
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
@@ -172,6 +174,12 @@
     }
   }
 
+  async function onPlanDescriptionChange() {
+    if (plan && hasPlanUpdatePermission && planDescription !== (plan.description ?? '')) {
+      await effects.updatePlan(plan, { description: planDescription }, user);
+    }
+  }
+
   async function onExportPlan() {
     if (plan && !planExporting && !$planImportRequest && activityDirectivesMap) {
       planExporting = true;
@@ -224,6 +232,21 @@
             </Input>
           </Field>
         </div>
+        <Input layout="inline" class="!items-baseline">
+          <label for="plan-description">Description</label>
+          <textarea
+            use:tooltip={{ content: !hasPlanUpdatePermission ? permissionError : '' }}
+            aria-label="Description"
+            id="plan-description"
+            name="plan-description"
+            class="st-input resize-y"
+            class:opacity-50={!hasPlanUpdatePermission}
+            rows={4}
+            readonly={!hasPlanUpdatePermission}
+            bind:value={planDescription}
+            on:change={onPlanDescriptionChange}
+          />
+        </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />

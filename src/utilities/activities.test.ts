@@ -294,6 +294,7 @@ function getTestPlan(): Plan {
     collaborators: [],
     constraint_specification: [],
     created_at: '2006-07-11T00:00:00',
+    description: null,
     duration: '1y',
     end_time_doy: '2006-T194:00:00',
     id: 1,

@@ -1625,6 +1625,7 @@ const effects = {
     startTimeDoy: string,
     simulationTemplateId: number | null,
     user: User | null,
+    description: string = '',
   ): Promise<PlanSlim | null> {
     try {
       createPlanErrorStore.set(null);
@@ -1636,6 +1637,7 @@ const effects = {
       creatingPlanStore.set(true);
 
       const planInsertInput: PlanInsertInput = {
+        description,
         duration: getIntervalFromDoyRange(startTimeDoy, endTimeDoy),
         model_id: modelId,
         name,
@@ -1653,6 +1655,7 @@ const effects = {
         const {
           collaborators,
           created_at,
+          description,
           duration,
           id,
           is_read_only,
@@ -1670,6 +1673,7 @@ const effects = {
         const plan: PlanSlim = {
           collaborators,
           created_at,
+          description,
           duration,
           end_time_doy: endTimeDoy,
           id,
