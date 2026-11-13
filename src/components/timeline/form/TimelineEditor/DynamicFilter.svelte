@@ -49,7 +49,8 @@
       : '';
   let currentType: DynamicFilterDataType = 'string';
   let currentValue = dirtyFilter.value;
-  // Scalar bindings preserve partially typed numbers, such as a standalone minus sign.
+  // Bind each input to its own value so Svelte leaves unfinished numbers alone while typing.
+  // Otherwise, typing "-" writes NaN back into the input and erases the minus sign.
   let currentMinValue: number | null;
   let currentMaxValue: number | null;
   let currentValueAsStringOrNumber: string | number = '';
