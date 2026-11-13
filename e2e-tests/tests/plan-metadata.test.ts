@@ -145,6 +145,32 @@ test.afterAll(async () => {
 });
 
 test.describe.serial('Plan Metadata', () => {
+  test('Description can be edited, read on both pages, and cleared', async () => {
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
+    const description = planA.panelPlanMetadata.getByLabel('Description', { exact: true });
+    const value = 'Plan purpose\nSecond line <plain text>';
+    await description.fill(value);
+    await description.press('Tab');
+    await expect(setupA.page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
+    await setupA.page.reload();
+    await expect(description).toHaveValue(value);
+
+    await plansA.goto();
+    await plansA.filterTable(planA.planName);
+    await plansA.tableRow(planA.planName).click();
+    const selectedDescription = setupA.page.getByLabel('Description', { exact: true });
+    await expect(selectedDescription).toHaveValue(value);
+    await expect(selectedDescription).toHaveAttribute('readonly', '');
+
+    await planA.goto(String(planAId));
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
+    await description.fill('');
+    await description.press('Tab');
+    await expect(setupA.page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
+    await setupA.page.reload();
+    await expect(description).toHaveValue('');
+  });
+
   test('Plan should be re-nameable', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.renamePlan(planA.planName + '_renamed');
@@ -183,6 +209,9 @@ test.describe.serial('Plan Metadata', () => {
     await planAForUserB.showPanel(PanelNames.PLAN_METADATA, true);
     await planAForUserB.waitForPlanCollaboratorLoad();
     await expect(planAForUserB.planCollaboratorInputContainer).toHaveAttribute('readonly');
+    const description = planAForUserB.panelPlanMetadata.getByLabel('Description', { exact: true });
+    await expect(description).toHaveAttribute('readonly', '');
+    await expect(description).toBeEnabled();
   });
 
   test(`userB can be added as a plan collaborator to userA's plan`, async () => {
