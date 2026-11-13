@@ -49,6 +49,10 @@
       : '';
   let currentType: DynamicFilterDataType = 'string';
   let currentValue = dirtyFilter.value;
+  // Bind each input to its own value so Svelte leaves unfinished numbers alone while typing.
+  // Otherwise, typing "-" writes NaN back into the input and erases the minus sign.
+  let currentMinValue: number | null;
+  let currentMaxValue: number | null;
   let currentValueAsStringOrNumber: string | number = '';
   let operatorKeys: (keyof typeof FilterOperator)[] = [];
   let currentUnit: string = '';
@@ -123,6 +127,15 @@
       dispatch('change', { filter: newFilter });
     }
   }
+
+  $: currentMinValue =
+    Array.isArray(currentValue) && typeof currentValue[0] === 'number' && !Number.isNaN(currentValue[0])
+      ? currentValue[0]
+      : null;
+  $: currentMaxValue =
+    Array.isArray(currentValue) && typeof currentValue[1] === 'number' && !Number.isNaN(currentValue[1])
+      ? currentValue[1]
+      : null;
 
   $: currentValueAsStringOrNumber = currentValue as string | number;
 
@@ -239,7 +252,7 @@
         <div class="range-input">
           <Input class="dynamic-filter-input">
             <input
-              value={currentValue[0]}
+              bind:value={currentMinValue}
               name="filter-value-min"
               aria-label="value-min"
               class="st-input w-full"
@@ -254,7 +267,7 @@
           <div class="st-typography-label">To</div>
           <Input class="dynamic-filter-input">
             <input
-              value={currentValue[1]}
+              bind:value={currentMaxValue}
               name="filter-value-max"
               aria-label="value-max"
               class="st-input w-full"
