@@ -3,17 +3,11 @@
 <script lang="ts">
   import { Button, cn } from '@nasa-jpl/stellar-svelte';
   import { FileUp, Pencil } from 'lucide-svelte';
+  import { createEventDispatcher } from 'svelte';
   import { PlanStatusMessages } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
-  import {
-    planImportRequest,
-    planIsLocked,
-    planIsNonExecutable,
-    planMetadata,
-    planReadOnly,
-    planReadOnlySnapshot,
-  } from '../../stores/plan';
+  import { planReadOnlySnapshot } from '../../stores/plan';
   import {
     initialPlanSnapshotsLoading,
     planSnapshotId,
@@ -50,7 +44,13 @@
 
   const planSnapshotsError = planSnapshots.error;
 
+  const dispatch = createEventDispatcher<{ modelchange: void; namechange: string }>();
+
   export let plan: Plan | null;
+  export let isReadOnly: boolean = false;
+  export let isLocked: boolean = false;
+  export let importInProgress: boolean = false;
+  export let mode: 'plan' | 'listing' = 'plan';
   export let activityDirectivesMap: ActivityDirectivesMap | null = {};
   export let planTags: Tag[];
   export let tags: Tag[] = [];
@@ -74,15 +74,15 @@
   ]);
   let planExporting: boolean = false;
 
-  $: permissionError = $planReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
+  $: permissionError = isReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan && plan.model) {
-    hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !$planReadOnly;
+    hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !isReadOnly;
   }
   $: {
     if (plan && user) {
-      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !$planIsLocked;
+      hasPlanUpdatePermission = featurePermissions.plan.canUpdate(user, plan) && !isLocked && !importInProgress;
       hasPlanCollaboratorsUpdatePermission =
-        featurePermissions.planCollaborators.canCreate(user, plan) && !$planIsLocked;
+        featurePermissions.planCollaborators.canCreate(user, plan) && !isLocked && !importInProgress;
       hasChangePlanModelPermission = featurePermissions.plan.canUpdateModel(user, plan);
     } else {
       hasPlanUpdatePermission = false;
@@ -112,21 +112,25 @@
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
+    const editedPlan = plan;
     const {
       detail: { tag, type },
     } = event;
-    if (type === 'remove' && plan) {
-      await effects.deletePlanTag(tag.id, plan.id, user);
-    } else if (plan && (type === 'create' || type === 'select')) {
+    if (!editedPlan || !hasPlanUpdatePermission) {
+      return;
+    }
+    if (type === 'remove') {
+      await effects.deletePlanTag(tag.id, editedPlan.id, user);
+    } else if (type === 'create' || type === 'select') {
       let tagsToAdd: Tag[] = [tag];
       if (type === 'create') {
         tagsToAdd = (await effects.createTags([{ color: tag.color, name: tag.name }], user, false)) || [];
       }
       const newPlanTags: PlanTagsInsertInput[] = tagsToAdd.map(({ id: tag_id }) => ({
-        plan_id: plan?.id || -1,
+        plan_id: editedPlan.id,
         tag_id,
       }));
-      await effects.createPlanTags(newPlanTags, plan, user, true);
+      await effects.createPlanTags(newPlanTags, editedPlan, user, true);
     }
   }
 
@@ -158,22 +162,20 @@
     if (plan !== null) {
       const success = await effects.updatePlanMissionModel(plan, user);
       if (success) {
-        // Clear active simulation
-        $simulationDatasetId = -1;
+        dispatch('modelchange');
       }
     }
   }
 
   async function onPlanNameChange() {
-    if (plan && $planNameField.dirtyAndValid && $planNameField.value) {
-      // Optimistically update plan metadata
-      planMetadata.updateValue(pm => (pm ? { ...pm, name: $planNameField.value } : null));
+    if (plan && hasPlanUpdatePermission && $planNameField.valid && $planNameField.value !== plan.name) {
+      dispatch('namechange', $planNameField.value);
       effects.updatePlan(plan, { name: $planNameField.value }, user);
     }
   }
 
   async function onExportPlan() {
-    if (plan && !planExporting && !$planImportRequest && activityDirectivesMap) {
+    if (plan && !planExporting && !importInProgress && activityDirectivesMap) {
       planExporting = true;
       await exportPlan(plan, user, Object.values(activityDirectivesMap));
       planExporting = false;
@@ -184,26 +186,28 @@
 <div class="plan-form">
   {#if plan}
     <fieldset>
-      <Collapse title="Details" contentClass="px-1">
+      <Collapse title="Details" contentClass="px-1" showHeader={mode === 'plan'} padContent={mode === 'plan'}>
         <svelte:fragment slot="right">
-          {#if planExporting}
-            <button class="st-button icon progress" on:click|stopPropagation={() => {}}>
-              <ProgressRadial strokeWidth={1} />
-            </button>
-          {:else}
-            <span
-              use:tooltip={{
-                content: $planImportRequest ? 'Import is incomplete – export is unavailable' : 'Export Plan JSON',
-              }}
-            >
-              <button
-                class="st-button icon export"
-                disabled={!!$planImportRequest}
-                on:click|stopPropagation={onExportPlan}
-              >
-                <FileUp size={16} />
+          {#if mode === 'plan'}
+            {#if planExporting}
+              <button class="st-button icon progress" on:click|stopPropagation={() => {}}>
+                <ProgressRadial strokeWidth={1} />
               </button>
-            </span>
+            {:else}
+              <span
+                use:tooltip={{
+                  content: importInProgress ? 'Import is incomplete – export is unavailable' : 'Export Plan JSON',
+                }}
+              >
+                <button
+                  class="st-button icon export"
+                  disabled={!!importInProgress}
+                  on:click|stopPropagation={onExportPlan}
+                >
+                  <FileUp size={16} />
+                </button>
+              </span>
+            {/if}
           {/if}
         </svelte:fragment>
         <div class="plan-form-field">
@@ -228,7 +232,7 @@
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />
         </Input>
-        {#if $planIsNonExecutable}
+        {#if plan.is_read_only}
           <Input layout="inline">
             <span>Model</span>
             <span class="text-muted-foreground">Model-free plan</span>
@@ -246,18 +250,18 @@
               />
               <div
                 use:permissionHandler={{
-                  hasPermission: hasChangePlanModelPermission && !$planReadOnly,
-                  permissionError: $planReadOnly
+                  hasPermission: hasChangePlanModelPermission && !isReadOnly,
+                  permissionError: isReadOnly
                     ? PlanStatusMessages.READ_ONLY
                     : "You don't have permission to change mission model",
                 }}
-                use:tooltip={{ content: !$planReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
+                use:tooltip={{ content: !isReadOnly ? 'Change Mission Model' : '', placement: 'top' }}
               >
                 <Button
                   class="shrink-0"
                   variant="outline"
                   size="icon"
-                  disabled={$planReadOnly}
+                  disabled={isReadOnly}
                   on:click={openChangePlanMissionModelModal}
                   aria-label="Change mission model"
                 >
@@ -281,13 +285,7 @@
             />
           </Input>
         {/if}
-        <PlanTimeBounds
-          {plan}
-          {user}
-          isReadOnly={$planReadOnly}
-          hasUpdatePermission={hasPlanUpdatePermission}
-          {permissionError}
-        />
+        <PlanTimeBounds {plan} {user} {isReadOnly} hasUpdatePermission={hasPlanUpdatePermission} {permissionError} />
         <Input layout="inline">
           <label use:tooltip={{ content: 'Owner', placement: 'top' }} for="owner">Owner</label>
           <input class="st-input w-full" disabled name="owner" value={plan.owner} id="owner" />
@@ -367,72 +365,74 @@
         </Input>
       </Collapse>
     </fieldset>
-    <fieldset>
-      <Collapse title="Snapshots" padContent={false}>
-        <div class="buttons" slot="right">
-          {#if $simulationDatasetId >= 0}
-            <FilterToggleButton
-              label="Snapshot"
-              offTooltipContent="Filter snapshots by selected simulation"
-              onTooltipContent="Remove filter"
-              isOn={isFilteredBySimulation}
-              on:toggle={onToggleFilter}
-            />
-          {/if}
-          <button
-            class="st-button secondary"
-            disabled={$initialPlanSnapshotsLoading}
-            use:permissionHandler={{
-              hasPermission: hasCreateSnapshotPermission,
-              permissionError: $planReadOnly
-                ? PlanStatusMessages.READ_ONLY
-                : 'You do not have permission to create a plan snapshot',
-            }}
-            on:click={onCreatePlanSnapshot}
-          >
-            Take Snapshot
-          </button>
-        </div>
-        <div style="margin-top: 8px">
-          <AsyncContentState
-            loading={$initialPlanSnapshotsLoading}
-            error={$planSnapshotsError || null}
-            errorMessage="Failed to load plan snapshots"
-            showRetry
-            empty={!filteredPlanSnapshots.length}
-            emptyMessage="No Plan Snapshots Found"
-            on:retry={() => planSnapshots.restartSocket()}
-          >
-            <CardList>
-              {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
-                <PlanSnapshot
-                  activePlanSnapshotId={$planSnapshotId}
-                  planModelId={plan.model?.id}
-                  {planSnapshot}
-                  on:click={() => {
-                    setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
-                    $planSnapshotId = planSnapshot.snapshot_id;
-                    $planReadOnlySnapshot = true;
+    {#if mode === 'plan'}
+      <fieldset>
+        <Collapse title="Snapshots" padContent={false}>
+          <div class="buttons" slot="right">
+            {#if $simulationDatasetId >= 0}
+              <FilterToggleButton
+                label="Snapshot"
+                offTooltipContent="Filter snapshots by selected simulation"
+                onTooltipContent="Remove filter"
+                isOn={isFilteredBySimulation}
+                on:toggle={onToggleFilter}
+              />
+            {/if}
+            <button
+              class="st-button secondary"
+              disabled={$initialPlanSnapshotsLoading}
+              use:permissionHandler={{
+                hasPermission: hasCreateSnapshotPermission,
+                permissionError: isReadOnly
+                  ? PlanStatusMessages.READ_ONLY
+                  : 'You do not have permission to create a plan snapshot',
+              }}
+              on:click={onCreatePlanSnapshot}
+            >
+              Take Snapshot
+            </button>
+          </div>
+          <div style="margin-top: 8px">
+            <AsyncContentState
+              loading={$initialPlanSnapshotsLoading}
+              error={$planSnapshotsError || null}
+              errorMessage="Failed to load plan snapshots"
+              showRetry
+              empty={!filteredPlanSnapshots.length}
+              emptyMessage="No Plan Snapshots Found"
+              on:retry={() => planSnapshots.restartSocket()}
+            >
+              <CardList>
+                {#each filteredPlanSnapshots as planSnapshot (planSnapshot.snapshot_id)}
+                  <PlanSnapshot
+                    activePlanSnapshotId={$planSnapshotId}
+                    planModelId={plan.model?.id}
+                    {planSnapshot}
+                    on:click={() => {
+                      setQueryParam(SearchParameters.SNAPSHOT_ID, `${planSnapshot.snapshot_id}`, 'PUSH');
+                      $planSnapshotId = planSnapshot.snapshot_id;
+                      $planReadOnlySnapshot = true;
 
-                    if (planSnapshot.simulation?.id != null) {
-                      setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
-                      $simulationDatasetId = planSnapshot.simulation?.id;
+                      if (planSnapshot.simulation?.id != null) {
+                        setQueryParam(SearchParameters.SIMULATION_DATASET_ID, `${planSnapshot.simulation?.id}`, 'PUSH');
+                        $simulationDatasetId = planSnapshot.simulation?.id;
 
-                      viewTogglePanel({ state: true, type: 'left', update: { leftComponentTop: 'SimulationPanel' } });
-                    } else {
-                      removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
-                      $simulationDatasetId = -1;
-                    }
-                  }}
-                  on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
-                  on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
-                />
-              {/each}
-            </CardList>
-          </AsyncContentState>
-        </div>
-      </Collapse>
-    </fieldset>
+                        viewTogglePanel({ state: true, type: 'left', update: { leftComponentTop: 'SimulationPanel' } });
+                      } else {
+                        removeQueryParam(SearchParameters.SIMULATION_DATASET_ID);
+                        $simulationDatasetId = -1;
+                      }
+                    }}
+                    on:restore={() => plan && effects.restorePlanSnapshot(planSnapshot, plan, user)}
+                    on:delete={() => effects.deletePlanSnapshot(planSnapshot, user)}
+                  />
+                {/each}
+              </CardList>
+            </AsyncContentState>
+          </div>
+        </Collapse>
+      </fieldset>
+    {/if}
   {/if}
 </div>
 

@@ -1673,6 +1673,7 @@ const effects = {
           duration,
           end_time_doy: endTimeDoy,
           id,
+          is_locked: false,
           is_read_only,
           model_id: modelId,
           name,
