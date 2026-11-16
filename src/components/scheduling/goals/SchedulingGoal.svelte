@@ -77,7 +77,7 @@
             ? goalPlanSpec.arguments[name]
             : undefined;
         const defaultArg = defaultArguments[name];
-        const { value, valueSource } = getArgument(arg, schema, undefined, defaultArg);
+        const { value, valueSource } = getArgument(arg, subschema, undefined, defaultArg);
         return {
           errors: null,
           name,
