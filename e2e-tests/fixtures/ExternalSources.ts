@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { filterAgGridTable } from '../utilities/helpers.js';
 import { schemaUploadFile, type ExternalSourceFixture, type UploadFile } from '../utilities/external-sources.js';
 
 export class ExternalSources {
@@ -45,24 +46,51 @@ export class ExternalSources {
   }
 
   async deleteDerivationGroup(derivationGroupName: string) {
-    await this.deleteFromTable('derivation-group-table', derivationGroupName, 'Delete Derivation Group');
+    await this.deleteFromTable(
+      'derivation-group-table',
+      derivationGroupName,
+      'Derivation Group',
+      'Delete Derivation Group',
+    );
   }
 
   async deleteExternalEventType(eventTypeName: string) {
-    await this.deleteFromTable('external-event-type-table', eventTypeName, 'Delete External Event Type');
+    await this.deleteFromTable(
+      'external-event-type-table',
+      eventTypeName,
+      'External Event Type',
+      'Delete External Event Type',
+    );
   }
 
   async deleteExternalSourceType(sourceTypeName: string) {
-    await this.deleteFromTable('external-source-type-table', sourceTypeName, 'Delete External Source Type');
+    await this.deleteFromTable(
+      'external-source-type-table',
+      sourceTypeName,
+      'External Source Type',
+      'Delete External Source Type',
+    );
   }
 
-  /** Delete a row through its confirmation modal. Throws if the row, its button, or the confirmation is missing. */
-  private async deleteFromTable(tableCssClass: string, itemName: string, deleteButtonLabel: string) {
-    const row = this.page.locator(`.${tableCssClass}`).getByRole('row', { name: itemName });
-    await expect(row).toBeVisible({ timeout: 10000 });
-    // The row's action button sits under the grid's overlay vertical scrollbar once the global table
-    // outgrows its viewport, so a pointer click is intercepted; dispatch the click to the button itself.
-    await row.getByLabel(deleteButtonLabel).dispatchEvent('click');
+  /**
+   * Delete a row through its confirmation modal with real pointer clicks. The grid is first filtered
+   * down to the row being deleted: the tables are global, so otherwise other suites' rows fill the
+   * grid and its scrollbar can sit over the row's action button. Throws if the row, its button, or
+   * the confirmation is missing.
+   */
+  private async deleteFromTable(
+    tableCssClass: string,
+    itemName: string,
+    nameColumn: string,
+    deleteButtonLabel: string,
+  ) {
+    const table = this.page.locator(`.${tableCssClass}`);
+    await filterAgGridTable(this.page, table, itemName, { columnName: nameColumn, exactColumnMatch: true });
+    const row = table.getByRole('row', { name: itemName });
+    await expect(row).toHaveCount(1);
+    // Row actions only appear while the row is hovered.
+    await row.hover();
+    await row.getByLabel(deleteButtonLabel).click();
     await this.page.getByRole('button', { exact: true, name: 'Delete' }).click();
     await expect(row).toBeHidden({ timeout: 10000 });
   }

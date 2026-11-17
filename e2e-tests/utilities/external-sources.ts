@@ -27,7 +27,7 @@ type SchemaMap = Record<string, { title?: string } & object>;
 export type TypeSchemas = { event_types: SchemaMap; source_types: SchemaMap };
 
 type ExternalSourceJson = {
-  events: ({ event_type_name: string; key: string } & object)[];
+  events: ({ event_type_name: string; key: string; start_time: string } & object)[];
   source: { derivation_group_name: string; key: string; source_type_name: string } & object;
 };
 

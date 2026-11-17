@@ -9,7 +9,8 @@ import {
   type BrowserSetupResult,
   type FullSetupResult,
 } from '../utilities/api.js';
-import { anyCanvasHasContent } from '../utilities/canvas.js';
+import { maxOpaquePixelsInColumns } from '../utilities/canvas.js';
+import { getUnixEpochTime } from '../../src/utilities/time.js';
 import {
   buildExternalSourceFixture,
   cleanupExternalSourceFixtures,
@@ -81,6 +82,18 @@ test.afterAll(async () => {
   }
 });
 
+/** In user A's own browser context, open the plan and add a timeline row for this fixture's event type. */
+async function addEventTypeRowForUserA() {
+  await planForUserA.goto();
+  await planForUserA.showPanel(PanelNames.TIMELINE_ITEMS);
+  await setupA.page.getByRole('tab', { exact: true, name: 'Events' }).click();
+  await expect(setupA.page.locator('.list-item').getByText(example.eventTypes[0])).toBeVisible();
+  await setupA.page.locator('.list-item').getByText(example.eventTypes[0]).first().hover();
+  await setupA.page.getByLabel(`FilterExternalevent-${example.eventTypes[0]}`).click();
+  await setupA.page.getByRole('menuitem', { name: 'New Row +' }).click();
+  await expect(setupA.page.locator('#timeline-0').getByRole('button', { name: example.eventTypes[0] })).toBeVisible();
+}
+
 test.beforeEach(async () => {
   await setup.plan.goto(); // Refresh page to reset the view
 });
@@ -111,14 +124,7 @@ test.describe.serial('Plan External Sources (linked)', () => {
 
   test('External event types can be added to the timeline', async () => {
     // Use userA's separate browser context - no login/logout needed!
-    await planForUserA.goto();
-    await planForUserA.showPanel(PanelNames.TIMELINE_ITEMS);
-    await setupA.page.getByRole('tab', { exact: true, name: 'Events' }).click();
-    await expect(setupA.page.locator('.list-item').getByText(example.eventTypes[0])).toBeVisible();
-    await setupA.page.locator('.list-item').getByText(example.eventTypes[0]).first().hover();
-    await setupA.page.getByLabel(`FilterExternalevent-${example.eventTypes[0]}`).click();
-    await setupA.page.getByRole('menuitem', { name: 'New Row +' }).click();
-    await expect(setupA.page.locator('#timeline-0').getByRole('button', { name: example.eventTypes[0] })).toBeVisible();
+    await addEventTypeRowForUserA();
 
     // Use userB's separate browser context - no login/logout needed!
     // Assert the timeline row does NOT exist for userB (user-specific settings)
@@ -129,9 +135,35 @@ test.describe.serial('Plan External Sources (linked)', () => {
   });
 
   test('Zero-duration events are properly drawn in the timeline', async () => {
+    // Timeline edits are per user and not persisted across reloads, so build the event row in user A's
+    // page here, then inspect only the row holding this fixture's event type.
+    await addEventTypeRowForUserA();
+    const eventRow = setupA.page
+      .locator('.timeline-row-wrapper')
+      .filter({ has: setupA.page.getByRole('button', { name: example.eventTypes[0] }) });
+    const canvas = eventRow.locator('canvas');
+    await expect(canvas).toHaveCount(1);
+
+    // The plan spans 2022-001 to 2022-006 and the view starts fully zoomed out, so the event's start
+    // time maps linearly onto the canvas width.
+    const planStartMs = getUnixEpochTime('2022-001T00:00:00');
+    const planEndMs = getUnixEpochTime('2022-006T00:00:00');
+    const eventStartMs = getUnixEpochTime(example.sourceJson.events[0].start_time);
+    const { width } = (await canvas.boundingBox())!;
+    const eventX = ((eventStartMs - planStartMs) / (planEndMs - planStartMs)) * width;
+
+    // A zero-duration event is drawn as a thin rectangle spanning the layer height, at its start time.
     await expect
-      .poll(() => anyCanvasHasContent(setup.page, '[data-component-name="TimelinePanel"] canvas'), { timeout: 10000 })
-      .toBe(true);
+      .poll(() => maxOpaquePixelsInColumns(canvas, eventX - 2, eventX + 4), { timeout: 10000 })
+      .toBeGreaterThanOrEqual(16);
+
+    // Hovering the drawn event identifies it as this fixture's event.
+    const box = (await canvas.boundingBox())!;
+    await setupA.page.mouse.move(box.x + eventX + 1, box.y + 8);
+    const tooltip = setupA.page.locator('.tooltip-row-container').filter({ hasText: 'ExternalEvent' }).first();
+    await expect(tooltip).toContainText(example.sourceJson.events[0].key);
+    await expect(tooltip).toContainText(example.eventTypes[0]);
+    await expect(tooltip).toContainText(/Duration:\s*00:00:00/);
   });
 
   test('Linked derivation groups should be expandable in panel', async () => {
