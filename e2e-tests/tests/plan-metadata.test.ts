@@ -153,6 +153,7 @@ test.describe.serial('Plan Metadata', () => {
     await description.press('Tab');
     await expect(setupA.page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
     await setupA.page.reload();
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(description).toHaveValue(value);
 
     await plansA.goto();
@@ -168,6 +169,7 @@ test.describe.serial('Plan Metadata', () => {
     await description.press('Tab');
     await expect(setupA.page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
     await setupA.page.reload();
+    await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await expect(description).toHaveValue('');
   });
 
