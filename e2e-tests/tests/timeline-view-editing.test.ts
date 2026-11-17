@@ -1,45 +1,39 @@
 import test, { expect } from '@playwright/test';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
-import { ExternalSources } from '../fixtures/ExternalSources.js';
 import { PanelNames } from '../fixtures/Plan.js';
 import { cleanupApiResources, closeBrowserResources, setupTest, type FullSetupResult } from '../utilities/api.js';
+import {
+  buildExternalSourceFixture,
+  cleanupExternalSourceFixtures,
+  EXAMPLE_SCHEMA_FILE,
+  EXAMPLE_SOURCE_FILE,
+  seedExternalSourceFixture,
+  type ExternalSourceFixture,
+} from '../utilities/external-sources.js';
 
 let setup: FullSetupResult;
-let externalSources: ExternalSources;
+
+// This execution's own source/event types, derivation group and source (see external-sources.ts).
+let example: ExternalSourceFixture;
 
 test.beforeAll(async ({ browser }) => {
+  example = buildExternalSourceFixture(EXAMPLE_SOURCE_FILE, EXAMPLE_SCHEMA_FILE);
   setup = await setupTest(browser);
-  externalSources = new ExternalSources(setup.page);
 
-  await externalSources.goto();
-  await externalSources.createTypes(
-    externalSources.exampleTypeSchema,
-    externalSources.exampleTypeSchemaExpectedSourceTypes,
-    externalSources.exampleTypeSchemaExpectedEventTypes,
-  );
-  await externalSources.uploadExternalSource();
-  await setup.plan.goto();
-  await setup.plan.showPanel(PanelNames.EXTERNAL_SOURCES);
-  await setup.plan.externalSourceManageButton.click();
-  await setup.page.getByText('No Derivation Groups Found').waitFor({ state: 'hidden' });
-  await externalSources.linkDerivationGroup(externalSources.exampleDerivationGroup, externalSources.exampleSourceType);
+  // The external event layer tests need events linked to the plan. That is a prerequisite here, not
+  // the behavior under test, so it is set up through the API.
+  await seedExternalSourceFixture(setup.api, example);
+  await setup.api.createPlanDerivationGroup(setup.planId, example.derivationGroup);
   await setup.plan.goto();
 });
 
 test.afterAll(async () => {
   await cleanupApiResources(setup);
-
-  // Use API for faster cleanup of external sources artifacts
   try {
-    await setup.api.deleteExternalSources(externalSources.exampleDerivationGroup, [externalSources.externalSourceKey]);
-    await setup.api.deleteDerivationGroups([externalSources.exampleDerivationGroup]);
-    await setup.api.deleteExternalSourceTypes([externalSources.exampleSourceType]);
-    await setup.api.deleteExternalEventTypes([externalSources.exampleEventType]);
-  } catch {
-    // Ignore cleanup errors - resources may not exist or have dependencies
+    await cleanupExternalSourceFixtures(setup.api, [example]);
+  } finally {
+    await closeBrowserResources(setup);
   }
-
-  await closeBrowserResources(setup);
 });
 
 test.describe.serial('Timeline View Editing', () => {
@@ -334,17 +328,21 @@ test.describe.serial('Timeline View Editing', () => {
     // Expect that manually selecting types cause the types to appear in the resulting types list
     await modal.locator("input[name='manual-types-filter-input']").click();
     expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
-    await modal.getByRole('menuitem', { name: 'ExampleEvent' }).click();
+    await modal.getByRole('menuitem', { name: example.eventTypes[0] }).click();
     await setup.page.keyboard.press('Escape');
 
-    expect(await resultingTypesList.getByText('ExampleEvent')).toBeDefined();
+    expect(await resultingTypesList.getByText(example.eventTypes[0])).toBeDefined();
 
     // Expect that dynamic types can be added
     await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Add Filter' }).click();
     expect(await modal.getByLabel('dynamic-types').getByRole('listitem').count()).toBe(1);
     // Fill filter value input
-    await modal.getByLabel('dynamic-types').getByRole('listitem').locator("input[name='filter-value']").fill('Example');
-    // Ensure that only one instance (ExampleEvent) is listed
+    await modal
+      .getByLabel('dynamic-types')
+      .getByRole('listitem')
+      .locator("input[name='filter-value']")
+      .fill(example.eventTypes[0]);
+    // Ensure that only this fixture's event type is listed
     expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(1);
 
     expect(await modal.getByText('1 instance')).toBeVisible();
@@ -374,7 +372,7 @@ test.describe.serial('Timeline View Editing', () => {
     expect(
       await setup.page
         .locator('.timeline-row-wrapper', { hasText: rowName })
-        .locator('.collapse-root', { hasText: 'ExampleEvent' })
+        .locator('.collapse-root', { hasText: example.eventTypes[0] })
         .count(),
     ).toBe(1);
 
