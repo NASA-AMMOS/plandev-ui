@@ -74,6 +74,7 @@
   ]);
   let planExporting: boolean = false;
 
+  $: isModelFreePlan = plan?.is_read_only ?? false;
   $: permissionError = isReadOnly ? PlanStatusMessages.READ_ONLY : 'You do not have permission to edit this plan.';
   $: if (plan && plan.model) {
     hasCreateSnapshotPermission = featurePermissions.planSnapshot.canCreate(user, plan, plan.model) && !isReadOnly;
@@ -232,7 +233,7 @@
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />
         </Input>
-        {#if plan.is_read_only}
+        {#if isModelFreePlan}
           <Input layout="inline">
             <span>Model</span>
             <span class="text-muted-foreground">Model-free plan</span>

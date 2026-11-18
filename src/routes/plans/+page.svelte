@@ -374,9 +374,13 @@
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
   let selectedPlan: PlanSlim | undefined;
+  let selectedDetailsId: number | null = null;
+  let selectedDetailsModelId: number | null = null;
+  let displayedPlan: Plan | null = null;
   let selectedPlanDetails: Plan | null = null;
-  let selectedPlanDetailsLoading = false;
-  let selectedPlanDetailsRequest = 0;
+  let selectedPlanDetailsLoading: boolean = false;
+  let selectedPlanDetailsReady: boolean = false;
+  let selectedPlanDetailsRequest: number = 0;
   let selectedPlanId: number | null = null;
   let panelColumns = '300px 3px 1fr';
   let startTimeField: FieldStore<string>;
