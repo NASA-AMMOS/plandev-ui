@@ -104,7 +104,7 @@ export class AerieApi {
       event_types: JSON.stringify(eventTypes),
       source_types: JSON.stringify(sourceTypes),
     });
-    await this.gatewayRequest('/uploadExternalSourceEventTypes', 'POST', body);
+    await this.gatewayJsonRequest('/uploadExternalSourceEventTypes', 'POST', body, 'createExternalEventTypes');
   }
 
   /** Revision the file's current saved state; returns the server-assigned revision name. */
@@ -129,6 +129,13 @@ export class AerieApi {
   async createPlan(plan: PlanInsertInput): Promise<{ id: number }> {
     const data = await this.gqlQuery<{ createPlan: { id: number } }>(gql.CREATE_PLAN, { plan });
     return data.createPlan;
+  }
+
+  /** Link a derivation group to a plan, bypassing the UI. Linking an already-linked group is a no-op. */
+  async createPlanDerivationGroup(planId: number, derivationGroupName: string): Promise<void> {
+    await this.gqlQuery(gql.CREATE_PLAN_DERIVATION_GROUP, {
+      source: { derivation_group_name: derivationGroupName, plan_id: planId },
+    });
   }
 
   async createPlanSnapshot(planId: number, name: string, description = ''): Promise<{ snapshot_id: number }> {
@@ -248,6 +255,26 @@ export class AerieApi {
   }
 
   /**
+   * Gateway request for the external-source endpoints, which report failures as `{ errors }` with
+   * HTTP 200. Returns the parsed body once it is known to hold `successKey`; throws otherwise.
+   */
+  private async gatewayJsonRequest(
+    path: string,
+    method: string,
+    body: FormData | string,
+    successKey: string,
+  ): Promise<Record<string, unknown>> {
+    const json = await (await this.gatewayRequest(path, method, body)).json();
+    if (json?.errors) {
+      throw new Error(`Request to ${path} returned errors: ${JSON.stringify(json.errors)}`);
+    }
+    if (typeof json !== 'object' || json === null || !(successKey in json)) {
+      throw new Error(`Request to ${path} returned an unexpected body: ${JSON.stringify(json)}`);
+    }
+    return json;
+  }
+
+  /**
    * Make an authenticated request to the Gateway (or the Workspace service when `workspace` is
    * true) and return the raw Response. Auth headers are attached automatically; Content-Type is
    * set only for string bodies (FormData supplies its own multipart boundary). Throws on non-2xx.
@@ -280,6 +307,25 @@ export class AerieApi {
     }
 
     return response;
+  }
+
+  /** Names of every external source record in the backend, for asserting what a fixture left behind. */
+  async getExternalSourceInventory(): Promise<{
+    derivationGroups: string[];
+    eventTypes: string[];
+    sourceKeys: string[];
+    sourceTypes: string[];
+  }> {
+    const names = async (subscription: string, field: string, key: string) =>
+      (await this.gqlQuery<Record<string, Record<string, string>[]>>(convertToQuery(subscription)))[field].map(
+        row => row[key],
+      );
+    return {
+      derivationGroups: await names(gql.SUB_DERIVATION_GROUPS, 'derivationGroups', 'name'),
+      eventTypes: await names(gql.SUB_EXTERNAL_EVENT_TYPES, 'models', 'name'),
+      sourceKeys: await names(gql.SUB_EXTERNAL_SOURCES, 'models', 'key'),
+      sourceTypes: await names(gql.SUB_EXTERNAL_SOURCE_TYPES, 'models', 'name'),
+    };
   }
 
   async getPlan(id: number): Promise<unknown> {
@@ -446,7 +492,7 @@ export class AerieApi {
       new Blob([JSON.stringify(sourceJson)], { type: 'application/json' }),
       'external_source.json',
     );
-    await this.gatewayRequest('/uploadExternalSource', 'POST', formData);
+    await this.gatewayJsonRequest('/uploadExternalSource', 'POST', formData, 'createExternalSource');
   }
 
   /**
