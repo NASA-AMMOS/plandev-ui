@@ -235,14 +235,15 @@
         <Input layout="inline" class="!items-baseline">
           <label for="plan-description">Description</label>
           <textarea
-            use:tooltip={{ content: !hasPlanUpdatePermission ? permissionError : '' }}
             aria-label="Description"
             id="plan-description"
             name="plan-description"
             class="st-input resize-y"
-            class:opacity-50={!hasPlanUpdatePermission}
             rows={4}
-            readonly={!hasPlanUpdatePermission}
+            use:permissionHandler={{
+              hasPermission: hasPlanUpdatePermission,
+              permissionError,
+            }}
             bind:value={planDescription}
             on:change={onPlanDescriptionChange}
           />
