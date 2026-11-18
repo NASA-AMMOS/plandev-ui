@@ -300,8 +300,7 @@ test.describe.serial('Timeline View Editing', () => {
 
     // Add an external event layer
     await externalEventLayerEditor.getByRole('button', { name: 'New Event Layer' }).click();
-    const newLayerCount = await externalEventLayerEditor.locator('.timeline-layer-editor').count();
-    expect(newLayerCount - existingLayerCount).toEqual(1);
+    await expect(externalEventLayerEditor.locator('.timeline-layer-editor')).toHaveCount(existingLayerCount + 1);
 
     // Expect the external event layer to include all external events
   });
@@ -318,24 +317,23 @@ test.describe.serial('Timeline View Editing', () => {
 
     // Expect that the modal is present
     const modal = externalEventLayerEditor.getByRole('dialog');
-    expect(modal).toBeDefined();
+    await expect(modal).toBeVisible();
 
     // Expect that the resulting types list is not empty
     const resultingTypesList = modal.locator('.resulting-types-list');
-    const allExternalEventTypesCount = await resultingTypesList.locator('.filter-type-result').count();
-    expect(allExternalEventTypesCount).toBeGreaterThan(0);
+    await expect(resultingTypesList.locator('.filter-type-result').first()).toBeVisible();
 
     // Expect that manually selecting types cause the types to appear in the resulting types list
     await modal.locator("input[name='manual-types-filter-input']").click();
-    expect(await modal.locator('.manual-types-menu').first()).toBeDefined();
+    await expect(modal.locator('.manual-types-menu').first()).toBeVisible();
     await modal.getByRole('menuitem', { name: example.eventTypes[0] }).click();
     await setup.page.keyboard.press('Escape');
 
-    expect(await resultingTypesList.getByText(example.eventTypes[0])).toBeDefined();
+    await expect(resultingTypesList.getByText(example.eventTypes[0], { exact: true })).toBeVisible();
 
     // Expect that dynamic types can be added
     await modal.getByLabel('dynamic-types').getByRole('button', { name: 'Add Filter' }).click();
-    expect(await modal.getByLabel('dynamic-types').getByRole('listitem').count()).toBe(1);
+    await expect(modal.getByLabel('dynamic-types').getByRole('listitem')).toHaveCount(1);
     // Fill filter value input
     await modal
       .getByLabel('dynamic-types')
@@ -343,9 +341,9 @@ test.describe.serial('Timeline View Editing', () => {
       .locator("input[name='filter-value']")
       .fill(example.eventTypes[0]);
     // Ensure that only this fixture's event type is listed
-    expect(await resultingTypesList.locator('.filter-type-result').count()).toEqual(1);
+    await expect(resultingTypesList.locator('.filter-type-result')).toHaveCount(1);
 
-    expect(await modal.getByText('1 instance')).toBeVisible();
+    await expect(modal.getByText('1 instance', { exact: true })).toBeVisible();
 
     // Give the layer a new name
     await modal.locator('input[name="layer-name"]').fill('Foo');
@@ -354,14 +352,16 @@ test.describe.serial('Timeline View Editing', () => {
     await modal.getByRole('button', { name: 'close' }).click();
 
     // Expect name to match given name
-    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').first()).toHaveText(/\s+Foo\s/);
+    await expect(
+      externalEventLayerEditor.locator('.timeline-layer-editor').first().locator('.layer-name-text'),
+    ).toHaveText('Foo');
   });
 
   test('Change external event layer settings', async () => {
-    const externalEventLayerEditor = await setup.page.getByLabel('Event Layer-editor');
+    const externalEventLayerEditor = setup.page.getByLabel('Event Layer-editor');
 
     // Expect to not see an external event tree group in this row
-    expect(await setup.page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.event-tree').count()).toBe(
+    await expect(setup.page.locator('.timeline-row-wrapper', { hasText: rowName }).locator('.event-tree')).toHaveCount(
       0,
     );
 
@@ -369,12 +369,11 @@ test.describe.serial('Timeline View Editing', () => {
     await setup.page.locator('button', { hasText: 'Grouped' }).click();
 
     // Expect to see an external event tree group for this event in this row
-    expect(
-      await setup.page
+    await expect(
+      setup.page
         .locator('.timeline-row-wrapper', { hasText: rowName })
-        .locator('.collapse-root', { hasText: example.eventTypes[0] })
-        .count(),
-    ).toBe(1);
+        .locator('.collapse-root', { hasText: example.eventTypes[0] }),
+    ).toHaveCount(1);
 
     // Delete an external event layer
     await externalEventLayerEditor
@@ -382,7 +381,7 @@ test.describe.serial('Timeline View Editing', () => {
       .first()
       .getByRole('button', { name: 'Delete' })
       .click();
-    expect(await externalEventLayerEditor.locator('.timeline-layer-editor').count()).toBe(0);
+    await expect(externalEventLayerEditor.locator('.timeline-layer-editor')).toHaveCount(0);
   });
 
   test('Open and close the row header context menu', async () => {
