@@ -22,33 +22,37 @@
 </script>
 
 <fieldset
-  aria-label="{item}-editor"
+  aria-label={item ? `${item}-editor` : undefined}
   class={classNames('editor-section', { 'editor-section-draggable': isDragContainer })}
 >
-  <div class="editor-section-header">
-    <div class="st-typography-medium">{pluralizedItem}</div>
-    {#if creatable}
-      <div>
-        {#if typeof itemCount === 'number' && itemCount > 0}
+  <!-- No item name renders a bare padded block, for a group whose only content is one
+       self-describing control. -->
+  {#if item}
+    <div class="editor-section-header">
+      <div class="st-typography-medium">{pluralizedItem}</div>
+      {#if creatable}
+        <div>
+          {#if typeof itemCount === 'number' && itemCount > 0}
+            <button
+              on:click|stopPropagation={() => dispatch('removeAll')}
+              use:tooltip={{ content: `Delete All ${pluralizedItem}`, placement: 'top' }}
+              class="st-button icon"
+            >
+              <RemoveAllIcon />
+            </button>
+          {/if}
           <button
-            on:click|stopPropagation={() => dispatch('removeAll')}
-            use:tooltip={{ content: `Delete All ${pluralizedItem}`, placement: 'top' }}
+            aria-label={`New ${item}`}
+            on:click|stopPropagation={() => dispatch('create')}
+            use:tooltip={{ content: `New ${item}`, placement: 'top' }}
             class="st-button icon"
           >
-            <RemoveAllIcon />
+            <PlusIcon />
           </button>
-        {/if}
-        <button
-          aria-label={`New ${item}`}
-          on:click|stopPropagation={() => dispatch('create')}
-          use:tooltip={{ content: `New ${item}`, placement: 'top' }}
-          class="st-button icon"
-        >
-          <PlusIcon />
-        </button>
-      </div>
-    {/if}
-  </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <slot />
 </fieldset>
