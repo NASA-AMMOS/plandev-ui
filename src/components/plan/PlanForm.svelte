@@ -236,7 +236,7 @@
         {#if isModelFreePlan}
           <Input layout="inline">
             <span>Model</span>
-            <span class="text-muted-foreground">Model-free plan</span>
+            <span class="text-muted-foreground" data-testid="modelFreePlanLabel">Model-free plan</span>
           </Input>
         {:else}
           <Input layout="inline">
