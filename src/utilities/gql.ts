@@ -354,6 +354,7 @@ const gql = {
   CREATE_PLAN: `#graphql
     mutation CreatePlan($plan: plan_insert_input!) {
       createPlan: ${Queries.INSERT_PLAN}(object: $plan) {
+        description
         created_at
         collaborators {
           collaborator
@@ -1360,6 +1361,7 @@ const gql = {
           collaborator
         }
         created_at
+        description
         duration
         id
         is_locked
@@ -1495,6 +1497,7 @@ const gql = {
           collaborator
         }
         created_at
+        description
         duration
         id
         is_read_only
@@ -2692,6 +2695,7 @@ const gql = {
           collaborator
         }
         created_at
+        description
         duration
         id
         is_read_only
@@ -2972,6 +2976,7 @@ const gql = {
         id
         is_read_only
         start_time
+        description
         duration
         model: mission_model {
           definition_file_id
