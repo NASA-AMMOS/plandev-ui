@@ -1,4 +1,4 @@
-import type { Profile, Resource, ResourceValue } from '../types/simulation';
+import type { Profile, RealDynamics, Resource, ResourceValue } from '../types/simulation';
 import { getIntervalInMs } from './time';
 
 // First-fetch sentinel for windowed profile pulls: smaller than any real
@@ -6,6 +6,15 @@ import { getIntervalInMs } from './time';
 // Postgres interval syntax (HH:MM:SS) — Hasura's interval scalar rejects
 // ISO 8601.
 export const INITIAL_SINCE = '-00:00:01';
+
+function isRealDynamics(dynamics: unknown): dynamics is RealDynamics {
+  return (
+    typeof dynamics === 'object' &&
+    dynamics !== null &&
+    typeof (dynamics as RealDynamics).initial === 'number' &&
+    typeof (dynamics as RealDynamics).rate === 'number'
+  );
+}
 
 /**
  * Samples a list of profiles at their change points. Converts the sampled profiles to Resources.
@@ -37,26 +46,29 @@ export function sampleProfiles(
         const { dynamics, is_gap } = segment;
 
         if (type === 'discrete') {
+          // Discrete dynamics is a SerializedValue; JSON null is a legitimate value. is_gap is the discriminator.
           values.push({
             is_gap,
             x: start + segmentOffset,
-            y: dynamics,
+            y: dynamics as ResourceValue['y'],
           });
           values.push({
             is_gap,
             x: start + nextSegmentOffset,
-            y: dynamics,
+            y: dynamics as ResourceValue['y'],
           });
         } else if (type === 'real') {
+          // Gaps, missing dynamics, and malformed dynamics all render as unknown (y: null breaks the line).
+          const known = !is_gap && isRealDynamics(dynamics);
           values.push({
-            is_gap,
+            is_gap: !known,
             x: start + segmentOffset,
-            y: dynamics.initial,
+            y: known ? dynamics.initial : null,
           });
           values.push({
-            is_gap,
+            is_gap: !known,
             x: start + nextSegmentOffset,
-            y: dynamics.initial + dynamics.rate * ((nextSegmentOffset - segmentOffset) / 1000),
+            y: known ? dynamics.initial + dynamics.rate * ((nextSegmentOffset - segmentOffset) / 1000) : null,
           });
         }
       }
