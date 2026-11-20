@@ -8,13 +8,24 @@ import {
 import type { ActivityDirective, ActivityType } from '../types/activity';
 import type { ExternalEvent } from '../types/external-event';
 import type { DefaultEffectiveArgumentsMap } from '../types/parameter';
-import type { Resource, ResourceType, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
+import type { Resource, ResourceType, ResourceValue, Span, SpanUtilityMaps, SpansMap } from '../types/simulation';
 import type { Tag } from '../types/tags';
-import type { DiscreteTreeNode, TimeRange, Timeline, XRangeLayer } from '../types/timeline';
+import type {
+  Axis,
+  DiscreteTreeNode,
+  Layer,
+  LinePoint,
+  TimeRange,
+  Timeline,
+  XRangeLayer,
+  XRangePoint,
+} from '../types/timeline';
 import { createSpanUtilityMaps } from './activities';
 import { convertUTCToMs } from './time';
 import {
   applyActivityLayerFilter,
+  appendLinePointSlice,
+  coalesceXRangeRuns,
   createHorizontalGuide,
   createRow,
   createTimeline,
@@ -29,6 +40,9 @@ import {
   externalEventInView,
   generateDiscreteTreeUtil,
   getMatchingTypesForActivityLayerFilter,
+  getHoverNeighbours,
+  getLinePointWindow,
+  getPointsAtX,
   getResourceForLayer,
   getTimeRangeAroundTime,
   getUniqueColorForActivityLayer,
@@ -38,10 +52,14 @@ import {
   isActivityLayer,
   isExternalEventLayer,
   isLineLayer,
+  isSortedByX,
   isXRangeLayer,
+  lowerBoundByX,
+  lowerBoundXRangeRunEnd,
   matchesDynamicFilter,
   paginateNodes,
   spanInView,
+  upperBoundByX,
 } from './timeline';
 
 const testActivityTypes: ActivityType[] = [
@@ -1656,4 +1674,464 @@ test('matchesDynamicFilter', () => {
   expect(matchesDynamicFilter(2, 'is_not_within', [1, 3])).toBeFalsy();
   // @ts-expect-error forcing the case where an invalid operator is specified
   expect(matchesDynamicFilter(2, 'is_definitely_somewhere_near', [1, 3])).toBeFalsy();
+});
+
+describe('in-view window search', () => {
+  const at = (...xs: number[]) => xs.map(x => ({ x }));
+
+  test('lowerBoundByX finds the first index with x >= target', () => {
+    const points = at(10, 20, 20, 30, 40);
+    expect(lowerBoundByX(points, 5)).toEqual(0);
+    expect(lowerBoundByX(points, 10)).toEqual(0);
+    expect(lowerBoundByX(points, 15)).toEqual(1);
+    expect(lowerBoundByX(points, 20)).toEqual(1); // first of a duplicate run
+    expect(lowerBoundByX(points, 40)).toEqual(4);
+    expect(lowerBoundByX(points, 41)).toEqual(5); // past the end
+    expect(lowerBoundByX([], 1)).toEqual(0);
+  });
+
+  test('upperBoundByX finds the first index with x > target', () => {
+    const points = at(10, 20, 20, 30, 40);
+    expect(upperBoundByX(points, 5)).toEqual(0);
+    expect(upperBoundByX(points, 10)).toEqual(1);
+    expect(upperBoundByX(points, 20)).toEqual(3); // past a duplicate run
+    expect(upperBoundByX(points, 39)).toEqual(4);
+    expect(upperBoundByX(points, 40)).toEqual(5);
+    expect(upperBoundByX([], 1)).toEqual(0);
+  });
+
+  test('isSortedByX accepts non-decreasing and rejects any inversion', () => {
+    expect(isSortedByX([])).toBe(true);
+    expect(isSortedByX(at(1))).toBe(true);
+    expect(isSortedByX(at(1, 1, 2, 2, 3))).toBe(true);
+    expect(isSortedByX(at(1, 3, 2))).toBe(false);
+    expect(isSortedByX(at(2, 1))).toBe(false);
+  });
+
+  test('bounded window matches the linear scan it replaced', () => {
+    type P = { x: number };
+
+    function linearScan(points: P[], start: number, end: number) {
+      const inView: P[] = [];
+      let leftPoint: P | null = null;
+      let rightPoint: P | null = null;
+      let prevPoint: P | null = null;
+      points.forEach(point => {
+        if (point.x >= start && !leftPoint && prevPoint) {
+          leftPoint = prevPoint;
+        }
+        if (point.x > end && !rightPoint && prevPoint) {
+          rightPoint = point;
+        }
+        if (point.x >= start && point.x <= end) {
+          inView.push(point);
+        }
+        prevPoint = point;
+      });
+      return { inView, leftPoint, rightPoint };
+    }
+
+    const datasets: P[][] = [
+      [],
+      at(50),
+      at(10, 20),
+      at(10, 10, 10),
+      at(0, 10, 20, 30, 40, 50),
+      at(5, 5, 15, 15, 25, 25),
+    ];
+
+    for (const points of datasets) {
+      for (let start = -10; start <= 60; start += 5) {
+        for (let end = start; end <= 60; end += 5) {
+          const { firstAfterView, firstInView, leftPoint, rightPoint } = getLinePointWindow(points, start, end);
+          expect({ inView: points.slice(firstInView, firstAfterView), leftPoint, rightPoint }).toEqual(
+            linearScan(points, start, end),
+          );
+        }
+      }
+    }
+  });
+});
+
+describe('x-range box scan bounding', () => {
+  type Box = { endMs: number; label: string; startMs: number };
+
+  function referenceBoxes(points: XRangePoint[], viewStart: number, viewEnd: number): Box[] {
+    const out: Box[] = [];
+    for (let i = 0; i < points.length; ++i) {
+      const point = points[i];
+      if (point.is_gap || point.is_null) {
+        continue;
+      }
+
+      let j = i + 1;
+      let nextPoint = points[j];
+      while (nextPoint && nextPoint.label.text === point.label.text && nextPoint.is_gap === point.is_gap) {
+        j = j + 1;
+        nextPoint = points[j];
+      }
+      i = j - 1;
+
+      const startMs = point.x;
+      const endMs = nextPoint ? nextPoint.x : points[i].x;
+
+      if (startMs > viewEnd) {
+        continue;
+      }
+      if (endMs < viewStart) {
+        continue;
+      }
+
+      out.push({ endMs, label: point.label.text, startMs });
+    }
+    return out;
+  }
+
+  function productionBoxes(points: XRangePoint[], viewStart: number, viewEnd: number): Box[] {
+    const runs = coalesceXRangeRuns(points);
+    const out: Box[] = [];
+    for (let i = lowerBoundXRangeRunEnd(runs, viewStart); i < runs.length; ++i) {
+      const { endMs, point } = runs[i];
+      if (point.x > viewEnd) {
+        break;
+      }
+      out.push({ endMs, label: point.label.text, startMs: point.x });
+    }
+    return out;
+  }
+
+  function makeRng(seed: number): () => number {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  test('bounded scan produces the same boxes as the full scan', () => {
+    const rng = makeRng(0xbeef);
+
+    for (let iteration = 0; iteration < 120; ++iteration) {
+      const count = 1 + Math.floor(rng() * 40);
+      // Few distinct labels so long runs occur; occasional gaps/nulls to exercise the skip paths.
+      const labelPool = ['A', 'B', 'C'].slice(0, 1 + Math.floor(rng() * 3));
+      const points: XRangePoint[] = [];
+      let x = 0;
+      for (let i = 0; i < count; ++i) {
+        points.push({
+          id: i,
+          is_gap: rng() < 0.12,
+          is_null: rng() < 0.08,
+          label: { text: labelPool[Math.floor(rng() * labelPool.length)] },
+          name: 'r',
+          type: 'x-range',
+          x,
+        });
+        x += 1 + Math.floor(rng() * 10);
+      }
+
+      const maxX = points[points.length - 1].x;
+      for (let viewStart = -5; viewStart <= maxX + 5; viewStart += 3) {
+        for (const span of [0, 1, 7, 25, maxX + 10]) {
+          const viewEnd = viewStart + span;
+          expect(productionBoxes(points, viewStart, viewEnd)).toEqual(referenceBoxes(points, viewStart, viewEnd));
+        }
+      }
+    }
+  });
+
+  test('a single run spanning the whole profile still yields its one box at any zoom', () => {
+    const points: XRangePoint[] = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      label: { text: 'CONSTANT' },
+      name: 'r',
+      type: 'x-range',
+      x: i * 10,
+    }));
+    expect(coalesceXRangeRuns(points)).toHaveLength(1);
+    for (const [viewStart, viewEnd] of [
+      [0, 490],
+      [200, 210],
+      [-100, -1],
+      [500, 600],
+    ]) {
+      expect(productionBoxes(points, viewStart, viewEnd)).toEqual(referenceBoxes(points, viewStart, viewEnd));
+    }
+  });
+});
+
+describe('line point conversion', () => {
+  test.each(['string', 'variant'] as const)('%s conversion resumes without duplicates', schemaType => {
+    const values: ResourceValue[] = Array.from({ length: 100 }, (_, i) => ({ x: i, y: `value-${i % 4}` }));
+    const schema =
+      schemaType === 'variant'
+        ? { type: 'variant' as const, variants: ['value-0', 'value-1', 'value-2', 'value-3'].map(label => ({ label })) }
+        : { type: 'string' as const };
+    const resources: Resource[] = [{ name: 'r', schema, values } as Resource];
+    const points: LinePoint[] = [];
+    const ordinalDomain = new Set<string>();
+    let cursor = { nextId: 0, resourceIndex: 0, valueIndex: 0 };
+    let completed = false;
+    let frames = 0;
+
+    do {
+      const next = appendLinePointSlice(resources, points, ordinalDomain, cursor, () => true);
+      ++frames;
+      if (!next) {
+        completed = true;
+        break;
+      }
+      cursor = next;
+    } while (frames < 200);
+
+    expect(frames).toBeGreaterThan(1);
+    expect(completed).toBe(true);
+    expect(points).toHaveLength(values.length);
+    expect(points.map(point => point.x)).toEqual(values.map(value => value.x));
+    expect(new Set(points.map(point => point.id)).size).toBe(values.length);
+    expect(ordinalDomain).toEqual(new Set(['value-0', 'value-1', 'value-2', 'value-3']));
+  });
+});
+
+// Original full scan retained as an independent oracle.
+function referenceGetYAxisBounds(yAxis: Axis, layers: Layer[], resources: Resource[], viewTimeRange?: TimeRange) {
+  const yAxisLayers = layers.filter(layer => layer.yAxisId === yAxis.id);
+  let minY: number | undefined = undefined;
+  let maxY: number | undefined = undefined;
+  yAxisLayers.forEach(layer => {
+    const layerResource = getResourceForLayer(layer, resources) as Resource;
+    if (layerResource) {
+      let leftValue: ResourceValue | undefined;
+      let rightValue: ResourceValue | undefined;
+      layerResource.values.forEach(value => {
+        const isNumber = typeof value.y === 'number';
+        if (viewTimeRange && value.x < viewTimeRange.start) {
+          if (value.is_gap) {
+            leftValue = undefined;
+          } else if (isNumber) {
+            if (!leftValue || value.x >= leftValue.x) {
+              leftValue = value;
+            }
+          }
+        }
+        if (viewTimeRange && value.x > viewTimeRange.end) {
+          if (value.is_gap) {
+            rightValue = undefined;
+          } else if (isNumber) {
+            if (!rightValue || value.x < rightValue.x) {
+              rightValue = value;
+            }
+          }
+        }
+        if (
+          typeof value.y === 'number' &&
+          (!viewTimeRange ||
+            yAxis.domainFitMode !== 'fitTimeWindow' ||
+            (value.x >= viewTimeRange.start && value.x <= viewTimeRange.end))
+        ) {
+          if (minY === undefined || value.y < minY) {
+            minY = value.y;
+          }
+          if (maxY === undefined || value.y > maxY) {
+            maxY = value.y;
+          }
+        }
+      });
+      if (viewTimeRange) {
+        minY = Math.min(
+          minY ?? Number.MAX_SAFE_INTEGER,
+          leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MAX_SAFE_INTEGER,
+          rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MAX_SAFE_INTEGER,
+        );
+        maxY = Math.max(
+          maxY ?? Number.MIN_SAFE_INTEGER,
+          leftValue !== undefined && leftValue.y ? (leftValue.y as number) : Number.MIN_SAFE_INTEGER,
+          rightValue !== undefined && rightValue.y ? (rightValue.y as number) : Number.MIN_SAFE_INTEGER,
+        );
+      }
+    }
+  });
+  const scaleDomain = [...(yAxis.scaleDomain || [])];
+  if (minY !== undefined) {
+    scaleDomain[0] = minY;
+  }
+  if (maxY !== undefined) {
+    scaleDomain[1] = maxY;
+  }
+  return scaleDomain as number[];
+}
+
+describe('getYAxisBounds bounded scan', () => {
+  function makeRng(seed: number): () => number {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  test('matches the original full scan across fit modes, gaps, and window positions', () => {
+    const rng = makeRng(0xd0d0);
+
+    for (let iteration = 0; iteration < 150; ++iteration) {
+      const timelines = generateTimelines();
+      populateTimelineRows(timelines);
+      populateTimelineYAxes(timelines);
+      populateTimelineLayers(timelines);
+      const layers = timelines[0].rows[0].layers;
+      layers[1].filter.resource = 'r';
+      const baseAxis = timelines[0].rows[0].yAxes[0];
+
+      const withGaps = iteration % 3 === 0;
+      const count = 1 + Math.floor(rng() * 30);
+      const values: ResourceValue[] = [];
+      let x = 0;
+      for (let i = 0; i < count; ++i) {
+        const nonNumeric = rng() < 0.15;
+        values.push({
+          is_gap: withGaps && rng() < 0.2,
+          x,
+          y: nonNumeric ? (`label-${i}` as unknown as number) : Math.round((rng() - 0.5) * 200),
+        });
+        x += 1 + Math.floor(rng() * 4);
+      }
+      const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+
+      const maxX = values[values.length - 1].x;
+      for (const domainFitMode of ['fitTimeWindow', 'fitPlan'] as const) {
+        const yAxis: Axis = { ...baseAxis, domainFitMode };
+
+        expect(getYAxisBounds(yAxis, layers, resources)).toEqual(referenceGetYAxisBounds(yAxis, layers, resources));
+
+        for (let start = -2; start <= maxX + 2; start += 2) {
+          for (const span of [0, 3, 11, maxX + 4]) {
+            const viewTimeRange: TimeRange = { end: start + span, start };
+            expect(getYAxisBounds(yAxis, layers, resources, viewTimeRange)).toEqual(
+              referenceGetYAxisBounds(yAxis, layers, resources, viewTimeRange),
+            );
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('hover neighbour search bounding', () => {
+  type P = { x: number; y: number | null };
+
+  function linearNeighbours(points: P[], xDate: number) {
+    let leftPoint: P | null = null;
+    let rightPoint: P | null = null;
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      if (point.x <= xDate) {
+        if (!leftPoint) {
+          leftPoint = point;
+        } else if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+          leftPoint = point;
+        }
+      } else if (!rightPoint) {
+        rightPoint = point;
+        break;
+      }
+    }
+    return { leftPoint, rightPoint };
+  }
+
+  function linearAtX(points: P[], x: number) {
+    return points.filter(p => p.y !== null && p.x === x);
+  }
+
+  test('bounded neighbour and exact-x lookups match the scans they replaced', () => {
+    const datasets: P[][] = [
+      [],
+      [{ x: 50, y: 1 }],
+      // Duplicate x values are the interesting case: the scan preferred later points on a tie, and
+      // consecutive profile segments genuinely share an x.
+      [
+        { x: 10, y: 1 },
+        { x: 10, y: 2 },
+        { x: 20, y: 3 },
+        { x: 20, y: 4 },
+        { x: 30, y: 5 },
+      ],
+      // Gaps must be excluded from the exact-x set but still count as neighbours.
+      [
+        { x: 0, y: 1 },
+        { x: 10, y: null },
+        { x: 10, y: 2 },
+        { x: 20, y: null },
+        { x: 30, y: 3 },
+      ],
+      Array.from({ length: 40 }, (_, i) => ({ x: i * 5, y: i })),
+    ];
+
+    for (const points of datasets) {
+      for (let cursor = -10; cursor <= 220; cursor += 1) {
+        expect(getHoverNeighbours(points, cursor)).toEqual(linearNeighbours(points, cursor));
+      }
+      for (const x of [-5, 0, 10, 15, 20, 30, 195, 500]) {
+        expect(getPointsAtX(points, x)).toEqual(linearAtX(points, x));
+      }
+    }
+  });
+});
+
+describe('getYAxisBounds cache revalidation', () => {
+  function fixture() {
+    const timelines = generateTimelines();
+    populateTimelineRows(timelines);
+    populateTimelineYAxes(timelines);
+    populateTimelineLayers(timelines);
+    const layers = timelines[0].rows[0].layers;
+    layers[1].filter.resource = 'r';
+    const yAxis: Axis = { ...timelines[0].rows[0].yAxes[0], domainFitMode: 'fitPlan' };
+    return { layers, yAxis };
+  }
+
+  test('appending to the same array is not served from the stale entry', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+
+    values.push({ x: 20, y: 99 });
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 99]);
+  });
+
+  test('rewriting the final sample in place is not served from the stale entry', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+
+    values[1] = { x: 10, y: -3 };
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([-3, 5]);
+  });
+
+  test('an unchanged array still uses the cache', () => {
+    const { layers, yAxis } = fixture();
+    const values: ResourceValue[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 7 },
+    ];
+    const resources: Resource[] = [{ name: 'r', schema: { type: 'real' }, values }];
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+    expect(getYAxisBounds(yAxis, layers, resources)).toEqual([5, 7]);
+  });
 });

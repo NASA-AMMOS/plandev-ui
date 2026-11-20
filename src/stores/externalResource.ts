@@ -2,7 +2,8 @@ import { derived, writable, type Readable } from 'svelte/store';
 import type { User } from '../types/app';
 import type { Profile, ProfileSegment, Resource } from '../types/simulation';
 import effects from '../utilities/effects';
-import { INITIAL_SINCE, sampleProfiles } from '../utilities/resources';
+import { appendAll } from '../utilities/generic';
+import { createProfileSampler, INITIAL_SINCE } from '../utilities/resources';
 import { catchError } from './console';
 import { planDatasets } from './plan';
 import {
@@ -52,10 +53,13 @@ export function createExternalResourceSubscription(
   }
 
   const accumulator: ProfileSegment[] = [];
+  // Sampling work tracks the segment delta; repointing to another dataset resets it.
+  const sampler = createProfileSampler(planStartTimeYmd);
   let sinceOffset = INITIAL_SINCE;
   let resolved = false;
   let lastError = '';
   let inFlight = false;
+  let requestGeneration = 0;
   // Re-fire once from the finally block if a refetch was requested while
   // another was in flight, so we don't miss the tail if the request
   // happened to be the last meaningful trigger (e.g. ingestion finished
@@ -126,18 +130,22 @@ export function createExternalResourceSubscription(
       return;
     }
     let resource: Resource | null = null;
-    if (currentMeta && resolved) {
-      const synthesised: Profile = {
-        dataset_id: currentMeta.datasetId,
+    // planStartTimeYmd guard matches sampleProfiles, which yielded no resource without a start
+    // time rather than emitting NaN x values.
+    if (currentMeta && resolved && planStartTimeYmd) {
+      resource = sampler.sample({
         duration: currentMeta.duration,
-        id: currentMeta.profileId,
         name,
-        profile_segments: accumulator,
-        type: currentMeta.type,
-      };
-      resource = sampleProfiles([synthesised], planStartTimeYmd, currentMeta.offsetFromPlanStart)[0] ?? null;
+        offsetInterval: currentMeta.offsetFromPlanStart,
+        profileType: currentMeta.type,
+        segments: accumulator,
+      });
     }
-    const nextState: TimelineResourceState = { error: lastError, loading: !resolved && !lastError, resource };
+    const nextState: TimelineResourceState = {
+      error: lastError,
+      loading: !resolved && !lastError,
+      resource,
+    };
     setState(nextState);
   }
 
@@ -150,6 +158,7 @@ export function createExternalResourceSubscription(
       return;
     }
     inFlight = true;
+    const requestGenerationAtStart = requestGeneration;
     try {
       const segments = await effects.getExternalProfileSegmentsSince(
         currentMeta.datasetId,
@@ -158,18 +167,18 @@ export function createExternalResourceSubscription(
         user,
         abortController.signal,
       );
-      if (disposed) {
+      if (disposed || requestGenerationAtStart !== requestGeneration) {
         return;
       }
       if (segments && segments.length > 0) {
-        accumulator.push(...segments);
+        appendAll(accumulator, segments);
         sinceOffset = segments[segments.length - 1].start_offset;
       }
       resolved = true;
       lastError = '';
       emit();
     } catch (e) {
-      if (disposed) {
+      if (disposed || requestGenerationAtStart !== requestGeneration) {
         return;
       }
       const err = e as Error;
@@ -188,7 +197,9 @@ export function createExternalResourceSubscription(
   }
 
   function resetForNewProfile() {
+    requestGeneration += 1;
     accumulator.length = 0;
+    sampler.reset();
     sinceOffset = INITIAL_SINCE;
     resolved = false;
   }
@@ -230,14 +241,15 @@ export function createExternalResourceSubscription(
       pendingMissing = false;
       const { meta } = next;
       currentMeta = meta;
-      // If we switched to a different profile row (different dataset or id),
-      // reset accumulator and sinceOffset before refetching.
+      // Retain segments so offset changes can rebuild samples without refetching.
       const switched =
         lastMeta !== null && (lastMeta.datasetId !== meta.datasetId || lastMeta.profileId !== meta.profileId);
       if (switched) {
         resetForNewProfile();
       }
       const durationAdvanced = lastMeta === null || lastMeta.duration !== meta.duration;
+      // Offset changes need a re-emit because every x shifts, but no refetch.
+      const offsetChanged = lastMeta !== null && lastMeta.offsetFromPlanStart !== meta.offsetFromPlanStart;
       lastMeta = meta;
       // Assumption: external profiles only grow via `duration` advancement.
       // If a backend ever appends segments without bumping duration, those
@@ -246,12 +258,9 @@ export function createExternalResourceSubscription(
       // feature ships.
       if (switched || durationAdvanced || !resolved) {
         refetch();
-      } else if (lastError) {
-        // Re-emit to clear lingering error if metadata is now clean.
+      } else if (offsetChanged || lastError) {
         emit();
       }
-      // Otherwise: meta unchanged, no error pending, no need to re-sample
-      // the full accumulator and re-push identical state downstream.
     }),
   );
 

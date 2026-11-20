@@ -14,7 +14,16 @@
     TimeRange,
   } from '../../types/timeline';
   import { filterNullish } from '../../utilities/generic';
-  import { CANVAS_PADDING_Y, getYScale, minMaxDecimation } from '../../utilities/timeline';
+  import {
+    appendLinePointSlice,
+    CANVAS_PADDING_Y,
+    getHoverNeighbours,
+    getLinePointWindow,
+    getPointsAtX,
+    getYScale,
+    isSortedByX,
+    minMaxDecimation,
+  } from '../../utilities/timeline';
 
   export let contextmenu: MouseEvent | undefined;
   export let dpr: number = 1;
@@ -55,6 +64,9 @@
   let tempPoints: LinePoint[];
   let processingRequest: number;
   let scaledYCache: Record<number | string, number | undefined>;
+  // Recomputed once per `points` rebuild, not per frame, so the draw path can binary-search the
+  // in-view window when the precondition holds.
+  let pointsSorted = true;
 
   $: canvasHeightDpr = drawHeight * dpr;
   $: canvasWidthDpr = drawWidth * dpr;
@@ -148,31 +160,57 @@
       let prevPoint: LinePoint | null = null;
       const gapPoints: LinePoint[] = [];
       const deferProcessingPoints = !ordinalScale && decimate;
-      points.forEach(point => {
-        if (point.x >= viewTimeRange.start && !leftPoint && prevPoint) {
-          leftPoint = processPoint(prevPoint, yScale);
-        }
-        if (point.x > viewTimeRange.end && !rightPoint && prevPoint) {
-          rightPoint = processPoint(point, yScale);
-        }
-        if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
-          // Ignore gaps
-          if (point.y === null) {
-            gapPoints.push(processPoint(point, yScale));
+
+      const collectPoint = (point: LinePoint) => {
+        // Ignore gaps
+        if (point.y === null) {
+          gapPoints.push(processPoint(point, yScale));
+        } else {
+          // If not using ordinal scale and we're decimating we can defer processing the points until after
+          // decimation has occurred to limit the number of expensive yScale calls to the actual decimated point set
+          if (deferProcessingPoints) {
+            pointsInView.push(point);
           } else {
-            // If not using ordinal scale and we're decimating we can defer processing the points until after
-            // decimation has occurred to limit the number of expensive yScale calls to the actual decimated point set
-            if (deferProcessingPoints) {
-              pointsInView.push(point);
-            } else {
-              // For ordinal scale we have to process the point in order to have a numerical y value for the
-              // decimation to operate on.
-              pointsInView.push(processPoint(point, yScale));
-            }
+            // For ordinal scale we have to process the point in order to have a numerical y value for the
+            // decimation to operate on.
+            pointsInView.push(processPoint(point, yScale));
           }
         }
-        prevPoint = point;
-      });
+      };
+
+      if (pointsSorted) {
+        // Sorted points let us binary-search the in-view window instead of touching every point
+        // on every zoom/pan frame, making frame cost track what is visible rather than how much
+        // data the resource has in total.
+        const {
+          firstAfterView,
+          firstInView,
+          leftPoint: left,
+          rightPoint: right,
+        } = getLinePointWindow(points, viewTimeRange.start, viewTimeRange.end);
+
+        for (let i = firstInView; i < firstAfterView; ++i) {
+          collectPoint(points[i]);
+        }
+        leftPoint = left ? processPoint(left, yScale) : null;
+        rightPoint = right ? processPoint(right, yScale) : null;
+      } else {
+        // Unsorted points (a profile whose duration lands before its last segment offset) break
+        // the search's precondition, and in-view points are not contiguous. Fall back to the
+        // original full scan.
+        points.forEach(point => {
+          if (point.x >= viewTimeRange.start && !leftPoint && prevPoint) {
+            leftPoint = processPoint(prevPoint, yScale);
+          }
+          if (point.x > viewTimeRange.end && !rightPoint && prevPoint) {
+            rightPoint = processPoint(point, yScale);
+          }
+          if (point.x >= viewTimeRange.start && point.x <= viewTimeRange.end) {
+            collectPoint(point);
+          }
+          prevPoint = point;
+        });
+      }
       finalPoints = pointsInView;
       // Perform decimation if requested
       if (pointsInView.length > 0 && decimate) {
@@ -261,8 +299,7 @@
     points: LinePoint[],
     yScale: ScaleLinear<number, number> | ScalePoint<string>,
   ): LinePoint | null {
-    /* TODO this could potentially include some pixel buffer around x? */
-    const pointsAtX = points.filter(p => p.y !== null && p.x === x);
+    const pointsAtX = pointsSorted ? getPointsAtX(points, x) : points.filter(p => p.y !== null && p.x === x);
     const closest = pointsAtX.reduce((closestPoint: LinePoint | null, nextPoint) => {
       if (closestPoint === null) {
         return nextPoint;
@@ -317,21 +354,24 @@
       let rightPoint: LinePoint | null = null;
       const yScale = computeYScale(yAxes);
 
-      // Find the points that neighbor mouse x
-      for (let i = 0; i < points.length; i++) {
-        const point = points[i];
-        if (point.x <= xDate) {
-          if (!leftPoint) {
-            leftPoint = point;
-          } else {
-            if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+      if (pointsSorted) {
+        ({ leftPoint, rightPoint } = getHoverNeighbours(points, xDate));
+      } else {
+        for (let i = 0; i < points.length; i++) {
+          const point = points[i];
+          if (point.x <= xDate) {
+            if (!leftPoint) {
               leftPoint = point;
+            } else {
+              if (Math.abs(point.x - xDate) <= Math.abs(leftPoint.x - xDate)) {
+                leftPoint = point;
+              }
             }
-          }
-        } else {
-          if (!rightPoint) {
-            rightPoint = point;
-            break; // Exit loop since points are sorted in time so this will be the closest point on the right
+          } else {
+            if (!rightPoint) {
+              rightPoint = point;
+              break; // Exit loop since points are sorted in time so this will be the closest point on the right
+            }
           }
         }
       }
@@ -503,6 +543,7 @@
     window.cancelAnimationFrame(processingRequest);
 
     points = [];
+    pointsSorted = true;
     tempPoints = [];
 
     processingRequest = window.requestAnimationFrame(() => resourcesToLinePoints(resources));
@@ -515,88 +556,22 @@
     startId = 0,
   ): void {
     const startTime = performance.now();
-    let resourceIndex = resourceStartIndex;
-    let valueIndex = valueStartIndex;
-    let id = startId;
-
-    for (resourceIndex; resourceIndex < resources.length; ++resourceIndex) {
-      const resource = resources[resourceIndex];
-      const { name, schema, values } = resource;
-
-      if (schema.type === 'boolean') {
-        for (valueIndex; valueIndex < values.length; ++valueIndex) {
-          const value = values[valueIndex];
-          const { x, y: yBoolean } = value;
-          const y = yBoolean ? 1 : 0;
-          tempPoints.push({
-            id: id++,
-            name,
-            type: 'line',
-            x,
-            y,
-          });
-
-          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
-            processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
-            );
-            return;
-          }
-        }
-
-        valueIndex = 0;
-      } else if (
-        schema.type === 'int' ||
-        schema.type === 'real' ||
-        schema.type === 'duration' ||
-        (schema.type === 'struct' && schema?.items?.rate?.type === 'real' && schema?.items?.initial?.type === 'real')
-      ) {
-        for (valueIndex; valueIndex < values.length; ++valueIndex) {
-          const value = values[valueIndex];
-          const { x } = value;
-          const y = value.y as number;
-          tempPoints.push({
-            id: id++,
-            name,
-            type: 'line',
-            x,
-            y,
-          });
-
-          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
-            processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
-            );
-            return;
-          }
-        }
-        valueIndex = 0;
-      } else if (schema.type === 'string' || schema.type === 'variant') {
-        for (let i = 0; i < values.length; ++i) {
-          const value = values[i];
-          const { x } = value;
-          const y = value.y as number;
-          ordinalScaleDomain.add(value.y as string);
-          tempPoints.push({
-            id: id++,
-            name,
-            type: 'line',
-            x,
-            y,
-          });
-
-          if (performance.now() - startTime > WORK_TIME_THRESHOLD) {
-            processingRequest = window.requestAnimationFrame(() =>
-              resourcesToLinePoints(resources, resourceIndex, valueIndex + 1, id),
-            );
-            return;
-          }
-        }
-        valueIndex = 0;
-      }
+    const next = appendLinePointSlice(
+      resources,
+      tempPoints,
+      ordinalScaleDomain,
+      { nextId: startId, resourceIndex: resourceStartIndex, valueIndex: valueStartIndex },
+      () => performance.now() - startTime > WORK_TIME_THRESHOLD,
+    );
+    if (next) {
+      processingRequest = window.requestAnimationFrame(() =>
+        resourcesToLinePoints(resources, next.resourceIndex, next.valueIndex, next.nextId),
+      );
+      return;
     }
 
     points = tempPoints;
+    pointsSorted = isSortedByX(points);
   }
 
   function generateOffscreenPoint(lineColor: string, radius: number): OffscreenCanvas | HTMLCanvasElement | null {
