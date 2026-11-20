@@ -1500,6 +1500,7 @@ const gql = {
         description
         duration
         id
+        is_locked
         is_read_only
         model_id
         name
@@ -2698,6 +2699,7 @@ const gql = {
         description
         duration
         id
+        is_locked
         is_read_only
         model_id
         name

@@ -188,6 +188,7 @@ export type PlanSlim = Pick<
   | 'duration'
   | 'end_time_doy'
   | 'id'
+  | 'is_locked'
   | 'is_read_only'
   | 'model_id'
   | 'name'

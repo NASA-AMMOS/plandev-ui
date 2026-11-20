@@ -1,4 +1,6 @@
 import test, { expect } from '@playwright/test';
+import { Plans } from '../fixtures/Plans.js';
+import { User } from '../fixtures/User.js';
 import { setupTest, teardownTest, type ModelSetupResult } from '../utilities/api.js';
 
 let setup: ModelSetupResult;
@@ -122,6 +124,65 @@ test.describe.serial('Plans - CRUD Operations', () => {
     await expect(setup.page.getByLabel('Description', { exact: true })).toHaveValue('Created description\nSecond line');
   });
 
+  test('Rename a plan from the Plans page', async () => {
+    const { page, plans } = setup;
+    const renamed = `${plans.planName}_renamed`;
+    await plans.tableRow(plans.planName).click();
+    const name = page.getByRole('textbox', { exact: true, name: 'Name' });
+    await expect(name).toHaveValue(plans.planName);
+
+    await name.fill('');
+    await name.blur();
+    await expect(page.getByText('Field is required', { exact: true })).toBeVisible();
+    await expect(plans.tableRow(plans.planName)).toBeVisible();
+
+    await name.fill(renamed);
+    await name.blur();
+    await plans.filterTable(renamed);
+    await expect(plans.tableRow(renamed)).toBeVisible();
+    await expect(page).toHaveURL(/\/plans$/);
+
+    await page.reload();
+    await plans.filterTable(renamed);
+    await plans.tableRow(renamed).click();
+    await expect(name).toHaveValue(renamed);
+    plans.planName = renamed;
+  });
+
+  test('Add and remove a plan tag from the Plans page', async () => {
+    const { page, plans, api } = setup;
+    const tagName = `${plans.planName}_tag`;
+    const tag = await api.createTag(tagName);
+    try {
+      await plans.goto();
+      await plans.filterTable(plans.planName);
+      await plans.tableRow(plans.planName).click();
+      await expect(page.getByRole('textbox', { exact: true, name: 'Name' })).toHaveValue(plans.planName);
+      await page.getByPlaceholder('Enter a tag...').fill(tagName);
+      await page.getByRole('listbox').getByRole('option', { exact: true, name: tagName }).click();
+      const selectedTag = page.getByRole('option', { exact: true, name: tagName });
+      await expect(selectedTag).toBeVisible();
+      await expect(page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
+      await expect(page).toHaveURL(/\/plans$/);
+
+      await page.reload();
+      await plans.filterTable(plans.planName);
+      await plans.tableRow(plans.planName).click();
+      await expect(selectedTag).toBeVisible();
+      await selectedTag.click();
+      await expect(page.getByText('Plan Updated Successfully', { exact: true })).toBeVisible();
+      await expect(selectedTag).not.toBeVisible();
+
+      await page.reload();
+      await plans.filterTable(plans.planName);
+      await plans.tableRow(plans.planName).click();
+      await expect(page.getByRole('textbox', { exact: true, name: 'Name' })).toHaveValue(plans.planName);
+      await expect(selectedTag).not.toBeVisible();
+    } finally {
+      await api.deleteTag(tag.id);
+    }
+  });
+
   test('Delete plan', async () => {
     await setup.plans.deletePlan();
   });
@@ -131,4 +192,29 @@ test.describe.serial('Plans - CRUD Operations', () => {
     await setup.plans.importPlan();
     await setup.plans.deletePlan();
   });
+});
+
+test('A user without edit permission cannot rename a plan from the Plans page', async ({ browser }) => {
+  const otherUser = await setupTest(browser, { model: false, user: 'userB' });
+  const planName = setup.plans.createPlanName();
+  const plan = await setup.api.createPlan({
+    duration: '1 day',
+    model_id: setup.modelId,
+    name: planName,
+    start_time: '2022-001T00:00:00',
+  });
+  try {
+    const user = new User(otherUser.page, 'userB');
+    await user.gotoWithRetry('/plans');
+    await user.switchRole('user');
+    const plans = new Plans(otherUser.page, setup.models);
+    await plans.filterTable(planName);
+    await plans.tableRow(planName).click();
+    const name = otherUser.page.getByRole('textbox', { exact: true, name: 'Name' });
+    await expect(name).toHaveValue(planName);
+    await expect(name).not.toBeEditable();
+  } finally {
+    await setup.api.deletePlan(plan.id);
+    await teardownTest(otherUser);
+  }
 });

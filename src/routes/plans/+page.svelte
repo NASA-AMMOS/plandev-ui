@@ -7,13 +7,14 @@
   import { Alert, Button, cn, Input as InputStellar, Label, Select, Textarea } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
-  import { FileUp, Import, LoaderCircle, LockKeyhole, Pencil, TriangleAlert, X } from 'lucide-svelte';
+  import { FileUp, Import, LoaderCircle, LockKeyhole, TriangleAlert, X } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
   import Nav from '../../components/app/Nav.svelte';
   import PageTitle from '../../components/app/PageTitle.svelte';
   import Collapse from '../../components/Collapse.svelte';
   import DatePickerField from '../../components/form/DatePickerField.svelte';
   import Field from '../../components/form/Field.svelte';
+  import PlanForm from '../../components/plan/PlanForm.svelte';
   import ModelStatusRollup from '../../components/model/ModelStatusRollup.svelte';
   import AlertError from '../../components/ui/AlertError.svelte';
   import CssGrid from '../../components/ui/CssGrid.svelte';
@@ -27,7 +28,7 @@
   import SectionTitle from '../../components/ui/SectionTitle.svelte';
   import TagsInput from '../../components/ui/Tags/TagsInput.svelte';
   import { InvalidDate } from '../../constants/time';
-  import { PlanImportStatus, PlanStatusMessages } from '../../enums/planStatusMessages';
+  import { PlanImportStatus } from '../../enums/planStatusMessages';
   import { SearchParameters } from '../../enums/searchParameters';
   import { field } from '../../stores/form';
   import { executableModels, models } from '../../stores/model';
@@ -36,7 +37,7 @@
   import { plugins } from '../../stores/plugins';
   import { simulationTemplates } from '../../stores/simulation';
   import { tags } from '../../stores/tags';
-  import { getUserStore } from '../../stores/user';
+  import { getUserStore, initialUsersLoading, users } from '../../stores/user';
   import type { DataGridColumnDef, RowId } from '../../types/data-grid';
   import type { FieldStore } from '../../types/form';
   import type { ModelSlim } from '../../types/model';
@@ -45,7 +46,6 @@
   import { generateRandomPastelColor } from '../../utilities/color';
   import effects from '../../utilities/effects';
   import { compareWithRankings, parseJSONStream } from '../../utilities/generic';
-  import { showChangePlanBoundsModal } from '../../utilities/modal';
   import { permissionHandler } from '../../utilities/permissionHandler';
   import { featurePermissions } from '../../utilities/permissions';
   import {
@@ -57,11 +57,9 @@
   } from '../../utilities/plan';
   import {
     convertDoyToYmd,
-    convertUsToDurationString,
     formatDate,
     getDoyTime,
     getDoyTimeFromInterval,
-    getIntervalInMs,
     getShortISOForDate,
   } from '../../utilities/time';
   import { showFailureToast, showSuccessToast } from '../../utilities/toast';
@@ -357,8 +355,6 @@
   const user = getUserStore();
 
   let canCreate: boolean = false;
-  let canChangePlanModel: boolean = false;
-  let canUpdatePlan: boolean = false;
   let columnDefs: DataGridColumnDef[] = baseColumnDefs;
   let createButtonEnabled: boolean = false;
   let createPlanButtonText: string = 'Create';
@@ -379,8 +375,14 @@
   let planTags: Tag[] = [];
   let selectedModel: ModelSlim | undefined;
   let selectedPlan: PlanSlim | undefined;
+  let selectedDetailsId: number | null = null;
+  let selectedDetailsModelId: number | null = null;
+  let displayedPlan: Plan | null = null;
+  let selectedPlanDetails: Plan | null = null;
+  let selectedPlanDetailsLoading: boolean = false;
+  let selectedPlanDetailsReady: boolean = false;
+  let selectedPlanDetailsRequest: number = 0;
   let selectedPlanId: number | null = null;
-  let selectedPlanModelName: string | null = null;
   let panelColumns = '300px 3px 1fr';
   let startTimeField: FieldStore<string>;
   let endTimeField: FieldStore<string>;
@@ -399,9 +401,6 @@
 
   $: startTimeField = field<string>('', [required, $plugins.time.primary.validate]);
   $: endTimeField = field<string>('', [required, $plugins.time.primary.validate]);
-  $: canChangePlanModel = selectedPlan !== undefined && featurePermissions.plan.canUpdateModel($user, selectedPlan);
-  $: canUpdatePlan =
-    selectedPlan !== undefined && $user ? featurePermissions.plan.canUpdate($user, selectedPlan) : false;
 
   $: if ($plans) {
     nameField.updateValidators([
@@ -413,10 +412,31 @@
     ]);
 
     selectedPlan = $plans.find(({ id }) => id === selectedPlanId);
-    if (selectedPlan) {
-      selectedPlanModelName = $models.find(model => model.id === selectedPlan?.model_id)?.name ?? null;
+  }
+  $: selectedDetailsId = selectedPlan?.id ?? null;
+  $: selectedDetailsModelId = selectedPlan?.model_id ?? null;
+  $: loadSelectedPlanDetails(selectedDetailsId, selectedDetailsModelId);
+  $: displayedPlan = selectedPlanDetails
+    ? { ...selectedPlanDetails, ...$plans.find(plan => plan.id === selectedPlanDetails?.id) }
+    : null;
+  $: selectedPlanDetailsReady =
+    !selectedPlanDetailsLoading && displayedPlan !== null && displayedPlan.id === selectedPlanId;
+
+  async function loadSelectedPlanDetails(id: number | null, _modelId: number | null) {
+    const request = ++selectedPlanDetailsRequest;
+    if (id === null) {
+      selectedPlanDetails = null;
+      selectedPlanDetailsLoading = false;
+      return;
+    }
+    selectedPlanDetailsLoading = true;
+    const details = await effects.getPlan(id, $user);
+    if (request === selectedPlanDetailsRequest) {
+      selectedPlanDetails = details;
+      selectedPlanDetailsLoading = false;
     }
   }
+
   $: plans.updateValue(() => data.plans);
   $: models.updateValue(() => data.models);
 
@@ -628,7 +648,7 @@
   }
 
   async function onExportSelectedPlan() {
-    if (selectedPlan) {
+    if (selectedPlan && selectedPlanDetailsReady) {
       await onExportPlan(selectedPlan);
     }
   }
@@ -665,14 +685,8 @@
   }
 
   function showSelectedPlan() {
-    if (selectedPlanId !== null) {
+    if (selectedPlanId !== null && selectedPlanDetailsReady) {
       openPlan(selectedPlanId);
-    }
-  }
-
-  function changeSelectedPlanTimeRange() {
-    if (selectedPlan && !isSelectedPlanReadOnly) {
-      showChangePlanBoundsModal(selectedPlan, $user);
     }
   }
 
@@ -819,12 +833,6 @@
     }
     return `${model.name} (Version: ${model.version})`;
   }
-
-  async function openChangePlanMissionModelModal() {
-    if (selectedPlan !== undefined) {
-      await effects.updatePlanMissionModel(selectedPlan, $user);
-    }
-  }
 </script>
 
 <PageTitle title="Plans" />
@@ -856,7 +864,7 @@
             >
               <Button
                 variant="outline"
-                disabled={planExporting || !!selectedPlanImportRequest}
+                disabled={planExporting || !!selectedPlanImportRequest || !selectedPlanDetailsReady}
                 class="flex gap-1"
                 on:click={onExportSelectedPlan}
               >
@@ -922,155 +930,36 @@
               </Alert.Description>
             </Alert.Root>
           {/if}
-          <div class="plan-metadata min-w-0">
-            <fieldset>
-              <div class="flex flex-col gap-0.5">
-                <Label size="sm" for="selected-plan-name">Name</Label>
-                <InputStellar
-                  id="selected-plan-name"
-                  sizeVariant="xs"
-                  readonly
-                  class="selected-plan-field w-full"
-                  value={selectedPlan.name}
-                />
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="selected-plan-description">Description</Label>
-                <Textarea
-                  id="selected-plan-description"
-                  class="px-2 py-1 text-xs"
-                  rows={4}
-                  readonly
-                  value={selectedPlan.description ?? ''}
-                />
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="selected-plan-model">Model</Label>
-                {#if selectedPlan.is_read_only}
-                  <div>
-                    <InputStellar
-                      id="selected-plan-model"
-                      sizeVariant="xs"
-                      readonly
-                      class="selected-plan-field w-full"
-                      value="Model-free plan"
-                    />
-                  </div>
-                {:else}
-                  <div class="flex min-w-0 gap-1">
-                    <div class="min-w-0 flex-1" use:tooltip={{ content: selectedPlanModelName, placement: 'top' }}>
-                      <InputStellar
-                        id="selected-plan-model"
-                        sizeVariant="xs"
-                        readonly
-                        class={cn(
-                          'selected-plan-field w-full',
-                          canChangePlanModel && !selectedPlanImportRequest ? 'selected-plan-field-editable' : '',
-                          !selectedPlanModelName ? 'border-destructive' : '',
-                        )}
-                        value={selectedPlanModelName ?? 'Model not found'}
-                      />
-                    </div>
-                    <div
-                      use:tooltip={{
-                        content: canChangePlanModel && !selectedPlanImportRequest ? 'Change Mission Model' : '',
-                        placement: 'top',
-                      }}
-                      use:permissionHandler={{
-                        hasPermission: canChangePlanModel && !selectedPlanImportRequest,
-                        permissionError: selectedPlanImportRequest
-                          ? PlanStatusMessages.READ_ONLY
-                          : 'You do not have permission to change mission model',
-                      }}
-                    >
-                      <Button
-                        class="shrink-0"
-                        variant="outline"
-                        size="icon"
-                        disabled={!!selectedPlanImportRequest}
-                        on:click={openChangePlanMissionModelModal}
-                        aria-label="Change mission model"
-                      >
-                        <Pencil size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                {/if}
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="selected-plan-start">Start Time - {$plugins.time.primary.formatString}</Label>
-                <div class="flex min-w-0 gap-1">
-                  <input
-                    id="selected-plan-start"
-                    class={cn(
-                      'st-input selected-plan-field min-w-0 flex-1',
-                      canUpdatePlan && !isSelectedPlanReadOnly ? 'selected-plan-field-editable' : '',
-                    )}
-                    readonly
-                    value={formatDate(new Date(selectedPlan.start_time), $plugins.time.primary.format)}
-                  />
-                  {#if !selectedPlan.is_read_only}
-                    <div
-                      use:permissionHandler={{
-                        hasPermission: canUpdatePlan && !isSelectedPlanReadOnly,
-                        permissionError: isSelectedPlanReadOnly
-                          ? PlanStatusMessages.READ_ONLY
-                          : 'You do not have permission to edit this plan.',
-                      }}
-                      use:tooltip={{
-                        content: canUpdatePlan && !isSelectedPlanReadOnly ? 'Change plan time range' : '',
-                        placement: 'top',
-                      }}
-                    >
-                      <Button
-                        aria-label="Change plan time range"
-                        size="icon"
-                        variant="outline"
-                        disabled={isSelectedPlanReadOnly}
-                        on:click={changeSelectedPlanTimeRange}><Pencil size={16} /></Button
-                      >
-                    </div>
-                  {/if}
-                </div>
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="selected-plan-end">End Time - {$plugins.time.primary.formatString}</Label>
-                <input
-                  id="selected-plan-end"
-                  class={cn(
-                    'st-input selected-plan-field w-full',
-                    canUpdatePlan && !isSelectedPlanReadOnly ? 'selected-plan-field-editable' : '',
-                  )}
-                  readonly
-                  value={formatDate(
-                    new Date(convertDoyToYmd(selectedPlan.end_time_doy) ?? selectedPlan.end_time_doy),
-                    $plugins.time.primary.format,
-                  )}
-                />
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="selected-plan-duration">Duration</Label>
-                <input
-                  id="selected-plan-duration"
-                  class="st-input selected-plan-field w-full"
-                  readonly
-                  value={convertUsToDurationString(getIntervalInMs(selectedPlan.duration) * 1000) || 'None'}
-                />
-              </div>
-              <div class="flex flex-col gap-0.5 pt-2">
-                <Label size="sm" for="tags">Tags</Label>
-                <TagsInput
-                  className="selected-plan-tags w-full"
-                  disabled
-                  options={$tags}
-                  selected={selectedPlan.tags.map(({ tag }) => tag)}
-                  on:change={onTagsInputChange}
-                />
-              </div>
-            </fieldset>
-          </div>
+          <fieldset
+            class="plan-metadata m-0 min-w-0 border-0 p-0"
+            disabled={selectedPlanDetailsLoading}
+            inert={selectedPlanDetailsLoading}
+            aria-busy={selectedPlanDetailsLoading}
+          >
+            {#if displayedPlan}
+              <PlanForm
+                plan={displayedPlan}
+                planTags={displayedPlan.tags.map(({ tag }) => tag)}
+                tags={$tags}
+                user={$user}
+                users={$users}
+                usersLoading={$initialUsersLoading}
+                userWriteablePlans={$plans.filter(plan => featurePermissions.plan.canUpdate($user, plan))}
+                isReadOnly={isSelectedPlanReadOnly}
+                isLocked={selectedPlan.is_locked}
+                importInProgress={!!selectedPlanImportRequest}
+                mode="listing"
+              />
+            {:else if selectedPlanDetailsLoading}
+              <p class="p-4 text-muted-foreground">Loading plan details…</p>
+            {:else}
+              <p class="p-4 text-destructive">
+                Unable to load plan details. Deselect and select the plan to try again.
+              </p>
+            {/if}
+          </fieldset>
           <fieldset class="my-4 pt-2">
-            <Button on:click={showSelectedPlan}>Open Plan</Button>
+            <Button disabled={!selectedPlanDetailsReady} on:click={showSelectedPlan}>Open Plan</Button>
           </fieldset>
         {:else}
           {@const canModify = canCreate && !isPlanUploadReadOnly}
@@ -1389,31 +1278,6 @@
 </CssGrid>
 
 <style>
-  .plan-metadata :global(input.selected-plan-field) {
-    background-color: var(--st-white);
-    border: var(--st-input-border);
-    color: var(--st-input-color);
-    opacity: 1;
-  }
-
-  .plan-metadata :global(input.selected-plan-field-editable) {
-    background-color: var(--st-input-background-color);
-  }
-
-  .plan-metadata :global(input.selected-plan-field.border-destructive) {
-    border-color: hsl(var(--destructive));
-  }
-
-  .plan-metadata :global(.selected-plan-tags) {
-    background-color: var(--st-white);
-    border: var(--st-input-border);
-    opacity: 1;
-  }
-
-  .plan-metadata :global(.permission-disabled button) {
-    opacity: 0.5 !important;
-  }
-
   :global(.plans-split > .css-grid-gutter.column) {
     position: relative;
     z-index: 1;

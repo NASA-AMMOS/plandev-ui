@@ -2,7 +2,8 @@
 
 <script lang="ts">
   import { activityDirectivesMap } from '../../stores/activities';
-  import { plan, planTags } from '../../stores/plan';
+  import { plan, planImportRequest, planIsLocked, planMetadata, planReadOnly, planTags } from '../../stores/plan';
+  import { simulationDatasetId } from '../../stores/simulation';
   import { gqlSubscribable } from '../../stores/subscribable';
   import { tags } from '../../stores/tags';
   import { initialUsersLoading, users } from '../../stores/user';
@@ -26,6 +27,11 @@
   </svelte:fragment>
   <svelte:fragment slot="body">
     <PlanForm
+      isReadOnly={$planReadOnly}
+      isLocked={$planIsLocked}
+      importInProgress={!!$planImportRequest}
+      on:namechange={({ detail: name }) => planMetadata.updateValue(pm => (pm ? { ...pm, name } : null))}
+      on:modelchange={() => ($simulationDatasetId = -1)}
       activityDirectivesMap={$activityDirectivesMap}
       plan={$plan}
       planTags={$planTags}

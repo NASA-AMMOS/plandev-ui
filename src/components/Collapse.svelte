@@ -17,6 +17,7 @@
   export let error: boolean = false;
   export let padContent: boolean = true;
   export let title: string = '';
+  export let showHeader: boolean = true;
   export let titleClassName: string = '';
   export let tooltipContent: string = '';
 
@@ -35,47 +36,49 @@
 </script>
 
 <div class={collapseClasses} class:error role="group" aria-label="{ariaTitle || title}-collapse">
-  <button
-    type="button"
-    on:contextmenu|preventDefault={contextMenu?.show}
-    tabindex={!collapsible ? -1 : 0}
-    class="collapse-header st-button st-typography-medium tertiary"
-    class:static={!collapsible}
-    class:expanded
-    style:height={`${headerHeight}px`}
-    on:click|stopPropagation={() => {
-      if (collapsible) {
-        expanded = !expanded;
-        dispatch('collapse', !expanded);
-      }
-    }}
-  >
-    {#if collapsible}
-      <div class="collapse-icon">
-        {#if expanded}
-          <CaretDownIcon />
-        {:else}
-          <CaretRightIcon />
-        {/if}
+  {#if showHeader}
+    <button
+      type="button"
+      on:contextmenu|preventDefault={contextMenu?.show}
+      tabindex={!collapsible ? -1 : 0}
+      class="collapse-header st-button st-typography-medium tertiary"
+      class:static={!collapsible}
+      class:expanded
+      style:height={`${headerHeight}px`}
+      on:click|stopPropagation={() => {
+        if (collapsible) {
+          expanded = !expanded;
+          dispatch('collapse', !expanded);
+        }
+      }}
+    >
+      {#if collapsible}
+        <div class="collapse-icon">
+          {#if expanded}
+            <CaretDownIcon />
+          {:else}
+            <CaretRightIcon />
+          {/if}
+        </div>
+      {/if}
+      <div class="left">
+        <slot name="left" />
       </div>
-    {/if}
-    <div class="left">
-      <slot name="left" />
-    </div>
-    <div class={titleClasses} use:tooltip={{ content: tooltipContent, placement: 'top' }}>
-      <slot name="title" />
-      {title}
-    </div>
-    <div class="right">
-      <slot name="right" />
-    </div>
-  </button>
+      <div class={titleClasses} use:tooltip={{ content: tooltipContent, placement: 'top' }}>
+        <slot name="title" />
+        {title}
+      </div>
+      <div class="right">
+        <slot name="right" />
+      </div>
+    </button>
+  {/if}
   <slot name="action-row" />
   <div
     class={classNames('content', { [contentClass]: !!contentClass })}
     class:pad-content={padContent}
-    class:expanded
-    aria-hidden={collapsible ? !expanded : false}
+    class:expanded={expanded || !showHeader}
+    aria-hidden={showHeader && collapsible ? !expanded : false}
   >
     <slot />
   </div>

@@ -113,6 +113,7 @@ test.beforeAll(async ({ browser }) => {
 
   // Navigate to plan page
   await planA.goto(String(planAId));
+  await setupA.page.waitForLoadState('networkidle');
 });
 
 test.afterAll(async () => {
@@ -185,7 +186,7 @@ test.describe.serial('Plan Metadata', () => {
   test('Plan name uniqueness validation enforced', async () => {
     await planA.showPanel(PanelNames.PLAN_METADATA, true);
     await planA.fillPlanName(planB.planName);
-    await expect(setupA.page.locator('.error:has-text("Plan name already exists")')).toBeDefined();
+    await expect(setupA.page.getByText('Plan name already exists', { exact: true })).toBeVisible();
   });
 
   test('Plan owner should be userA', async () => {
@@ -251,11 +252,11 @@ test.describe.serial('Plan Metadata', () => {
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
         .getByRole('option', { exact: true, name: 'userA' }),
-    ).toBeDefined();
+    ).toBeVisible();
     await expect(
       planB.planCollaboratorInputContainer
         .getByTestId('tags-input-selected-items')
         .getByRole('option', { exact: true, name: 'userB' }),
-    ).toBeDefined();
+    ).toBeVisible();
   });
 });
