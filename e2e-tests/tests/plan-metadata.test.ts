@@ -201,7 +201,7 @@ test.describe.serial('Plan Metadata', () => {
     await planA.removePlanCollaborator('userA');
   });
 
-  test(`Non-collaborator userB as role user should not be able to edit userA's plan collaborators`, async () => {
+  test(`Non-collaborator userB as role user should not be able to edit userA's plan collaborators or metadata`, async () => {
     // Use userB's separate browser context - no login/logout needed!
     const userB = new User(setupB.page, 'userB');
     await userB.gotoWithRetry('/plans');
@@ -212,7 +212,7 @@ test.describe.serial('Plan Metadata', () => {
     await planAForUserB.waitForPlanCollaboratorLoad();
     await expect(planAForUserB.planCollaboratorInputContainer).toHaveAttribute('readonly');
     const description = planAForUserB.panelPlanMetadata.getByLabel('Description', { exact: true });
-    await expect(description).toHaveAttribute('readonly', '');
+    await expect(description).toHaveAttribute('readonly');
     await expect(description).toBeEnabled();
   });
 
