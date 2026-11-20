@@ -113,7 +113,15 @@ test.describe('Plans - Form Validation', () => {
 test.describe.serial('Plans - CRUD Operations', () => {
   test('Create plan', async () => {
     await setup.plans.goto();
+    await setup.page.getByLabel('Description', { exact: true }).fill('Created description\nSecond line');
     await setup.plans.createPlan();
+    await expect(setup.page.getByLabel('Description', { exact: true })).toHaveValue('');
+    await setup.plans.tableRow(setup.plans.planName).click();
+    await expect(setup.page.getByLabel('Description', { exact: true })).toHaveValue('Created description\nSecond line');
+    await setup.page.reload();
+    await setup.plans.filterTable(setup.plans.planName);
+    await setup.plans.tableRow(setup.plans.planName).click();
+    await expect(setup.page.getByLabel('Description', { exact: true })).toHaveValue('Created description\nSecond line');
   });
 
   test('Rename a plan from the Plans page', async () => {

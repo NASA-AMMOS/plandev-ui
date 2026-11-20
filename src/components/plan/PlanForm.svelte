@@ -72,6 +72,7 @@
       'Plan name already exists',
     ),
   ]);
+  let planDescription: string = '';
   let planExporting: boolean = false;
 
   $: isModelFreePlan = plan?.is_read_only ?? false;
@@ -110,6 +111,7 @@
   }
   $: if (plan) {
     planNameField.validateAndSet(plan?.name ?? '');
+    planDescription = plan.description ?? '';
   }
 
   async function onTagsInputChange(event: TagsChangeEvent) {
@@ -175,6 +177,12 @@
     }
   }
 
+  async function onPlanDescriptionChange() {
+    if (plan && hasPlanUpdatePermission && planDescription !== (plan.description ?? '')) {
+      await effects.updatePlan(plan, { description: planDescription }, user);
+    }
+  }
+
   async function onExportPlan() {
     if (plan && !planExporting && !importInProgress && activityDirectivesMap) {
       planExporting = true;
@@ -229,6 +237,22 @@
             </Input>
           </Field>
         </div>
+        <Input layout="inline" class="!items-baseline">
+          <label for="plan-description">Description</label>
+          <textarea
+            aria-label="Description"
+            id="plan-description"
+            name="plan-description"
+            class="st-input resize-y"
+            rows={4}
+            use:permissionHandler={{
+              hasPermission: hasPlanUpdatePermission,
+              permissionError,
+            }}
+            bind:value={planDescription}
+            on:change={onPlanDescriptionChange}
+          />
+        </Input>
         <Input layout="inline">
           <label use:tooltip={{ content: 'ID', placement: 'top' }} for="id">Plan ID</label>
           <input class="st-input w-full" disabled name="id" value={plan.id} id="id" />

@@ -16,7 +16,7 @@ export type PlanCollaborator = { collaborator: UserId; plan_id: number };
 
 export type PlanCollaboratorSlim = Pick<PlanCollaborator, 'collaborator'>;
 
-export type PlanInsertInput = Pick<PlanSchema, 'duration' | 'model_id' | 'name' | 'start_time'>;
+export type PlanInsertInput = Pick<PlanSchema, 'description' | 'duration' | 'model_id' | 'name' | 'start_time'>;
 
 export type PlanMergeActivityOutcome = 'add' | 'delete' | 'modify' | 'none';
 
@@ -106,6 +106,7 @@ export type PlanSchema = {
   collaborators: PlanCollaboratorSlim[];
   constraint_specification: ConstraintPlanSpecification[];
   created_at: string;
+  description: string | null;
   duration: string;
   id: number;
   is_locked: boolean;
@@ -171,6 +172,7 @@ export type PlanMetadata = Pick<
   | 'name'
   | 'owner'
   | 'created_at'
+  | 'description'
   | 'collaborators'
   | 'model'
   | 'start_time'
@@ -181,6 +183,7 @@ export type PlanMetadata = Pick<
 export type PlanSlim = Pick<
   Plan,
   | 'created_at'
+  | 'description'
   | 'collaborators'
   | 'duration'
   | 'end_time_doy'

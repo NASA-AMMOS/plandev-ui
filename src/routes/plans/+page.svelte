@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { Alert, Button, Input as InputStellar, Label, Select } from '@nasa-jpl/stellar-svelte';
+  import { Alert, Button, cn, Input as InputStellar, Label, Select, Textarea } from '@nasa-jpl/stellar-svelte';
   import type { ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
   import { flatten } from 'lodash-es';
   import { FileUp, Import, LoaderCircle, LockKeyhole, TriangleAlert, X } from 'lucide-svelte';
@@ -361,6 +361,7 @@
   // This array should only be mutated to avoid extra re-renders. It is not needed for rendering as $planImportRequests will
   // be used to track the status of the import requests and retrigger a render
   let currentImportRequests: { planName: string; requestId: number }[] = [];
+  let description: string = '';
   let durationString: string = 'None';
   let filterText: string = '';
   let isPlanImportMode: boolean = false;
@@ -602,6 +603,7 @@
         startTime,
         $simTemplateField.value,
         $user,
+        description,
       );
       if (newPlan) {
         // Associate new tags with plan
@@ -617,6 +619,7 @@
         startTimeField.reset('');
         endTimeField.reset('');
         nameField.reset('');
+        description = '';
       }
     }
   }
@@ -1091,6 +1094,20 @@
                 />
               </div>
             </Field>
+
+            {#if !isPlanImportMode}
+              <fieldset>
+                <Label size="sm" class="pb-0.5" for="plan-description">Description</Label>
+                <Textarea
+                  id="plan-description"
+                  name="description"
+                  class="px-2 py-1 text-xs"
+                  rows={4}
+                  disabled={!canCreate}
+                  bind:value={description}
+                />
+              </fieldset>
+            {/if}
 
             <fieldset>
               <DatePickerField
