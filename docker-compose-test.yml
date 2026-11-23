@@ -2,6 +2,9 @@
 # It assumes the main PlanDev repository has been cloned into this repo as a sub-directory called 'plandev'.
 # See .github/workflows/test.yml for how this file is utilized.
 
+# Shared values for the test backend, referenced below via YAML aliases (*name).
+# NOTE: YAML aliases can't be embedded inside strings, so the hasura database URLs repeat
+# the plandev username/password/database values; keep them in sync if these change.
 x-plandev-env:
   plandev_file_store_name: &plandev_file_store_name plandev_file_store
   plandev_db: &plandev_db plandev
