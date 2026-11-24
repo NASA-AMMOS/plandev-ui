@@ -90,7 +90,7 @@ jobs:
       # It may be possible to remove in future iterations
       - name: Post-Process Output
         run: |
-          python3 -m pip install nasa-scrub==3.0
+          python3 -m pip install --only-binary :all: nasa-scrub==3.0
 
           results_dir=`realpath ${{ github.workspace }}/../results`
           sarif_files=`find $results_dir -name '*.sarif'`

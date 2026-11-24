@@ -75,7 +75,8 @@ jobs:
 
       - name: Post-Process CodeQL Output
         run: |
-          python3 -m pip install nasa-scrub==3.0
+          # Wheels only: never run a package's setup.py/build scripts in a job that has SONAR_TOKEN.
+          python3 -m pip install --only-binary :all: nasa-scrub==3.0
 
           results_dir="$GITHUB_WORKSPACE/results"
           for sarif_file in $(find "$results_dir" -name '*.sarif' ! -name '*_stripped.sarif'); do
