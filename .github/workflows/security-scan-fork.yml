@@ -1,0 +1,127 @@
+# SonarQube scan for pull requests from forks.
+#
+# Fork PRs never receive secrets under `pull_request`, so the `sonar` job in security-scan.yml skips them.
+# This workflow runs under `pull_request_target` (base-repo context, has SONAR_TOKEN) and is designed so the
+# fork's code is only ever *read*, never executed:
+#   - no `npm install`, build, test, or script from the PR checkout is run
+#   - CodeQL (build-mode: none) and the Sonar scanner only parse source files
+#   - all configuration and helper scripts come from the trusted base-branch checkout
+#   - the PR's sonar-project.properties is replaced, and Sonar connection params are forced, so a PR cannot
+#     redirect the scanner (and SONAR_TOKEN) to another host or project
+# Do NOT add steps that execute code from the `pr/` checkout.
+name: 'Security Scan (Fork PRs)'
+
+on:
+  pull_request_target:
+    branches:
+      - develop
+      - 'dev-[0-9]+.[0-9]+.[0-9]+'
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    name: SonarQube Scan (Fork PR)
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: read
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+    steps:
+      - name: Checkout trusted base branch
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          path: trusted
+          persist-credentials: false
+
+      - name: Checkout PR code (untrusted, read-only)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Replace PR Sonar config with trusted config
+        run: |
+          rm -f pr/sonar-project.properties pr/.sonarcloud.properties
+          cp trusted/sonar-project.properties pr/sonar-project.properties
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          languages: actions, javascript-typescript
+          build-mode: none
+          source-root: pr
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          checkout_path: ${{ github.workspace }}/pr
+          output: ${{ github.workspace }}/results
+          upload: never
+
+      - name: Post-Process CodeQL Output
+        run: |
+          python3 -m pip install nasa-scrub==3.0
+
+          results_dir="$GITHUB_WORKSPACE/results"
+          for sarif_file in $(find "$results_dir" -name '*.sarif' ! -name '*_stripped.sarif'); do
+            output_file="$results_dir/$(basename "$sarif_file" .sarif)_stripped.sarif"
+            python3 -m scrub.tools.parsers.translate_results "$sarif_file" "$output_file" "$GITHUB_WORKSPACE/pr" sarifv2.1.0
+          done
+
+          # TEMPORARY WORKAROUND: remove this once nasa-scrub emits valid SARIF 2.1.0.
+          # https://github.com/nasa/scrub/issues/118
+          python3 trusted/.github/workflows/scripts/repair-scrub-sarif.py "$results_dir"
+          # END TEMPORARY WORKAROUND
+
+          sarif_paths="$(find "$results_dir" -name '*_stripped.sarif' -type f | paste -sd, -)"
+          echo "sarif paths: $sarif_paths"
+          test -n "$sarif_paths"
+
+          # Built with jq so untrusted values (e.g. the fork's branch name) can't inject scanner arguments.
+          # These take precedence over sonar-project.properties.
+          # sonar.host.url is pinned because the scanner sends SONAR_TOKEN to whatever host it is configured
+          # with; a fork PR could otherwise set it (e.g. in sonar-project.properties) to an attacker's server.
+          # https://sonarcloud.io is SonarQube Cloud, which this project uses (see sonar.organization in
+          # sonar-project.properties) and is also the scan action's default host in security-scan.yml.
+          # If the project moves to another Sonar instance, update this and SONAR_HOST_URL below.
+          params="$(jq -cn \
+            --arg sarif "$sarif_paths" \
+            --arg key "$PR_NUMBER" \
+            --arg branch "$PR_HEAD_REF" \
+            --arg base "$PR_BASE_REF" \
+            --arg sha "$PR_HEAD_SHA" \
+            '{
+              "sonar.host.url": "https://sonarcloud.io",
+              "sonar.organization": "nasa-ammos",
+              "sonar.projectKey": "NASA-AMMOS_aerie-ui",
+              "sonar.sarifReportPaths": $sarif,
+              "sonar.pullrequest.key": $key,
+              "sonar.pullrequest.branch": $branch,
+              "sonar.pullrequest.base": $base,
+              "sonar.scm.revision": $sha
+            }')"
+          echo "SONAR_SCANNER_JSON_PARAMS=$params" >> "$GITHUB_ENV"
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Pinned (redundantly with sonar.host.url above) so SONAR_TOKEN can only be sent to SonarQube Cloud.
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: pr
